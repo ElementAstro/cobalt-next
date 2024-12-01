@@ -1,4 +1,4 @@
-import { Guider } from "../components/guider";
+import { Guider } from "./guider";
 
 export default function GuiderPage() {
   return <Guider />;

@@ -9,24 +9,33 @@ import {
   PointerSensor,
 } from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
+
 import { motion, AnimatePresence } from "framer-motion";
+
+import { toast, Toaster } from "react-hot-toast";
+
 import CameraViewfinder from "./components/CameraViewfinder";
 import ExposureControls from "./components/ExposureControls";
-import DeviceToggle from "./components/DeviceToggle";
 import DeviceWindow from "./components/DeviceWindow";
 import ParameterAdjust from "./components/ParameterAdjust";
 import { TopBar } from "./components/TopBar";
 import { Offcanvas } from "./components/Offcanvas";
-import { toast, Toaster } from "react-hot-toast";
-import { Button } from "@/components/ui/button";
 import { ImageGallery } from "./components/ImageGallery";
 import { WeatherInfo } from "./components/WeatherInfo";
-import { StarChart } from "./components/StarChart";
 import { Sidebar } from "./components/Sidebar";
 import { FocusAssistant } from "./components/FocusAssistant";
-import { PolarAlignment } from "./components/PolarAlignment";
-import { SequenceEditor } from "./components/SequenceEditor";
-import { LiveStacking } from "./components/LiveStacking";
+import PolarAlignment from "./components/PolarAlignment";
+import SequenceEditor from "./components/SequenceEditor";
+import LiveStacking from "./components/LiveStacking";
+import {DeviceConnection} from "./components/DeviceConnection";
+
+import CameraPage from "./components/device/camera/page";
+import FocuserPage from "./components/device/focuser/page";
+import FilterWheelPage from "./components/device/filter-wheel/page";
+import GuiderPage from "./components/device/guider/page";
+import { TelescopePage } from "./components/device/telescope/page";
+
+import LandscapeDetector from "@/components/landscape-detection";
 
 export default function CameraInterface() {
   type DeviceParams = {
@@ -39,6 +48,7 @@ export default function CameraInterface() {
     declination?: string;
     currentFilter?: string;
     availableFilters?: string[];
+    [key: string]: any;
   };
 
   type Device = {
@@ -51,51 +61,9 @@ export default function CameraInterface() {
 
   const [devices, setDevices] = useState<Device[]>([
     {
-      id: "telescope",
-      name: "Telescope",
-      icon: "telescope",
-      active: false,
-      params: {
-        focalLength: 1000,
-        aperture: 200,
-        tracking: false,
-      },
-    },
-    {
-      id: "focuser",
-      name: "Focuser",
-      icon: "focus",
-      active: false,
-      params: {
-        position: 5000,
-        speed: 100,
-      },
-    },
-    {
-      id: "mount",
-      name: "Mount",
-      icon: "compass",
-      active: false,
-      params: {
-        rightAscension: "05h 34m 32s",
-        declination: "-05° 27' 10\"",
-        tracking: false,
-      },
-    },
-    {
-      id: "filterWheel",
-      name: "Filter Wheel",
-      icon: "filter",
-      active: false,
-      params: {
-        currentFilter: "Clear",
-        availableFilters: ["Clear", "Red", "Green", "Blue", "Luminance"],
-      },
-    },
-    {
-      id: "gallery",
-      name: "Image Gallery",
-      icon: "image",
+      id: "device",
+      name: "Device Connection",
+      icon: "wifi",
       active: false,
       params: {},
     },
@@ -150,9 +118,11 @@ export default function CameraInterface() {
     focusPoint: "5000",
     filterType: "Clear",
     exposureTime: 10,
+    exposureMode: "Auto",
+    whiteBalance: "Daylight",
   });
 
-  const [activeId, setActiveId] = useState(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedParameter, setSelectedParameter] = useState<string | null>(
     null
   );
@@ -195,11 +165,11 @@ export default function CameraInterface() {
           : { ...device, active: false }
       )
     );
-    setActiveDevice(id);
+    setActiveDevice((prev) => (prev === id ? null : id));
   }, []);
 
   const handleDragStart = useCallback(() => {
-    // Add your logic for drag start here
+    // 添加拖拽开始逻辑
   }, []);
 
   const handleDragEnd = useCallback(() => {
@@ -233,21 +203,24 @@ export default function CameraInterface() {
   );
 
   const handleCapture = useCallback(
-    (exposureTime: number, burstMode: boolean) => {
+    (
+      exposureTime: number,
+      burstMode: boolean,
+      exposureMode: string,
+      whiteBalance: string
+    ) => {
       if (isShooting) {
-        // Toggle pause/resume
+        // 切换暂停/恢复
         setIsPaused((prev) => !prev);
       } else {
-        // Start a new capture
+        // 开始新的捕捉
         setIsShooting(true);
         setIsPaused(false);
         setProgress(0);
-        const captureCount = burstMode ? 3 : 1; // Assuming 3 shots for burst mode
+        const captureCount = burstMode ? 3 : 1; // 假设连拍模式下捕捉3张
         const totalTime = exposureTime * captureCount;
         const toastId = toast.loading(
-          `Capturing ${
-            burstMode ? "burst" : "image"
-          } for ${totalTime} seconds...`
+          `正在捕捉${burstMode ? "连拍" : "图像"}，耗时 ${totalTime} 秒...`
         );
 
         const startTime = Date.now();
@@ -261,11 +234,10 @@ export default function CameraInterface() {
           } else {
             setIsShooting(false);
             setProgress(0);
-            toast.success(
-              `${burstMode ? "Burst" : "Image"} captured successfully!`,
-              { id: toastId }
-            );
-            // Simulate adding captured images
+            toast.success(`${burstMode ? "连拍" : "图像"}成功捕捉！`, {
+              id: toastId,
+            });
+            // 模拟添加捕捉的图像
             setCapturedImages((prev) => [
               ...prev,
               ...Array(captureCount).fill(
@@ -295,130 +267,136 @@ export default function CameraInterface() {
     setOffcanvasDevice(null);
   }, []);
 
+  const renderOffcanvasContent = () => {
+    switch (offcanvasDevice) {
+      case "telescope":
+        return <TelescopePage />;
+      case "focuser":
+        return <FocuserPage />;
+      case "filterWheel":
+        return <FilterWheelPage />;
+      case "guider":
+        return <GuiderPage />;
+      case "camera":
+        return <CameraPage />;
+      // 添加其他设备的页面组件
+      default:
+        return null;
+    }
+  };
+
   return (
-    <DndContext
-      sensors={sensors}
-      modifiers={[restrictToWindowEdges]}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
+    <LandscapeDetector
+      aspectRatioThreshold={4 / 3}
+      enableSound={true}
+      persistPreference={true}
+      forceFullscreen={true}
     >
-      <div className="flex flex-col h-screen bg-gray-900 text-white overflow-hidden">
-        <TopBar onOpenOffcanvas={handleOpenOffcanvas} />
-        <div className="flex flex-1 overflow-hidden">
-          <Sidebar devices={devices} onToggle={toggleDevice} />
-          <div className="flex-1 relative overflow-hidden">
-            <CameraViewfinder isShooting={isShooting} />
-            <AnimatePresence>
-              {activeDevice && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {activeDevice === "gallery" && (
-                    <ImageGallery
-                      images={capturedImages}
-                      onClose={() => setActiveDevice(null)}
-                    />
-                  )}
-                  {activeDevice === "weather" && (
-                    <WeatherInfo onClose={() => setActiveDevice(null)} />
-                  )}
-                  {activeDevice === "starChart" && (
-                    <StarChart onClose={() => setActiveDevice(null)} />
-                  )}
-                  {activeDevice === "focusAssistant" && (
-                    <FocusAssistant onClose={() => setActiveDevice(null)} />
-                  )}
-                  {activeDevice === "polarAlignment" && (
-                    <PolarAlignment onClose={() => setActiveDevice(null)} />
-                  )}
-                  {activeDevice === "sequenceEditor" && (
-                    <SequenceEditor onClose={() => setActiveDevice(null)} />
-                  )}
-                  {activeDevice === "liveStacking" && (
-                    <LiveStacking onClose={() => setActiveDevice(null)} />
-                  )}
-                  {["telescope", "focuser", "mount", "filterWheel"].includes(
-                    activeDevice
-                  ) && (
-                    <DeviceWindow
-                      device={devices.find((d) => d.id === activeDevice)!}
-                      onParamChange={handleDeviceParamChange}
-                      onClose={() => setActiveDevice(null)}
-                    />
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <AnimatePresence>
-              {selectedParameter && (
-                <ParameterAdjust
-                  parameter={selectedParameter}
-                  value={String(
-                    exposureSettings[
-                      selectedParameter as keyof typeof exposureSettings
-                    ]
-                  )}
-                  onChange={(value) =>
-                    handleParameterChange(selectedParameter, value)
-                  }
-                  onClose={() => setSelectedParameter(null)}
-                />
-              )}
-            </AnimatePresence>
-          </div>
-          <motion.div
-            className="w-64 p-4 border-l border-gray-700"
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <ExposureControls
-              settings={exposureSettings}
-              onParameterClick={handleParameterClick}
-              onCapture={handleCapture}
-              onPause={handlePause}
-              isShooting={isShooting}
-              isPaused={isPaused}
-              progress={progress}
-            />
-          </motion.div>
-        </div>
-      </div>
-      <DragOverlay>
-        {activeId ? (
-          <DeviceWindow
-            device={devices.find((d) => d.id === activeId)!}
-            onParamChange={handleDeviceParamChange}
-            onClose={() => {}}
-          />
-        ) : null}
-      </DragOverlay>
-      <Offcanvas
-        isOpen={offcanvasOpen}
-        onClose={handleCloseOffcanvas}
-        title={
-          offcanvasDevice
-            ? devices.find((d) => d.id === offcanvasDevice)?.name || ""
-            : ""
-        }
+      <DndContext
+        sensors={sensors}
+        modifiers={[restrictToWindowEdges]}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
       >
-        {offcanvasDevice && (
-          <div className="space-y-4">
-            {Object.entries(
-              devices.find((d) => d.id === offcanvasDevice)?.params || {}
-            ).map(([key, value]) => (
-              <div key={key} className="flex justify-between items-center">
-                <span className="text-sm font-medium">{key}:</span>
-                <span className="text-sm">{value.toString()}</span>
-              </div>
-            ))}
+        <div className="flex flex-col h-screen bg-gray-900 text-white overflow-hidden">
+          <TopBar onOpenOffcanvas={handleOpenOffcanvas} />
+          <div className="flex flex-1 overflow-hidden">
+            <Sidebar devices={devices} onToggle={toggleDevice} />
+            <div className="flex-1 relative overflow-hidden">
+              {!activeDevice && <CameraViewfinder isShooting={isShooting} />}
+              <AnimatePresence>
+                {activeDevice && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {activeDevice === "device" && (
+                      <DeviceConnection
+                      />
+                    )}
+                    {activeDevice === "weather" && (
+                      <WeatherInfo
+                        apiKey="YOUR_API_KEY"
+                        onClose={() => setActiveDevice(null)}
+                      />
+                    )}
+                    {activeDevice === "starChart" && (
+                      <StarChart onClose={() => setActiveDevice(null)} />
+                    )}
+                    {activeDevice === "focusAssistant" && (
+                      <FocusAssistant onClose={() => setActiveDevice(null)} />
+                    )}
+                    {activeDevice === "polarAlignment" && (
+                      <PolarAlignment onClose={() => setActiveDevice(null)} />
+                    )}
+                    {activeDevice === "sequenceEditor" && (
+                      <SequenceEditor onClose={() => setActiveDevice(null)} />
+                    )}
+                    {activeDevice === "liveStacking" && (
+                      <LiveStacking onClose={() => setActiveDevice(null)} />
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <AnimatePresence>
+                {selectedParameter && (
+                  <ParameterAdjust
+                    parameter={selectedParameter}
+                    value={String(
+                      exposureSettings[
+                        selectedParameter as keyof typeof exposureSettings
+                      ]
+                    )}
+                    onChange={(value) =>
+                      handleParameterChange(selectedParameter, value)
+                    }
+                    onClose={() => setSelectedParameter(null)}
+                  />
+                )}
+              </AnimatePresence>
+            </div>
+            <motion.div
+              className="w-20 border-l border-gray-700"
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <ExposureControls
+                settings={exposureSettings}
+                onParameterClick={handleParameterClick}
+                onCapture={handleCapture}
+                onPause={handlePause}
+                isShooting={isShooting}
+                isPaused={isPaused}
+                progress={progress}
+              />
+            </motion.div>
           </div>
-        )}
-      </Offcanvas>
-      <Toaster />
-    </DndContext>
+        </div>
+        <DragOverlay>
+          {activeId ? (
+            <DeviceWindow
+              device={devices.find((d) => d.id === activeId)!}
+              onParamChange={handleDeviceParamChange}
+              onClose={() => {}}
+            />
+          ) : null}
+        </DragOverlay>
+        <Offcanvas
+          isOpen={offcanvasOpen}
+          onClose={handleCloseOffcanvas}
+          title={
+            offcanvasDevice
+              ? devices.find((d) => d.id === offcanvasDevice)?.name || ""
+              : ""
+          }
+        >
+          {offcanvasDevice && renderOffcanvasContent()}
+        </Offcanvas>
+        <Toaster />
+      </DndContext>
+    </LandscapeDetector>
   );
 }

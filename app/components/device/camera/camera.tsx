@@ -7,9 +7,9 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { LineChart } from "./line-chart";
+import { LineChart } from "../components/line-chart";
 import { useMockBackend } from "@/utils/mock-device";
-import { DeviceSelector } from "./device-selector";
+import { DeviceSelector } from "../components/device-selector";
 
 export function Camera() {
   const [exposure, setExposure] = useState("1");
@@ -57,7 +57,7 @@ export function Camera() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-4">
       <DeviceSelector
         deviceType="Camera"
         devices={["ZWO ASI294MC Pro", "QHY600M", "Atik 16200"]}
@@ -67,8 +67,8 @@ export function Camera() {
         <CardHeader>
           <CardTitle>Camera Settings</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label>Sensor type</Label>
               <div className="text-sm">{cameraInfo.sensorType}</div>
@@ -93,8 +93,8 @@ export function Camera() {
         <CardHeader>
           <CardTitle>Exposure Control</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="exposure">Exposure (s)</Label>
               <Input
@@ -128,9 +128,15 @@ export function Camera() {
               />
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={handleStartExposure}>Start Exposure</Button>
-            <Button variant="destructive" onClick={handleAbortExposure}>
+          <div className="flex flex-col sm:flex-row gap-2 mt-4">
+            <Button onClick={handleStartExposure} className="w-full sm:w-auto">
+              Start Exposure
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleAbortExposure}
+              className="w-full sm:w-auto"
+            >
               Abort Exposure
             </Button>
           </div>
@@ -138,7 +144,7 @@ export function Camera() {
       </Card>
 
       <Card className="bg-slate-800/50">
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
           <CardTitle>Temperature Control</CardTitle>
           <div className="flex items-center space-x-2">
             <Label htmlFor="cooler">Cooler</Label>
@@ -149,19 +155,23 @@ export function Camera() {
             />
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
+        <CardContent>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <Label htmlFor="target-temp">Target Temperature (°C)</Label>
             <Input
               id="target-temp"
               type="number"
               value={cameraInfo.targetTemperature}
               onChange={(e) => setTemperature(parseFloat(e.target.value))}
-              className="w-24"
+              className="w-full sm:w-24"
             />
-            <Button onClick={handleSetTemperature}>Set</Button>
+            <Button onClick={handleSetTemperature} className="w-full sm:w-auto">
+              Set
+            </Button>
           </div>
-          <LineChart data={cameraInfo.temperatureHistory} />
+          <div className="mt-4">
+            <LineChart data={cameraInfo.temperatureHistory} />
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -1,4 +1,4 @@
-import { Focuser } from "../components/focuser";
+import { Focuser } from "./focuser";
 
 export default function FocuserPage() {
   return <Focuser />;

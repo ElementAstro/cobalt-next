@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useMockBackend } from "@/utils/mock-device";
-import { DeviceSelector } from "./device-selector";
+import { DeviceSelector } from "../components/device-selector";
 
 export function Guider() {
   const [ditherPixels, setDitherPixels] = useState("5");
@@ -61,7 +61,7 @@ export function Guider() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-4 text-white">
       <DeviceSelector
         deviceType="Guider"
         devices={[
@@ -77,7 +77,7 @@ export function Guider() {
             <CardTitle>Guider Settings</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label>Pixel scale</Label>
                 <div className="text-sm">{guiderInfo.pixelScale} arcsec/px</div>
@@ -101,8 +101,8 @@ export function Guider() {
               </div>
             </div>
 
-            <div className="grid gap-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="dither-pixels">Dither pixels</Label>
                   <Input
@@ -110,6 +110,8 @@ export function Guider() {
                     type="number"
                     value={ditherPixels}
                     onChange={(e) => setDitherPixels(e.target.value)}
+                    className="text-black"
+                    placeholder="Enter pixels"
                   />
                 </div>
                 <div className="space-y-2">
@@ -119,12 +121,22 @@ export function Guider() {
                     type="number"
                     value={settleTimeout}
                     onChange={(e) => setSettleTimeout(e.target.value)}
+                    className="text-black"
+                    placeholder="Enter timeout"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phd2-profile">PHD2 profile</Label>
-                  <Select defaultValue={guiderInfo.phd2Profile}>
-                    <SelectTrigger id="phd2-profile">
+                  <Select
+                    defaultValue={guiderInfo.phd2Profile}
+                    onValueChange={(value) =>
+                      setGuiderSettings({
+                        ...guiderInfo,
+                        phd2Profile: value,
+                      })
+                    }
+                  >
+                    <SelectTrigger id="phd2-profile" className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -135,7 +147,17 @@ export function Guider() {
                   </Select>
                 </div>
               </div>
-              <Button onClick={handleSettingsChange}>Apply Settings</Button>
+              <Button
+                onClick={handleSettingsChange}
+                className="w-full sm:w-auto"
+              >
+                Apply Settings
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <div className="text-sm">{guiderInfo.description}</div>
             </div>
           </CardContent>
         </Card>
@@ -145,22 +167,25 @@ export function Guider() {
             <CardTitle>Guider Control</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <Button
                 onClick={handleStartGuiding}
                 disabled={guiderInfo.state === "Guiding"}
+                className="w-full sm:w-auto"
               >
                 Start Guiding
               </Button>
               <Button
                 onClick={handleStopGuiding}
                 disabled={guiderInfo.state !== "Guiding"}
+                className="w-full sm:w-auto"
               >
                 Stop Guiding
               </Button>
               <Button
                 onClick={handleDither}
                 disabled={guiderInfo.state !== "Guiding"}
+                className="w-full sm:w-auto"
               >
                 Dither
               </Button>

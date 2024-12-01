@@ -19,12 +19,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className={inter.className}>
-        <ThemeProvider>
-          {children}
-          <Toaster />
-        </ThemeProvider>
+    <html lang="en" className="dark h-screen">
+      <body className={`${inter.className} overflow-hidden h-screen`}>
+      <ThemeProvider>
+        {children}
+        <Toaster />
+      </ThemeProvider>
       </body>
     </html>
   );

@@ -1,19 +1,19 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Lightbulb, Maximize2, Move, Star } from 'lucide-react'
-import { RiseSetChart } from "./rise-set-chart"
-import Image from 'next/image'
-import Link from 'next/link'
-import { useState } from 'react'
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Lightbulb, Maximize2, Move, Star } from "lucide-react";
+import { RiseSetChart } from "./rise-set-chart";
+import Image from "next/image";
+import Link from "next/link";
+import { useState } from "react";
 
 interface CelestialObjectProps {
   id: string;
-  name: string
-  type: string
-  constellation: string
-  rightAscension: string
-  declination: string
-  magnitude: number
+  name: string;
+  type: string;
+  constellation: string;
+  rightAscension: string;
+  declination: string;
+  magnitude: number;
   size: number;
   distance: number;
   riseTime: string;
@@ -41,22 +41,22 @@ export function CelestialObjectCard({
   thumbnail,
   isLoggedIn, // Receive login status as a prop
 }: CelestialObjectProps) {
-  const [isFavorite, setIsFavorite] = useState(false)
+  const [isFavorite, setIsFavorite] = useState(false);
 
   const toggleFavorite = async () => {
-    if (!isLoggedIn) return // Check login status
+    if (!isLoggedIn) return; // Check login status
 
-    const method = isFavorite ? 'DELETE' : 'POST'
-    const response = await fetch('/api/favorites', {
+    const method = isFavorite ? "DELETE" : "POST";
+    const response = await fetch("/api/favorites", {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ objectId: id }),
-    })
+    });
 
     if (response.ok) {
-      setIsFavorite(!isFavorite)
+      setIsFavorite(!isFavorite);
     }
-  }
+  };
 
   return (
     <Card className="w-full p-2">
@@ -80,7 +80,9 @@ export function CelestialObjectCard({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Link href={`/celestial-object/${id}`}>
-                <h3 className="text-lg font-semibold hover:underline">{name}</h3>
+                <h3 className="text-lg font-semibold hover:underline">
+                  {name}
+                </h3>
               </Link>
               <span className="text-sm text-muted-foreground">{type}</span>
             </div>
@@ -124,9 +126,17 @@ export function CelestialObjectCard({
                 Slew
               </Button>
               {isLoggedIn && (
-                <Button className="w-full" variant="outline" onClick={toggleFavorite}>
-                  <Star className={`w-4 h-4 mr-2 ${isFavorite ? 'fill-yellow-400' : ''}`} />
-                  {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={toggleFavorite}
+                >
+                  <Star
+                    className={`w-4 h-4 mr-2 ${
+                      isFavorite ? "fill-yellow-400" : ""
+                    }`}
+                  />
+                  {isFavorite ? "Remove from Favorites" : "Add to Favorites"}
                 </Button>
               )}
             </div>
@@ -141,6 +151,5 @@ export function CelestialObjectCard({
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-

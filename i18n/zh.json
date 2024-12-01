@@ -1,0 +1,45 @@
+{
+  "title": "常见问题和项目依赖",
+  "description": "使用Next.js和Tailwind CSS演示常见问题和项目依赖",
+  "faq": {
+    "title": "常见问题",
+    "searchPlaceholder": "搜索常见问题...",
+    "questions": [
+      {
+        "question": "这个项目是关于什么的？",
+        "answer": "这个项目是使用Next.js、React和Tailwind CSS演示常见问题页面和项目依赖展示。"
+      },
+      {
+        "question": "我如何开始？",
+        "answer": "要开始，请克隆仓库并运行`npm install`安装依赖。然后运行`npm run dev`启动开发服务器。"
+      },
+      {
+        "question": "这个项目是移动端响应式的吗？",
+        "answer": "是的，这个项目设计为完全响应式，在桌面和移动设备上都能很好地工作。"
+      },
+      {
+        "question": "我可以为这个项目做贡献吗？",
+        "answer": "我们欢迎贡献。请查看我们的GitHub仓库了解贡献指南。"
+      },
+      {
+        "question": "我如何报告一个bug？",
+        "answer": "如果你发现了一个bug，请在我们的GitHub仓库上开一个issue，详细描述问题和重现步骤。"
+      }
+    ]
+  },
+  "dependencies": {
+    "title": "项目依赖",
+    "version": "版本"
+  },
+  "graph": {
+    "title": "依赖图"
+  },
+  "languageSwitch": "切换到{language}",
+  "search": {
+    "placeholder": "搜索..."
+  },
+  "theme": {
+    "toggle": "切换主题"
+  }
+}
+

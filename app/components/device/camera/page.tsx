@@ -1,4 +1,4 @@
-import { Camera } from "../components/camera";
+import { Camera } from "./camera";
 
 export default function CameraPage() {
   return <Camera />;

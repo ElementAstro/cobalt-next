@@ -15,7 +15,7 @@ import {
   ParkingSquare,
 } from "lucide-react";
 import { useMockBackend } from "@/utils/mock-device";
-import { DeviceSelector } from "./device-selector";
+import { DeviceSelector } from "../components/device-selector";
 
 export function Telescope() {
   const [targetRA, setTargetRA] = useState("00:00:00");
@@ -62,7 +62,7 @@ export function Telescope() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-4 text-white">
       <DeviceSelector
         deviceType="Telescope"
         devices={["Celestron CGX", "Skywatcher EQ6-R", "iOptron CEM60"]}
@@ -70,36 +70,60 @@ export function Telescope() {
           console.log(`Selected telescope: ${device}`)
         }
       />
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="flex flex-col gap-4">
         <Card className="bg-card">
           <CardHeader>
             <CardTitle>Telescope Information</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Site latitude</Label>
-                <Input value={telescopeInfo.siteLatitude} readOnly />
+                <Input
+                  value={telescopeInfo.siteLatitude}
+                  readOnly
+                  className="text-white bg-gray-700"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Site longitude</Label>
-                <Input value={telescopeInfo.siteLongitude} readOnly />
+                <Input
+                  value={telescopeInfo.siteLongitude}
+                  readOnly
+                  className="text-white bg-gray-700"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Right Ascension</Label>
-                <Input value={telescopeInfo.rightAscension} readOnly />
+                <Input
+                  value={telescopeInfo.rightAscension}
+                  readOnly
+                  className="text-white bg-gray-700"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Declination</Label>
-                <Input value={telescopeInfo.declination} readOnly />
+                <Input
+                  value={telescopeInfo.declination}
+                  readOnly
+                  className="text-white bg-gray-700"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Altitude</Label>
-                <Input value={telescopeInfo.altitude} readOnly />
+                <Input
+                  value={telescopeInfo.altitude}
+                  readOnly
+                  className="text-white bg-gray-700"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Azimuth</Label>
-                <Input value={telescopeInfo.azimuth} readOnly />
+                <Input
+                  value={telescopeInfo.azimuth}
+                  readOnly
+                  className="text-white bg-gray-700"
+                />
               </div>
             </div>
           </CardContent>
@@ -110,13 +134,13 @@ export function Telescope() {
             <CardTitle>Manual Control</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4">
-              <div className="grid grid-cols-3 gap-2 max-w-[240px] mx-auto">
+            <div className="flex flex-col items-center">
+              <div className="grid grid-cols-3 gap-2 max-w-[240px] w-full">
                 <div />
                 <Button
                   variant="secondary"
                   size="icon"
-                  className="aspect-square"
+                  className="aspect-square text-white"
                   onClick={() => handleManualMove("up")}
                 >
                   <ChevronUp className="h-4 w-4" />
@@ -125,7 +149,7 @@ export function Telescope() {
                 <Button
                   variant="secondary"
                   size="icon"
-                  className="aspect-square"
+                  className="aspect-square text-white"
                   onClick={() => handleManualMove("left")}
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -133,7 +157,7 @@ export function Telescope() {
                 <Button
                   variant="secondary"
                   size="icon"
-                  className="aspect-square"
+                  className="aspect-square text-white"
                   onClick={() => handleManualMove("stop")}
                 >
                   Stop
@@ -141,7 +165,7 @@ export function Telescope() {
                 <Button
                   variant="secondary"
                   size="icon"
-                  className="aspect-square"
+                  className="aspect-square text-white"
                   onClick={() => handleManualMove("right")}
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -150,7 +174,7 @@ export function Telescope() {
                 <Button
                   variant="secondary"
                   size="icon"
-                  className="aspect-square"
+                  className="aspect-square text-white"
                   onClick={() => handleManualMove("down")}
                 >
                   <ChevronDown className="h-4 w-4" />
@@ -158,10 +182,10 @@ export function Telescope() {
                 <div />
               </div>
 
-              <div className="flex justify-end gap-2">
+              <div className="flex flex-col sm:flex-row justify-center gap-2 mt-4 w-full">
                 <Button
                   variant="secondary"
-                  className="w-24"
+                  className="w-full sm:w-24 text-white"
                   onClick={handlePark}
                 >
                   <ParkingSquare className="mr-2 h-4 w-4" />
@@ -169,7 +193,7 @@ export function Telescope() {
                 </Button>
                 <Button
                   variant="secondary"
-                  className="w-24"
+                  className="w-full sm:w-24 text-white"
                   onClick={handleHome}
                 >
                   <Home className="mr-2 h-4 w-4" />
@@ -180,12 +204,12 @@ export function Telescope() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card md:col-span-2">
+        <Card className="bg-card">
           <CardHeader>
             <CardTitle>Slew to Coordinates</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="target-ra">Target RA</Label>
                 <Input
@@ -193,6 +217,7 @@ export function Telescope() {
                   value={targetRA}
                   onChange={(e) => setTargetRA(e.target.value)}
                   placeholder="HH:MM:SS"
+                  className="text-white bg-gray-700"
                 />
               </div>
               <div className="space-y-2">
@@ -202,10 +227,16 @@ export function Telescope() {
                   value={targetDec}
                   onChange={(e) => setTargetDec(e.target.value)}
                   placeholder="DD:MM:SS"
+                  className="text-white bg-gray-700"
                 />
               </div>
               <div className="flex items-end">
-                <Button onClick={handleSlew}>Slew</Button>
+                <Button
+                  onClick={handleSlew}
+                  className="w-full sm:w-auto text-white"
+                >
+                  Slew
+                </Button>
               </div>
             </div>
           </CardContent>

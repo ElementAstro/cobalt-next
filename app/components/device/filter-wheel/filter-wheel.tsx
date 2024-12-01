@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useMockBackend } from "@/utils/mock-device";
-import { DeviceSelector } from "./device-selector";
+import { DeviceSelector } from "../components/device-selector";
 
 export function FilterWheel() {
   const [selectedFilter, setSelectedFilter] = useState("1");
@@ -29,7 +29,7 @@ export function FilterWheel() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-4 text-white">
       <DeviceSelector
         deviceType="Filter Wheel"
         devices={["ZWO EFW", "Starlight Xpress 5-position", "Atik EFW2"]}
@@ -43,7 +43,7 @@ export function FilterWheel() {
             <CardTitle>Filter Wheel Control</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-6">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Name</Label>
                 <div className="text-sm">{filterWheelInfo.name}</div>
@@ -69,7 +69,10 @@ export function FilterWheel() {
                   value={selectedFilter}
                   onValueChange={setSelectedFilter}
                 >
-                  <SelectTrigger id="filter-select" className="w-[200px]">
+                  <SelectTrigger
+                    id="filter-select"
+                    className="w-full sm:w-[200px]"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -82,16 +85,19 @@ export function FilterWheel() {
                 </Select>
               </div>
 
-              <div className="flex gap-2">
-                <Button onClick={handleFilterChange}>Change Filter</Button>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  onClick={handleFilterChange}
+                  className="w-full sm:w-auto"
+                >
+                  Change Filter
+                </Button>
               </div>
             </div>
 
             <div className="space-y-2">
               <Label>Description</Label>
-              <div className="text-sm text-muted-foreground">
-                {filterWheelInfo.description}
-              </div>
+              <div className="text-sm">{filterWheelInfo.description}</div>
             </div>
           </CardContent>
         </Card>

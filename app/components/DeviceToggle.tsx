@@ -16,7 +16,8 @@ import {
   Crosshair,
   Target,
   List,
-  Layers
+  Layers,
+  Wifi
 } from "lucide-react";
 
 interface DeviceToggleProps {
@@ -36,7 +37,8 @@ const iconMap: { [key: string]: React.ComponentType<{ className?: string }> } =
     crosshair: Crosshair,
     target: Target,
     list: List,
-    layers: Layers
+    layers: Layers,
+    wifi: Wifi,
   };
 
 export default function DeviceToggle({ device, onToggle }: DeviceToggleProps) {
