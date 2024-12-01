@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import styled from "styled-components";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +25,56 @@ import { useApiService } from "@/services/api";
 interface ProfileTabProps {
   toast: (props: { title: string; description: string }) => void;
 }
+
+const Container = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+  padding: 1rem;
+
+  @media (orientation: landscape) and (max-width: 768px) {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+`;
+
+const Row = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+`;
+
+const Grid = styled.div`
+  display: grid;
+  gap: 1rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (orientation: landscape) and (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const FlexItem = styled.div`
+  flex: 1;
+  width: 100%;
+`;
+
+const FlexCenter = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
 
 export function ProfileTab({ toast }: ProfileTabProps) {
   const { fetchProfileData, updateProfileData } = useApiService();
@@ -56,9 +107,9 @@ export function ProfileTab({ toast }: ProfileTabProps) {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col md:flex-row items-start md:items-center gap-4 justify-between">
-        <div className="flex-1 w-full">
+    <Container>
+      <Row>
+        <FlexItem>
           <Label htmlFor="name">Profile Name</Label>
           <Input
             id="name"
@@ -66,18 +117,18 @@ export function ProfileTab({ toast }: ProfileTabProps) {
             onChange={(e) => handleChange("name", e.target.value)}
             className="mt-1"
           />
-        </div>
-        <div className="flex items-center space-x-2">
+        </FlexItem>
+        <FlexCenter>
           <Switch
             id="autoConnect"
             checked={profile.autoConnect}
             onCheckedChange={(checked) => handleChange("autoConnect", checked)}
           />
           <Label htmlFor="autoConnect">Auto Connect</Label>
-        </div>
-      </div>
+        </FlexCenter>
+      </Row>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <Grid>
         <div>
           <Label>Connection Mode</Label>
           <RadioGroup
@@ -85,14 +136,14 @@ export function ProfileTab({ toast }: ProfileTabProps) {
             onValueChange={(value) => handleChange("mode", value)}
             className="flex gap-4 mt-1"
           >
-            <div className="flex items-center space-x-2">
+            <FlexCenter>
               <RadioGroupItem value="local" id="local" />
               <Label htmlFor="local">Local</Label>
-            </div>
-            <div className="flex items-center space-x-2">
+            </FlexCenter>
+            <FlexCenter>
               <RadioGroupItem value="remote" id="remote" />
               <Label htmlFor="remote">Remote</Label>
-            </div>
+            </FlexCenter>
           </RadioGroup>
         </div>
         <div>
@@ -110,9 +161,9 @@ export function ProfileTab({ toast }: ProfileTabProps) {
             </SelectContent>
           </Select>
         </div>
-      </div>
+      </Grid>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <Grid>
         <div>
           <Label htmlFor="host">Host</Label>
           <Input
@@ -131,13 +182,13 @@ export function ProfileTab({ toast }: ProfileTabProps) {
             className="mt-1"
           />
         </div>
-      </div>
+      </Grid>
 
-      <div className="flex items-center justify-between">
+      <Row>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center space-x-2">
+              <FlexCenter>
                 <Checkbox
                   id="indiWebManager"
                   checked={profile.indiWebManager}
@@ -146,7 +197,7 @@ export function ProfileTab({ toast }: ProfileTabProps) {
                   }
                 />
                 <Label htmlFor="indiWebManager">INDI Web Manager</Label>
-              </div>
+              </FlexCenter>
             </TooltipTrigger>
             <TooltipContent>
               <p>Enable INDI Web Manager for advanced device control</p>
@@ -166,7 +217,7 @@ export function ProfileTab({ toast }: ProfileTabProps) {
           <Search className="w-4 h-4 mr-2" />
           Scan Network
         </Button>
-      </div>
-    </div>
+      </Row>
+    </Container>
   );
 }

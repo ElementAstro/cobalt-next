@@ -1,180 +1,211 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Card } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartLegend,
-  ChartStyle,
-} from "@/components/ui/chart";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-import { useTranslation } from "react-i18next";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { ChartComponent } from "./autofocus/chart-component";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ChartLegend } from "./autofocus/chart-legend";
 
-interface FocusAssistantProps {
-  onClose: () => void;
-}
-
-interface FocusData {
-  timestamp: Date;
-  score: number;
-}
-
-export function FocusAssistant({ onClose }: FocusAssistantProps) {
-  const { t } = useTranslation();
-  const [focusScore, setFocusScore] = useState(0);
-  const [isFocusing, setIsFocusing] = useState(false);
-  const [focusDuration, setFocusDuration] = useState(0); // 专注时长（秒）
-  const [focusHistory, setFocusHistory] = useState<FocusData[]>([]);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-  // 加载历史记录
-  useEffect(() => {
-    const storedHistory = localStorage.getItem("focusHistory");
-    if (storedHistory) {
-      setFocusHistory(JSON.parse(storedHistory));
-    }
-  }, []);
-
-  // 保存历史记录
-  useEffect(() => {
-    localStorage.setItem("focusHistory", JSON.stringify(focusHistory));
-  }, [focusHistory]);
-
-  // 实时更新专注分数
-  useEffect(() => {
-    if (isFocusing) {
-      intervalRef.current = setInterval(() => {
-        setFocusScore((prevScore) => {
-          const newScore = prevScore + Math.random() * 10 - 5;
-          return Math.max(0, Math.min(100, newScore));
-        });
-      }, 500);
-
-      // 开始计时
-      timerRef.current = setInterval(() => {
-        setFocusDuration((prev) => prev + 1);
-      }, 1000);
-
-      // 播放开始专注音效
-      const startAudio = new Audio("/start-focus.mp3");
-      startAudio.play();
-
-      return () => {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        if (timerRef.current) clearInterval(timerRef.current);
-      };
-    }
-  }, [isFocusing]);
-
-  const handleStartFocus = () => {
-    setIsFocusing(true);
-  };
-
-  const handleStopFocus = () => {
-    setIsFocusing(false);
-    // 保存当前专注分数到历史记录
-    setFocusHistory((prev) => [
-      ...prev,
-      { timestamp: new Date(), score: focusScore },
-    ]);
-    // 重置专注分数和时长
-    setFocusScore(0);
-    setFocusDuration(0);
-    // 播放停止专注音效
-    const stopAudio = new Audio("/stop-focus.mp3");
-    stopAudio.play();
-  };
-
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}m ${secs}s`;
-  };
+export default function FocusAssistant() {
+  const [isEnabled, setIsEnabled] = useState(false);
+  const [mode, setMode] = useState<"real" | "mock">("real");
 
   return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("focusAssistant.title")}</DialogTitle>
-          <DialogDescription>
-            {t("focusAssistant.description")}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold">
-              {t("focusAssistant.focusScore")}
-            </h3>
-            <p className="text-3xl font-bold">{focusScore.toFixed(2)}</p>
-          </div>
-          <Progress
-            value={focusScore}
-            className="w-full"
-            aria-label={t("focusAssistant.progress")}
-          />
-          <div className="text-center">
-            <p className="text-sm text-gray-500">
-              {t("focusAssistant.duration")}: {formatDuration(focusDuration)}
-            </p>
-          </div>
-          <div className="flex justify-center space-x-4">
-            <Button onClick={handleStartFocus} disabled={isFocusing}>
-              {t("focusAssistant.startFocus")}
-            </Button>
-            <Button onClick={handleStopFocus} disabled={!isFocusing}>
-              {t("focusAssistant.stopFocus")}
-            </Button>
-          </div>
-          <div className="mt-6">
-            <h4 className="text-md font-medium mb-2">
-              {t("focusAssistant.history")}
-            </h4>
-            {focusHistory.length > 0 ? (
-              <ChartContainer config={{}}>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={focusHistory}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="timestamp" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="score" stroke="#8884d8" />
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            ) : (
-              <p className="text-sm text-gray-400">
-                {t("focusAssistant.noHistory")}
-              </p>
-            )}
-          </div>
+    <div className="w-full h-screen max-h-screen overflow-hidden bg-gray-900 text-white">
+      <ScrollArea className="h-full">
+        <div className="max-w-6xl mx-auto p-4 space-y-4">
+          <Card className="bg-gray-800 border-gray-700 p-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+              <h1 className="text-2xl font-bold">Focuser Control</h1>
+              <ToggleGroup
+                type="single"
+                value={mode}
+                onValueChange={(value) => setMode(value as "real" | "mock")}
+                className="flex-shrink-0"
+              >
+                <ToggleGroupItem
+                  value="real"
+                  aria-label="Real mode"
+                  className="bg-gray-700 text-white hover:bg-gray-600"
+                >
+                  Real
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="mock"
+                  aria-label="Mock mode"
+                  className="bg-gray-700 text-white hover:bg-gray-600"
+                >
+                  Mock
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+              <div>
+                <Label htmlFor="position">Position</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="position"
+                    placeholder="Enter position"
+                    className="bg-gray-700 text-white"
+                  />
+                  <Button
+                    variant="secondary"
+                    className="bg-gray-700 hover:bg-gray-600 whitespace-nowrap"
+                  >
+                    GO TO
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="filter">Filter</Label>
+                <Select>
+                  <SelectTrigger id="filter" className="bg-gray-700 text-white">
+                    <SelectValue placeholder="Select filter" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-700 text-white">
+                    <SelectItem value="clear">Clear</SelectItem>
+                    <SelectItem value="red">Red</SelectItem>
+                    <SelectItem value="green">Green</SelectItem>
+                    <SelectItem value="blue">Blue</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center justify-between sm:col-span-2 lg:col-span-1">
+                <span>Autofocus Enabled</span>
+                <Switch
+                  checked={isEnabled}
+                  onCheckedChange={setIsEnabled}
+                  className="bg-gray-700"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mb-6">
+              <Button
+                variant="secondary"
+                className="bg-gray-700 hover:bg-gray-600"
+              >
+                GO TO FOCUS STAR
+              </Button>
+              <Button
+                variant="secondary"
+                className="bg-gray-700 hover:bg-gray-600"
+              >
+                INJECT-FOCUS
+              </Button>
+              <Button
+                variant="secondary"
+                className="bg-gray-700 hover:bg-gray-600"
+              >
+                ROBOSTAR
+              </Button>
+              <Button
+                variant="secondary"
+                className="bg-gray-700 hover:bg-gray-600"
+              >
+                LOCALFIELD
+              </Button>
+              <Button
+                variant="secondary"
+                className="bg-gray-700 hover:bg-gray-600"
+              >
+                FOCUS ON PLACE
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <ChartLegend />
+                <ChartComponent mode={mode} />
+              </div>
+              <div>
+                <Label htmlFor="focus-adjustment">Focus Adjustment</Label>
+                <Slider
+                  id="focus-adjustment"
+                  max={100}
+                  step={1}
+                  defaultValue={[50]}
+                  className="mt-2 bg-gray-700"
+                />
+
+                <Tabs defaultValue="time" className="w-full mt-6">
+                  <TabsList className="w-full bg-gray-800 border-t border-gray-700 grid grid-cols-3 sm:grid-cols-6">
+                    <TabsTrigger
+                      value="time"
+                      className="text-white hover:bg-gray-600"
+                    >
+                      TIME
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="hfd"
+                      className="text-white hover:bg-gray-600"
+                    >
+                      HFD
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="fltr"
+                      className="text-white hover:bg-gray-600"
+                    >
+                      FLTR
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="temp"
+                      className="text-white hover:bg-gray-600"
+                    >
+                      TEMP
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="percdev"
+                      className="text-white hover:bg-gray-600"
+                    >
+                      PERCDEV
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="durat"
+                      className="text-white hover:bg-gray-600"
+                    >
+                      DURAT
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="time" className="h-32 overflow-y-auto">
+                    Time data visualization
+                  </TabsContent>
+                  <TabsContent value="hfd" className="h-32 overflow-y-auto">
+                    HFD data visualization
+                  </TabsContent>
+                  <TabsContent value="fltr" className="h-32 overflow-y-auto">
+                    Filter data visualization
+                  </TabsContent>
+                  <TabsContent value="temp" className="h-32 overflow-y-auto">
+                    Temperature data visualization
+                  </TabsContent>
+                  <TabsContent value="percdev" className="h-32 overflow-y-auto">
+                    Percentage deviation data visualization
+                  </TabsContent>
+                  <TabsContent value="durat" className="h-32 overflow-y-auto">
+                    Duration data visualization
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </div>
+          </Card>
         </div>
-        <DialogFooter>
-          <Button onClick={onClose} variant="secondary">
-            {t("focusAssistant.close")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </ScrollArea>
+    </div>
   );
 }

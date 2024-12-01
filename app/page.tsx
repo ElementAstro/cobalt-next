@@ -20,20 +20,22 @@ import DeviceWindow from "./components/DeviceWindow";
 import ParameterAdjust from "./components/ParameterAdjust";
 import { TopBar } from "./components/TopBar";
 import { Offcanvas } from "./components/Offcanvas";
-import { ImageGallery } from "./components/ImageGallery";
-import { WeatherInfo } from "./components/WeatherInfo";
 import { Sidebar } from "./components/Sidebar";
-import { FocusAssistant } from "./components/FocusAssistant";
+import FocusAssistant from "./components/FocusAssistant";
 import PolarAlignment from "./components/PolarAlignment";
 import SequenceEditor from "./components/SequenceEditor";
 import LiveStacking from "./components/LiveStacking";
-import {DeviceConnection} from "./components/DeviceConnection";
+import DeviceConnection from "./components/DeviceConnection";
+import PluginPage from "./components/Plugin";
+import StarSearch from "./components/StarSearch";
 
 import CameraPage from "./components/device/camera/page";
 import FocuserPage from "./components/device/focuser/page";
 import FilterWheelPage from "./components/device/filter-wheel/page";
 import GuiderPage from "./components/device/guider/page";
-import { TelescopePage } from "./components/device/telescope/page";
+import TelescopePage from "./components/device/telescope/page";
+
+import Log from "./components/Log";
 
 import LandscapeDetector from "@/components/landscape-detection";
 
@@ -68,9 +70,9 @@ export default function CameraInterface() {
       params: {},
     },
     {
-      id: "weather",
-      name: "Weather Info",
-      icon: "cloud",
+      id: "plugin",
+      name: "Plugin",
+      icon: "plug",
       active: false,
       params: {},
     },
@@ -279,7 +281,8 @@ export default function CameraInterface() {
         return <GuiderPage />;
       case "camera":
         return <CameraPage />;
-      // 添加其他设备的页面组件
+      case "Logs":
+        return <Log />;
       default:
         return null;
     }
@@ -312,19 +315,9 @@ export default function CameraInterface() {
                     exit={{ opacity: 0, scale: 0.8 }}
                     transition={{ duration: 0.3 }}
                   >
-                    {activeDevice === "device" && (
-                      <DeviceConnection
-                      />
-                    )}
-                    {activeDevice === "weather" && (
-                      <WeatherInfo
-                        apiKey="YOUR_API_KEY"
-                        onClose={() => setActiveDevice(null)}
-                      />
-                    )}
-                    {activeDevice === "starChart" && (
-                      <StarChart onClose={() => setActiveDevice(null)} />
-                    )}
+                    {activeDevice === "device" && <DeviceConnection />}
+                    {activeDevice === "plugin" && <PluginPage />}
+                    {activeDevice === "starChart" && <StarSearch />}
                     {activeDevice === "focusAssistant" && (
                       <FocusAssistant onClose={() => setActiveDevice(null)} />
                     )}

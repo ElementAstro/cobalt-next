@@ -88,7 +88,7 @@ const LiveStacking: React.FC<LiveStackingProps> = memo(
     return (
       <Dialog open={true} onOpenChange={onClose}>
         <AnimatePresence>
-          <DialogContent>
+          <DialogContent className="bg-gray-900 text-white">
             <DialogHeader>
               <DialogTitle className="text-white">Live Stacking</DialogTitle>
               <Button
@@ -140,6 +140,7 @@ const LiveStacking: React.FC<LiveStackingProps> = memo(
                   onClick={handleSavePreset}
                   variant="secondary"
                   size="sm"
+                  className="bg-gray-700 hover:bg-gray-600"
                   aria-label="保存预设"
                 >
                   <Save className="h-4 w-4 mr-1" /> 保存预设
@@ -150,6 +151,7 @@ const LiveStacking: React.FC<LiveStackingProps> = memo(
                     onClick={() => handleLoadPreset(preset)}
                     variant="ghost"
                     size="sm"
+                    className="bg-gray-700 hover:bg-gray-600"
                     aria-label={`加载预设 ${index + 1}`}
                   >
                     <Check className="h-4 w-4 mr-1" /> 预设 {index + 1}
@@ -161,7 +163,7 @@ const LiveStacking: React.FC<LiveStackingProps> = memo(
               <Button
                 onClick={handleStartStopStacking}
                 disabled={success}
-                className="w-full"
+                className="w-full bg-gray-700 hover:bg-gray-600"
               >
                 {isStacking ? (
                   <>

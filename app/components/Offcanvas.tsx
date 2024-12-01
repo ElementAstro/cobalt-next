@@ -55,26 +55,26 @@ export function Offcanvas({
             aria-modal="true"
             aria-labelledby="offcanvas-title"
           >
-            <div className="flex justify-between items-center p-4 border-b border-gray-700">
-              <h2
-                id="offcanvas-title"
-                className="text-xl font-semibold text-white"
-              >
-                {title}
-              </h2>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                aria-label="Close Offcanvas"
-              >
-                <X className="w-5 h-5 text-white" />
-              </Button>
-            </div>
+            {title && (
+              <div className="flex justify-between items-center p-4 border-b border-gray-700">
+                <h2
+                  id="offcanvas-title"
+                  className="text-xl font-semibold text-white"
+                >
+                  {title}
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  aria-label="Close Offcanvas"
+                >
+                  <X className="w-5 h-5 text-white" />
+                </Button>
+              </div>
+            )}
             {/* 使用 flex-1 和 overflow-y-auto 实现内部滚动 */}
-            <div className="flex-1 overflow-y-auto p-4">
-              {children}
-            </div>
+            <div className="flex-1 overflow-y-auto p-4">{children}</div>
           </motion.div>
         </>
       )}

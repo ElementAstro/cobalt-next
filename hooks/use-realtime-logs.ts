@@ -1,9 +1,24 @@
+// use-realtime-logs.ts
 import { useState, useEffect, useCallback } from "react";
 import { Log } from "@/types/log";
 import { generateMockLogs } from "@/utils/mock-log-data";
 
-export function useRealtimeLogs(initialLogs: Log[], maxLogs: number = 1000) {
-  const [logs, setLogs] = useState(initialLogs);
+interface RealtimeLogsOptions {
+  enabled: boolean;
+  interval?: number;
+  maxLogs?: number;
+}
+
+export function useRealtimeLogs(
+  initialLogs: Log[],
+  options: RealtimeLogsOptions = {
+    enabled: true,
+    interval: 5000,
+    maxLogs: 1000,
+  }
+) {
+  const [logs, setLogs] = useState<Log[]>(initialLogs);
+  const { enabled, interval = 5000, maxLogs = 1000 } = options;
 
   const addNewLog = useCallback(() => {
     const newLog = generateMockLogs(1)[0];
@@ -14,10 +29,15 @@ export function useRealtimeLogs(initialLogs: Log[], maxLogs: number = 1000) {
   }, [maxLogs]);
 
   useEffect(() => {
-    const interval = setInterval(addNewLog, 5000); // 每5秒添加一个新日志
+    if (enabled) {
+      const intervalId = setInterval(addNewLog, interval);
+      return () => clearInterval(intervalId);
+    }
+  }, [addNewLog, enabled, interval]);
 
-    return () => clearInterval(interval);
-  }, [addNewLog]);
+  useEffect(() => {
+    setLogs(initialLogs);
+  }, [initialLogs]);
 
   return logs;
 }

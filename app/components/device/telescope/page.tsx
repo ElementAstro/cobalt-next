@@ -1,7 +1,5 @@
 import { Telescope } from "./telescope";
 
-export function TelescopePage() {
-  return (
-    <Telescope />
-  );
+export default function TelescopePage() {
+  return <Telescope />;
 }

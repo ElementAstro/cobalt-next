@@ -38,6 +38,8 @@ const LogDetail: React.FC<{ log: Log }> = React.memo(({ log }) => {
   );
 });
 
+LogDetail.displayName = "LogDetail";
+
 export const LogDisplay: React.FC<LogDisplayProps> = React.memo(
   function LogDisplay({ logs, logLevelColors }) {
     return (
@@ -88,3 +90,5 @@ export const LogDisplay: React.FC<LogDisplayProps> = React.memo(
     );
   }
 );
+
+LogDisplay.displayName = "LogDisplay";

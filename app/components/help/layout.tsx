@@ -1,16 +1,10 @@
-'use client'
+"use client"
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Metadata } from 'next'
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Menu } from 'lucide-react'
-
-export const metadata: Metadata = {
-  title: '帮助中心',
-  description: '查找有关我们产品的帮助和支持',
-}
 
 export default function HelpLayout({
   children,
@@ -66,4 +60,3 @@ export default function HelpLayout({
     </div>
   )
 }
-

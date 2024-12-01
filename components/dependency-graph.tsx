@@ -91,7 +91,9 @@ export function DependencyGraph() {
             ctx.fillStyle = node.color;
             ctx.fillText(label, node.x, node.y);
 
-            node === hoverNode && paintRing(node, ctx);
+            if (node === hoverNode) {
+              paintRing(node, ctx);
+            }
           }}
           onNodeHover={handleNodeHover}
         />

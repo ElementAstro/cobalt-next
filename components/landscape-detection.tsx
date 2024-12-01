@@ -196,17 +196,19 @@ export default function LandscapeDetector({
               </svg>
             </div>
             {autoRotateSupported && (
-              <DialogDescription>{t("autoRotateEnabled")}</DialogDescription>
+              <DialogDescription className="text-center">
+                {t("autoRotateEnabled")}
+              </DialogDescription>
             )}
-            <DialogDescription>
+            <DialogDescription className="text-center">
               {isFullscreen ? t("fullscreenEnabled") : t("fullscreenDisabled")}
             </DialogDescription>
-            <DialogFooter className="flex justify-center space-x-4">
+            <DialogFooter className="grid grid-cols-2 gap-4">
               <Button
                 variant="outline"
                 onClick={ignoreWarning}
                 aria-label={t("ignore")}
-                className="bg-gray-700 text-white border-gray-600"
+                className="bg-gray-700 text-white border-gray-600 w-full"
               >
                 {t("ignore")}
               </Button>
@@ -216,7 +218,7 @@ export default function LandscapeDetector({
                 aria-label={
                   isFullscreen ? t("exitFullscreen") : t("enterFullscreen")
                 }
-                className="bg-blue-600 text-white"
+                className="bg-blue-600 text-white w-full"
               >
                 {isFullscreen ? t("exitFullscreen") : t("enterFullscreen")}
               </Button>

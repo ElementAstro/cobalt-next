@@ -15,17 +15,16 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { AdvancedSearch } from "./AdvancedSearch";
-import { PluginDetails } from "./PluginDetails";
-import { VerticalTabs } from "./VerticalTabs";
-import { AuthModal } from "./AuthModal";
-import { PluginReviews } from "./PluginReviews";
+import { AdvancedSearch } from "./plugin/AdvancedSearch";
+import { PluginDetails } from "./plugin/PluginDetails";
+import { VerticalTabs } from "./plugin/VerticalTabs";
+import { PluginReviews } from "./plugin/PluginReviews";
 import { Plugin, SearchFilters, User } from "@/types/plugin";
 import { mockPlugins } from "@/utils/mock-plugin";
-import { AutocompleteSearch } from "./AutocompleteSearch";
-import { ConfirmDialog } from "./ConfirmDialog";
+import { AutocompleteSearch } from "./plugin/AutocompleteSearch";
+import { ConfirmDialog } from "./plugin/ConfirmDialog";
 
-export default function AstronomyStore() {
+export default function PluginPage() {
   const [plugins, setPlugins] = useState<Plugin[]>([]);
   const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -393,56 +392,18 @@ export default function AstronomyStore() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
-      <header className="sticky top-0 z-10 bg-background shadow-md">
-        <div className="container mx-auto py-4 px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <Button variant="ghost" onClick={handleReturnHome}>
-              <Home className="h-5 w-5 mr-2" />
-              Home
-            </Button>
-            <AutocompleteSearch
-              plugins={plugins}
-              onSearch={handleSearch}
-              className="flex-grow max-w-2xl mx-4"
-            />
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
-              >
-                <Filter className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setUseMockData(!useMockData)}
-              >
-                {useMockData ? "Use Real API" : "Use Mock Data"}
-              </Button>
-              <AuthModal onLogin={handleLogin} onRegister={handleRegister} />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              >
-                {theme === "dark" ? (
-                  <Sun className="h-4 w-4" />
-                ) : (
-                  <Moon className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
+      <main className="flex-grow overflow-hidden" ref={mainContentRef}>
+        <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8 h-full overflow-y-auto">
+          <AutocompleteSearch
+            plugins={plugins}
+            onSearch={handleSearch}
+            className="mb-6"
+          />
           {showAdvancedSearch && (
-            <div className="mt-4">
+            <div className="mb-6">
               <AdvancedSearch onSearch={handleSearch} />
             </div>
           )}
-        </div>
-      </header>
-      <main className="flex-grow overflow-hidden" ref={mainContentRef}>
-        <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8 h-full overflow-y-auto">
           {selectedPlugin ? (
             <>
               <PluginDetails

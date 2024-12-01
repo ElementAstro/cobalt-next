@@ -1,17 +1,20 @@
-import { useState } from "react";
+import { use, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Telescope, Focus, Compass, Filter } from "lucide-react";
+import { Telescope, Focus, Compass, Filter, Camera, Logs } from "lucide-react";
 
 interface TopBarProps {
   onOpenOffcanvas: (device: string) => void;
 }
 
 export function TopBar({ onOpenOffcanvas }: TopBarProps) {
+  const [isShowDeviceName, setIsShowDeviceName] = useState(false);
   const devices = [
+    { id: "camera", name: "Camera", icon: Camera },
     { id: "telescope", name: "Telescope", icon: Telescope },
     { id: "focuser", name: "Focuser", icon: Focus },
-    { id: "mount", name: "Mount", icon: Compass },
     { id: "filterWheel", name: "Filter Wheel", icon: Filter },
+    { id: "guider", name: "Guider", icon: Compass },
+    { id: "Logs", name: "Logs", icon: Logs },
   ];
 
   return (
@@ -42,7 +45,7 @@ export function TopBar({ onOpenOffcanvas }: TopBarProps) {
             onClick={() => onOpenOffcanvas(device.id)}
           >
             <device.icon className="w-5 h-5 mr-1" />
-            {device.name}
+            {isShowDeviceName && device.name}
           </Button>
         ))}
       </div>

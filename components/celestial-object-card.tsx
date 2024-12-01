@@ -104,49 +104,40 @@ export function CelestialObjectCard({
                 <p>{magnitude}</p>
               </div>
             </div>
-          </div>
-          <div className="space-y-2">
             <RiseSetChart
               riseTime={riseTime}
               setTime={setTime}
               transitTime={transitTime}
               transitAltitude={transitAltitude}
             />
-            <div className="flex flex-col gap-2">
-              <Button className="w-full" variant="default">
-                <Maximize2 className="w-4 h-4 mr-2" />
-                Add target
-              </Button>
-              <Button className="w-full" variant="outline">
-                <Lightbulb className="w-4 h-4 mr-2" />
-                Set framing
-              </Button>
-              <Button className="w-full" variant="outline">
-                <Move className="w-4 h-4 mr-2" />
-                Slew
-              </Button>
-              {isLoggedIn && (
-                <Button
-                  className="w-full"
-                  variant="outline"
-                  onClick={toggleFavorite}
-                >
-                  <Star
-                    className={`w-4 h-4 mr-2 ${
-                      isFavorite ? "fill-yellow-400" : ""
-                    }`}
-                  />
-                  {isFavorite ? "Remove from Favorites" : "Add to Favorites"}
-                </Button>
-              )}
-            </div>
           </div>
-        </div>
-        <div className="mt-4">
-          <div className="w-full h-24 bg-muted rounded-lg relative">
-            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-              Altitude Chart
-            </div>
+          <div className="flex flex-col gap-2">
+            <Button className="w-full" variant="default">
+              <Maximize2 className="w-4 h-4 mr-2" />
+              Add target
+            </Button>
+            <Button className="w-full" variant="outline">
+              <Lightbulb className="w-4 h-4 mr-2" />
+              Set framing
+            </Button>
+            <Button className="w-full" variant="outline">
+              <Move className="w-4 h-4 mr-2" />
+              Slew
+            </Button>
+            {isLoggedIn && (
+              <Button
+                className="w-full mt-2"
+                variant="outline"
+                onClick={toggleFavorite}
+              >
+                <Star
+                  className={`w-4 h-4 mr-2 ${
+                    isFavorite ? "fill-yellow-400" : ""
+                  }`}
+                />
+                {isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>

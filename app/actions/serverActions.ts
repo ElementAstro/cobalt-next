@@ -32,6 +32,7 @@ export async function fetchConfigFiles(isMockMode: boolean) {
     ];
   }
   // Implement actual API call here
+  return []; // Add return statement to avoid undefined
 }
 
 export async function createConfigFile(
@@ -42,6 +43,7 @@ export async function createConfigFile(
     return { id: "3", ...config };
   }
   // Implement actual API call here
+  return null; // Add return statement to avoid undefined
 }
 
 export async function fetchDrivers(isMockMode: boolean): Promise<Driver[]> {
@@ -61,6 +63,7 @@ export async function fetchDrivers(isMockMode: boolean): Promise<Driver[]> {
     ];
   }
   // Implement actual API call here
+  return []; // Add return statement to avoid undefined
 }
 
 export async function fetchDevices(
@@ -136,6 +139,7 @@ export async function fetchDevices(
     return devices[driverId] || [];
   }
   // Implement actual API call here
+  return []; // Add return statement to avoid undefined
 }
 
 export async function startServer(config: any, isMockMode: boolean) {
@@ -144,4 +148,5 @@ export async function startServer(config: any, isMockMode: boolean) {
     return { success: true };
   }
   // Implement actual API call here
+  return { success: false }; // Add return statement to avoid undefined
 }

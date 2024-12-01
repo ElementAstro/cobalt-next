@@ -1,10 +1,9 @@
-import React, { useReducer, useEffect, useState } from "react";
+import React, { useReducer, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -30,6 +29,9 @@ interface ExposureSettings {
   exposureTime: number;
   exposureMode: string;
   whiteBalance: string;
+  gain: number;
+  offset: number;
+  binning: string;
 }
 
 interface ExposureControlsProps {
@@ -55,6 +57,13 @@ type State = {
   intervalTime: number;
   exposureMode: string;
   whiteBalance: string;
+  iso: number;
+  aperture: number;
+  focusPoint: number;
+  filterType: string;
+  gain: number;
+  offset: number;
+  binning: string;
 };
 
 type Action =
@@ -65,6 +74,13 @@ type Action =
   | { type: "SET_INTERVAL_TIME"; payload: number }
   | { type: "SET_EXPOSURE_MODE"; payload: string }
   | { type: "SET_WHITE_BALANCE"; payload: string }
+  | { type: "SET_ISO"; payload: number }
+  | { type: "SET_APERTURE"; payload: number }
+  | { type: "SET_FOCUS_POINT"; payload: number }
+  | { type: "SET_FILTER_TYPE"; payload: string }
+  | { type: "SET_GAIN"; payload: number }
+  | { type: "SET_OFFSET"; payload: number }
+  | { type: "SET_BINNING"; payload: string }
   | { type: "RESET"; payload: ExposureSettings };
 
 const initialState = (settings: ExposureSettings): State => ({
@@ -75,6 +91,13 @@ const initialState = (settings: ExposureSettings): State => ({
   intervalTime: 60,
   exposureMode: settings.exposureMode || "Manual",
   whiteBalance: settings.whiteBalance || "Auto",
+  iso: parseInt(settings.iso) || 100,
+  aperture: parseFloat(settings.aperture) || 2.8,
+  focusPoint: parseInt(settings.focusPoint) || 50,
+  filterType: settings.filterType || "None",
+  gain: settings.gain || 0,
+  offset: settings.offset || 0,
+  binning: settings.binning || "1x1",
 });
 
 const reducer = (state: State, action: Action): State => {
@@ -93,6 +116,20 @@ const reducer = (state: State, action: Action): State => {
       return { ...state, exposureMode: action.payload };
     case "SET_WHITE_BALANCE":
       return { ...state, whiteBalance: action.payload };
+    case "SET_ISO":
+      return { ...state, iso: action.payload };
+    case "SET_APERTURE":
+      return { ...state, aperture: action.payload };
+    case "SET_FOCUS_POINT":
+      return { ...state, focusPoint: action.payload };
+    case "SET_FILTER_TYPE":
+      return { ...state, filterType: action.payload };
+    case "SET_GAIN":
+      return { ...state, gain: action.payload };
+    case "SET_OFFSET":
+      return { ...state, offset: action.payload };
+    case "SET_BINNING":
+      return { ...state, binning: action.payload };
     case "RESET":
       return initialState(action.payload);
     default:
@@ -111,7 +148,6 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
     progress,
   }) => {
     const [state, dispatch] = useReducer(reducer, settings, initialState);
-    const [collapsed, setCollapsed] = useState(true);
 
     useEffect(() => {
       dispatch({ type: "RESET", payload: settings });
@@ -128,21 +164,20 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
       }
     };
 
-    const handleIntervalTimeChange = (
-      e: React.ChangeEvent<HTMLInputElement>
-    ) => {
-      const value = Number(e.target.value);
-      if (value >= 5 && value <= 3600) {
-        dispatch({ type: "SET_INTERVAL_TIME", payload: value });
-      }
+    const handleFilterTypeChange = (value: string) => {
+      dispatch({ type: "SET_FILTER_TYPE", payload: value });
     };
 
-    const handleExposureModeChange = (value: string) => {
-      dispatch({ type: "SET_EXPOSURE_MODE", payload: value });
+    const handleGainChange = (value: number[]) => {
+      dispatch({ type: "SET_GAIN", payload: value[0] });
     };
 
-    const handleWhiteBalanceChange = (value: string) => {
-      dispatch({ type: "SET_WHITE_BALANCE", payload: value });
+    const handleOffsetChange = (value: number[]) => {
+      dispatch({ type: "SET_OFFSET", payload: value[0] });
+    };
+
+    const handleBinningChange = (value: string) => {
+      dispatch({ type: "SET_BINNING", payload: value });
     };
 
     const handleReset = () => {
@@ -159,7 +194,7 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
     };
 
     return (
-      <div className="flex flex-col items-center justify-center h-full p-4  rounded-lg shadow-lg">
+      <div className="flex flex-col items-center justify-center h-full p-4 rounded-lg shadow-lg">
         <div className="flex justify-end w-full mb-4">
           <Popover>
             <PopoverTrigger asChild>
@@ -215,39 +250,62 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
                   </div>
                 </div>
                 <div className="flex flex-col">
-                  <Label htmlFor="exposureMode">曝光模式</Label>
+                  <Label htmlFor="filterType">滤镜类型</Label>
                   <Select
-                    value={state.exposureMode}
-                    onValueChange={handleExposureModeChange}
+                    value={state.filterType}
+                    onValueChange={handleFilterTypeChange}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="选择曝光模式" />
+                      <SelectValue placeholder="选择滤镜类型" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Manual">手动</SelectItem>
-                      <SelectItem value="Auto">自动</SelectItem>
-                      <SelectItem value="Aperture Priority">
-                        光圈优先
-                      </SelectItem>
-                      <SelectItem value="Shutter Priority">快门优先</SelectItem>
+                      <SelectItem value="None">无</SelectItem>
+                      <SelectItem value="Black and White">黑白</SelectItem>
+                      <SelectItem value="Sepia">棕褐色</SelectItem>
+                      <SelectItem value="Vivid">鲜艳</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="flex flex-col">
-                  <Label htmlFor="whiteBalance">白平衡</Label>
+                  <Label htmlFor="gain">增益</Label>
+                  <Slider
+                    id="gain"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={[state.gain]}
+                    onValueChange={handleGainChange}
+                    className="mt-2"
+                  />
+                  <div className="text-sm text-right">{state.gain}</div>
+                </div>
+                <div className="flex flex-col">
+                  <Label htmlFor="offset">偏置</Label>
+                  <Slider
+                    id="offset"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={[state.offset]}
+                    onValueChange={handleOffsetChange}
+                    className="mt-2"
+                  />
+                  <div className="text-sm text-right">{state.offset}</div>
+                </div>
+                <div className="flex flex-col">
+                  <Label htmlFor="binning">像素合并</Label>
                   <Select
-                    value={state.whiteBalance}
-                    onValueChange={handleWhiteBalanceChange}
+                    value={state.binning}
+                    onValueChange={handleBinningChange}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="选择白平衡" />
+                      <SelectValue placeholder="选择像素合并" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Auto">自动</SelectItem>
-                      <SelectItem value="Incandescent">白炽灯</SelectItem>
-                      <SelectItem value="Fluorescent">荧光灯</SelectItem>
-                      <SelectItem value="Daylight">日光</SelectItem>
-                      <SelectItem value="Shade">阴影</SelectItem>
+                      <SelectItem value="1x1">1x1</SelectItem>
+                      <SelectItem value="2x2">2x2</SelectItem>
+                      <SelectItem value="3x3">3x3</SelectItem>
+                      <SelectItem value="4x4">4x4</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -298,5 +356,7 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
     );
   }
 );
+
+ExposureControls.displayName = "ExposureControls";
 
 export default ExposureControls;

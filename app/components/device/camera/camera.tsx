@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import styled from "styled-components";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -10,6 +11,58 @@ import { useToast } from "@/hooks/use-toast";
 import { LineChart } from "../components/line-chart";
 import { useMockBackend } from "@/utils/mock-device";
 import { DeviceSelector } from "../components/device-selector";
+
+const Container = styled.div`
+  color: white;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  @media (max-width: 768px) {
+    padding: 0.5rem;
+  }
+`;
+
+const StyledCard = styled(Card)`
+  background-color: rgba(47, 79, 79, 0.5);
+`;
+
+const Grid = styled.div`
+  display: grid;
+  gap: 1rem;
+
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+`;
+
+const FlexRow = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+
+  @media (min-width: 640px) {
+    flex-direction: row;
+  }
+`;
+
+const FlexRowCentered = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: flex-start;
+
+  @media (min-width: 640px) {
+    flex-direction: row;
+    align-items: center;
+  }
+`;
 
 export function Camera() {
   const [exposure, setExposure] = useState("1");
@@ -57,18 +110,18 @@ export function Camera() {
   };
 
   return (
-    <div className="space-y-4 p-4">
+    <Container>
       <DeviceSelector
         deviceType="Camera"
         devices={["ZWO ASI294MC Pro", "QHY600M", "Atik 16200"]}
         onDeviceChange={(device) => console.log(`Selected camera: ${device}`)}
       />
-      <Card className="bg-slate-800/50">
+      <StyledCard>
         <CardHeader>
           <CardTitle>Camera Settings</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Grid>
             <div className="space-y-2">
               <Label>Sensor type</Label>
               <div className="text-sm">{cameraInfo.sensorType}</div>
@@ -85,16 +138,16 @@ export function Camera() {
               <Label>Temperature</Label>
               <div className="text-sm">{cameraInfo.temperature}°C</div>
             </div>
-          </div>
+          </Grid>
         </CardContent>
-      </Card>
+      </StyledCard>
 
-      <Card className="bg-slate-800/50">
+      <StyledCard>
         <CardHeader>
           <CardTitle>Exposure Control</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Grid>
             <div className="space-y-2">
               <Label htmlFor="exposure">Exposure (s)</Label>
               <Input
@@ -127,36 +180,38 @@ export function Camera() {
                 max="4"
               />
             </div>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 mt-4">
-            <Button onClick={handleStartExposure} className="w-full sm:w-auto">
+          </Grid>
+          <FlexRow>
+            <Button onClick={handleStartExposure} className=" sm:w-auto">
               Start Exposure
             </Button>
             <Button
               variant="destructive"
               onClick={handleAbortExposure}
-              className="w-full sm:w-auto"
+              className=" sm:w-auto"
             >
               Abort Exposure
             </Button>
-          </div>
+          </FlexRow>
         </CardContent>
-      </Card>
+      </StyledCard>
 
-      <Card className="bg-slate-800/50">
-        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
-          <CardTitle>Temperature Control</CardTitle>
-          <div className="flex items-center space-x-2">
-            <Label htmlFor="cooler">Cooler</Label>
-            <Switch
-              id="cooler"
-              checked={cameraInfo.coolerOn}
-              onCheckedChange={handleToggleCooler}
-            />
-          </div>
+      <StyledCard>
+        <CardHeader>
+          <FlexRowCentered>
+            <CardTitle>Temperature Control</CardTitle>
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="cooler">Cooler</Label>
+              <Switch
+                id="cooler"
+                checked={cameraInfo.coolerOn}
+                onCheckedChange={handleToggleCooler}
+              />
+            </div>
+          </FlexRowCentered>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <FlexRowCentered>
             <Label htmlFor="target-temp">Target Temperature (°C)</Label>
             <Input
               id="target-temp"
@@ -168,12 +223,12 @@ export function Camera() {
             <Button onClick={handleSetTemperature} className="w-full sm:w-auto">
               Set
             </Button>
-          </div>
+          </FlexRowCentered>
           <div className="mt-4">
             <LineChart data={cameraInfo.temperatureHistory} />
           </div>
         </CardContent>
-      </Card>
-    </div>
+      </StyledCard>
+    </Container>
   );
 }

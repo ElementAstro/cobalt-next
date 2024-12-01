@@ -17,7 +17,8 @@ import {
   Target,
   List,
   Layers,
-  Wifi
+  Wifi,
+  Plug
 } from "lucide-react";
 
 interface DeviceToggleProps {
@@ -39,6 +40,7 @@ const iconMap: { [key: string]: React.ComponentType<{ className?: string }> } =
     list: List,
     layers: Layers,
     wifi: Wifi,
+    plug: Plug
   };
 
 export default function DeviceToggle({ device, onToggle }: DeviceToggleProps) {

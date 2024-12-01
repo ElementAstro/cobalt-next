@@ -16,6 +16,7 @@ import { LogStats } from "./LogStats";
 import { LogAggregation } from "./LogAggregation";
 import { DateRangePicker } from "./DateRangePicker";
 import { ExportLogs } from "./ExportLogs";
+import { Settings } from "./Settings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { generateMockLogs, generateSingleMockLog } from "@/utils/mock-log-data";
@@ -147,37 +148,42 @@ export function LogDashboard({
   }, [logs, alertRule, toast]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
-        <LogSearch onSearch={handleSearch} />
-        <LogFilter onFilter={handleFilter} />
-        <DateRangePicker
-          dateRange={dateRange}
-          onDateRangeChange={handleDateRangeChange}
-        />
-        <ExportLogs logs={filteredLogs} />
+    <div className="flex flex-col h-screen space-y-6 overflow-hidden max-h-screen">
+      <div className="flex-none border-b">
+        <div className="flex flex-col md:flex-row items-center justify-between max-w-5xl mx-auto gap-4">
+          <LogSearch onSearch={handleSearch} />
+          <LogFilter onFilter={handleFilter} />
+          <DateRangePicker
+            dateRange={dateRange}
+            onDateRangeChange={handleDateRangeChange}
+          />
+          <ExportLogs logs={filteredLogs} />
+        </div>
       </div>
-      <Tabs defaultValue="logs" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+      <Tabs
+        defaultValue="logs"
+        className="flex-grow flex flex-col overflow-hidden"
+      >
+        <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 w-full">
           <TabsTrigger value="logs">日志列表</TabsTrigger>
           <TabsTrigger value="stats">统计信息</TabsTrigger>
           <TabsTrigger value="aggregation">日志聚合</TabsTrigger>
           <TabsTrigger value="analysis">日志分析</TabsTrigger>
           <TabsTrigger value="settings">设置</TabsTrigger>
         </TabsList>
-        <TabsContent value="logs">
+        <TabsContent value="logs" className="flex-grow overflow-auto">
           <LogDisplay logs={filteredLogs} logLevelColors={logLevelColors} />
         </TabsContent>
-        <TabsContent value="stats">
+        <TabsContent value="stats" className="flex-grow overflow-auto">
           <LogStats logs={filteredLogs} />
         </TabsContent>
-        <TabsContent value="aggregation">
+        <TabsContent value="aggregation" className="flex-grow overflow-auto">
           <LogAggregation logs={filteredLogs} />
         </TabsContent>
-        <TabsContent value="analysis">
+        <TabsContent value="analysis" className="flex-grow overflow-auto">
           <LogAnalysis logs={filteredLogs} />
         </TabsContent>
-        <TabsContent value="settings">
+        <TabsContent value="settings" className="flex-grow overflow-auto">
           <Settings
             logLevelColors={logLevelColors}
             setLogLevelColors={setLogLevelColors}

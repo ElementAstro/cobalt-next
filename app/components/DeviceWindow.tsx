@@ -78,6 +78,8 @@ const DeviceWindow: React.FC<DeviceWindowProps> = memo(
   }
 );
 
+DeviceWindow.displayName = "DeviceWindow";
+
 function renderParam(
   key: string,
   value: any,
@@ -184,5 +186,7 @@ const InputSearch: React.FC<InputSearchProps> = memo(({ onSearch }) => {
     </div>
   );
 });
+
+InputSearch.displayName = "InputSearch";
 
 export default DeviceWindow;
