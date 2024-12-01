@@ -5,19 +5,39 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { Telescope, Focus, Compass, Filter } from "lucide-react";
+import {
+  Telescope,
+  Focus,
+  Compass,
+  Filter,
+  Image,
+  Cloud,
+  Star,
+  Crosshair,
+  Target,
+  List,
+  Layers
+} from "lucide-react";
 
 interface DeviceToggleProps {
   device: { id: string; name: string; icon: string; active: boolean };
   onToggle: () => void;
 }
 
-const iconMap: { [key: string]: React.ComponentType } = {
-  telescope: Telescope,
-  focus: Focus,
-  compass: Compass,
-  filter: Filter,
-};
+const iconMap: { [key: string]: React.ComponentType<{ className?: string }> } =
+  {
+    telescope: Telescope,
+    focus: Focus,
+    compass: Compass,
+    filter: Filter,
+    image: Image,
+    cloud: Cloud,
+    star: Star,
+    crosshair: Crosshair,
+    target: Target,
+    list: List,
+    layers: Layers
+  };
 
 export default function DeviceToggle({ device, onToggle }: DeviceToggleProps) {
   const Icon = iconMap[device.icon];
