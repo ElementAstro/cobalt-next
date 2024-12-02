@@ -16,6 +16,22 @@ import {
 } from "lucide-react";
 import { useMockBackend } from "@/utils/mock-device";
 import { DeviceSelector } from "../components/device-selector";
+import { motion } from "framer-motion";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
 
 export function Telescope() {
   const [targetRA, setTargetRA] = useState("00:00:00");
@@ -62,7 +78,12 @@ export function Telescope() {
   };
 
   return (
-    <div className="space-y-4 p-4 text-white">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-4 p-4 text-white"
+    >
       <DeviceSelector
         deviceType="Telescope"
         devices={["Celestron CGX", "Skywatcher EQ6-R", "iOptron CEM60"]}
@@ -70,72 +91,85 @@ export function Telescope() {
           console.log(`Selected telescope: ${device}`)
         }
       />
-      <div className="flex flex-col gap-4">
-        <Card className="bg-card">
+      <motion.div variants={itemVariants} className="flex flex-col gap-4">
+        <Card className="bg-gray-800 border-gray-700">
           <CardHeader>
             <CardTitle>Telescope Information</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+            >
+              <motion.div variants={itemVariants} className="space-y-2">
                 <Label>Site latitude</Label>
                 <Input
                   value={telescopeInfo.siteLatitude}
                   readOnly
                   className="text-white bg-gray-700"
                 />
-              </div>
-              <div className="space-y-2">
+              </motion.div>
+              <motion.div variants={itemVariants} className="space-y-2">
                 <Label>Site longitude</Label>
                 <Input
                   value={telescopeInfo.siteLongitude}
                   readOnly
                   className="text-white bg-gray-700"
                 />
-              </div>
-              <div className="space-y-2">
+              </motion.div>
+              <motion.div variants={itemVariants} className="space-y-2">
                 <Label>Right Ascension</Label>
                 <Input
                   value={telescopeInfo.rightAscension}
                   readOnly
                   className="text-white bg-gray-700"
                 />
-              </div>
-              <div className="space-y-2">
+              </motion.div>
+              <motion.div variants={itemVariants} className="space-y-2">
                 <Label>Declination</Label>
                 <Input
                   value={telescopeInfo.declination}
                   readOnly
                   className="text-white bg-gray-700"
                 />
-              </div>
-              <div className="space-y-2">
+              </motion.div>
+              <motion.div variants={itemVariants} className="space-y-2">
                 <Label>Altitude</Label>
                 <Input
                   value={telescopeInfo.altitude}
                   readOnly
                   className="text-white bg-gray-700"
                 />
-              </div>
-              <div className="space-y-2">
+              </motion.div>
+              <motion.div variants={itemVariants} className="space-y-2">
                 <Label>Azimuth</Label>
                 <Input
                   value={telescopeInfo.azimuth}
                   readOnly
                   className="text-white bg-gray-700"
                 />
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </CardContent>
         </Card>
 
-        <Card className="bg-card">
+        <Card className="bg-gray-800 border-gray-700">
           <CardHeader>
             <CardTitle>Manual Control</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col items-center">
-              <div className="grid grid-cols-3 gap-2 max-w-[240px] w-full">
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="flex flex-col items-center"
+            >
+              <motion.div
+                variants={itemVariants}
+                className="grid grid-cols-3 gap-2 max-w-[240px] w-full"
+              >
                 <div />
                 <Button
                   variant="secondary"
@@ -180,9 +214,12 @@ export function Telescope() {
                   <ChevronDown className="h-4 w-4" />
                 </Button>
                 <div />
-              </div>
+              </motion.div>
 
-              <div className="flex flex-col sm:flex-row justify-center gap-2 mt-4 w-full">
+              <motion.div
+                variants={itemVariants}
+                className="flex flex-col sm:flex-row justify-center gap-2 mt-4 w-full"
+              >
                 <Button
                   variant="secondary"
                   className="w-full sm:w-24 text-white"
@@ -199,18 +236,23 @@ export function Telescope() {
                   <Home className="mr-2 h-4 w-4" />
                   Home
                 </Button>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </CardContent>
         </Card>
 
-        <Card className="bg-card">
+        <Card className="bg-gray-800 border-gray-700">
           <CardHeader>
             <CardTitle>Slew to Coordinates</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+            >
+              <motion.div variants={itemVariants} className="space-y-2">
                 <Label htmlFor="target-ra">Target RA</Label>
                 <Input
                   id="target-ra"
@@ -219,8 +261,8 @@ export function Telescope() {
                   placeholder="HH:MM:SS"
                   className="text-white bg-gray-700"
                 />
-              </div>
-              <div className="space-y-2">
+              </motion.div>
+              <motion.div variants={itemVariants} className="space-y-2">
                 <Label htmlFor="target-dec">Target Dec</Label>
                 <Input
                   id="target-dec"
@@ -229,19 +271,19 @@ export function Telescope() {
                   placeholder="DD:MM:SS"
                   className="text-white bg-gray-700"
                 />
-              </div>
-              <div className="flex items-end">
+              </motion.div>
+              <motion.div variants={itemVariants} className="flex items-end">
                 <Button
                   onClick={handleSlew}
                   className="w-full sm:w-auto text-white"
                 >
                   Slew
                 </Button>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </CardContent>
         </Card>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

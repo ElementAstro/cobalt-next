@@ -2,10 +2,9 @@
 
 import Image from "next/image";
 import { Moon, Sun, Menu, X, Globe } from "lucide-react";
-import { useTheme } from "../../../../contexts/ThemeContext";
-import { useLanguage } from "../../../../contexts/LanguageContext";
+import { useLanguage } from "../../contexts/LanguageContext";
 import { useState } from "react";
-import styled from 'styled-components';
+import styled from "styled-components";
 
 const HeaderWrapper = styled.header`
   background-color: ${({ theme }) => theme.background};
@@ -33,7 +32,6 @@ const StyledMenu = styled.div`
 `;
 
 export default function Header() {
-  const { theme, toggleTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -52,7 +50,10 @@ export default function Header() {
             height={40}
             className="animate-pulse-slow"
           />
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1
+            className="text-2xl font-bold text-gray-900 dark:text-white cursor-pointer"
+            onClick={() => (window.location.href = "/")}
+          >
             {t("title")}
           </h1>
         </div>
@@ -84,15 +85,6 @@ export default function Header() {
             aria-label="Switch language"
           >
             <Globe size={20} />
-          </button>
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 transition-colors duration-300 hover-effect"
-            aria-label={
-              theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
-            }
-          >
-            {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
           </button>
           <button
             className="md:hidden text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"

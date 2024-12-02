@@ -27,6 +27,7 @@ import LiveStacking from "./components/LiveStacking";
 import DeviceConnection from "./components/DeviceConnection";
 import PluginPage from "./components/Plugin";
 import StarSearch from "./components/StarSearch";
+import ToolPanel from "./components/ToolPanel";
 
 import CameraPage from "../components/device/camera/page";
 import FocuserPage from "../components/device/focuser/page";
@@ -37,6 +38,7 @@ import TelescopePage from "../components/device/telescope/page";
 import Log from "./components/Log";
 
 import LandscapeDetector from "@/components/landscape-detection";
+import SplashScreen from "../components/loading/SplashScreen";
 
 export default function CameraInterface() {
   type DeviceParams = {
@@ -294,6 +296,7 @@ export default function CameraInterface() {
       persistPreference={true}
       forceFullscreen={true}
     >
+      <SplashScreen />
       <DndContext
         sensors={sensors}
         modifiers={[restrictToWindowEdges]}
@@ -324,7 +327,7 @@ export default function CameraInterface() {
                       <SequenceEditor onClose={() => setActiveDevice(null)} />
                     )}
                     {activeDevice === "liveStacking" && (
-                      <LiveStacking onClose={() => setActiveDevice(null)} />
+                      <ToolPanel/>
                     )}
                   </motion.div>
                 )}

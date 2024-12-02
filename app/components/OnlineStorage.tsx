@@ -1,44 +1,64 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { CookieManager } from "@/components/storage/CookieManager";
+import { IndexedDBManager } from "@/components/storage/IndexedDbManager";
+import { LocalStorageManager } from "@/components/storage/LocalStorageManager";
 
-import { CookieManager } from "@/components/storage/cookie-manager";
-import { IndexedDBManager } from "@/components/storage/indexed-db-manager";
-import { LocalStorageManager } from "@/components/storage/local-storage-manager";
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
 
-export default function StorageManager() {
+export default function OnlineStorage() {
   const [cookieCount, setCookieCount] = useState(0);
   const [localStorageCount, setLocalStorageCount] = useState(0);
   const [indexedDBCount, setIndexedDBCount] = useState(0);
   const [isLandscape, setIsLandscape] = useState(
-    window.innerWidth > window.innerHeight
+    typeof window !== "undefined"
+      ? window.innerWidth > window.innerHeight
+      : true
   );
 
   useEffect(() => {
-    // Count cookies
+    // 统计 Cookies 数量
     setCookieCount(
       document.cookie.split(";").filter((c) => c.trim() !== "").length
     );
 
-    // Count localStorage items
+    // 统计 LocalStorage 项数
     setLocalStorageCount(localStorage.length);
 
-    // Count IndexedDB items
+    // 统计 IndexedDB 项数
     const request = indexedDB.open("MyDatabase", 1);
     request.onsuccess = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
-      const transaction = db.transaction(["items"], "readonly");
-      const objectStore = transaction.objectStore("items");
-      const countRequest = objectStore.count();
-      countRequest.onsuccess = () => {
-        setIndexedDBCount(countRequest.result);
-      };
+      if (db.objectStoreNames.contains("items")) {
+        const transaction = db.transaction(["items"], "readonly");
+        const objectStore = transaction.objectStore("items");
+        const countRequest = objectStore.count();
+        countRequest.onsuccess = () => {
+          setIndexedDBCount(countRequest.result);
+        };
+      } else {
+        setIndexedDBCount(0);
+      }
     };
 
-    // Update isLandscape on resize
+    // 监听窗口大小变化
     const handleResize = () => {
       setIsLandscape(window.innerWidth > window.innerHeight);
     };
@@ -50,50 +70,74 @@ export default function StorageManager() {
   }, []);
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">Storage Manager</h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Cookies</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>{cookieCount} items</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>LocalStorage</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>{localStorageCount} items</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>IndexedDB</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>{indexedDBCount} items</p>
-          </CardContent>
-        </Card>
-      </div>
-      <Tabs defaultValue="cookies">
-        <TabsList>
-          <TabsTrigger value="cookies">Cookies</TabsTrigger>
-          <TabsTrigger value="localstorage">LocalStorage</TabsTrigger>
-          <TabsTrigger value="indexeddb">IndexedDB</TabsTrigger>
-        </TabsList>
-        <TabsContent value="cookies">
-          <CookieManager isLandscape={isLandscape} />
-        </TabsContent>
-        <TabsContent value="localstorage">
-          <LocalStorageManager isLandscape={isLandscape} />
-        </TabsContent>
-        <TabsContent value="indexeddb">
-          <IndexedDBManager isLandscape={isLandscape} />
-        </TabsContent>
-      </Tabs>
-    </div>
+    <motion.div
+      className="dark bg-gray-900 min-h-screen "
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6"
+        variants={containerVariants}
+      >
+        <motion.div variants={itemVariants}>
+          <Card className="bg-gray-800 text-white">
+            <CardHeader>
+              <CardTitle>Cookies</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>{cookieCount} 项</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <Card className="bg-gray-800 text-white">
+            <CardHeader>
+              <CardTitle>LocalStorage</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>{localStorageCount} 项</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <Card className="bg-gray-800 text-white">
+            <CardHeader>
+              <CardTitle>IndexedDB</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>{indexedDBCount} 项</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
+      <motion.div variants={itemVariants}>
+        <Tabs
+          defaultValue="cookies"
+          className="bg-gray-800 text-white rounded-lg"
+        >
+          <TabsList className="flex space-x-1 bg-gray-700 p-1 rounded-lg">
+            <TabsTrigger value="cookies" className="flex-1">
+              Cookies
+            </TabsTrigger>
+            <TabsTrigger value="localstorage" className="flex-1">
+              LocalStorage
+            </TabsTrigger>
+            <TabsTrigger value="indexeddb" className="flex-1">
+              IndexedDB
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="cookies" className="mt-4">
+            <CookieManager isLandscape={isLandscape} />
+          </TabsContent>
+          <TabsContent value="localstorage" className="mt-4">
+            <LocalStorageManager isLandscape={isLandscape} />
+          </TabsContent>
+          <TabsContent value="indexeddb" className="mt-4">
+            <IndexedDBManager isLandscape={isLandscape} />
+          </TabsContent>
+        </Tabs>
+      </motion.div>
+    </motion.div>
   );
 }

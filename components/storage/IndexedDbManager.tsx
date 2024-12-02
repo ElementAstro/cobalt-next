@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { motion } from "framer-motion";
 
 export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
   const [isDBOpen, setIsDBOpen] = useState(false);
@@ -27,14 +30,12 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
           return;
         }
         const db = target.result;
-        // Create an object store for landscape images
         if (!db.objectStoreNames.contains("landscape")) {
           db.createObjectStore("landscape", {
             keyPath: "id",
             autoIncrement: true,
           });
         }
-        // Create an object store for portrait images
         if (!db.objectStoreNames.contains("portrait")) {
           db.createObjectStore("portrait", {
             keyPath: "id",
@@ -109,27 +110,57 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
   };
 
   return (
-    <div>
-      <h1>IndexedDB Manager</h1>
-      <p>isLandscape: {isLandscape ? "true" : "false"}</p>
-      <button onClick={openDB}>Open DB</button>
-      <p>DB Open: {isDBOpen ? "true" : "false"}</p>
-      <button onClick={clearDB}>Clear DB</button>
-      <button
-        onClick={() =>
-          addImage(
-            { id: 1, url: "test" },
-            isLandscape ? "landscape" : "portrait"
-          )
-        }
-      >
-        Add Image
-      </button>
-      <button
-        onClick={() => deleteImage(1, isLandscape ? "landscape" : "portrait")}
-      >
-        Delete Image
-      </button>
-    </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="dark bg-gray-900 min-h-screen p-4"
+    >
+      <Card className="p-6">
+        <motion.h1
+          initial={{ y: -20 }}
+          animate={{ y: 0 }}
+          className="text-2xl text-white"
+        >
+          IndexedDB Manager
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-gray-300"
+        >
+          isLandscape: {isLandscape ? "true" : "false"}
+        </motion.p>
+        <div className="mt-4 space-x-2">
+          <Button onClick={openDB} variant="default">
+            Open DB
+          </Button>
+          <Button onClick={clearDB} variant="secondary">
+            Clear DB
+          </Button>
+          <Button
+            onClick={() =>
+              addImage(
+                { id: 1, url: "test" },
+                isLandscape ? "landscape" : "portrait"
+              )
+            }
+            variant="default"
+          >
+            Add Image
+          </Button>
+          <Button
+            onClick={() =>
+              deleteImage(1, isLandscape ? "landscape" : "portrait")
+            }
+            variant="destructive"
+          >
+            Delete Image
+          </Button>
+        </div>
+        <p className="text-gray-300 mt-2">
+          DB Open: {isDBOpen ? "true" : "false"}
+        </p>
+      </Card>
+    </motion.div>
   );
 }

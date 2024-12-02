@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { Highlight, themes } from "prism-react-renderer";
-import { useLanguage } from "../../../../contexts/LanguageContext";
+import { useLanguage } from "../../contexts/LanguageContext";
 import styled from "styled-components";
 
 const Section = styled.section`

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { Search } from "lucide-react";
 
 interface Task {
   id: string;
@@ -52,13 +53,23 @@ export function ExposureTaskList({
 }: ExposureTaskListProps) {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedType, setSelectedType] = useState<string>("ALL");
 
   const isMobile = useMediaQuery("(max-width: 768px)");
+
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(
+      (task) =>
+        task.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        (selectedType !== "ALL" ? task.type === selectedType : true)
+    );
+  }, [tasks, searchTerm, selectedType]);
 
   const addTask = () => {
     const newTask: Task = {
       id: Date.now().toString(),
-      name: `Task ${tasks.length + 1}`,
+      name: `任务 ${tasks.length + 1}`,
       enabled: true,
       progress: [0, 1],
       total: 1,
@@ -97,15 +108,53 @@ export function ExposureTaskList({
     onTasksChange(newTasks);
   };
 
+  const handleBatchDelete = () => {
+    const selectedIds = tasks
+      .filter((task) => task.enabled)
+      .map((task) => task.id);
+    onTasksChange(tasks.filter((task) => !selectedIds.includes(task.id)));
+  };
+
   return (
     <div>
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 space-y-2 md:space-y-0">
+        <div className="flex items-center space-x-2">
+          <Input
+            placeholder="搜索任务..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-48"
+          />
+          <Select value={selectedType} onValueChange={setSelectedType}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="筛选类型" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">全部</SelectItem>
+              <SelectItem value="LIGHT">LIGHT</SelectItem>
+              <SelectItem value="DARK">DARK</SelectItem>
+              <SelectItem value="FLAT">FLAT</SelectItem>
+              <SelectItem value="BIAS">BIAS</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex space-x-2">
+          <Button variant="destructive" onClick={handleBatchDelete}>
+            批量删除
+          </Button>
+          <Button onClick={addTask} className="bg-teal-500 text-white">
+            添加任务
+          </Button>
+        </div>
+      </div>
+
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="tasks">
           {(provided) => (
             <div {...provided.droppableProps} ref={provided.innerRef}>
               {isMobile ? (
                 <div className="space-y-2">
-                  {tasks.map((task, index) => (
+                  {filteredTasks.map((task, index) => (
                     <Draggable
                       key={task.id}
                       draggableId={task.id}
@@ -116,36 +165,42 @@ export function ExposureTaskList({
                           ref={provided.innerRef}
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
-                          className="bg-gray-800 p-2 rounded-lg flex items-center justify-between border border-gray-700"
+                          className="bg-gray-800 p-4 rounded-lg flex flex-col space-y-2 border border-gray-700"
                         >
-                          <div className="flex items-center space-x-2">
-                            <Switch
-                              checked={task.enabled}
-                              onCheckedChange={(checked) =>
-                                updateTask({ ...task, enabled: checked })
-                              }
-                              className="data-[state=checked]:bg-teal-500"
-                            />
-                            <span className="text-sm text-white">
-                              {task.name}
-                            </span>
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center space-x-2">
+                              <Switch
+                                checked={task.enabled}
+                                onCheckedChange={(checked) =>
+                                  updateTask({ ...task, enabled: checked })
+                                }
+                                className="data-[state=checked]:bg-teal-500"
+                              />
+                              <span className="text-sm text-white">
+                                {task.name}
+                              </span>
+                            </div>
+                            <div className="flex space-x-1">
+                              <Button
+                                size="sm"
+                                onClick={() => editTask(task)}
+                                className="bg-teal-500 text-white"
+                              >
+                                编辑
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => removeTask(task.id)}
+                                className="bg-red-500 text-white"
+                              >
+                                删除
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex space-x-1">
-                            <Button
-                              size="sm"
-                              onClick={() => editTask(task)}
-                              className="bg-teal-500 text-white hover:bg-teal-600"
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => removeTask(task.id)}
-                              className="bg-red-500 text-white hover:bg-red-600"
-                            >
-                              X
-                            </Button>
+                          <div className="text-sm text-gray-400">
+                            类型: {task.type} | 总数: {task.total} | 时间:{" "}
+                            {task.time}
                           </div>
                         </div>
                       )}
@@ -156,19 +211,31 @@ export function ExposureTaskList({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Enabled</TableHead>
-                      <TableHead>Progress</TableHead>
-                      <TableHead>Total #</TableHead>
-                      <TableHead>Time</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Filter</TableHead>
-                      <TableHead>Binning</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead>
+                        <Switch
+                          checked={tasks.every((task) => task.enabled)}
+                          onCheckedChange={(checked) =>
+                            onTasksChange(
+                              tasks.map((task) => ({
+                                ...task,
+                                enabled: checked,
+                              }))
+                            )
+                          }
+                        />
+                      </TableHead>
+                      <TableHead>名称</TableHead>
+                      <TableHead>类型</TableHead>
+                      <TableHead>总数</TableHead>
+                      <TableHead>时间</TableHead>
+                      <TableHead>进度</TableHead>
+                      <TableHead>筛选</TableHead>
+                      <TableHead>分辨率</TableHead>
+                      <TableHead>操作</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {tasks.map((task, index) => (
+                    {filteredTasks.map((task, index) => (
                       <Draggable
                         key={task.id}
                         draggableId={task.id}
@@ -180,7 +247,6 @@ export function ExposureTaskList({
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
                           >
-                            <TableCell>{task.name}</TableCell>
                             <TableCell>
                               <Switch
                                 checked={task.enabled}
@@ -189,22 +255,29 @@ export function ExposureTaskList({
                                 }
                               />
                             </TableCell>
-                            <TableCell>{task.progress.join(" / ")}</TableCell>
+                            <TableCell>{task.name}</TableCell>
+                            <TableCell>{task.type}</TableCell>
                             <TableCell>{task.total}</TableCell>
                             <TableCell>{task.time}</TableCell>
-                            <TableCell>{task.type}</TableCell>
+                            <TableCell>{task.progress.join(" / ")}</TableCell>
                             <TableCell>{task.filter}</TableCell>
                             <TableCell>{task.binning}</TableCell>
                             <TableCell>
                               <div className="flex space-x-2">
-                                <Button onClick={() => editTask(task)}>
-                                  Edit
+                                <Button
+                                  size="sm"
+                                  onClick={() => editTask(task)}
+                                  className="bg-teal-500 text-white"
+                                >
+                                  编辑
                                 </Button>
                                 <Button
+                                  size="sm"
                                   variant="destructive"
                                   onClick={() => removeTask(task.id)}
+                                  className="bg-red-500 text-white"
                                 >
-                                  Remove
+                                  删除
                                 </Button>
                               </div>
                             </TableCell>
@@ -221,13 +294,6 @@ export function ExposureTaskList({
         </Droppable>
       </DragDropContext>
 
-      <Button
-        onClick={addTask}
-        className="mt-4 w-full md:w-auto bg-teal-500 text-white hover:bg-teal-600"
-      >
-        Add Task
-      </Button>
-
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent
           className={
@@ -237,12 +303,12 @@ export function ExposureTaskList({
           }
         >
           <DialogHeader>
-            <DialogTitle className="text-teal-500">Edit Task</DialogTitle>
+            <DialogTitle className="text-teal-500">编辑任务</DialogTitle>
           </DialogHeader>
           {editingTask && (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">名称</Label>
                 <Input
                   id="name"
                   value={editingTask.name}
@@ -253,7 +319,26 @@ export function ExposureTaskList({
                 />
               </div>
               <div>
-                <Label htmlFor="total">Total #</Label>
+                <Label htmlFor="type">类型</Label>
+                <Select
+                  value={editingTask.type}
+                  onValueChange={(value) =>
+                    setEditingTask({ ...editingTask, type: value })
+                  }
+                >
+                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                    <SelectValue placeholder="选择类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="LIGHT">LIGHT</SelectItem>
+                    <SelectItem value="DARK">DARK</SelectItem>
+                    <SelectItem value="FLAT">FLAT</SelectItem>
+                    <SelectItem value="BIAS">BIAS</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="total">总数</Label>
                 <Input
                   id="total"
                   type="number"
@@ -261,14 +346,14 @@ export function ExposureTaskList({
                   onChange={(e) =>
                     setEditingTask({
                       ...editingTask,
-                      total: parseInt(e.target.value),
+                      total: parseInt(e.target.value) || 0,
                     })
                   }
                   className="bg-gray-800 border-gray-700 text-white"
                 />
               </div>
               <div>
-                <Label htmlFor="time">Time</Label>
+                <Label htmlFor="time">时间</Label>
                 <Input
                   id="time"
                   value={editingTask.time}
@@ -279,26 +364,7 @@ export function ExposureTaskList({
                 />
               </div>
               <div>
-                <Label htmlFor="type">Type</Label>
-                <Select
-                  value={editingTask.type}
-                  onValueChange={(value) =>
-                    setEditingTask({ ...editingTask, type: value })
-                  }
-                >
-                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                    <SelectItem value="LIGHT">LIGHT</SelectItem>
-                    <SelectItem value="DARK">DARK</SelectItem>
-                    <SelectItem value="FLAT">FLAT</SelectItem>
-                    <SelectItem value="BIAS">BIAS</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="filter">Filter</Label>
+                <Label htmlFor="filter">筛选</Label>
                 <Input
                   id="filter"
                   value={editingTask.filter}
@@ -309,7 +375,7 @@ export function ExposureTaskList({
                 />
               </div>
               <div>
-                <Label htmlFor="binning">Binning</Label>
+                <Label htmlFor="binning">分辨率</Label>
                 <Input
                   id="binning"
                   value={editingTask.binning}
@@ -319,8 +385,11 @@ export function ExposureTaskList({
                   className="bg-gray-800 border-gray-700 text-white"
                 />
               </div>
-              <Button onClick={() => updateTask(editingTask)}>
-                Save Changes
+              <Button
+                onClick={() => updateTask(editingTask)}
+                className="bg-teal-500 text-white"
+              >
+                保存更改
               </Button>
             </div>
           )}

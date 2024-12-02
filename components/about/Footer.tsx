@@ -1,7 +1,7 @@
 "use client";
 
 import { Github, Star, Twitter, Linkedin } from "lucide-react";
-import { useLanguage } from "../../../../contexts/LanguageContext";
+import { useLanguage } from "../../contexts/LanguageContext";
 import styled from "styled-components";
 
 const FooterWrapper = styled.footer`

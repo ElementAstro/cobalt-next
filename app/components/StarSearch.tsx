@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { RealTimeData } from "@/components/real-time-data";
 import { Pagination } from "@/components/pagination";
+import { motion, AnimatePresence } from "framer-motion";
 
 // 假设我们有一个更大的模拟数据集
 const mockObjects = Array.from({ length: 1000 }, (_, i) => ({
@@ -60,6 +61,21 @@ const mockObjects = Array.from({ length: 1000 }, (_, i) => ({
 }));
 
 const ITEMS_PER_PAGE = 10;
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
 
 export default function StarSearch() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -132,8 +148,13 @@ export default function StarSearch() {
   };
 
   return (
-    <div className="flex flex-col max-h-screen bg-background overflow-hidden">
-      <div className="flex-none p-4 border-b">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="flex flex-col max-h-screen bg-background overflow-hidden"
+    >
+      <motion.div variants={itemVariants} className="flex-none p-4 border-b">
         <div className="flex flex-col md:flex-row items-center justify-between max-w-5xl mx-auto gap-4">
           <SearchBar onSearch={handleSearch} items={mockObjects} />
           <div className="flex gap-2 items-center">
@@ -174,25 +195,43 @@ export default function StarSearch() {
             </Dialog>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="flex-grow p-4 overflow-hidden">
+      <motion.div
+        variants={itemVariants}
+        className="flex-grow p-4 overflow-hidden"
+      >
         <div className="max-w-5xl mx-auto">
-          <ScrollArea
-            className="space-y-4 overflow-y-auto"
-            style={{ maxHeight: "calc(100vh - 200px)" }}
-          >
-            {paginatedObjects.map((item) => (
-              <CelestialObjectCard key={item.id} {...item} isLoggedIn={false} />
-            ))}
-          </ScrollArea>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
+          <AnimatePresence>
+            <ScrollArea
+              as={motion.div}
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              className="space-y-4 overflow-y-auto"
+              style={{ maxHeight: "calc(100vh - 200px)" }}
+            >
+              {paginatedObjects.map((item) => (
+                <motion.div key={item.id} variants={itemVariants}>
+                  <CelestialObjectCard
+                    key={item.id}
+                    {...item}
+                    isLoggedIn={false}
+                  />
+                </motion.div>
+              ))}
+            </ScrollArea>
+          </AnimatePresence>
+          <motion.div variants={itemVariants}>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </motion.div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

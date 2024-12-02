@@ -2,7 +2,7 @@
 
 import { Cpu, Code, Rocket, BookOpen, Globe, Github } from "lucide-react";
 import { useInView } from "react-intersection-observer";
-import { useLanguage } from "../../../../contexts/LanguageContext";
+import { useLanguage } from "../../contexts/LanguageContext";
 import styled from "styled-components";
 
 const Section = styled.section`

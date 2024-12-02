@@ -15,14 +15,35 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { AdvancedSearch } from "./plugin/AdvancedSearch";
-import { PluginDetails } from "./plugin/PluginDetails";
-import { VerticalTabs } from "./plugin/VerticalTabs";
-import { PluginReviews } from "./plugin/PluginReviews";
+import { AdvancedSearch } from "../../components/plugin/AdvancedSearch";
+import { PluginDetails } from "../../components/plugin/PluginDetails";
+import { VerticalTabs } from "../../components/plugin/VerticalTabs";
+import { PluginReviews } from "../../components/plugin/PluginReviews";
 import { Plugin, SearchFilters, User } from "@/types/plugin";
 import { mockPlugins } from "@/utils/mock-plugin";
-import { AutocompleteSearch } from "./plugin/AutocompleteSearch";
-import { ConfirmDialog } from "./plugin/ConfirmDialog";
+import { AutocompleteSearch } from "../../components/plugin/AutocompleteSearch";
+import { ConfirmDialog } from "../../components/plugin/ConfirmDialog";
+import { motion, AnimatePresence } from "framer-motion";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
+
+const headerVariants = {
+  hidden: { opacity: 0, y: -10 },
+  visible: { opacity: 1, y: 0 },
+};
 
 export default function PluginPage() {
   const [plugins, setPlugins] = useState<Plugin[]>([]);
@@ -213,121 +234,182 @@ export default function PluginPage() {
   };
 
   const renderFeaturedPlugins = () => (
-    <section className="mt-6">
-      <h2 className="mb-6 text-2xl font-semibold">Featured Plugins</h2>
+    <motion.section
+      variants={itemVariants}
+      initial="hidden"
+      animate="visible"
+      className="mt-6"
+    >
+      <motion.h2
+        variants={headerVariants}
+        className="mb-6 text-2xl font-semibold"
+      >
+        Featured Plugins
+      </motion.h2>
       <Carousel className="w-full max-w-5xl mx-auto">
         <CarouselContent>
           {plugins.slice(0, 3).map((plugin) => (
-            <CarouselItem key={plugin.id} className="md:basis-1/2 lg:basis-1/3">
-              <div className="p-1">
-                <Card>
-                  <CardContent className="flex aspect-square items-center justify-center p-6">
-                    <div className="text-center">
-                      <Image
-                        src={plugin.image}
-                        alt={plugin.name}
-                        width={200}
-                        height={200}
-                        className="mx-auto mb-4 rounded-lg object-cover"
-                      />
-                      <h3 className="font-semibold">{plugin.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {plugin.description}
-                      </p>
-                      <Button
-                        className="mt-4"
-                        onClick={() => handleViewPlugin(plugin)}
-                      >
-                        View Details
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </CarouselItem>
+            <motion.div key={plugin.id} variants={itemVariants}>
+              <CarouselItem className="md:basis-1/2 lg:basis-1/3">
+                <div className="p-1">
+                  <Card>
+                    <CardContent className="flex aspect-square items-center justify-center p-6">
+                      <div className="text-center">
+                        <Image
+                          src={plugin.image}
+                          alt={plugin.name}
+                          width={200}
+                          height={200}
+                          className="mx-auto mb-4 rounded-lg object-cover"
+                        />
+                        <h3 className="font-semibold">{plugin.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {plugin.description}
+                        </p>
+                        <Button
+                          className="mt-4"
+                          onClick={() => handleViewPlugin(plugin)}
+                        >
+                          View Details
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CarouselItem>
+            </motion.div>
           ))}
         </CarouselContent>
         <CarouselPrevious />
         <CarouselNext />
       </Carousel>
-    </section>
+    </motion.section>
   );
 
   const renderPluginGrid = (pluginsToRender: Plugin[], title: string) => (
-    <section className="mt-6">
-      <h2 className="mb-6 text-2xl font-semibold">{title}</h2>
+    <motion.section
+      variants={itemVariants}
+      initial="hidden"
+      animate="visible"
+      className="mt-6"
+    >
+      <motion.h2
+        variants={headerVariants}
+        className="mb-6 text-2xl font-semibold"
+      >
+        {title}
+      </motion.h2>
       {isLoading ? (
         <p>Loading plugins...</p>
       ) : error ? (
         <p className="text-red-500">{error}</p>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+        >
           {pluginsToRender.map((plugin) => (
-            <Card key={plugin.id} className="overflow-hidden">
-              <CardContent className="p-0">
-                <Image
-                  src={plugin.image}
-                  alt={plugin.name}
-                  width={300}
-                  height={200}
-                  className="h-48 w-full object-cover"
-                />
-                <div className="p-4">
-                  <h3 className="font-semibold">{plugin.name}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {plugin.description}
-                  </p>
-                  <div className="mt-4 flex items-center justify-between">
-                    <span className="text-sm font-medium">{plugin.price}</span>
-                    <Button size="sm" onClick={() => handleViewPlugin(plugin)}>
-                      {plugin.installed ? "Installed" : "View"}
-                    </Button>
+            <motion.div key={plugin.id} variants={itemVariants}>
+              <Card className="overflow-hidden">
+                <CardContent className="p-0">
+                  <Image
+                    src={plugin.image}
+                    alt={plugin.name}
+                    width={300}
+                    height={200}
+                    className="h-48 w-full object-cover"
+                  />
+                  <div className="p-4">
+                    <h3 className="font-semibold">{plugin.name}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {plugin.description}
+                    </p>
+                    <div className="mt-4 flex items-center justify-between">
+                      <span className="text-sm font-medium">
+                        {plugin.price}
+                      </span>
+                      <Button
+                        size="sm"
+                        onClick={() => handleViewPlugin(plugin)}
+                      >
+                        {plugin.installed ? "Installed" : "View"}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
-    </section>
+    </motion.section>
   );
 
   const renderRecentlyViewed = () => (
-    <section className="mt-6">
-      <h2 className="mb-6 text-2xl font-semibold">Recently Viewed</h2>
+    <motion.section
+      variants={itemVariants}
+      initial="hidden"
+      animate="visible"
+      className="mt-6"
+    >
+      <motion.h2
+        variants={headerVariants}
+        className="mb-6 text-2xl font-semibold"
+      >
+        Recently Viewed
+      </motion.h2>
       <div className="flex space-x-4 overflow-x-auto">
         {recentlyViewed.map((plugin) => (
-          <Card key={plugin.id} className="w-64 flex-shrink-0">
-            <CardContent className="p-4">
-              <Image
-                src={plugin.image}
-                alt={plugin.name}
-                width={200}
-                height={150}
-                className="rounded-lg object-cover mb-4"
-              />
-              <h3 className="font-semibold">{plugin.name}</h3>
-              <p className="text-sm text-muted-foreground">
-                {plugin.description}
-              </p>
-              <Button
-                className="mt-4 w-full"
-                onClick={() => handleViewPlugin(plugin)}
-              >
-                View Again
-              </Button>
-            </CardContent>
-          </Card>
+          <motion.div key={plugin.id} variants={itemVariants}>
+            <Card className="w-64 flex-shrink-0">
+              <CardContent className="p-4">
+                <Image
+                  src={plugin.image}
+                  alt={plugin.name}
+                  width={200}
+                  height={150}
+                  className="rounded-lg object-cover mb-4"
+                />
+                <h3 className="font-semibold">{plugin.name}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {plugin.description}
+                </p>
+                <Button
+                  className="mt-4 w-full"
+                  onClick={() => handleViewPlugin(plugin)}
+                >
+                  View Again
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
         ))}
       </div>
-    </section>
+    </motion.section>
   );
 
   const renderComparePlugins = () => (
-    <section className="mt-6">
-      <h2 className="mb-6 text-2xl font-semibold">Compare Plugins</h2>
+    <motion.section
+      variants={itemVariants}
+      initial="hidden"
+      animate="visible"
+      className="mt-6"
+    >
+      <motion.h2
+        variants={headerVariants}
+        className="mb-6 text-2xl font-semibold"
+      >
+        Compare Plugins
+      </motion.h2>
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
+        <motion.table
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="w-full border-collapse"
+        >
           <thead>
             <tr>
               <th className="border p-2">Feature</th>
@@ -339,34 +421,34 @@ export default function PluginPage() {
             </tr>
           </thead>
           <tbody>
-            <tr>
+            <motion.tr variants={itemVariants}>
               <td className="border p-2">Price</td>
               {comparePlugins.map((plugin) => (
                 <td key={plugin.id} className="border p-2">
                   {plugin.price}
                 </td>
               ))}
-            </tr>
-            <tr>
+            </motion.tr>
+            <motion.tr variants={itemVariants}>
               <td className="border p-2">Rating</td>
               {comparePlugins.map((plugin) => (
                 <td key={plugin.id} className="border p-2">
                   {plugin.rating.toFixed(1)}
                 </td>
               ))}
-            </tr>
-            <tr>
+            </motion.tr>
+            <motion.tr variants={itemVariants}>
               <td className="border p-2">Downloads</td>
               {comparePlugins.map((plugin) => (
                 <td key={plugin.id} className="border p-2">
                   {plugin.downloads.toLocaleString()}
                 </td>
               ))}
-            </tr>
+            </motion.tr>
           </tbody>
-        </table>
+        </motion.table>
       </div>
-    </section>
+    </motion.section>
   );
 
   const tabs = [
@@ -391,58 +473,97 @@ export default function PluginPage() {
   ];
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-background">
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="flex flex-col h-screen overflow-hidden bg-background"
+    >
       <main className="flex-grow overflow-hidden" ref={mainContentRef}>
-        <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8 h-full overflow-y-auto">
+        <motion.div
+          variants={itemVariants}
+          initial="hidden"
+          animate="visible"
+          className="container mx-auto py-6 px-4 sm:px-6 lg:px-8 h-full overflow-y-auto"
+        >
           <AutocompleteSearch
             plugins={plugins}
             onSearch={handleSearch}
             className="mb-6"
           />
           {showAdvancedSearch && (
-            <div className="mb-6">
+            <motion.div
+              variants={itemVariants}
+              initial="hidden"
+              animate="visible"
+              className="mb-6"
+            >
               <AdvancedSearch onSearch={handleSearch} />
-            </div>
+            </motion.div>
           )}
           {selectedPlugin ? (
             <>
-              <PluginDetails
-                plugin={selectedPlugin}
-                onInstallComplete={handleInstallComplete}
-                onUninstall={handleUninstall}
-              />
-              <PluginReviews
-                reviews={selectedPlugin.reviews || []}
-                onAddReview={(rating, comment) =>
-                  handleAddReview(selectedPlugin.id, rating, comment)
-                }
-                currentUser={currentUser}
-              />
-              <Button
-                className="mt-4"
-                onClick={() => handleAddToCompare(selectedPlugin)}
-              >
-                Add to Compare
-              </Button>
+              <motion.div variants={itemVariants}>
+                <PluginDetails
+                  plugin={selectedPlugin}
+                  onInstallComplete={handleInstallComplete}
+                  onUninstall={handleUninstall}
+                />
+              </motion.div>
+              <motion.div variants={itemVariants}>
+                <PluginReviews
+                  reviews={selectedPlugin.reviews || []}
+                  onAddReview={(rating, comment) =>
+                    handleAddReview(selectedPlugin.id, rating, comment)
+                  }
+                  currentUser={currentUser}
+                />
+              </motion.div>
+              <motion.div variants={itemVariants}>
+                <Button
+                  className="mt-4"
+                  onClick={() => handleAddToCompare(selectedPlugin)}
+                >
+                  Add to Compare
+                </Button>
+              </motion.div>
             </>
           ) : searchResults.length > 0 ? (
-            renderPluginGrid(searchResults, "Search Results")
+            <motion.div variants={itemVariants}>
+              {renderPluginGrid(searchResults, "Search Results")}
+            </motion.div>
           ) : isLandscape ? (
-            <VerticalTabs tabs={tabs} />
+            <motion.div variants={itemVariants}>
+              <VerticalTabs tabs={tabs} />
+            </motion.div>
           ) : (
-            <>
-              {renderFeaturedPlugins()}
-              {renderPluginGrid(plugins, "All Plugins")}
-              {renderPluginGrid(
-                plugins.filter((plugin) => plugin.installed),
-                "Installed Plugins"
-              )}
-            </>
+            <motion.div variants={containerVariants}>
+              <motion.div variants={itemVariants}>
+                {renderFeaturedPlugins()}
+              </motion.div>
+              <motion.div variants={itemVariants}>
+                {renderPluginGrid(plugins, "All Plugins")}
+              </motion.div>
+              <motion.div variants={itemVariants}>
+                {renderPluginGrid(
+                  plugins.filter((plugin) => plugin.installed),
+                  "Installed Plugins"
+                )}
+              </motion.div>
+            </motion.div>
           )}
 
-          {recentlyViewed.length > 0 && renderRecentlyViewed()}
-          {comparePlugins.length > 0 && renderComparePlugins()}
-        </div>
+          {recentlyViewed.length > 0 && (
+            <motion.div variants={itemVariants}>
+              {renderRecentlyViewed()}
+            </motion.div>
+          )}
+          {comparePlugins.length > 0 && (
+            <motion.div variants={itemVariants}>
+              {renderComparePlugins()}
+            </motion.div>
+          )}
+        </motion.div>
       </main>
       <ConfirmDialog
         isOpen={showConfirmDialog}
@@ -453,6 +574,6 @@ export default function PluginPage() {
         }}
         message={confirmMessage}
       />
-    </div>
+    </motion.div>
   );
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { toast, Toaster } from "react-hot-toast";
 import { Buffer } from "buffer";
+import { motion } from "framer-motion";
 
 import TitleBar from "./serial/TitleBar";
 import ConsoleArea from "./serial/ConsoleArea";
@@ -30,7 +31,7 @@ export default function SerialMonitor() {
   const [isMockMode, setIsMockMode] = useState(false);
   const [inputCommand, setInputCommand] = useState("");
   const [showTimestamp, setShowTimestamp] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const [isLandscape, setIsLandscape] = useState(false);
   const [isAutoScroll, setIsAutoScroll] = useState(true);
   const [isHexView, setIsHexView] = useState(false);
@@ -46,7 +47,7 @@ export default function SerialMonitor() {
     };
 
     window.addEventListener("resize", handleResize);
-    handleResize(); // Initial check
+    handleResize();
 
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -68,7 +69,7 @@ export default function SerialMonitor() {
         rxCount: 0,
         txCount: 0,
       },
-      // Add other ports...
+      // 添加其他端口...
     ];
 
     setState((prevState) => ({
@@ -83,7 +84,7 @@ export default function SerialMonitor() {
         : new RealSerialService();
     });
 
-    toast.success("Ports scanned successfully");
+    toast.success("端口扫描成功");
   };
 
   useEffect(() => {
@@ -99,10 +100,10 @@ export default function SerialMonitor() {
     try {
       if (port.isConnected) {
         await serialServices.current[portId].disconnect();
-        toast.success(`Disconnected from ${port.name}`);
+        toast.success(`已断开 ${port.name}`);
       } else {
         await serialServices.current[portId].connect(port.config);
-        toast.success(`Connected to ${port.name}`);
+        toast.success(`已连接到 ${port.name}`);
       }
 
       setState((prevState) => ({
@@ -129,12 +130,8 @@ export default function SerialMonitor() {
         });
       }
     } catch (error) {
-      console.error("Connection error:", error);
-      toast.error(
-        `Failed to ${port.isConnected ? "disconnect from" : "connect to"} ${
-          port.name
-        }`
-      );
+      console.error("连接错误:", error);
+      toast.error(`无法 ${port.isConnected ? "断开" : "连接到"} ${port.name}`);
     }
   };
 
@@ -161,10 +158,10 @@ export default function SerialMonitor() {
         ),
       }));
       setInputCommand("");
-      toast.success("Command sent successfully");
+      toast.success("命令发送成功");
     } catch (error) {
-      console.error("Send error:", error);
-      toast.error("Failed to send command");
+      console.error("发送错误:", error);
+      toast.error("发送命令失败");
     }
   };
 
@@ -176,7 +173,7 @@ export default function SerialMonitor() {
         p.id === state.activePortId ? { ...p, data: [] } : p
       ),
     }));
-    toast.success("Console cleared");
+    toast.success("控制台已清空");
   };
 
   const handleConfigChange = (
@@ -190,7 +187,7 @@ export default function SerialMonitor() {
         p.id === portId ? { ...p, config: { ...p.config, [key]: value } } : p
       ),
     }));
-    toast.success(`${key} updated for ${portId}`);
+    toast.success(`${key} 已更新为 ${portId}`);
   };
 
   const handleSaveLog = () => {
@@ -215,20 +212,20 @@ export default function SerialMonitor() {
     a.download = `serial_log_${activePort.name}.txt`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success("Log saved successfully");
+    toast.success("日志已保存");
   };
 
   const addCustomCommand = () => {
     if (inputCommand.trim()) {
       setCustomCommands((prev) => [...prev, inputCommand.trim()]);
       setInputCommand("");
-      toast.success("Custom command added");
+      toast.success("自定义命令已添加");
     }
   };
 
   const removeCustomCommand = (index: number) => {
     setCustomCommands((prev) => prev.filter((_, i) => i !== index));
-    toast.success("Custom command removed");
+    toast.success("自定义命令已移除");
   };
 
   const scrollUp = () => {
@@ -240,7 +237,14 @@ export default function SerialMonitor() {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col ${isDarkMode ? "dark" : ""}`}>
+    <motion.div
+      className={`min-h-screen flex flex-col ${
+        isDarkMode ? "bg-gray-900 text-white" : "bg-white text-black"
+      }`}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <Toaster position="top-right" />
       <TitleBar
         ports={state.ports}
@@ -252,10 +256,13 @@ export default function SerialMonitor() {
         isDarkMode={isDarkMode}
         toggleDarkMode={() => setIsDarkMode(!isDarkMode)}
       />
-      <div
+      <motion.div
         className={`flex-1 p-4 flex ${
           isLandscape ? "flex-row" : "flex-col"
         } gap-4`}
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
       >
         <div className={`${isLandscape ? "w-2/3" : "w-full"}`}>
           <ConsoleArea
@@ -313,7 +320,12 @@ export default function SerialMonitor() {
             onRemove={removeCustomCommand}
           />
         </div>
-        <div className={`${isLandscape ? "w-1/3" : "w-full"}`}>
+        <motion.div
+          className={`${isLandscape ? "w-1/3" : "w-full"}`}
+          initial={{ x: 50, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
           <ConfigurationPanel
             isMockMode={isMockMode}
             toggleMockMode={setIsMockMode}
@@ -325,8 +337,8 @@ export default function SerialMonitor() {
             onConfigChange={handleConfigChange}
           />
           <StatusBar isMockMode={isMockMode} />
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }

@@ -4,14 +4,14 @@ import { useState, useCallback } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ExposureTaskList } from "./exposure-task-list";
+import { ExposureTaskList } from "./ExposureTaskList";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Download } from "lucide-react";
+import { ChevronDown, ChevronUp, Download, Upload, Trash } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -77,6 +77,13 @@ export function AutofocusSettings() {
     setActiveTargetId(newTarget.id);
   };
 
+  const deleteTarget = (targetId: string) => {
+    setTargets(targets.filter((target) => target.id !== targetId));
+    if (activeTargetId === targetId && targets.length > 1) {
+      setActiveTargetId(targets[0].id);
+    }
+  };
+
   const updateTasks = (targetId: string, newTasks: Task[]) => {
     setTargets(
       targets.map((target) =>
@@ -84,6 +91,26 @@ export function AutofocusSettings() {
       )
     );
   };
+
+  const importJson = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const fileReader = new FileReader();
+      if (event.target.files && event.target.files.length > 0) {
+        fileReader.readAsText(event.target.files[0], "UTF-8");
+        fileReader.onload = (e) => {
+          if (e.target && typeof e.target.result === "string") {
+            const data = JSON.parse(e.target.result);
+            setTargets(data.targets);
+            setDither(data.dither);
+            setDitherEvery(data.ditherEvery);
+            setGain(data.gain);
+            setOffset(data.offset);
+          }
+        };
+      }
+    },
+    []
+  );
 
   const activeTarget =
     targets.find((target) => target.id === activeTargetId) || targets[0];
@@ -120,16 +147,27 @@ export function AutofocusSettings() {
       <CollapsibleContent>
         <div className="bg-gray-900/50 p-4 space-y-4">
           <div className="flex justify-between items-center">
-            <div className="space-x-2 overflow-x-auto pb-2">
+            <div className="flex flex-wrap space-x-2 overflow-x-auto pb-2">
               {targets.map((target) => (
-                <Button
-                  key={target.id}
-                  variant={target.id === activeTargetId ? "default" : "outline"}
-                  onClick={() => setActiveTargetId(target.id)}
-                  className="whitespace-nowrap bg-gray-800 text-white border-gray-700 hover:bg-gray-700"
-                >
-                  {target.name}
-                </Button>
+                <div key={target.id} className="flex items-center space-x-1">
+                  <Button
+                    variant={
+                      target.id === activeTargetId ? "default" : "outline"
+                    }
+                    onClick={() => setActiveTargetId(target.id)}
+                    className="whitespace-nowrap bg-gray-800 text-white border-gray-700 hover:bg-gray-700"
+                  >
+                    {target.name}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => deleteTarget(target.id)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </div>
               ))}
             </div>
             <div className="flex space-x-2">
@@ -141,11 +179,21 @@ export function AutofocusSettings() {
               </Button>
               <Button
                 onClick={exportJson}
-                className="bg-teal-500 text-white hover:bg-teal-600"
+                className="bg-teal-500 text-white hover:bg-teal-600 flex items-center"
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
+              <label className="bg-teal-500 text-white hover:bg-teal-600 flex items-center cursor-pointer px-3">
+                <Upload className="h-4 w-4 mr-2" />
+                Import
+                <input
+                  type="file"
+                  accept=".json"
+                  hidden
+                  onChange={importJson}
+                />
+              </label>
             </div>
           </div>
 
@@ -194,15 +242,35 @@ export function AutofocusSettings() {
             </div>
             <div>
               <Label className="text-sm text-gray-400">Dither every #</Label>
-              <div className="text-gray-300">{ditherEvery ?? ""}</div>
+              <input
+                type="number"
+                value={ditherEvery ?? ""}
+                onChange={(e) =>
+                  setDitherEvery(e.target.value ? Number(e.target.value) : null)
+                }
+                className="w-full p-2 bg-gray-800 text-white rounded"
+                placeholder="Enter number"
+              />
             </div>
             <div>
               <Label className="text-sm text-gray-400">Gain</Label>
-              <div className="text-gray-300">{gain}</div>
+              <input
+                type="text"
+                value={gain}
+                onChange={(e) => setGain(e.target.value)}
+                className="w-full p-2 bg-gray-800 text-white rounded"
+                placeholder="Gain value"
+              />
             </div>
             <div>
               <Label className="text-sm text-gray-400">Offset</Label>
-              <div className="text-gray-300">{offset}</div>
+              <input
+                type="text"
+                value={offset}
+                onChange={(e) => setOffset(e.target.value)}
+                className="w-full p-2 bg-gray-800 text-white rounded"
+                placeholder="Offset value"
+              />
             </div>
           </div>
         </div>

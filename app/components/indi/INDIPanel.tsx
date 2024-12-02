@@ -19,6 +19,8 @@ import {
   Sun,
   Download,
   Upload,
+  Bell,
+  Info,
 } from "lucide-react";
 import {
   INDIPanelProps,
@@ -33,6 +35,14 @@ import { LineChart } from "./LineChart";
 import { AdvancedFilter } from "./AdvancedFilter";
 import { DeviceDashboard } from "./DeviceDashboard";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 
 export function INDIPanel({
   devices,
@@ -51,7 +61,7 @@ export function INDIPanel({
     groups: [],
   });
   const [showAdvancedFilter, setShowAdvancedFilter] = React.useState(false);
-  const [darkMode, setDarkMode] = React.useState(false);
+  const [darkMode, setDarkMode] = React.useState(true);
 
   React.useEffect(() => {
     if (darkMode) {
@@ -62,7 +72,10 @@ export function INDIPanel({
   }, [darkMode]);
 
   const addLog = (message: string) => {
-    setLogs((prev) => [...prev, `[${new Date().toISOString()}] ${message}`]);
+    setLogs((prev) => [
+      ...prev,
+      `[${new Date().toLocaleTimeString()}] ${message}`,
+    ]);
   };
 
   const handlePropertyChange = async (
@@ -72,12 +85,12 @@ export function INDIPanel({
   ) => {
     try {
       await onPropertyChange(deviceName, propertyName, value);
-      addLog(`Changed ${deviceName}.${propertyName} to ${value}`);
+      addLog(`已将 ${deviceName}.${propertyName} 修改为 ${value}`);
     } catch (error) {
-      addLog(`Failed to change ${deviceName}.${propertyName} to ${value}`);
+      addLog(`修改 ${deviceName}.${propertyName} 失败`);
       toast({
-        title: "Error",
-        description: `Failed to change ${propertyName}. Please try again.`,
+        title: "错误",
+        description: `修改 ${propertyName} 失败，请重试。`,
         variant: "destructive",
       });
     }
@@ -86,20 +99,16 @@ export function INDIPanel({
   const handleRefresh = async (deviceName: string, propertyName?: string) => {
     try {
       await onRefresh(deviceName, propertyName);
-      addLog(
-        `Refreshed ${deviceName}${propertyName ? `.${propertyName}` : ""}`
-      );
+      addLog(`已刷新 ${deviceName}${propertyName ? `.${propertyName}` : ""}`);
     } catch (error) {
       addLog(
-        `Failed to refresh ${deviceName}${
-          propertyName ? `.${propertyName}` : ""
-        }`
+        `刷新 ${deviceName}${propertyName ? `.${propertyName}` : ""} 失败`
       );
       toast({
-        title: "Error",
-        description: `Failed to refresh ${deviceName}${
+        title: "错误",
+        description: `刷新 ${deviceName}${
           propertyName ? `.${propertyName}` : ""
-        }. Please try again.`,
+        } 失败，请重试。`,
         variant: "destructive",
       });
     }
@@ -108,12 +117,12 @@ export function INDIPanel({
   const handleConnect = async (deviceName: string) => {
     try {
       await onConnect(deviceName);
-      addLog(`Connected to ${deviceName}`);
+      addLog(`已连接到 ${deviceName}`);
     } catch (error) {
-      addLog(`Failed to connect to ${deviceName}`);
+      addLog(`连接 ${deviceName} 失败`);
       toast({
-        title: "Error",
-        description: `Failed to connect to ${deviceName}. Please try again.`,
+        title: "错误",
+        description: `连接 ${deviceName} 失败，请重试。`,
         variant: "destructive",
       });
     }
@@ -122,12 +131,12 @@ export function INDIPanel({
   const handleDisconnect = async (deviceName: string) => {
     try {
       await onDisconnect(deviceName);
-      addLog(`Disconnected from ${deviceName}`);
+      addLog(`已断开 ${deviceName}`);
     } catch (error) {
-      addLog(`Failed to disconnect from ${deviceName}`);
+      addLog(`断开 ${deviceName} 失败`);
       toast({
-        title: "Error",
-        description: `Failed to disconnect from ${deviceName}. Please try again.`,
+        title: "错误",
+        description: `断开 ${deviceName} 失败，请重试。`,
         variant: "destructive",
       });
     }
@@ -136,16 +145,16 @@ export function INDIPanel({
   const handleExportConfig = async (deviceName: string) => {
     try {
       await onExportConfig(deviceName);
-      addLog(`Exported configuration for ${deviceName}`);
+      addLog(`已导出 ${deviceName} 的配置`);
       toast({
-        title: "Success",
-        description: `Configuration for ${deviceName} has been exported.`,
+        title: "成功",
+        description: `${deviceName} 的配置已导出。`,
       });
     } catch (error) {
-      addLog(`Failed to export configuration for ${deviceName}`);
+      addLog(`导出 ${deviceName} 的配置失败`);
       toast({
-        title: "Error",
-        description: `Failed to export configuration for ${deviceName}. Please try again.`,
+        title: "错误",
+        description: `导出 ${deviceName} 的配置失败，请重试。`,
         variant: "destructive",
       });
     }
@@ -154,16 +163,16 @@ export function INDIPanel({
   const handleImportConfig = async (deviceName: string, config: string) => {
     try {
       await onImportConfig(deviceName, config);
-      addLog(`Imported configuration for ${deviceName}`);
+      addLog(`已导入 ${deviceName} 的配置`);
       toast({
-        title: "Success",
-        description: `Configuration for ${deviceName} has been imported.`,
+        title: "成功",
+        description: `${deviceName} 的配置已导入。`,
       });
     } catch (error) {
-      addLog(`Failed to import configuration for ${deviceName}`);
+      addLog(`导入 ${deviceName} 的配置失败`);
       toast({
-        title: "Error",
-        description: `Failed to import configuration for ${deviceName}. Please try again.`,
+        title: "错误",
+        description: `导入 ${deviceName} 的配置失败，请重试。`,
         variant: "destructive",
       });
     }
@@ -173,80 +182,121 @@ export function INDIPanel({
     switch (device.state) {
       case "Disconnected":
         return (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleConnect(device.name)}
-          >
-            <Power className="w-4 h-4 mr-2" />
-            Connect
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleConnect(device.name)}
+                >
+                  <Power className="w-5 h-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>连接设备</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         );
       case "Connected":
         return (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleDisconnect(device.name)}
-          >
-            <Power className="w-4 h-4 mr-2" />
-            Disconnect
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleDisconnect(device.name)}
+                >
+                  <Power className="w-5 h-5 text-green-500" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>断开设备</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         );
       case "Connecting":
         return (
-          <Button variant="outline" size="sm" disabled>
-            <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-            Connecting...
+          <Button variant="outline" size="icon" disabled>
+            <RefreshCw className="w-5 h-5 animate-spin" />
           </Button>
         );
       case "Error":
         return (
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => handleConnect(device.name)}
-          >
-            <Power className="w-4 h-4 mr-2" />
-            Retry Connection
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={() => handleConnect(device.name)}
+                >
+                  <Power className="w-5 h-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>重试连接</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         );
     }
   };
 
   const renderDevice = (device: INDIDevice) => (
     <TabsContent key={device.name} value={device.name} className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">{device.name}</h2>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="flex justify-between items-center"
+      >
+        <div className="flex items-center space-x-4">
+          <Avatar>
+            <AvatarFallback>{device.name.charAt(0)}</AvatarFallback>
+          </Avatar>
+          <h2 className="text-xl font-semibold">{device.name}</h2>
+        </div>
         <div className="flex gap-2">
           {renderDeviceStateButton(device)}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleRefresh(device.name)}
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh All
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleExportConfig(device.name)}
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Export Config
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleImportConfig(device.name, "")}
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Import Config
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleRefresh(device.name)}
+                >
+                  <RefreshCw className="w-5 h-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>刷新所有</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleExportConfig(device.name)}
+                >
+                  <Download className="w-5 h-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>导出配置</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleImportConfig(device.name, "")}
+                >
+                  <Upload className="w-5 h-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>导入配置</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
-      </div>
-      <Accordion type="single" collapsible className="w-full">
+      </motion.div>
+      <Accordion type="multiple" className="w-full">
         {device.groups.map((group) => renderGroup(device.name, group))}
       </Accordion>
     </TabsContent>
@@ -280,10 +330,11 @@ export function INDIPanel({
             {filteredProperties.map((property) => (
               <motion.div
                 key={property.name}
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.2 }}
+                className="mb-4"
               >
                 <PropertyControl
                   deviceName={deviceName}
@@ -310,52 +361,41 @@ export function INDIPanel({
   }, [devices]);
 
   return (
-    <div
-      className={`min-h-screen p-4 ${
-        darkMode ? "dark bg-gray-900 text-white" : "bg-gray-50"
-      }`}
-    >
+    <div className="min-h-screen dark:bg-gray-900 dark:text-white">
       <Card className="max-w-[1200px] mx-auto">
-        <CardContent className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-semibold">INDI Control Panel</h1>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAdvancedFilter(!showAdvancedFilter)}
-              >
-                <Search className="w-4 h-4 mr-2" />
-                {showAdvancedFilter ? "Hide" : "Show"} Filters
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setDarkMode(!darkMode)}
-              >
-                {darkMode ? (
-                  <Sun className="w-4 h-4" />
-                ) : (
-                  <Moon className="w-4 h-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-
-          <DeviceDashboard devices={devices} />
-
+        <CardContent className="p-2">
           {showAdvancedFilter && (
-            <div className="mb-4">
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+            >
               <AdvancedFilter
                 options={filterOptions}
                 onChange={setFilterOptions}
                 groups={allGroups}
               />
-            </div>
+            </motion.div>
           )}
 
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mb-4"
+          >
+            <Input
+              placeholder="搜索属性..."
+              value={filterOptions.searchTerm}
+              onChange={(e) =>
+                setFilterOptions({
+                  ...filterOptions,
+                  searchTerm: e.target.value,
+                })
+              }
+            />
+          </motion.div>
+
           <Tabs defaultValue={devices[0]?.name} className="space-y-4">
-            <ScrollArea className="w-full whitespace-nowrap">
+            <ScrollArea className="w-full overscroll-x-auto">
               <TabsList className="w-full justify-start">
                 {devices.map((device) => (
                   <TabsTrigger key={device.name} value={device.name}>
@@ -368,23 +408,26 @@ export function INDIPanel({
             {devices.map(renderDevice)}
           </Tabs>
 
-          {/* Logs Section */}
-          <div className="mt-6 border rounded-lg">
-            <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+          {/* 日志部分 */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-6 border rounded-lg"
+          >
+            <div className="flex items-center justify-between p-2 bg-gray-800">
+              <h2 className="text-lg font-semibold text-white">日志</h2>
+              <Button variant="outline" size="sm" onClick={() => setLogs([])}>
+                清除日志
+              </Button>
+            </div>
+            <ScrollArea className="h-48 p-4 bg-gray-900 text-white">
               {logs.map((log, index) => (
                 <div key={index} className="text-sm font-mono">
                   {log}
                 </div>
               ))}
             </ScrollArea>
-          </div>
-
-          {/* Footer Buttons */}
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setLogs([])}>
-              Clear Logs
-            </Button>
-          </div>
+          </motion.div>
         </CardContent>
       </Card>
     </div>

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { INDIPanel } from "./INDIPanel";
+import { INDIPanel } from "./indi/INDIPanel";
 import { INDIDevice } from "@/types/indi";
 import { Toaster } from "@/components/ui/toaster";
 import { initialDevices } from "@/utils/mock-indi";
 
-export default function ExampleUsage() {
+export default function AllINDIPanel() {
   const [devices, setDevices] = useState<INDIDevice[]>(initialDevices);
 
   useEffect(() => {
