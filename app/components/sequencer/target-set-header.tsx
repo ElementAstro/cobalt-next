@@ -29,7 +29,7 @@ export function TargetSetHeader() {
   };
 
   return (
-    <div className="bg-gray-900/50 p-4">
+    <div className="bg-dark-900 p-4">
       <div className="space-y-4">
         <Collapsible
           open={!isStartOptionsCollapsed}
@@ -40,20 +40,20 @@ export function TargetSetHeader() {
               variant="ghost"
               className="w-full flex justify-between items-center text-left"
             >
-              <h2 className="text-sm font-medium text-teal-500">
+              <h2 className="text-sm font-medium text-dark-500">
                 Target Set Start Options
               </h2>
               {isStartOptionsCollapsed ? (
-                <ChevronDown className="h-4 w-4 text-teal-500" />
+                <ChevronDown className="h-4 w-4 text-dark-500" />
               ) : (
-                <ChevronUp className="h-4 w-4 text-teal-500" />
+                <ChevronUp className="h-4 w-4 text-dark-500" />
               )}
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="flex flex-wrap items-center gap-6 mt-2">
               <div>
-                <Label htmlFor="cool-camera" className="text-sm text-gray-400">
+                <Label htmlFor="cool-camera" className="text-sm text-dark-400">
                   Cool Camera
                 </Label>
                 <div className="flex items-center gap-2">
@@ -61,13 +61,13 @@ export function TargetSetHeader() {
                     id="cool-camera"
                     checked={options.coolCamera}
                     onCheckedChange={() => updateOption("coolCamera")}
-                    className="data-[state=checked]:bg-teal-500"
+                    className="data-[state=checked]:bg-dark-500"
                   />
-                  <span className="text-xs text-gray-500">OFF</span>
+                  <span className="text-xs text-dark-500">OFF</span>
                 </div>
               </div>
               <div>
-                <Label htmlFor="unpark-mount" className="text-sm text-gray-400">
+                <Label htmlFor="unpark-mount" className="text-sm text-dark-400">
                   Unpark Mount
                 </Label>
                 <div className="flex items-center gap-2">
@@ -75,15 +75,15 @@ export function TargetSetHeader() {
                     id="unpark-mount"
                     checked={options.unparkMount}
                     onCheckedChange={() => updateOption("unparkMount")}
-                    className="data-[state=checked]:bg-teal-500"
+                    className="data-[state=checked]:bg-dark-500"
                   />
-                  <span className="text-xs text-gray-500">ON</span>
+                  <span className="text-xs text-dark-500">ON</span>
                 </div>
               </div>
               <div>
                 <Label
                   htmlFor="meridian-flip"
-                  className="text-sm text-gray-400"
+                  className="text-sm text-dark-400"
                 >
                   Meridian Flip
                 </Label>
@@ -92,9 +92,9 @@ export function TargetSetHeader() {
                     id="meridian-flip"
                     checked={options.meridianFlip}
                     onCheckedChange={() => updateOption("meridianFlip")}
-                    className="data-[state=checked]:bg-teal-500"
+                    className="data-[state=checked]:bg-dark-500"
                   />
-                  <span className="text-xs text-gray-500">OFF</span>
+                  <span className="text-xs text-dark-500">OFF</span>
                 </div>
               </div>
             </div>
@@ -110,20 +110,20 @@ export function TargetSetHeader() {
               variant="ghost"
               className="w-full flex justify-between items-center text-left"
             >
-              <h2 className="text-sm font-medium text-teal-500">
+              <h2 className="text-sm font-medium text-dark-500">
                 Target Set End Options
               </h2>
               {isEndOptionsCollapsed ? (
-                <ChevronDown className="h-4 w-4 text-teal-500" />
+                <ChevronDown className="h-4 w-4 text-dark-500" />
               ) : (
-                <ChevronUp className="h-4 w-4 text-teal-500" />
+                <ChevronUp className="h-4 w-4 text-dark-500" />
               )}
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="flex flex-wrap items-center gap-6 mt-2">
               <div>
-                <Label htmlFor="warm-camera" className="text-sm text-gray-400">
+                <Label htmlFor="warm-camera" className="text-sm text-dark-400">
                   Warm Camera
                 </Label>
                 <div className="flex items-center gap-2">
@@ -131,13 +131,13 @@ export function TargetSetHeader() {
                     id="warm-camera"
                     checked={options.warmCamera}
                     onCheckedChange={() => updateOption("warmCamera")}
-                    className="data-[state=checked]:bg-teal-500"
+                    className="data-[state=checked]:bg-dark-500"
                   />
-                  <span className="text-xs text-gray-500">OFF</span>
+                  <span className="text-xs text-dark-500">OFF</span>
                 </div>
               </div>
               <div>
-                <Label htmlFor="park-mount" className="text-sm text-gray-400">
+                <Label htmlFor="park-mount" className="text-sm text-dark-400">
                   Park Mount
                 </Label>
                 <div className="flex items-center gap-2">
@@ -145,9 +145,9 @@ export function TargetSetHeader() {
                     id="park-mount"
                     checked={options.parkMount}
                     onCheckedChange={() => updateOption("parkMount")}
-                    className="data-[state=checked]:bg-teal-500"
+                    className="data-[state=checked]:bg-dark-500"
                   />
-                  <span className="text-xs text-gray-500">OFF</span>
+                  <span className="text-xs text-dark-500">OFF</span>
                 </div>
               </div>
             </div>

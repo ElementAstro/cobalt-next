@@ -65,22 +65,27 @@ export function TargetList() {
           value={newTargetName}
           onChange={(e) => setNewTargetName(e.target.value)}
           placeholder="Enter target name"
+          className="bg-dark-700 text-dark-200"
         />
-        <Button onClick={addTarget}>Add Target</Button>
+        <Button onClick={addTarget} className="bg-dark-500 text-dark-200">
+          Add Target
+        </Button>
       </div>
       <Accordion type="single" collapsible className="w-full">
         {targets.map((target) => (
           <AccordionItem key={target.id} value={target.id}>
-            <AccordionTrigger>{target.name}</AccordionTrigger>
-            <AccordionContent>
-              <Card>
+            <AccordionTrigger className="bg-dark-700 text-dark-200">
+              {target.name}
+            </AccordionTrigger>
+            <AccordionContent className="bg-dark-800 text-dark-200">
+              <Card className="bg-dark-800 text-dark-200">
                 <CardHeader>
                   <CardTitle>Coordinates</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <Label>RA</Label>
+                      <Label className="text-dark-400">RA</Label>
                       <Input
                         type="number"
                         value={target.coordinates.ra.h}
@@ -93,10 +98,11 @@ export function TargetList() {
                             },
                           })
                         }
+                        className="bg-dark-700 text-dark-200"
                       />
                     </div>
                     <div>
-                      <Label>Dec</Label>
+                      <Label className="text-dark-400">Dec</Label>
                       <Input
                         type="number"
                         value={target.coordinates.dec.d}
@@ -109,10 +115,11 @@ export function TargetList() {
                             },
                           })
                         }
+                        className="bg-dark-700 text-dark-200"
                       />
                     </div>
                     <div>
-                      <Label>Rotation</Label>
+                      <Label className="text-dark-400">Rotation</Label>
                       <Input
                         type="number"
                         value={target.coordinates.rotation}
@@ -122,12 +129,13 @@ export function TargetList() {
                             rotation: Number(e.target.value),
                           })
                         }
+                        className="bg-dark-700 text-dark-200"
                       />
                     </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card className="mt-4">
+              <Card className="mt-4 bg-dark-800 text-dark-200">
                 <CardHeader>
                   <CardTitle>Tasks</CardTitle>
                 </CardHeader>
@@ -139,7 +147,10 @@ export function TargetList() {
                       </li>
                     ))}
                   </ul>
-                  <Button onClick={() => addTask(target.id)} className="mt-2">
+                  <Button
+                    onClick={() => addTask(target.id)}
+                    className="mt-2 bg-dark-500 text-dark-200"
+                  >
                     Add Task
                   </Button>
                 </CardContent>
