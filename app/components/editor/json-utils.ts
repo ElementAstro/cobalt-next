@@ -1,67 +1,60 @@
 export function parseJson(jsonString: string): any {
-  return JSON.parse(jsonString)
+  return JSON.parse(jsonString);
 }
 
 export function stringifyJson(json: any): string {
-  return JSON.stringify(json, null, 2)
+  return JSON.stringify(json, null, 2);
 }
 
-export function reorderNodes(json: any, sourcePath: string[], destinationPath: string[], sourceIndex: number, destinationIndex: number): any {
-  const newJson = { ...json }
-  
-  let sourceParent = newJson
-  for (let i = 0; i < sourcePath.length - 1; i++) {
-    sourceParent = sourceParent[sourcePath[i]]
-  }
-  
-  let destParent = newJson
-  for (let i = 0; i < destinationPath.length - 1; i++) {
-    destParent = destParent[destinationPath[i]]
-  }
-  
-  const sourceKey = sourcePath[sourcePath.length - 1]
-  const destKey = destinationPath[destinationPath.length - 1]
-  
+export function reorderNodes(
+  json: any,
+  sourcePath: string[],
+  destinationPath: string[],
+  sourceIndex: number,
+  destinationIndex: number
+): any {
+  const newJson = JSON.parse(JSON.stringify(json)); // 深拷贝
+
+  const getParent = (obj: any, path: string[]) => {
+    return path.reduce((acc, key) => acc[key], obj);
+  };
+
+  const sourceParent = getParent(newJson, sourcePath);
+  const destParent = getParent(newJson, destinationPath);
+
   if (Array.isArray(sourceParent) && Array.isArray(destParent)) {
-    const [removed] = sourceParent.splice(sourceIndex, 1)
-    destParent.splice(destinationIndex, 0, removed)
-  } else if (typeof sourceParent === 'object' && typeof destParent === 'object') {
-    const sourceKeys = Object.keys(sourceParent)
-    const destKeys = Object.keys(destParent)
-    
-    const [removed] = sourceKeys.splice(sourceIndex, 1)
-    destKeys.splice(destinationIndex, 0, removed)
-    
-    const newSourceParent: any = {}
-    sourceKeys.forEach(key => {
-      newSourceParent[key] = sourceParent[key]
-    })
-    
-    const newDestParent: any = {}
-    destKeys.forEach(key => {
-      newDestParent[key] = key === removed ? sourceParent[removed] : destParent[key]
-    })
-    
-    Object.assign(sourceParent, newSourceParent)
-    Object.assign(destParent, newDestParent)
+    const [removed] = sourceParent.splice(sourceIndex, 1);
+    destParent.splice(destinationIndex, 0, removed);
+  } else if (
+    typeof sourceParent === "object" &&
+    typeof destParent === "object"
+  ) {
+    const keys = Object.keys(sourceParent);
+    const [removedKey] = keys.splice(sourceIndex, 1);
+    keys.forEach((key, idx) => {
+      sourceParent[key] = sourceParent[key];
+    });
+    destParent.splice(destinationIndex, 0, {
+      [removedKey]: sourceParent[removedKey],
+    });
+    delete sourceParent[removedKey];
   }
-  
-  return newJson
+
+  return newJson;
 }
 
 export function parseInputData(data: any): any {
-  if (typeof data === 'string') {
+  if (typeof data === "string") {
     try {
-      return JSON.parse(data)
+      return JSON.parse(data);
     } catch (error) {
-      console.error("Invalid JSON string:", error)
-      return {}
+      console.error("Invalid JSON string:", error);
+      return {};
     }
-  } else if (typeof data === 'object' && data !== null) {
-    return data
+  } else if (typeof data === "object" && data !== null) {
+    return data;
   } else {
-    console.error("Invalid input data type")
-    return {}
+    console.error("Invalid input data type");
+    return {};
   }
 }
-

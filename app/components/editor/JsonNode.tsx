@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState, memo } from 'react'
 import { Draggable, Droppable } from 'react-beautiful-dnd'
 import { ChevronDown, ChevronRight, Trash2, Plus, GripVertical } from 'lucide-react'
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,7 @@ interface JsonNodeProps {
   index?: number
 }
 
-export default function JsonNode({ data, path, onchange, ondelete, onAddChild, index }: JsonNodeProps) {
+const JsonNode = memo(function JsonNode({ data, path, onchange, ondelete, onAddChild, index }: JsonNodeProps) {
   const [isExpanded, setIsExpanded] = useState(true)
 
   const handleToggle = () => setIsExpanded(!isExpanded)
@@ -101,5 +101,7 @@ export default function JsonNode({ data, path, onchange, ondelete, onAddChild, i
       {isExpanded && typeof data === 'object' && data !== null && renderValue(data)}
     </div>
   )
-}
+})
+
+export default JsonNode
 

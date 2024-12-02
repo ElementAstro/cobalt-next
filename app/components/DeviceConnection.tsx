@@ -12,9 +12,6 @@ import { DevicesTab } from "./connection/DevicesTab";
 import { AdvancedTab } from "./connection/AdvancedTab";
 import { LogsTab } from "./connection/LogsTab";
 import { useApiService } from "@/services/api";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function DeviceConnection() {
   const [activeTab, setActiveTab] = useState("profile");

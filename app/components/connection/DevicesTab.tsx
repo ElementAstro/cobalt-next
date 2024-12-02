@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -11,18 +11,31 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useApiService } from "@/services/api";
 
+interface DeviceData {
+  name: string;
+  type: string;
+  connected: boolean;
+}
+
 export function DevicesTab() {
   const { fetchDevices, connectDevice, disconnectDevice } = useApiService();
-  const [devices, setDevices] = useState([]);
+  const [devices, setDevices] = useState<DeviceData[]>([]);
   const [remoteDrivers, setRemoteDrivers] = useState(
     "driver@host:port,driver@host,@host:port,@host,driver"
   );
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     fetchDevices().then(setDevices);
   }, [fetchDevices]);
 
-  const handleConnect = async (deviceName) => {
+  const filteredDevices = useMemo(() => {
+    return devices.filter((device) =>
+      device.name.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [devices, search]);
+
+  const handleConnect = async (deviceName: string) => {
     try {
       const updatedDevice = await connectDevice(deviceName);
       setDevices(
@@ -33,7 +46,7 @@ export function DevicesTab() {
     }
   };
 
-  const handleDisconnect = async (deviceName) => {
+  const handleDisconnect = async (deviceName: string) => {
     try {
       const updatedDevice = await disconnectDevice(deviceName);
       setDevices(
@@ -46,8 +59,14 @@ export function DevicesTab() {
 
   return (
     <div className="space-y-4">
+      <Input
+        placeholder="搜索设备..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="mb-4"
+      />
       <div className="grid md:grid-cols-3 gap-4">
-        {devices.map((device) => (
+        {filteredDevices.map((device) => (
           <div key={device.name} className="space-y-2">
             <Label htmlFor={device.name.toLowerCase().replace(" ", "-")}>
               {device.name}

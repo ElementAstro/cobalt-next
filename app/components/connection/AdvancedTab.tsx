@@ -11,16 +11,39 @@ export function AdvancedTab() {
     connectionTimeout: 30,
     debugMode: false,
   });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     fetchAdvancedSettings().then(setSettings);
   }, [fetchAdvancedSettings]);
 
+  const validate = (field: string, value: number | boolean) => {
+    let error = "";
+    if (
+      field === "updateInterval" &&
+      typeof value === "number" &&
+      (value < 500 || value > 10000)
+    ) {
+      error = "更新间隔必须在500ms到10000ms之间";
+    }
+    if (
+      field === "connectionTimeout" &&
+      typeof value === "number" &&
+      (value < 10 || value > 120)
+    ) {
+      error = "连接超时必须在10秒到120秒之间";
+    }
+    setErrors((prev) => ({ ...prev, [field]: error }));
+    return error === "";
+  };
+
   const handleChange = (field: string, value: number | boolean) => {
-    setSettings((prev) => ({ ...prev, [field]: value }));
-    updateAdvancedSettings({ [field]: value }).catch((error) => {
-      console.error("Failed to update advanced settings:", error);
-    });
+    if (validate(field, value)) {
+      setSettings((prev) => ({ ...prev, [field]: value }));
+      updateAdvancedSettings({ [field]: value }).catch((error) => {
+        console.error("Failed to update advanced settings:", error);
+      });
+    }
   };
 
   return (
@@ -37,6 +60,9 @@ export function AdvancedTab() {
             }
             className="mt-1"
           />
+          {errors.updateInterval && (
+            <span className="text-red-500">{errors.updateInterval}</span>
+          )}
         </div>
         <div>
           <Label htmlFor="timeout">Connection Timeout (s)</Label>
@@ -49,6 +75,9 @@ export function AdvancedTab() {
             }
             className="mt-1"
           />
+          {errors.connectionTimeout && (
+            <span className="text-red-500">{errors.connectionTimeout}</span>
+          )}
         </div>
       </div>
       <div className="flex items-center space-x-2">

@@ -4,6 +4,37 @@ import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { Highlight, themes } from "prism-react-renderer";
 import { useLanguage } from "../../../../contexts/LanguageContext";
+import styled from "styled-components";
+
+const Section = styled.section`
+  padding: 4rem 0;
+  background-color: ${({ theme }) => theme.buildBackground};
+  transition: background-color 0.3s;
+`;
+
+const CodeButton = styled.button`
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background-color: #374151;
+  color: #ffffff;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #4b5563;
+  }
+`;
+
+const StyledPre = styled.pre`
+  position: relative;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  background-color: #1e293b;
+  color: #cbd5e1;
+`;
 
 const CodeBlock = ({ code, language }: { code: string; language: string }) => {
   const [copied, setCopied] = useState(false);
@@ -16,37 +47,35 @@ const CodeBlock = ({ code, language }: { code: string; language: string }) => {
 
   return (
     <div className="relative">
-      <Highlight
-        theme={themes.nightOwl}
-        code={code.trim()}
-        language={language as any}
-      >
-        {({ className, style, tokens, getLineProps, getTokenProps }) => (
-          <pre
-            className={`${className} p-4 rounded-lg overflow-x-auto text-sm`}
-            style={style}
-          >
-            {tokens.map((line, i) => (
-              <div key={i} {...getLineProps({ line, key: i })}>
-                {line.map((token, key) => (
-                  <span key={key} {...getTokenProps({ token, key })} />
-                ))}
-              </div>
-            ))}
-          </pre>
-        )}
-      </Highlight>
-      <button
-        onClick={copyToClipboard}
-        className="absolute top-2 right-2 p-2 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
-        aria-label="Copy code"
-      >
-        {copied ? (
-          <Check size={16} className="text-green-500" />
-        ) : (
-          <Copy size={16} className="text-white" />
-        )}
-      </button>
+      <StyledPre>
+        <Highlight
+          theme={themes.nightOwl}
+          code={code.trim()}
+          language={language as any}
+        >
+          {({ className, style, tokens, getLineProps, getTokenProps }) => (
+            <pre
+              className={`${className} p-4 rounded-lg overflow-x-auto text-sm`}
+              style={style}
+            >
+              {tokens.map((line, i) => (
+                <div key={i} {...getLineProps({ line, key: i })}>
+                  {line.map((token, key) => (
+                    <span key={key} {...getTokenProps({ token, key })} />
+                  ))}
+                </div>
+              ))}
+            </pre>
+          )}
+        </Highlight>
+        <CodeButton onClick={copyToClipboard} aria-label="Copy code">
+          {copied ? (
+            <Check size={16} className="text-green-500" />
+          ) : (
+            <Copy size={16} />
+          )}
+        </CodeButton>
+      </StyledPre>
     </div>
   );
 };
@@ -55,10 +84,7 @@ export default function BuildInstructions() {
   const { t } = useLanguage();
 
   return (
-    <section
-      id="build"
-      className="py-16 bg-gray-100 dark:bg-gray-800 transition-colors duration-300"
-    >
+    <Section id="build">
       <div className="container mx-auto px-4">
         <h2 className="text-3xl font-bold mb-8 text-center text-gray-900 dark:text-white animate-fade-in">
           {t("buildInstructions")}
@@ -121,6 +147,6 @@ sudo apt-get install build-essential cmake libcfitsio-dev zlib1g-dev libssl-dev 
           </ol>
         </div>
       </div>
-    </section>
+    </Section>
   );
 }

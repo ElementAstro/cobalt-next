@@ -1,7 +1,8 @@
 "use client"
 
+import React, { memo } from 'react'
 import { useState } from 'react'
-import JsonEditor from './json-editor'
+import JsonEditor from './JsonEditor'
 import { parseInputData } from './json-utils'
 
 const sampleData = {
@@ -15,7 +16,7 @@ const sampleData = {
   hobbies: ["reading", "swimming", "coding"]
 }
 
-export default function Page() {
+const Page = memo(function Page() {
   const [jsonData, setJsonData] = useState(sampleData)
 
   const handleJsonChange = (newData: any) => {
@@ -29,5 +30,7 @@ export default function Page() {
       <JsonEditor initialData={parseInputData(jsonData)} onChange={handleJsonChange} />
     </div>
   )
-}
+})
+
+export default Page
 

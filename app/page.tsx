@@ -29,11 +29,11 @@ import DeviceConnection from "./components/DeviceConnection";
 import PluginPage from "./components/Plugin";
 import StarSearch from "./components/StarSearch";
 
-import CameraPage from "./components/device/camera/page";
-import FocuserPage from "./components/device/focuser/page";
-import FilterWheelPage from "./components/device/filter-wheel/page";
-import GuiderPage from "./components/device/guider/page";
-import TelescopePage from "./components/device/telescope/page";
+import CameraPage from "../components/device/camera/page";
+import FocuserPage from "../components/device/focuser/page";
+import FilterWheelPage from "../components/device/filter-wheel/page";
+import GuiderPage from "../components/device/guider/page";
+import TelescopePage from "../components/device/telescope/page";
 
 import Log from "./components/Log";
 

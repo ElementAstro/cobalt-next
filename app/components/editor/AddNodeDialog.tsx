@@ -17,6 +17,10 @@ export default function AddNodeDialog({ isOpen, onClose, onAdd }: AddNodeDialogP
   const [value, setValue] = useState('')
 
   const handleAdd = () => {
+    if (!key.trim()) {
+      alert("键名不能为空");
+      return;
+    }
     let parsedValue: any = value
     if (valueType === 'number') {
       parsedValue = Number(value)

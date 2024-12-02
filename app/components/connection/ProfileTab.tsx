@@ -76,6 +76,16 @@ const FlexCenter = styled.div`
   gap: 0.5rem;
 `;
 
+interface Profile {
+  name: string;
+  autoConnect: boolean;
+  mode: "local" | "remote";
+  host: string;
+  port: string;
+  guiding: "internal" | "external";
+  indiWebManager: boolean;
+}
+
 export function ProfileTab({ toast }: ProfileTabProps) {
   const { fetchProfileData, updateProfileData } = useApiService();
   const [profile, setProfile] = useState({
@@ -88,22 +98,38 @@ export function ProfileTab({ toast }: ProfileTabProps) {
     indiWebManager: false,
   });
 
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const validate = (field: string, value: string | boolean) => {
+    let error = "";
+    if (field === "name" && typeof value === "string" && value.trim() === "") {
+      error = "名称不能为空";
+    }
+    if (field === "port" && typeof value === "string" && !/^\d+$/.test(value)) {
+      error = "端口必须是数字";
+    }
+    setErrors((prev) => ({ ...prev, [field]: error }));
+    return error === "";
+  };
+
   useEffect(() => {
     fetchProfileData().then(setProfile);
   }, [fetchProfileData]);
 
   const handleChange = (field: string, value: string | boolean) => {
-    setProfile((prev) => ({ ...prev, [field]: value }));
-    updateProfileData({ [field]: value })
-      .then(() => {
-        toast({
-          title: "Profile Updated",
-          description: `${field} has been updated.`,
+    if (validate(field, value)) {
+      setProfile((prev) => ({ ...prev, [field]: value }));
+      updateProfileData({ [field]: value })
+        .then(() => {
+          toast({
+            title: "Profile Updated",
+            description: `${field} 已更新。`,
+          });
+        })
+        .catch((error) => {
+          toast({ title: "更新失败", description: error.message });
         });
-      })
-      .catch((error) => {
-        toast({ title: "Update Failed", description: error.message });
-      });
+    }
   };
 
   return (
@@ -117,6 +143,7 @@ export function ProfileTab({ toast }: ProfileTabProps) {
             onChange={(e) => handleChange("name", e.target.value)}
             className="mt-1"
           />
+          {errors.name && <span className="text-red-500">{errors.name}</span>}
         </FlexItem>
         <FlexCenter>
           <Switch
@@ -181,6 +208,7 @@ export function ProfileTab({ toast }: ProfileTabProps) {
             onChange={(e) => handleChange("port", e.target.value)}
             className="mt-1"
           />
+          {errors.port && <span className="text-red-500">{errors.port}</span>}
         </div>
       </Grid>
 

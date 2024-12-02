@@ -5,6 +5,32 @@ import { Moon, Sun, Menu, X, Globe } from "lucide-react";
 import { useTheme } from "../../../../contexts/ThemeContext";
 import { useLanguage } from "../../../../contexts/LanguageContext";
 import { useState } from "react";
+import styled from 'styled-components';
+
+const HeaderWrapper = styled.header`
+  background-color: ${({ theme }) => theme.background};
+  padding: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  transition: background-color 0.3s;
+`;
+
+const StyledMenu = styled.div`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: ${({ theme }) => theme.menuBackground};
+  padding: 0.5rem 1rem;
+  animation: slideIn 0.3s ease-in;
+
+  ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+`;
 
 export default function Header() {
   const { theme, toggleTheme } = useTheme();
@@ -16,7 +42,7 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white dark:bg-gray-800 py-4 transition-colors duration-300 sticky top-0 z-50">
+    <HeaderWrapper>
       <div className="container mx-auto px-4 flex justify-between items-center">
         <div className="flex items-center space-x-2">
           <Image
@@ -78,8 +104,8 @@ export default function Header() {
         </div>
       </div>
       {isMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 bg-white dark:bg-gray-800 py-2 px-4 animate-slide-in">
-          <ul className="space-y-2">
+        <StyledMenu>
+          <ul>
             {[t("overview"), t("features"), t("build"), "GitHub"].map(
               (item) => (
                 <li key={item}>
@@ -98,8 +124,8 @@ export default function Header() {
               )
             )}
           </ul>
-        </div>
+        </StyledMenu>
       )}
-    </header>
+    </HeaderWrapper>
   );
 }

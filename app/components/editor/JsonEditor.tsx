@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import JsonNode from "./json-node";
-import AddNodeDialog from "./add-node-dialog";
+import JsonNode from "./JsonNode";
+import AddNodeDialog from "./AddNodeDialog";
 import {
   parseJson,
   stringifyJson,
@@ -33,6 +33,53 @@ export default function JsonEditor({ initialData, onChange }: JsonEditorProps) {
   const [isAddNodeDialogOpen, setIsAddNodeDialogOpen] = useState(false);
   const [currentPath, setCurrentPath] = useState<string[]>([]);
   const [highlightedJson, setHighlightedJson] = useState("");
+  const [history, setHistory] = useState<any[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+
+  useEffect(() => {
+    setHistory((prev) => [...prev.slice(0, historyIndex), json]);
+    setHistoryIndex((prev) => prev + 1);
+  }, [json]);
+
+  const undo = useCallback(() => {
+    if (historyIndex > 1) {
+      setHistoryIndex(historyIndex - 1);
+      setJson(history[historyIndex - 2]);
+    }
+  }, [history, historyIndex]);
+
+  const redo = useCallback(() => {
+    if (historyIndex < history.length) {
+      setJson(history[historyIndex]);
+      setHistoryIndex(historyIndex + 1);
+    }
+  }, [history, historyIndex]);
+
+  const handleExport = () => {
+    const blob = new Blob([stringifyJson(json)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "data.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const importedJson = parseJson(e.target?.result as string);
+          setJson(importedJson);
+        } catch (error) {
+          console.error("导入的JSON无效:", error);
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
 
   useEffect(() => {
     const highlighted = Prism.highlight(
@@ -120,6 +167,16 @@ export default function JsonEditor({ initialData, onChange }: JsonEditorProps) {
               checked={isLowCodeMode}
               onCheckedChange={setIsLowCodeMode}
             />
+          </div>
+          <div className="flex space-x-2">
+            <Button onClick={undo} disabled={historyIndex <= 1}>
+              撤销
+            </Button>
+            <Button onClick={redo} disabled={historyIndex >= history.length}>
+              重做
+            </Button>
+            <Button onClick={handleExport}>导出JSON</Button>
+            <input type="file" accept=".json" onChange={handleImport} />
           </div>
         </CardTitle>
       </CardHeader>

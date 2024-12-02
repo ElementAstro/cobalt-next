@@ -2,17 +2,41 @@
 
 import { Github, Star, Twitter, Linkedin } from "lucide-react";
 import { useLanguage } from "../../../../contexts/LanguageContext";
+import styled from "styled-components";
+
+const FooterWrapper = styled.footer`
+  background-color: ${({ theme }) => theme.footerBackground};
+  padding: 2rem 0;
+  text-align: center;
+  transition: background-color 0.3s;
+`;
+
+const IconLinks = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  a {
+    color: ${({ theme }) => theme.iconColor};
+    transition: color 0.3s;
+
+    &:hover {
+      color: ${({ theme }) => theme.iconHoverColor};
+    }
+  }
+`;
 
 export default function Footer() {
   const { t } = useLanguage();
 
   return (
-    <footer className="bg-gray-100 dark:bg-gray-800 py-8 transition-colors duration-300">
-      <div className="container mx-auto px-4 text-center">
+    <FooterWrapper>
+      <div className="container mx-auto px-4">
         <p className="mb-4 text-gray-600 dark:text-gray-300 animate-fade-in">
           {t("footer")}
         </p>
-        <div className="flex justify-center space-x-4 mb-4">
+        <IconLinks>
           {[
             { icon: Github, href: "#", label: "GitHub" },
             { icon: Star, href: "#", label: "Star" },
@@ -29,7 +53,7 @@ export default function Footer() {
               <item.icon className="w-6 h-6" />
             </a>
           ))}
-        </div>
+        </IconLinks>
         <p
           className="text-sm text-gray-500 dark:text-gray-400 animate-fade-in"
           style={{ animationDelay: "400ms" }}
@@ -37,6 +61,6 @@ export default function Footer() {
           © {new Date().getFullYear()} Lithium Project. {t("allRightsReserved")}
         </p>
       </div>
-    </footer>
+    </FooterWrapper>
   );
 }

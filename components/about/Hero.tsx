@@ -2,12 +2,24 @@
 
 import { Shield, Code, Star } from "lucide-react";
 import { useLanguage } from "../../../../contexts/LanguageContext";
+import styled from 'styled-components';
+
+const Section = styled.section`
+  padding: 5rem 0;
+  text-align: center;
+  background: linear-gradient(to bottom, #f9fafb, #ffffff);
+  transition: background 0.3s;
+
+  @media (prefers-color-scheme: dark) {
+    background: linear-gradient(to bottom, #1f2937, #111827);
+  }
+`;
 
 export default function Hero() {
   const { t } = useLanguage();
 
   return (
-    <section className="py-20 text-center bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 transition-colors duration-300">
+    <Section>
       <div className="container mx-auto px-4">
         <h2 className="text-4xl md:text-5xl font-bold mb-4 text-gray-900 dark:text-white animate-fade-in">
           {t("title")}
@@ -42,6 +54,6 @@ export default function Hero() {
           {t("getStarted")}
         </a>
       </div>
-    </section>
+    </Section>
   );
 }
