@@ -22,11 +22,11 @@ export function SoftwareList({
   const getViewClass = () => {
     switch (view) {
       case "grid":
-        return "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4";
+        return "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4";
       case "detail":
-        return "grid grid-cols-1 md:grid-cols-2 gap-4";
+        return "grid grid-cols-1 gap-4";
       default:
-        return "grid grid-cols-1 gap-2";
+        return "flex flex-col space-y-2";
     }
   };
 
@@ -35,7 +35,9 @@ export function SoftwareList({
       {software.map((item) => (
         <div
           key={item.id}
-          className="flex items-center gap-4 rounded-lg border p-4 hover:bg-accent"
+          className={`flex items-center gap-4 rounded-lg border p-4 hover:bg-accent ${
+            view !== "list" ? "flex-col items-start" : ""
+          }`}
         >
           <img
             src={item.icon}

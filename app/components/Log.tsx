@@ -8,7 +8,8 @@ import { useRealtimeLogs } from "../../hooks/use-realtime-logs";
 
 export default function Log() {
   const initialLogs = generateMockLogs(1000);
-  const logs = useRealtimeLogs(initialLogs, {
+
+  const realtimeLogs = useRealtimeLogs([], {
     enabled: true,
     interval: 5000,
     maxLogs: 1000,
@@ -16,7 +17,7 @@ export default function Log() {
 
   return (
     <Suspense fallback={<div>加载中...</div>}>
-      <LogDashboard logs={logs} />
+      <LogDashboard initialLogs={initialLogs} />
     </Suspense>
   );
 }

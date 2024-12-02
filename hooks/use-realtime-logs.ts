@@ -1,5 +1,5 @@
 // use-realtime-logs.ts
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Log } from "@/types/log";
 import { generateMockLogs } from "@/utils/mock-log-data";
 
@@ -18,6 +18,7 @@ export function useRealtimeLogs(
   }
 ) {
   const [logs, setLogs] = useState<Log[]>(initialLogs);
+  const initialLogsRef = useRef(initialLogs);
   const { enabled, interval = 5000, maxLogs = 1000 } = options;
 
   const addNewLog = useCallback(() => {
@@ -36,8 +37,8 @@ export function useRealtimeLogs(
   }, [addNewLog, enabled, interval]);
 
   useEffect(() => {
-    setLogs(initialLogs);
-  }, [initialLogs]);
+    setLogs(initialLogsRef.current);
+  }, []);
 
   return logs;
 }

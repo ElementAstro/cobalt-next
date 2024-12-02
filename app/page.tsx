@@ -22,7 +22,6 @@ import { TopBar } from "./components/TopBar";
 import { Offcanvas } from "./components/Offcanvas";
 import { Sidebar } from "./components/Sidebar";
 import FocusAssistant from "./components/FocusAssistant";
-import PolarAlignment from "./components/PolarAlignment";
 import SequenceEditor from "./components/SequenceEditor";
 import LiveStacking from "./components/LiveStacking";
 import DeviceConnection from "./components/DeviceConnection";
@@ -320,9 +319,6 @@ export default function CameraInterface() {
                     {activeDevice === "starChart" && <StarSearch />}
                     {activeDevice === "focusAssistant" && (
                       <FocusAssistant onClose={() => setActiveDevice(null)} />
-                    )}
-                    {activeDevice === "polarAlignment" && (
-                      <PolarAlignment onClose={() => setActiveDevice(null)} />
                     )}
                     {activeDevice === "sequenceEditor" && (
                       <SequenceEditor onClose={() => setActiveDevice(null)} />

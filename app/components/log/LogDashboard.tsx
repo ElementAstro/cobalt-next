@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useReducer } from "react";
 import {
   Log,
   LogLevelColor,
@@ -20,12 +20,74 @@ import { Settings } from "./Settings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { generateMockLogs, generateSingleMockLog } from "@/utils/mock-log-data";
+import { Sun, Moon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-// 生成默认的模拟数据
 const defaultMockLogs = generateMockLogs(100);
 
 interface LogDashboardProps {
   initialLogs?: Log[];
+}
+
+type State = {
+  logs: Log[];
+  filteredLogs: Log[];
+  dateRange: { from: Date; to: Date };
+  logLevelColors: LogLevelColor;
+  retentionPolicy: LogRetentionPolicy;
+  alertRule: LogAlertRule;
+  realtimeUpdates: boolean;
+  mockMode: MockModeSettings;
+  searchTerm: string;
+  searchField: string;
+  filterLevel: string;
+  theme: "light" | "dark";
+};
+
+type Action =
+  | { type: "SET_LOGS"; payload: Log[] }
+  | { type: "ADD_LOG"; payload: Log }
+  | { type: "SET_DATE_RANGE"; payload: { from: Date; to: Date } }
+  | { type: "SET_FILTER"; payload: { level: string } }
+  | { type: "SET_SEARCH"; payload: { term: string; field: string } }
+  | { type: "SET_LOG_LEVEL_COLORS"; payload: LogLevelColor }
+  | { type: "SET_RETENTION_POLICY"; payload: LogRetentionPolicy }
+  | { type: "SET_ALERT_RULE"; payload: LogAlertRule }
+  | { type: "SET_REALTIME_UPDATES"; payload: boolean }
+  | { type: "SET_MOCK_MODE"; payload: MockModeSettings }
+  | { type: "SET_THEME"; payload: "light" | "dark" };
+
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case "SET_LOGS":
+      return { ...state, logs: action.payload };
+    case "ADD_LOG":
+      return { ...state, logs: [action.payload, ...state.logs] };
+    case "SET_DATE_RANGE":
+      return { ...state, dateRange: action.payload };
+    case "SET_FILTER":
+      return { ...state, filterLevel: action.payload.level };
+    case "SET_SEARCH":
+      return {
+        ...state,
+        searchTerm: action.payload.term,
+        searchField: action.payload.field,
+      };
+    case "SET_LOG_LEVEL_COLORS":
+      return { ...state, logLevelColors: action.payload };
+    case "SET_RETENTION_POLICY":
+      return { ...state, retentionPolicy: action.payload };
+    case "SET_ALERT_RULE":
+      return { ...state, alertRule: action.payload };
+    case "SET_REALTIME_UPDATES":
+      return { ...state, realtimeUpdates: action.payload };
+    case "SET_MOCK_MODE":
+      return { ...state, mockMode: action.payload };
+    case "SET_THEME":
+      return { ...state, theme: action.payload };
+    default:
+      return state;
+  }
 }
 
 function addDays(date: Date, days: number): Date {
@@ -41,123 +103,153 @@ function subDays(date: Date, days: number): Date {
 export function LogDashboard({
   initialLogs = defaultMockLogs,
 }: LogDashboardProps) {
-  const [logs, setLogs] = useState<Log[]>(initialLogs);
-  const [filteredLogs, setFilteredLogs] = useState<Log[]>(logs);
-  const [dateRange, setDateRange] = useState({
-    from: subDays(new Date(), 7),
-    to: new Date(),
+  const [state, dispatch] = useReducer(reducer, {
+    logs: initialLogs,
+    filteredLogs: initialLogs,
+    dateRange: { from: subDays(new Date(), 7), to: new Date() },
+    logLevelColors: {
+      info: "#3498db",
+      warning: "#f39c12",
+      error: "#e74c3c",
+    },
+    retentionPolicy: { days: 30 },
+    alertRule: { level: "error", keyword: "critical" },
+    realtimeUpdates: true,
+    mockMode: { enabled: true, logGenerationInterval: 5000 },
+    searchTerm: "",
+    searchField: "all",
+    filterLevel: "all",
+    theme: "light",
   });
-  const [logLevelColors, setLogLevelColors] = useState<LogLevelColor>({
-    info: "#3498db",
-    warning: "#f39c12",
-    error: "#e74c3c",
-  });
-  const [retentionPolicy, setRetentionPolicy] = useState<LogRetentionPolicy>({
-    days: 30,
-  });
-  const [alertRule, setAlertRule] = useState<LogAlertRule>({
-    level: "error",
-    keyword: "critical",
-  });
-  const [realtimeUpdates, setRealtimeUpdates] = useState(true);
-  const [mockMode, setMockMode] = useState<MockModeSettings>({
-    enabled: true,
-    logGenerationInterval: 5000,
-  });
+
   const { toast } = useToast();
 
-  const applyFilters = useCallback(
-    (logsToFilter: Log[]) => {
-      const filtered = logsToFilter.filter((log) => {
-        const logDate = new Date(log.timestamp);
-        return logDate >= dateRange.from && logDate <= dateRange.to;
-      });
-      setFilteredLogs(filtered);
-    },
-    [dateRange]
-  );
+  const applyFilters = useCallback(() => {
+    let filtered = state.logs;
 
-  const handleSearch = useCallback(
-    (searchTerm: string, searchField: string) => {
-      const filtered = logs.filter((log) => {
-        if (searchField === "all") {
+    // 日期过滤
+    filtered = filtered.filter((log) => {
+      const logDate = new Date(log.timestamp);
+      return logDate >= state.dateRange.from && logDate <= state.dateRange.to;
+    });
+
+    // 日志级别过滤
+    if (state.filterLevel !== "all") {
+      filtered = filtered.filter((log) => log.level === state.filterLevel);
+    }
+
+    // 搜索过滤
+    if (state.searchTerm) {
+      filtered = filtered.filter((log) => {
+        if (state.searchField === "all") {
           return (
-            log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            log.source.toLowerCase().includes(searchTerm.toLowerCase())
+            log.message
+              .toLowerCase()
+              .includes(state.searchTerm.toLowerCase()) ||
+            log.source.toLowerCase().includes(state.searchTerm.toLowerCase())
           );
-        } else if (searchField === "message") {
-          return log.message.toLowerCase().includes(searchTerm.toLowerCase());
-        } else if (searchField === "source") {
-          return log.source.toLowerCase().includes(searchTerm.toLowerCase());
+        } else if (state.searchField === "message") {
+          return log.message
+            .toLowerCase()
+            .includes(state.searchTerm.toLowerCase());
+        } else if (state.searchField === "source") {
+          return log.source
+            .toLowerCase()
+            .includes(state.searchTerm.toLowerCase());
         }
         return false;
       });
-      applyFilters(filtered);
-    },
-    [logs, applyFilters]
-  );
+    }
 
-  const handleFilter = useCallback(
-    (level: string) => {
-      const filtered =
-        level === "all" ? logs : logs.filter((log) => log.level === level);
-      applyFilters(filtered);
-    },
-    [logs, applyFilters]
-  );
-
-  const handleDateRangeChange = useCallback(
-    (range: { from: Date; to: Date }) => {
-      setDateRange(range);
-      applyFilters(logs);
-    },
-    [logs, applyFilters]
-  );
+    dispatch({ type: "SET_LOGS", payload: state.logs });
+    dispatch({ type: "SET_LOGS", payload: filtered });
+  }, [
+    state.logs,
+    state.dateRange,
+    state.filterLevel,
+    state.searchTerm,
+    state.searchField,
+  ]);
 
   useEffect(() => {
-    if (realtimeUpdates && mockMode.enabled) {
+    applyFilters();
+  }, [applyFilters, state.logs, state.dateRange, state.filterLevel, state.searchTerm, state.searchField]);
+
+  useEffect(() => {
+    if (state.realtimeUpdates && state.mockMode.enabled) {
       const interval = setInterval(() => {
         const newLog = generateSingleMockLog();
-        setLogs((prevLogs) => [newLog, ...prevLogs]);
-      }, mockMode.logGenerationInterval);
+        dispatch({ type: "ADD_LOG", payload: newLog });
+      }, state.mockMode.logGenerationInterval);
       return () => clearInterval(interval);
     }
-  }, [realtimeUpdates, mockMode]);
+  }, [state.realtimeUpdates, state.mockMode.enabled, state.mockMode.logGenerationInterval]);
 
   useEffect(() => {
     const now = new Date();
-    const retentionDate = subDays(now, retentionPolicy.days);
-    setLogs((prevLogs) =>
-      prevLogs.filter((log) => new Date(log.timestamp) >= retentionDate)
+    const retentionDate = subDays(now, state.retentionPolicy.days);
+    const freshLogs = state.logs.filter(
+      (log) => new Date(log.timestamp) >= retentionDate
     );
-  }, [retentionPolicy.days]);
+    dispatch({ type: "SET_LOGS", payload: freshLogs });
+  }, [state.retentionPolicy.days, state.logs]);
 
   useEffect(() => {
-    const checkAlerts = (log: Log) => {
+    const latestLog = state.logs[0];
+    if (latestLog) {
       if (
-        log.level === alertRule.level &&
-        log.message.includes(alertRule.keyword)
+        latestLog.level === state.alertRule.level &&
+        latestLog.message.includes(state.alertRule.keyword)
       ) {
         toast({
           title: "日志告警",
-          description: `检测到符合告警规则的日志: ${log.message}`,
+          description: `检测到符合告警规则的日志: ${latestLog.message}`,
         });
       }
-    };
-    logs.forEach(checkAlerts);
-  }, [logs, alertRule, toast]);
+    }
+  }, [state.logs, state.alertRule.level, state.alertRule.keyword, toast]);
+
+  const handleSearch = (term: string, field: string) => {
+    dispatch({ type: "SET_SEARCH", payload: { term, field } });
+  };
+
+  const handleFilter = (level: string) => {
+    dispatch({ type: "SET_FILTER", payload: { level } });
+  };
+
+  const handleDateRangeChange = (range: { from: Date; to: Date }) => {
+    dispatch({ type: "SET_DATE_RANGE", payload: range });
+  };
+
+  const toggleTheme = () => {
+    dispatch({
+      type: "SET_THEME",
+      payload: state.theme === "light" ? "dark" : "light",
+    });
+  };
 
   return (
-    <div className="flex flex-col h-screen space-y-6 overflow-hidden max-h-screen">
-      <div className="flex-none border-b">
-        <div className="flex flex-col md:flex-row items-center justify-between max-w-5xl mx-auto gap-4">
-          <LogSearch onSearch={handleSearch} />
+    <div
+      className={`flex flex-col h-screen space-y-4 overflow-hidden max-h-screen ${state.theme}`}
+    >
+      <div className="flex-none border-b bg-white dark:bg-gray-800">
+        <div className="flex flex-col md:flex-row items-center justify-between max-w-7xl mx-auto p-4 gap-4">
+          <div className="flex items-center space-x-2">
+            <Button variant="ghost" onClick={toggleTheme}>
+              {state.theme === "light" ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+            </Button>
+            <LogSearch onSearch={handleSearch} />
+          </div>
           <LogFilter onFilter={handleFilter} />
           <DateRangePicker
-            dateRange={dateRange}
+            dateRange={state.dateRange}
             onDateRangeChange={handleDateRangeChange}
           />
-          <ExportLogs logs={filteredLogs} />
+          <ExportLogs logs={state.filteredLogs} />
         </div>
       </div>
       <Tabs
@@ -172,29 +264,42 @@ export function LogDashboard({
           <TabsTrigger value="settings">设置</TabsTrigger>
         </TabsList>
         <TabsContent value="logs" className="flex-grow overflow-auto">
-          <LogDisplay logs={filteredLogs} logLevelColors={logLevelColors} />
+          <LogDisplay
+            logs={state.filteredLogs}
+            logLevelColors={state.logLevelColors}
+          />
         </TabsContent>
         <TabsContent value="stats" className="flex-grow overflow-auto">
-          <LogStats logs={filteredLogs} />
+          <LogStats logs={state.filteredLogs} />
         </TabsContent>
         <TabsContent value="aggregation" className="flex-grow overflow-auto">
-          <LogAggregation logs={filteredLogs} />
+          <LogAggregation logs={state.filteredLogs} />
         </TabsContent>
         <TabsContent value="analysis" className="flex-grow overflow-auto">
-          <LogAnalysis logs={filteredLogs} />
+          <LogAnalysis logs={state.filteredLogs} />
         </TabsContent>
         <TabsContent value="settings" className="flex-grow overflow-auto">
           <Settings
-            logLevelColors={logLevelColors}
-            setLogLevelColors={setLogLevelColors}
-            retentionPolicy={retentionPolicy}
-            setRetentionPolicy={setRetentionPolicy}
-            alertRule={alertRule}
-            setAlertRule={setAlertRule}
-            realtimeUpdates={realtimeUpdates}
-            setRealtimeUpdates={setRealtimeUpdates}
-            mockMode={mockMode}
-            setMockMode={setMockMode}
+            logLevelColors={state.logLevelColors}
+            setLogLevelColors={(colors) =>
+              dispatch({ type: "SET_LOG_LEVEL_COLORS", payload: colors })
+            }
+            retentionPolicy={state.retentionPolicy}
+            setRetentionPolicy={(policy) =>
+              dispatch({ type: "SET_RETENTION_POLICY", payload: policy })
+            }
+            alertRule={state.alertRule}
+            setAlertRule={(rule) =>
+              dispatch({ type: "SET_ALERT_RULE", payload: rule })
+            }
+            realtimeUpdates={state.realtimeUpdates}
+            setRealtimeUpdates={(value) =>
+              dispatch({ type: "SET_REALTIME_UPDATES", payload: value })
+            }
+            mockMode={state.mockMode}
+            setMockMode={(mode) =>
+              dispatch({ type: "SET_MOCK_MODE", payload: mode })
+            }
           />
         </TabsContent>
       </Tabs>

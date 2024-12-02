@@ -13,15 +13,16 @@ export function ViewToggle({ view, onViewChange }: ViewToggleProps) {
       type="single"
       value={view}
       onValueChange={(v) => onViewChange(v as "list" | "grid" | "detail")}
+      className="flex space-x-2"
     >
-      <ToggleGroupItem value="list" aria-label="List view">
-        <List className="h-4 w-4" />
+      <ToggleGroupItem value="list" aria-label="List view" className="w-10">
+        <List className="h-4 w-4 mx-auto" />
       </ToggleGroupItem>
-      <ToggleGroupItem value="grid" aria-label="Grid view">
-        <Grid className="h-4 w-4" />
+      <ToggleGroupItem value="grid" aria-label="Grid view" className="w-10">
+        <Grid className="h-4 w-4 mx-auto" />
       </ToggleGroupItem>
-      <ToggleGroupItem value="detail" aria-label="Detail view">
-        <LayoutGrid className="h-4 w-4" />
+      <ToggleGroupItem value="detail" aria-label="Detail view" className="w-10">
+        <LayoutGrid className="h-4 w-4 mx-auto" />
       </ToggleGroupItem>
     </ToggleGroup>
   );

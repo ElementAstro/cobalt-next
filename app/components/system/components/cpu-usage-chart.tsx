@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useMediaQuery } from "react-responsive";
 import {
   LineChart,
   Line,
@@ -17,6 +18,7 @@ interface CpuUsageChartProps {
 
 export function CpuUsageChart({ usage }: CpuUsageChartProps) {
   const [data, setData] = useState<{ time: string; usage: number }[]>([]);
+  const isMobile = useMediaQuery({ maxWidth: 767 });
 
   useEffect(() => {
     setData((oldData) => {
@@ -30,7 +32,7 @@ export function CpuUsageChart({ usage }: CpuUsageChartProps) {
   }, [usage]);
 
   return (
-    <ResponsiveContainer width="100%" height={200}>
+    <ResponsiveContainer width="100%" height={isMobile ? 150 : 200}>
       <LineChart data={data}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="time" />

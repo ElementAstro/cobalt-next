@@ -14,8 +14,10 @@ import {
   RefreshCcw,
   AlertCircle,
   X,
+  Locate,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectItem } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface WeatherInfoProps {
@@ -36,6 +38,13 @@ interface WeatherData {
   uvi: number;
   pressure: number;
   visibility: number;
+  forecast?: ForecastData[];
+}
+
+interface ForecastData {
+  date: string;
+  temperature: number;
+  description: string;
 }
 
 const DEFAULT_CITY = "London";
@@ -48,6 +57,10 @@ const DEFAULT_MOCK_DATA: WeatherData = {
   uvi: 5,
   pressure: 1013,
   visibility: 10000,
+  forecast: [
+    { date: "明天", temperature: 26, description: "多云" },
+    { date: "后天", temperature: 24, description: "小雨" },
+  ],
 };
 
 export const WeatherInfo: React.FC<WeatherInfoProps> = memo(
@@ -63,6 +76,7 @@ export const WeatherInfo: React.FC<WeatherInfoProps> = memo(
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+    const [selectedCity, setSelectedCity] = useState<string>(city);
 
     const fetchWeatherData = useCallback(async () => {
       if (isMock) {
@@ -75,12 +89,22 @@ export const WeatherInfo: React.FC<WeatherInfoProps> = memo(
       setError(null);
       try {
         const response = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=${units}`
+          `https://api.openweathermap.org/data/2.5/weather?q=${selectedCity}&appid=${apiKey}&units=${units}`
         );
         if (!response.ok) {
           throw new Error("无法获取天气数据，请检查城市名称或 API 密钥。");
         }
         const data = await response.json();
+        // 获取预报数据
+        const forecastResponse = await fetch(
+          `https://api.openweathermap.org/data/2.5/forecast?q=${selectedCity}&appid=${apiKey}&units=${units}`
+        );
+        const forecastData = await forecastResponse.json();
+        const forecastList = forecastData.list.slice(0, 2).map((item: any) => ({
+          date: item.dt_txt.split(" ")[0],
+          temperature: item.main.temp,
+          description: item.weather[0].description,
+        }));
         setWeatherData({
           temperature: data.main.temp,
           humidity: data.main.humidity,
@@ -90,6 +114,7 @@ export const WeatherInfo: React.FC<WeatherInfoProps> = memo(
           uvi: data.uvi || 0,
           pressure: data.main.pressure,
           visibility: data.visibility,
+          forecast: forecastList,
         });
         setLastUpdated(new Date());
       } catch (err: any) {
@@ -98,7 +123,7 @@ export const WeatherInfo: React.FC<WeatherInfoProps> = memo(
       } finally {
         setLoading(false);
       }
-    }, [city, units, apiKey, isMock, mockData]);
+    }, [selectedCity, units, apiKey, isMock, mockData]);
 
     useEffect(() => {
       fetchWeatherData();
@@ -108,15 +133,51 @@ export const WeatherInfo: React.FC<WeatherInfoProps> = memo(
       }
     }, [fetchWeatherData, isMock]);
 
+    const handleGeolocation = () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            // 根据经纬度获取城市名称
+            fetch(
+              `https://api.openweathermap.org/data/2.5/weather?lat=${position.coords.latitude}&lon=${position.coords.longitude}&appid=${apiKey}&units=${units}`
+            )
+              .then((res) => res.json())
+              .then((data) => {
+                setSelectedCity(data.name);
+              })
+              .catch((err) => {
+                console.error("定位获取失败:", err);
+                setError("无法获取当前位置天气。");
+              });
+          },
+          () => {
+            setError("无法获取您的位置信息。");
+          }
+        );
+      } else {
+        setError("浏览器不支持地理定位。");
+      }
+    };
+
     return (
       <Dialog open={true} onOpenChange={onClose}>
         <AnimatePresence>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle className="text-white">
-                城市天气信息: {city}
+              <DialogTitle className="text-white flex items-center space-x-2">
+                <Locate className="w-6 h-6" />
+                <span>城市天气信息: {selectedCity}</span>
               </DialogTitle>
               <div className="flex items-center space-x-2">
+                <Select
+                  value={selectedCity}
+                  onValueChange={(value) => setSelectedCity(value)}
+                >
+                  <SelectItem value="London">伦敦</SelectItem>
+                  <SelectItem value="Beijing">北京</SelectItem>
+                  <SelectItem value="New York">纽约</SelectItem>
+                  {/* 添加更多城市 */}
+                </Select>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -130,6 +191,23 @@ export const WeatherInfo: React.FC<WeatherInfoProps> = memo(
                     }`}
                   />
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleGeolocation}
+                  aria-label="获取当前位置天气"
+                >
+                  <Locate className="h-5 w-5 text-white" />
+                </Button>
+                <Select
+                  value={units}
+                  onValueChange={(value) => {
+                    fetchWeatherData();
+                  }}
+                >
+                  <SelectItem value="metric">公制</SelectItem>
+                  <SelectItem value="imperial">英制</SelectItem>
+                </Select>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -199,6 +277,21 @@ export const WeatherInfo: React.FC<WeatherInfoProps> = memo(
                 <div className="col-span-1 sm:col-span-2 flex items-center space-x-2">
                   <span>描述: {weatherData.description}</span>
                 </div>
+                {weatherData.forecast && (
+                  <div className="col-span-1 sm:col-span-2">
+                    <h3 className="text-lg">预报：</h3>
+                    {weatherData.forecast.map((forecast, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <span>{forecast.date}:</span>
+                        <span>
+                          {forecast.temperature}°
+                          {units === "metric" ? "C" : "F"} -{" "}
+                          {forecast.description}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {lastUpdated && (
                   <div className="col-span-1 sm:col-span-2 text-sm text-gray-400">
                     最后更新: {lastUpdated.toLocaleTimeString()}

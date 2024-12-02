@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useMediaQuery } from "react-responsive";
 
 interface DiskUsageChartProps {
   usage: number;
@@ -20,8 +21,10 @@ export function DiskUsageChart({ usage }: DiskUsageChartProps) {
     { name: "Free", value: 100 - usage },
   ];
 
+  const isMobile = useMediaQuery({ maxWidth: 767 });
+
   return (
-    <ResponsiveContainer width="100%" height={200}>
+    <ResponsiveContainer width="100%" height={isMobile ? 150 : 200}>
       <BarChart data={data}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="name" />

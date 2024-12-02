@@ -1,6 +1,15 @@
-import { use, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Telescope, Focus, Compass, Filter, Camera, Logs } from "lucide-react";
+import {
+  Telescope,
+  Focus,
+  Compass,
+  Filter,
+  Camera,
+  Logs,
+  Battery,
+  Wifi,
+} from "lucide-react";
 
 interface TopBarProps {
   onOpenOffcanvas: (device: string) => void;
@@ -8,6 +17,10 @@ interface TopBarProps {
 
 export function TopBar({ onOpenOffcanvas }: TopBarProps) {
   const [isShowDeviceName, setIsShowDeviceName] = useState(false);
+  const [time, setTime] = useState(new Date());
+  const [batteryLevel, setBatteryLevel] = useState<number | null>(null);
+  const [wifiStatus, setWifiStatus] = useState<boolean | null>(null);
+
   const devices = [
     { id: "camera", name: "Camera", icon: Camera },
     { id: "telescope", name: "Telescope", icon: Telescope },
@@ -16,6 +29,39 @@ export function TopBar({ onOpenOffcanvas }: TopBarProps) {
     { id: "guider", name: "Guider", icon: Compass },
     { id: "Logs", name: "Logs", icon: Logs },
   ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    // 获取电量信息
+    (navigator as any).getBattery?.().then((battery: any) => {
+      setBatteryLevel(Math.round(battery.level * 100));
+      battery.addEventListener("levelchange", () => {
+        setBatteryLevel(Math.round(battery.level * 100));
+      });
+    });
+
+    // 获取WiFi状态
+    const updateOnlineStatus = () => {
+      setWifiStatus(navigator.onLine);
+    };
+
+    window.addEventListener("online", updateOnlineStatus);
+    window.addEventListener("offline", updateOnlineStatus);
+
+    updateOnlineStatus();
+
+    return () => {
+      window.removeEventListener("online", updateOnlineStatus);
+      window.removeEventListener("offline", updateOnlineStatus);
+    };
+  }, []);
 
   return (
     <div className="h-14 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-4">
@@ -36,7 +82,22 @@ export function TopBar({ onOpenOffcanvas }: TopBarProps) {
         </svg>
         <span className="text-xl font-bold text-white">Cobalt</span>
       </div>
-      <div className="flex space-x-2">
+      <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-1 text-white">
+          <Battery className="w-5 h-5" />
+          <span>{batteryLevel !== null ? `${batteryLevel}%` : "N/A"}</span>
+        </div>
+        <div className="flex items-center space-x-1 text-white">
+          <Wifi className="w-5 h-5" />
+          <span>
+            {wifiStatus !== null
+              ? wifiStatus
+                ? "Connected"
+                : "Disconnected"
+              : "N/A"}
+          </span>
+        </div>
+        <div className="text-white">{time.toLocaleTimeString()}</div>
         {devices.map((device) => (
           <Button
             key={device.id}

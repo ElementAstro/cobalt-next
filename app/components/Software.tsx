@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { SearchBar } from "./search-bar";
-import { ViewToggle } from "./view-toggle";
-import { SoftwareFilters } from "./software-filters";
-import { SoftwareList } from "./software-list";
-import { PaginationComponent as Pagination } from "./pagination";
-import { SoftwareDetail } from "./software-detail";
+import React, { useState, useMemo } from "react";
+import { SearchBar } from "./software/search-bar";
+import { ViewToggle } from "./software/view-toggle";
+import { SoftwareFilters } from "./software/software-filters";
+import { SoftwareList } from "./software/software-list";
+import { PaginationComponent as Pagination } from "./software/pagination";
+import { SoftwareDetail } from "./software/software-detail";
 import type { Software, SortOption, FilterOption } from "@/types/software";
 
 const sortOptions: SortOption[] = [
@@ -75,6 +75,8 @@ const mockSoftware: Software[] = [
 
 const ITEMS_PER_PAGE = 10;
 
+const SoftwareListMemo = React.memo(SoftwareList);
+
 export default function SoftwareManagement() {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"list" | "grid" | "detail">("list");
@@ -141,7 +143,7 @@ export default function SoftwareManagement() {
         totalCount={filteredSoftware.length}
       />
 
-      <SoftwareList
+      <SoftwareListMemo
         software={paginatedSoftware}
         view={view}
         onViewDetail={handleViewDetail}

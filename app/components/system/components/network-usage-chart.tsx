@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useMediaQuery } from "react-responsive";
 import {
   AreaChart,
   Area,
@@ -24,6 +25,8 @@ export function NetworkUsageChart({
     { time: string; upload: number; download: number }[]
   >([]);
 
+  const isMobile = useMediaQuery({ maxWidth: 767 });
+
   useEffect(() => {
     setData((oldData) => {
       const newData = [
@@ -36,7 +39,7 @@ export function NetworkUsageChart({
   }, [upload, download]);
 
   return (
-    <ResponsiveContainer width="100%" height={200}>
+    <ResponsiveContainer width="100%" height={isMobile ? 150 : 200}>
       <AreaChart data={data}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="time" />

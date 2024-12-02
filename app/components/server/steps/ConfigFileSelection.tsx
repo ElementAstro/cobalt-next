@@ -1,32 +1,53 @@
-import { useState, useEffect } from 'react'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
-import { fetchConfigFiles } from '@/app/actions/serverActions'
+import { useState, useEffect } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { fetchConfigFiles } from "@/app/actions/serverActions";
 
-export function ConfigFileSelection({ setConfig, isMockMode, onCreateNew }) {
-  const [configFiles, setConfigFiles] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
+interface ConfigFile {
+  id: string;
+  name: string;
+}
+
+interface ConfigFileSelectionProps {
+  setConfig: (config: ConfigFile) => void;
+  isMockMode: boolean;
+  onCreateNew: () => void;
+}
+
+export function ConfigFileSelection({
+  setConfig,
+  isMockMode,
+  onCreateNew,
+}: ConfigFileSelectionProps) {
+  const [configFiles, setConfigFiles] = useState<ConfigFile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoading(true)
+    setIsLoading(true);
     fetchConfigFiles(isMockMode)
-      .then(files => {
-        setConfigFiles(files || [])
-        setIsLoading(false)
+      .then((files: ConfigFile[] | null) => {
+        setConfigFiles(files || []);
+        setIsLoading(false);
       })
-      .catch(error => {
-        console.error('Error fetching config files:', error)
-        setConfigFiles([])
-        setIsLoading(false)
-      })
-  }, [isMockMode])
+      .catch((error) => {
+        console.error("Error fetching config files:", error);
+        setConfigFiles([]);
+        setIsLoading(false);
+      });
+  }, [isMockMode]);
 
   if (isLoading) {
-    return <div>Loading configuration files...</div>
+    return <div>Loading configuration files...</div>;
   }
 
   return (
-    <div className="w-full max-w-xs sm:max-w-sm md:max-w-md mx-auto space-y-4">
+    <div className="w-full max-w-xs sm:max-w-sm md:max-w-md mx-auto space-y-4 p-4 sm:p-6 md:p-8">
       {configFiles.length > 0 ? (
         <Select onValueChange={(value) => setConfig(JSON.parse(value))}>
           <SelectTrigger className="w-full">
@@ -43,8 +64,9 @@ export function ConfigFileSelection({ setConfig, isMockMode, onCreateNew }) {
       ) : (
         <div>No configuration files found. Please create a new one.</div>
       )}
-      <Button onClick={onCreateNew} className="w-full">Create New Configuration</Button>
+      <Button onClick={onCreateNew} className="w-full">
+        Create New Configuration
+      </Button>
     </div>
-  )
+  );
 }
-
