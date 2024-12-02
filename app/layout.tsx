@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
 import { Toaster } from "react-hot-toast";
+
 import { ThemeProvider } from "next-themes";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -21,10 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark h-screen">
       <body className={`${inter.className} overflow-hidden h-screen`}>
-      <ThemeProvider>
-        {children}
-        <Toaster />
-      </ThemeProvider>
+        <ThemeProvider>
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
