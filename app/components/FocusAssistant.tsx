@@ -15,10 +15,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { ChartComponent } from "./autofocus/chart-component";
+import { ChartComponent } from "../../components/autofocus/ChartComponent";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChartLegend } from "./autofocus/chart-legend";
+import { ChartLegend } from "../../components/autofocus/ChartLegend";
 import { motion } from "framer-motion";
 
 const containerVariants = {

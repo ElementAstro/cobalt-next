@@ -1,17 +1,13 @@
-import "./globals.css";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Space_Grotesk } from "next/font/google";
+import "./globals.css";
 
-import { Toaster } from "react-hot-toast";
-
-import { ThemeProvider } from "next-themes";
-
-const inter = Inter({ subsets: ["latin"] });
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Astronomy Camera Interface",
+  title: "Cobalt Hub",
   description:
-    "An advanced astronomy camera interface with draggable device windows",
+    "Cobalt Hub is root layout for Cobalt, a modern web browser that is focused on privacy and security.",
 };
 
 export default function RootLayout({
@@ -20,12 +16,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark h-screen">
-      <body className={`${inter.className} overflow-hidden h-screen`}>
-        <ThemeProvider>
-          {children}
-          <Toaster />
-        </ThemeProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${spaceGrotesk.className} bg-black`}>
+        <div className="fixed inset-0 bg-cyber-grid bg-cyber-grid-size animate-matrix opacity-20 pointer-events-none z-0"></div>
+        {children}
       </body>
     </html>
   );

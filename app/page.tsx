@@ -1,394 +1,193 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
-import {
-  DndContext,
-  DragOverlay,
-  useSensor,
-  useSensors,
-  PointerSensor,
-} from "@dnd-kit/core";
-import { restrictToWindowEdges } from "@dnd-kit/modifiers";
+import { useState, useEffect } from "react";
+import Header from "@/components/home/Header";
+import SearchBar from "@/components/home/SearchBar";
+import QuickAccess from "@/components/home/QuickAccess";
+import CategoryFilter from "@/components/home/CategoryFilter";
+import SiteList from "@/components/home/SiteList";
+import { Site } from "@/types/home";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { motion, useAnimation } from "framer-motion";
+import { useInView } from "react-intersection-observer";
 
-import { motion, AnimatePresence } from "framer-motion";
+const defaultSites: Site[] = [
+  {
+    id: "1",
+    name: "GitHub",
+    url: "https://github.com",
+    icon: "github",
+    category: "Development",
+  },
+  {
+    id: "2",
+    name: "Dashboard",
+    url: "/dashboard",
+    icon: "google",
+    category: "Search",
+  },
+  // ...其他默认站点
+];
 
-import { toast, Toaster } from "react-hot-toast";
-
-import CameraViewfinder from "./components/CameraViewfinder";
-import ExposureControls from "./components/ExposureControls";
-import DeviceWindow from "./components/DeviceWindow";
-import ParameterAdjust from "./components/ParameterAdjust";
-import { TopBar } from "./components/TopBar";
-import { Offcanvas } from "./components/Offcanvas";
-import { Sidebar } from "./components/Sidebar";
-import FocusAssistant from "./components/FocusAssistant";
-import SequenceEditor from "./components/SequenceEditor";
-import LiveStacking from "./components/LiveStacking";
-import DeviceConnection from "./components/DeviceConnection";
-import PluginPage from "./components/Plugin";
-import StarSearch from "./components/StarSearch";
-import ToolPanel from "./components/ToolPanel";
-
-import CameraPage from "../components/device/camera/page";
-import FocuserPage from "../components/device/focuser/page";
-import FilterWheelPage from "../components/device/filter-wheel/page";
-import GuiderPage from "../components/device/guider/page";
-import TelescopePage from "../components/device/telescope/page";
-
-import Log from "./components/Log";
-
-import LandscapeDetector from "@/components/landscape-detection";
-import SplashScreen from "../components/loading/SplashScreen";
-
-export default function CameraInterface() {
-  type DeviceParams = {
-    focalLength?: number;
-    aperture?: number;
-    tracking?: boolean;
-    position?: number;
-    speed?: number;
-    rightAscension?: string;
-    declination?: string;
-    currentFilter?: string;
-    availableFilters?: string[];
-    [key: string]: any;
-  };
-
-  type Device = {
-    id: string;
-    name: string;
-    icon: string;
-    active: boolean;
-    params: DeviceParams;
-  };
-
-  const [devices, setDevices] = useState<Device[]>([
-    {
-      id: "device",
-      name: "Device Connection",
-      icon: "wifi",
-      active: false,
-      params: {},
-    },
-    {
-      id: "plugin",
-      name: "Plugin",
-      icon: "plug",
-      active: false,
-      params: {},
-    },
-    {
-      id: "starChart",
-      name: "Star Chart",
-      icon: "star",
-      active: false,
-      params: {},
-    },
-    {
-      id: "focusAssistant",
-      name: "Focus Assistant",
-      icon: "crosshair",
-      active: false,
-      params: {},
-    },
-    {
-      id: "polarAlignment",
-      name: "Polar Alignment",
-      icon: "target",
-      active: false,
-      params: {},
-    },
-    {
-      id: "sequenceEditor",
-      name: "Sequence Editor",
-      icon: "list",
-      active: false,
-      params: {},
-    },
-    {
-      id: "liveStacking",
-      name: "Live Stacking",
-      icon: "layers",
-      active: false,
-      params: {},
-    },
-  ]);
-
-  const [exposureSettings, setExposureSettings] = useState({
-    shutterSpeed: "1/125",
-    iso: "100",
-    aperture: "f/2.8",
-    focusPoint: "5000",
-    filterType: "Clear",
-    exposureTime: 10,
-    exposureMode: "Auto",
-    whiteBalance: "Daylight",
+export default function Home() {
+  const [sites, setSites] = useState<Site[]>(defaultSites);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [newSite, setNewSite] = useState<Site>({
+    id: "",
+    name: "",
+    url: "",
+    icon: "",
+    category: "",
   });
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [editingSite, setEditingSite] = useState<Site | null>(null);
+  const [quickAccessSites, setQuickAccessSites] = useState<Site[]>([]);
 
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [selectedParameter, setSelectedParameter] = useState<string | null>(
-    null
-  );
-  const [isShooting, setIsShooting] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [activeDevice, setActiveDevice] = useState<string | null>(null);
-  const captureIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [isPortrait, setIsPortrait] = useState(false);
-  const [offcanvasOpen, setOffcanvasOpen] = useState(false);
-  const [offcanvasDevice, setOffcanvasDevice] = useState<string | null>(null);
-  const [capturedImages, setCapturedImages] = useState<string[]>([]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    })
-  );
+  const controls = useAnimation();
+  const [ref, inView] = useInView();
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsPortrait(window.innerHeight > window.innerWidth);
-    };
-
-    handleResize();
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
+    const savedSites = localStorage.getItem("sites");
+    if (savedSites) {
+      setSites(JSON.parse(savedSites));
+    }
   }, []);
 
-  const toggleDevice = useCallback((id: string) => {
-    setDevices((devices) =>
-      devices.map((device) =>
-        device.id === id
-          ? { ...device, active: !device.active }
-          : { ...device, active: false }
-      )
-    );
-    setActiveDevice((prev) => (prev === id ? null : id));
-  }, []);
+  useEffect(() => {
+    localStorage.setItem("sites", JSON.stringify(sites));
+  }, [sites]);
 
-  const handleDragStart = useCallback(() => {
-    // 添加拖拽开始逻辑
-  }, []);
+  useEffect(() => {
+    if (inView) {
+      controls.start("visible");
+    }
+  }, [controls, inView]);
 
-  const handleDragEnd = useCallback(() => {
-    setActiveId(null);
-  }, []);
-
-  const handleParameterClick = useCallback((parameter: string) => {
-    setSelectedParameter((prevParam) =>
-      prevParam === parameter ? null : parameter
-    );
-  }, []);
-
-  const handleParameterChange = useCallback(
-    (parameter: string, value: string) => {
-      setExposureSettings((prev) => ({ ...prev, [parameter]: value }));
-    },
-    []
+  const filteredSites = sites.filter(
+    (site) =>
+      site.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      (activeCategory === "All" || site.category === activeCategory)
   );
 
-  const handleDeviceParamChange = useCallback(
-    (deviceId: string, param: string, value: any) => {
-      setDevices((devices) =>
-        devices.map((device) =>
-          device.id === deviceId
-            ? { ...device, params: { ...device.params, [param]: value } }
-            : device
-        )
-      );
-    },
-    []
-  );
+  const categories = [
+    "All",
+    ...Array.from(new Set(sites.map((site) => site.category))),
+  ];
 
-  const handleCapture = useCallback(
-    (
-      exposureTime: number,
-      burstMode: boolean,
-      exposureMode: string,
-      whiteBalance: string
-    ) => {
-      if (isShooting) {
-        // 切换暂停/恢复
-        setIsPaused((prev) => !prev);
-      } else {
-        // 开始新的捕捉
-        setIsShooting(true);
-        setIsPaused(false);
-        setProgress(0);
-        const captureCount = burstMode ? 3 : 1; // 假设连拍模式下捕捉3张
-        const totalTime = exposureTime * captureCount;
-        const toastId = toast.loading(
-          `正在捕捉${burstMode ? "连拍" : "图像"}，耗时 ${totalTime} 秒...`
-        );
-
-        const startTime = Date.now();
-        const updateProgress = () => {
-          const elapsedTime = Date.now() - startTime;
-          const newProgress = (elapsedTime / (totalTime * 1000)) * 100;
-          setProgress(Math.min(newProgress, 100));
-
-          if (newProgress < 100) {
-            captureIntervalRef.current = setTimeout(updateProgress, 100);
-          } else {
-            setIsShooting(false);
-            setProgress(0);
-            toast.success(`${burstMode ? "连拍" : "图像"}成功捕捉！`, {
-              id: toastId,
-            });
-            // 模拟添加捕捉的图像
-            setCapturedImages((prev) => [
-              ...prev,
-              ...Array(captureCount).fill(
-                `/placeholder.svg?height=300&width=300`
-              ),
-            ]);
-          }
-        };
-
-        updateProgress();
+  const addSite = (site: Site) => {
+    if (site.name && site.url) {
+      const newSiteWithId = { ...site, id: Date.now().toString() };
+      setSites([...sites, newSiteWithId]);
+      if (quickAccessSites.length < 5) {
+        setQuickAccessSites([...quickAccessSites, newSiteWithId]);
       }
-    },
-    [isShooting]
-  );
+      toast.success("Site added successfully!");
+    }
+  };
 
-  const handlePause = useCallback(() => {
-    setIsPaused((prev) => !prev);
-  }, []);
+  const updateSite = (updatedSite: Site) => {
+    setSites(
+      sites.map((site) => (site.id === updatedSite.id ? updatedSite : site))
+    );
+    setEditingSite(null);
+    toast.success("Site updated successfully!");
+  };
 
-  const handleOpenOffcanvas = useCallback((device: string) => {
-    setOffcanvasDevice(device);
-    setOffcanvasOpen(true);
-  }, []);
+  const removeSite = (siteToRemove: Site) => {
+    setSites(sites.filter((site) => site.id !== siteToRemove.id));
+    setQuickAccessSites(
+      quickAccessSites.filter((site) => site.id !== siteToRemove.id)
+    );
+    toast.info("Site removed");
+  };
 
-  const handleCloseOffcanvas = useCallback(() => {
-    setOffcanvasOpen(false);
-    setOffcanvasDevice(null);
-  }, []);
+  const toggleQuickAccess = (site: Site) => {
+    if (quickAccessSites.some((s) => s.id === site.id)) {
+      setQuickAccessSites(quickAccessSites.filter((s) => s.id !== site.id));
+    } else if (quickAccessSites.length < 5) {
+      setQuickAccessSites([...quickAccessSites, site]);
+    } else {
+      toast.error("You can only have up to 5 quick access sites");
+    }
+  };
 
-  const renderOffcanvasContent = () => {
-    switch (offcanvasDevice) {
-      case "telescope":
-        return <TelescopePage />;
-      case "focuser":
-        return <FocuserPage />;
-      case "filterWheel":
-        return <FilterWheelPage />;
-      case "guider":
-        return <GuiderPage />;
-      case "camera":
-        return <CameraPage />;
-      case "Logs":
-        return <Log />;
-      default:
-        return null;
+  const onDragEnd = (result: any) => {
+    if (!result.destination) return;
+
+    const reorderedSites = Array.from(sites);
+    const [movedSite] = reorderedSites.splice(result.source.index, 1);
+    reorderedSites.splice(result.destination.index, 0, movedSite);
+
+    setSites(reorderedSites);
+  };
+
+  const exportData = () => {
+    const dataStr = JSON.stringify(sites);
+    const dataUri =
+      "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
+    const exportFileDefaultName = "my_navigation_hub_data.json";
+
+    const linkElement = document.createElement("a");
+    linkElement.setAttribute("href", dataUri);
+    linkElement.setAttribute("download", exportFileDefaultName);
+    linkElement.click();
+    toast.success("Data exported successfully!");
+  };
+
+  const importData = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result;
+        if (typeof content === "string") {
+          try {
+            const importedSites = JSON.parse(content);
+            setSites(importedSites);
+            toast.success("Data imported successfully!");
+          } catch (error) {
+            console.error("Error parsing imported data:", error);
+            toast.error("Error importing data. Please check the file format.");
+          }
+        }
+      };
+      reader.readAsText(file);
     }
   };
 
   return (
-    <LandscapeDetector
-      aspectRatioThreshold={4 / 3}
-      enableSound={true}
-      persistPreference={true}
-      forceFullscreen={true}
+    <motion.main
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="min-h-screen bg-gradient-to-br from-indigo-900 to-purple-900 dark:from-gray-900 dark:to-black p-4 sm:p-8 transition-colors duration-300"
+      ref={ref}
     >
-      <SplashScreen />
-      <DndContext
-        sensors={sensors}
-        modifiers={[restrictToWindowEdges]}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="flex flex-col h-screen bg-gray-900 text-white overflow-hidden">
-          <TopBar onOpenOffcanvas={handleOpenOffcanvas} />
-          <div className="flex flex-1 overflow-hidden">
-            <Sidebar devices={devices} onToggle={toggleDevice} />
-            <div className="flex-1 relative overflow-hidden">
-              {!activeDevice && <CameraViewfinder isShooting={isShooting} />}
-              <AnimatePresence>
-                {activeDevice && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    {activeDevice === "device" && <DeviceConnection />}
-                    {activeDevice === "plugin" && <PluginPage />}
-                    {activeDevice === "starChart" && <StarSearch />}
-                    {activeDevice === "focusAssistant" && (
-                      <FocusAssistant onClose={() => setActiveDevice(null)} />
-                    )}
-                    {activeDevice === "sequenceEditor" && (
-                      <SequenceEditor onClose={() => setActiveDevice(null)} />
-                    )}
-                    {activeDevice === "liveStacking" && (
-                      <ToolPanel/>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <AnimatePresence>
-                {selectedParameter && (
-                  <ParameterAdjust
-                    parameter={selectedParameter}
-                    value={String(
-                      exposureSettings[
-                        selectedParameter as keyof typeof exposureSettings
-                      ]
-                    )}
-                    onChange={(value) =>
-                      handleParameterChange(selectedParameter, value)
-                    }
-                    onClose={() => setSelectedParameter(null)}
-                  />
-                )}
-              </AnimatePresence>
-            </div>
-            <motion.div
-              className="w-20 border-l border-gray-700"
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <ExposureControls
-                settings={exposureSettings}
-                onParameterClick={handleParameterClick}
-                onCapture={handleCapture}
-                onPause={handlePause}
-                isShooting={isShooting}
-                isPaused={isPaused}
-                progress={progress}
-              />
-            </motion.div>
-          </div>
-        </div>
-        <DragOverlay>
-          {activeId ? (
-            <DeviceWindow
-              device={devices.find((d) => d.id === activeId)!}
-              onParamChange={handleDeviceParamChange}
-              onClose={() => {}}
-            />
-          ) : null}
-        </DragOverlay>
-        <Offcanvas
-          isOpen={offcanvasOpen}
-          onClose={handleCloseOffcanvas}
-          title={
-            offcanvasDevice
-              ? devices.find((d) => d.id === offcanvasDevice)?.name || ""
-              : ""
-          }
-        >
-          {offcanvasDevice && renderOffcanvasContent()}
-        </Offcanvas>
-        <Toaster />
-      </DndContext>
-    </LandscapeDetector>
+      <div className="max-w-6xl mx-auto space-y-8">
+        <Header exportData={exportData} importData={importData} />
+        <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+        <QuickAccess quickAccessSites={quickAccessSites} />
+        <CategoryFilter
+          categories={categories}
+          activeCategory={activeCategory}
+          setActiveCategory={setActiveCategory}
+        />
+        <SiteList
+          sites={filteredSites}
+          onDragEnd={onDragEnd}
+          removeSite={removeSite}
+          toggleQuickAccess={toggleQuickAccess}
+          setEditingSite={setEditingSite}
+          controls={controls}
+        />
+        {/* 预览和其他对话框组件可在此添加 */}
+      </div>
+      <ToastContainer
+        position="bottom-right"
+        toastClassName="bg-indigo-800 text-white"
+      />
+    </motion.main>
   );
 }

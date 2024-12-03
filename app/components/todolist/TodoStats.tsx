@@ -1,4 +1,4 @@
-import { Todo } from ".";
+import { Todo } from "../TodoList";
 
 interface TodoStatsProps {
   todos: Todo[];

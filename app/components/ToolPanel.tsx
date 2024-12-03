@@ -4,17 +4,7 @@ import { useState, useMemo } from "react";
 import { DndContext, DragEndEvent } from "@dnd-kit/core";
 import { CategorySection } from "@/components/toolpanel/CategorySection";
 import { ToolDetail } from "@/components/toolpanel/ToolDetail";
-import {
-  Image,
-  FileText,
-  BarChart,
-  PieChart,
-  LineChart,
-  Wand2,
-  SendHorizonal,
-  Webhook,
-  Cloud
-} from "lucide-react";
+import { Image, Wand2, SendHorizonal, Webhook, Cloud } from "lucide-react";
 import { Tool } from "@/types/toolpanel";
 import SearchBar from "@/components/toolpanel/SearchBar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -23,9 +13,12 @@ import { motion } from "framer-motion";
 
 import ClientInfo from "./ClientInfo";
 import AllINDIPanel from "./INDIPanel";
+import HttpTester from "./HttpClient";
 import OnlineStorage from "./OnlineStorage";
 import SerialMonitor from "./SerialMonitor";
+import SoftwareManagement from "./Software";
 import WeatherInfo from "./WeatherInfo";
+import TodoList from "./TodoList";
 
 function arrayMove<T>(array: T[], from: number, to: number): T[] {
   const newArray = array.slice();
@@ -50,35 +43,57 @@ const initialTools: Tool[] = [
   },
   {
     id: "2",
-    name: "文本分析",
-    description: "分析和处理文本数据",
-    icon: FileText,
+    name: "软件管理",
+    description: "管理本地软件",
+    icon: Wand2,
     usageCount: 0,
-    category: "数据",
+    category: "系统",
+    CustomComponent: SoftwareManagement,
   },
   {
     id: "3",
-    name: "柱状图",
-    description: "创建交互式柱状图",
-    icon: BarChart,
+    name: "待办事项",
+    description: "管理待办事项",
+    icon: Wand2,
     usageCount: 0,
-    category: "可视化",
+    category: "基础",
+    CustomComponent: TodoList,
   },
   {
     id: "4",
-    name: "饼图",
-    description: "创建交互式饼图",
-    icon: PieChart,
+    name: "HTTP 测试",
+    description: "测试 HTTP 请求",
+    icon: Webhook,
     usageCount: 0,
-    category: "可视化",
+    category: "客户端",
+    CustomComponent: HttpTester,
   },
   {
-    id: "5",
-    name: "折线图",
-    description: "创建交互式折线图",
-    icon: LineChart,
+    id: "6",
+    name: "存储管理",
+    description: "管理本地存储",
+    icon: Wand2,
     usageCount: 0,
-    category: "可视化",
+    category: "基础",
+    CustomComponent: OnlineStorage,
+  },
+  {
+    id: "7",
+    name: "天气信息",
+    description: "获取天气信息",
+    icon: Webhook,
+    usageCount: 0,
+    category: "数据",
+    CustomComponent: (props) => <WeatherInfo {...props} onClose={() => {}} />,
+  },
+  {
+    id: "8",
+    name: "INDI 面板",
+    description: "INDI 设备控制面板",
+    icon: Cloud,
+    usageCount: 0,
+    category: "客户端",
+    CustomComponent: AllINDIPanel,
   },
   {
     id: "6",

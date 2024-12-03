@@ -5,13 +5,13 @@ import { toast, Toaster } from "react-hot-toast";
 import { Buffer } from "buffer";
 import { motion } from "framer-motion";
 
-import TitleBar from "./serial/TitleBar";
-import ConsoleArea from "./serial/ConsoleArea";
-import ControlButtons from "./serial/ControlButtons";
-import CommandInput from "./serial/CommandInput";
-import CustomCommands from "./serial/CustomCommands";
-import ConfigurationPanel from "./serial/ConfigurationPanel";
-import StatusBar from "./serial/StatusBar";
+import TitleBar from "../../components/serial/TitleBar";
+import ConsoleArea from "../../components/serial/ConsoleArea";
+import ControlButtons from "../../components/serial/ControlButtons";
+import CommandInput from "../../components/serial/CommandInput";
+import CustomCommands from "../../components/serial/CustomCommands";
+import ConfigurationPanel from "../../components/serial/ConfigurationPanel";
+import StatusBar from "../../components/serial/StatusBar";
 
 import { MockSerialService } from "@/services/mock-serial";
 import { RealSerialService } from "@/services/real-serial";

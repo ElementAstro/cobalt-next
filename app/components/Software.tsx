@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { SearchBar } from "./software/search-bar";
-import { ViewToggle } from "./software/view-toggle";
-import { SoftwareFilters } from "./software/software-filters";
-import { SoftwareList } from "./software/software-list";
-import { PaginationComponent as Pagination } from "./software/pagination";
-import { SoftwareDetail } from "./software/software-detail";
+import { SearchBar } from "../../components/software/search-bar";
+import { ViewToggle } from "../../components/software/view-toggle";
+import { SoftwareFilters } from "../../components/software/software-filters";
+import { SoftwareList } from "../../components/software/software-list";
+import { PaginationComponent as Pagination } from "../../components/software/pagination";
+import { SoftwareDetail } from "../../components/software/software-detail";
+import { motion, AnimatePresence } from "framer-motion";
 import type { Software, SortOption, FilterOption } from "@/types/software";
 
 const sortOptions: SortOption[] = [
@@ -125,7 +126,7 @@ export default function SoftwareManagement() {
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
+    <div className="container mx-auto p-4 space-y-6 dark:bg-gray-900 dark:text-white">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex-1 max-w-md">
           <SearchBar value={search} onChange={setSearch} />
@@ -143,11 +144,21 @@ export default function SoftwareManagement() {
         totalCount={filteredSoftware.length}
       />
 
-      <SoftwareListMemo
-        software={paginatedSoftware}
-        view={view}
-        onViewDetail={handleViewDetail}
-      />
+      <AnimatePresence>
+        <motion.div
+          key={view}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.3 }}
+        >
+          <SoftwareListMemo
+            software={paginatedSoftware}
+            view={view}
+            onViewDetail={handleViewDetail}
+          />
+        </motion.div>
+      </AnimatePresence>
 
       <Pagination
         currentPage={currentPage}
@@ -155,10 +166,22 @@ export default function SoftwareManagement() {
         onPageChange={handlePageChange}
       />
 
-      <SoftwareDetail
-        software={selectedSoftware}
-        onClose={() => setSelectedSoftware(null)}
-      />
+      <AnimatePresence>
+        {selectedSoftware && (
+          <motion.div
+            key={selectedSoftware.id}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.3 }}
+          >
+            <SoftwareDetail
+              software={selectedSoftware}
+              onClose={() => setSelectedSoftware(null)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Editor from "@monaco-editor/react";
+import { motion } from "framer-motion";
 
 interface FileItem {
   name: string;
@@ -23,7 +24,7 @@ interface FilePreviewProps {
     operation: string,
     file: FileItem,
     content?: string
-  ) => void;
+  ) => Promise<void>;
 }
 
 export function FilePreview({ file, path, onFileOperation }: FilePreviewProps) {
@@ -35,7 +36,7 @@ export function FilePreview({ file, path, onFileOperation }: FilePreviewProps) {
   useEffect(() => {
     fetchFileContent();
     fetchVersions();
-  }, [file]);
+  }, [file, selectedVersion]);
 
   const fetchFileContent = async () => {
     try {
@@ -91,7 +92,13 @@ export function FilePreview({ file, path, onFileOperation }: FilePreviewProps) {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.3 }}
+      className="h-full flex flex-col p-4 bg-gray-900 text-white rounded-lg shadow-lg"
+    >
       <h2 className="text-xl font-semibold mb-2">{file.name}</h2>
       <div className="mb-2 flex justify-between items-center">
         <Select value={selectedVersion} onValueChange={setSelectedVersion}>
@@ -123,7 +130,7 @@ export function FilePreview({ file, path, onFileOperation }: FilePreviewProps) {
       </div>
       <Editor
         height="70vh"
-        defaultLanguage="javascript"
+        defaultLanguage={getLanguage()}
         value={content}
         onChange={(value) => setContent(value || "")}
         options={{
@@ -132,8 +139,9 @@ export function FilePreview({ file, path, onFileOperation }: FilePreviewProps) {
           fontSize: 14,
           wordWrap: "on",
           automaticLayout: true,
+          theme: "vs-dark",
         }}
       />
-    </div>
+    </motion.div>
   );
 }

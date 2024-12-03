@@ -48,13 +48,13 @@ export const PropertyControl: React.FC<PropertyControlProps> = ({
     try {
       await onChange(deviceName, property.name, value);
       toast({
-        title: "Property Updated",
-        description: `${property.label} has been updated to ${value}`,
+        title: "属性已更新",
+        description: `${property.label} 已更新为 ${value}`,
       });
     } catch (error) {
       toast({
-        title: "Update Failed",
-        description: `Failed to update ${property.label}`,
+        title: "更新失败",
+        description: `更新 ${property.label} 失败`,
         variant: "destructive",
       });
     } finally {
@@ -66,13 +66,13 @@ export const PropertyControl: React.FC<PropertyControlProps> = ({
     try {
       await onRefresh(deviceName, property.name);
       toast({
-        title: "Property Refreshed",
-        description: `${property.label} has been refreshed`,
+        title: "属性已刷新",
+        description: `${property.label} 已刷新`,
       });
     } catch (error) {
       toast({
-        title: "Refresh Failed",
-        description: `Failed to refresh ${property.label}`,
+        title: "刷新失败",
+        description: `刷新 ${property.label} 失败`,
         variant: "destructive",
       });
     }
@@ -87,11 +87,12 @@ export const PropertyControl: React.FC<PropertyControlProps> = ({
             onChange={(e) => setLocalValue(e.target.value)}
             onBlur={() => handleChange(localValue as string)}
             disabled={isChanging || property.perm === "ro"}
+            className="text-sm"
           />
         );
       case "number":
         return (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Input
               type="number"
               value={localValue as number}
@@ -101,6 +102,7 @@ export const PropertyControl: React.FC<PropertyControlProps> = ({
               max={property.max}
               step={property.step}
               disabled={isChanging || property.perm === "ro"}
+              className="text-sm w-20"
             />
             <Slider
               value={[localValue as number]}
@@ -109,7 +111,7 @@ export const PropertyControl: React.FC<PropertyControlProps> = ({
               min={property.min}
               max={property.max}
               step={property.step}
-              className="w-[100px]"
+              className="w-24"
               disabled={isChanging || property.perm === "ro"}
             />
           </div>
@@ -131,8 +133,9 @@ export const PropertyControl: React.FC<PropertyControlProps> = ({
           <Button
             onClick={() => handleChange("blob")}
             disabled={isChanging || property.perm === "ro"}
+            className="text-sm"
           >
-            Upload
+            上传
           </Button>
         );
       default:
@@ -142,14 +145,14 @@ export const PropertyControl: React.FC<PropertyControlProps> = ({
 
   return (
     <motion.div
-      className="flex items-center gap-4 p-2 rounded-lg hover:bg-gray-100"
+      className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100"
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
       <PropertyStateIcon state={property.state} />
-      <div className="grid gap-1.5 flex-1">
-        <Label htmlFor={`${deviceName}-${property.name}`}>
+      <div className="grid gap-1 flex-1">
+        <Label htmlFor={`${deviceName}-${property.name}`} className="text-sm">
           {property.label}
         </Label>
         {renderControl()}
@@ -157,7 +160,7 @@ export const PropertyControl: React.FC<PropertyControlProps> = ({
       {isChanging ? (
         <Loader2 className="w-4 h-4 animate-spin" />
       ) : (
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           <Button variant="ghost" size="icon" onClick={handleRefresh}>
             <RefreshCw className="w-4 h-4" />
           </Button>
@@ -170,15 +173,15 @@ export const PropertyControl: React.FC<PropertyControlProps> = ({
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                  <DialogTitle>{property.label} History</DialogTitle>
+                  <DialogTitle>{property.label} 历史记录</DialogTitle>
                 </DialogHeader>
-                <div className="py-4">
+                <div className="py-2">
                   <LineChart
                     data={property.history.map((h) => ({
                       x: h.timestamp,
                       y: h.value as number,
                     }))}
-                    xLabel="Time"
+                    xLabel="时间"
                     yLabel={property.label}
                   />
                 </div>
