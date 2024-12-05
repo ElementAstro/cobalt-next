@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TodoItem } from "./todolist/TodoItem";
-import { AddTodoForm } from "./todolist/AddTodoForm";
-import { TodoFilter } from "./todolist/TodoFilter";
-import { TodoStats } from "./todolist/TodoStats";
-import { TodoSort } from "./todolist/TodoSort";
-import { ThemeToggle } from "./todolist/ThemeToggle";
+import { TodoItem } from "@/components/todolist/TodoItem";
+import { AddTodoForm } from "@/components/todolist/AddTodoForm";
+import { TodoFilter } from "@/components/todolist/TodoFilter";
+import { TodoStats } from "@/components/todolist/TodoStats";
+import { TodoSort } from "@/components/todolist/TodoSort";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,6 +22,7 @@ export interface Todo {
   moonPhase?: string;
   celestialObjectRiseTime?: string;
   celestialObjectSetTime?: string;
+  celestialObject?: string; // 新增字段
 }
 
 export default function TodoList() {
@@ -31,8 +31,13 @@ export default function TodoList() {
     category: "all",
     priority: "all",
     completed: "all",
+    dueDateStart: "",
+    dueDateEnd: "",
+    celestialObject: "all", // 新增过滤条件
   });
-  const [sort, setSort] = useState<"priority" | "dueDate">("priority");
+  const [sort, setSort] = useState<"priority" | "dueDate" | "celestialObject">(
+    "priority"
+  );
   const [search, setSearch] = useState("");
   const [selectedTodos, setSelectedTodos] = useState<number[]>([]);
   const [isBatchActions, setIsBatchActions] = useState(false);
@@ -94,6 +99,8 @@ export default function TodoList() {
         (filter.completed === "all" ||
           (filter.completed === "completed" && todo.completed) ||
           (filter.completed === "active" && !todo.completed)) &&
+        (filter.celestialObject === "all" ||
+          todo.celestialObject === filter.celestialObject) && // 新增过滤逻辑
         todo.text.toLowerCase().includes(search.toLowerCase())
     )
     .sort((a, b) => {
@@ -106,17 +113,13 @@ export default function TodoList() {
     });
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 py-6 flex flex-col items-center px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 flex flex-col items-center">
       <motion.div
-        className="w-full max-w-2xl bg-white dark:bg-gray-800 shadow-lg rounded-3xl p-6"
+        className="w-full max-w-2xl bg-white dark:bg-gray-800 shadow-lg rounded-3xl"
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Astronomy TODO List</h1>
-          <ThemeToggle />
-        </div>
         <AddTodoForm onAdd={addTodo} />
         <div className="mt-6 flex flex-col md:flex-row md:justify-between md:items-center space-y-4 md:space-y-0">
           <Input

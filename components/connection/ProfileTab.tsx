@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import styled from "styled-components";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,60 +20,11 @@ import {
 } from "@/components/ui/tooltip";
 import { Search } from "lucide-react";
 import { useApiService } from "@/services/api";
+import { motion } from "framer-motion";
 
 interface ProfileTabProps {
   toast: (props: { title: string; description: string }) => void;
 }
-
-const Container = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-height: calc(100vh - 4rem);
-  overflow-y: auto;
-  padding: 1rem;
-
-  @media (orientation: landscape) and (max-width: 768px) {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-`;
-
-const Row = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-
-  @media (min-width: 768px) {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-  }
-`;
-
-const Grid = styled.div`
-  display: grid;
-  gap: 1rem;
-
-  @media (min-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @media (orientation: landscape) and (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const FlexItem = styled.div`
-  flex: 1;
-  width: 100%;
-`;
-
-const FlexCenter = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-`;
 
 interface Profile {
   name: string;
@@ -88,7 +38,7 @@ interface Profile {
 
 export function ProfileTab({ toast }: ProfileTabProps) {
   const { fetchProfileData, updateProfileData } = useApiService();
-  const [profile, setProfile] = useState({
+  const [profile, setProfile] = useState<Profile>({
     name: "",
     autoConnect: false,
     mode: "remote",
@@ -133,29 +83,44 @@ export function ProfileTab({ toast }: ProfileTabProps) {
   };
 
   return (
-    <Container>
-      <Row>
-        <FlexItem>
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md max-h-[calc(100vh-4rem)] overflow-y-auto"
+    >
+      <motion.div
+        initial={{ opacity: 0, x: -50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.1 }}
+        className="flex flex-col md:flex-row md:justify-between md:items-center gap-4"
+      >
+        <div className="flex-1">
           <Label htmlFor="name">Profile Name</Label>
           <Input
             id="name"
             value={profile.name}
             onChange={(e) => handleChange("name", e.target.value)}
-            className="mt-1"
+            className="mt-1 dark:bg-gray-700 dark:text-gray-200"
           />
           {errors.name && <span className="text-red-500">{errors.name}</span>}
-        </FlexItem>
-        <FlexCenter>
+        </div>
+        <div className="flex items-center gap-2">
           <Switch
             id="autoConnect"
             checked={profile.autoConnect}
             onCheckedChange={(checked) => handleChange("autoConnect", checked)}
           />
           <Label htmlFor="autoConnect">Auto Connect</Label>
-        </FlexCenter>
-      </Row>
+        </div>
+      </motion.div>
 
-      <Grid>
+      <motion.div
+        initial={{ opacity: 0, x: -50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.2 }}
+        className="grid md:grid-cols-2 gap-4"
+      >
         <div>
           <Label>Connection Mode</Label>
           <RadioGroup
@@ -163,14 +128,14 @@ export function ProfileTab({ toast }: ProfileTabProps) {
             onValueChange={(value) => handleChange("mode", value)}
             className="flex gap-4 mt-1"
           >
-            <FlexCenter>
+            <div className="flex items-center gap-2">
               <RadioGroupItem value="local" id="local" />
               <Label htmlFor="local">Local</Label>
-            </FlexCenter>
-            <FlexCenter>
+            </div>
+            <div className="flex items-center gap-2">
               <RadioGroupItem value="remote" id="remote" />
               <Label htmlFor="remote">Remote</Label>
-            </FlexCenter>
+            </div>
           </RadioGroup>
         </div>
         <div>
@@ -179,7 +144,7 @@ export function ProfileTab({ toast }: ProfileTabProps) {
             value={profile.guiding}
             onValueChange={(value) => handleChange("guiding", value)}
           >
-            <SelectTrigger className="mt-1">
+            <SelectTrigger className="mt-1 dark:bg-gray-700 dark:text-gray-200">
               <SelectValue placeholder="Select guiding" />
             </SelectTrigger>
             <SelectContent>
@@ -188,16 +153,21 @@ export function ProfileTab({ toast }: ProfileTabProps) {
             </SelectContent>
           </Select>
         </div>
-      </Grid>
+      </motion.div>
 
-      <Grid>
+      <motion.div
+        initial={{ opacity: 0, x: -50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.3 }}
+        className="grid md:grid-cols-2 gap-4"
+      >
         <div>
           <Label htmlFor="host">Host</Label>
           <Input
             id="host"
             value={profile.host}
             onChange={(e) => handleChange("host", e.target.value)}
-            className="mt-1"
+            className="mt-1 dark:bg-gray-700 dark:text-gray-200"
           />
         </div>
         <div>
@@ -206,17 +176,22 @@ export function ProfileTab({ toast }: ProfileTabProps) {
             id="port"
             value={profile.port}
             onChange={(e) => handleChange("port", e.target.value)}
-            className="mt-1"
+            className="mt-1 dark:bg-gray-700 dark:text-gray-200"
           />
           {errors.port && <span className="text-red-500">{errors.port}</span>}
         </div>
-      </Grid>
+      </motion.div>
 
-      <Row>
+      <motion.div
+        initial={{ opacity: 0, x: -50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.4 }}
+        className="flex flex-col md:flex-row md:justify-between md:items-center gap-4"
+      >
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <FlexCenter>
+              <div className="flex items-center gap-2">
                 <Checkbox
                   id="indiWebManager"
                   checked={profile.indiWebManager}
@@ -225,7 +200,7 @@ export function ProfileTab({ toast }: ProfileTabProps) {
                   }
                 />
                 <Label htmlFor="indiWebManager">INDI Web Manager</Label>
-              </FlexCenter>
+              </div>
             </TooltipTrigger>
             <TooltipContent>
               <p>Enable INDI Web Manager for advanced device control</p>
@@ -241,11 +216,12 @@ export function ProfileTab({ toast }: ProfileTabProps) {
               description: "This may take a few moments.",
             })
           }
+          className="flex items-center"
         >
           <Search className="w-4 h-4 mr-2" />
           Scan Network
         </Button>
-      </Row>
-    </Container>
+      </motion.div>
+    </motion.div>
   );
 }

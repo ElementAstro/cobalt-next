@@ -9,6 +9,7 @@ import {
   Logs,
   Battery,
   Wifi,
+  Settings,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -44,6 +45,7 @@ export function TopBar({ onOpenOffcanvas }: TopBarProps) {
     { id: "filterWheel", name: "Filter Wheel", icon: Filter },
     { id: "guider", name: "Guider", icon: Compass },
     { id: "Logs", name: "Logs", icon: Logs },
+    { id: "Settings", name: "Settings", icon: Settings },
   ];
 
   useEffect(() => {

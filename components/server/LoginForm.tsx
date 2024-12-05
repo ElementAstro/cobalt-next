@@ -58,7 +58,7 @@ export function LoginForm({ form, showPassword, togglePasswordVisibility }: Logi
         />
       </div>
       <p className="text-sm text-muted-foreground">
-        Insert Username and Password as set in Voyager before connection
+        Insert Username and Password as set in Lithium before connection
       </p>
     </div>
   )

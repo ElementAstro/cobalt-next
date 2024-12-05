@@ -6,11 +6,14 @@ import SearchBar from "@/components/home/SearchBar";
 import QuickAccess from "@/components/home/QuickAccess";
 import CategoryFilter from "@/components/home/CategoryFilter";
 import SiteList from "@/components/home/SiteList";
+import PreviewModal from "@/components/home/PreviewModal";
 import { Site } from "@/types/home";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { motion, useAnimation } from "framer-motion";
 import { useInView } from "react-intersection-observer";
+import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog"; // 确保引入 Dialog 组件
+import AddEditSiteDialog from "@/components/home/AddEditSiteDialog";
 
 const defaultSites: Site[] = [
   {
@@ -44,6 +47,21 @@ export default function Home() {
   const [previewUrl, setPreviewUrl] = useState("");
   const [editingSite, setEditingSite] = useState<Site | null>(null);
   const [quickAccessSites, setQuickAccessSites] = useState<Site[]>([]);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [selectedSite, setSelectedSite] = useState<Site | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const openDialog = () => setIsDialogOpen(true);
+  const closeDialog = () => setIsDialogOpen(false);
+
+  const handleAddNewSite = () => {
+    setEditingSite(null);
+    openDialog();
+  };
+
+  const handleEditSite = () => {
+    openDialog();
+  };
 
   const controls = useAnimation();
   const [ref, inView] = useInView();
@@ -157,6 +175,16 @@ export default function Home() {
     }
   };
 
+  const openPreview = (site: Site) => {
+    setSelectedSite(site);
+    setIsPreviewOpen(true);
+  };
+
+  const closePreview = () => {
+    setIsPreviewOpen(false);
+    setSelectedSite(null);
+  };
+
   return (
     <motion.main
       initial={{ opacity: 0 }}
@@ -166,7 +194,11 @@ export default function Home() {
       ref={ref}
     >
       <div className="max-w-6xl mx-auto space-y-8">
-        <Header exportData={exportData} importData={importData} />
+        <Header 
+          exportData={exportData} 
+          importData={importData} 
+          onAddNewSite={handleAddNewSite} // 添加此行
+        />
         <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
         <QuickAccess quickAccessSites={quickAccessSites} />
         <CategoryFilter
@@ -179,10 +211,29 @@ export default function Home() {
           onDragEnd={onDragEnd}
           removeSite={removeSite}
           toggleQuickAccess={toggleQuickAccess}
-          setEditingSite={setEditingSite}
+          setEditingSite={(site) => {
+            setEditingSite(site);
+            handleEditSite();
+          }}
           controls={controls}
+          onPreview={openPreview}
         />
         {/* 预览和其他对话框组件可在此添加 */}
+        <PreviewModal
+          isOpen={isPreviewOpen}
+          onClose={closePreview}
+          site={selectedSite}
+        />
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent>
+            <AddEditSiteDialog
+              addSite={addSite}
+              editingSite={editingSite}
+              updateSite={updateSite}
+              setEditingSite={setEditingSite}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
       <ToastContainer
         position="bottom-right"

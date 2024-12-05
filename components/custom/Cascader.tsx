@@ -1,85 +1,98 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { CascaderProps, CascaderOption } from './Cascader.ts'
-import CascaderMenu from './CascaderMenu'
-import { useClickOutside } from '@/hooks/use-click-outside'
-import { ChevronDown, X, Search } from 'lucide-react'
-import { AnimatePresence, motion } from 'framer-motion'
+import React, { useState, useRef, useEffect } from "react";
+import { CascaderProps, CascaderOption } from "@/types/custom/cascader";
+import CascaderMenu from "./CascaderMenu";
+import { useClickOutside } from "../../hooks/use-click-outside";
+import { ChevronDown, X, Search } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 
 const Cascader: React.FC<CascaderProps> = ({
   options,
-  placeholder = '请选择',
+  placeholder = "请选择",
   multiple = false,
   clearable = false,
   disabled = false,
   showPath = true,
-  separator = ' / ',
-  expandTrigger = 'click',
+  separator = " / ",
+  expandTrigger = "click",
   filterable = false,
   onChange,
   ...props
 }) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [selectedOptions, setSelectedOptions] = useState<CascaderOption[]>([])
-  const [searchValue, setSearchValue] = useState('')
-  const containerRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedOptions, setSelectedOptions] = useState<CascaderOption[]>([]);
+  const [searchValue, setSearchValue] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  useClickOutside(containerRef, () => setIsOpen(false))
+  useClickOutside(containerRef, () => setIsOpen(false));
 
   useEffect(() => {
     if (isOpen && filterable && inputRef.current) {
-      inputRef.current.focus()
+      inputRef.current.focus();
     }
-  }, [isOpen, filterable])
+  }, [isOpen, filterable]);
 
   const handleSelect = (option: CascaderOption, path: CascaderOption[]) => {
     if (multiple) {
-      const newSelectedOptions = [...selectedOptions]
-      const index = newSelectedOptions.findIndex((o) => o.value === option.value)
+      const newSelectedOptions = [...selectedOptions];
+      const index = newSelectedOptions.findIndex(
+        (o) => o.value === option.value
+      );
       if (index > -1) {
-        newSelectedOptions.splice(index, 1)
+        newSelectedOptions.splice(index, 1);
       } else {
-        newSelectedOptions.push(option)
+        newSelectedOptions.push(option);
       }
-      setSelectedOptions(newSelectedOptions)
-      onChange?.(newSelectedOptions.map((o) => o.value), newSelectedOptions, path)
+      setSelectedOptions(newSelectedOptions);
+      onChange?.(
+        newSelectedOptions.map((o) => o.value),
+        newSelectedOptions,
+        path
+      );
     } else {
-      setSelectedOptions([option])
-      setIsOpen(false)
-      onChange?.([option.value], [option], path)
+      setSelectedOptions([option]);
+      setIsOpen(false);
+      onChange?.([option.value], [option], path);
     }
-    setSearchValue('')
-  }
+    setSearchValue("");
+  };
 
   const handleClear = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setSelectedOptions([])
-    onChange?.([], [], [])
-    setSearchValue('')
-  }
+    e.stopPropagation();
+    setSelectedOptions([]);
+    onChange?.([], [], []);
+    setSearchValue("");
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchValue(e.target.value)
-  }
+    setSearchValue(e.target.value);
+  };
 
   const renderValue = () => {
     if (selectedOptions.length === 0) {
-      return <span className="text-gray-400">{placeholder}</span>
+      return <span className="text-gray-400">{placeholder}</span>;
     }
 
     return selectedOptions.map((option, index) => (
       <span key={option.value} className="mr-1">
-        {showPath ? option.path?.map((o) => o.label).join(separator) : option.label}
-        {index < selectedOptions.length - 1 && ', '}
+        {showPath
+          ? option.path?.map((o: CascaderOption) => o.label).join(separator)
+          : option.label}
+        {index < selectedOptions.length - 1 && ", "}
       </span>
-    ))
-  }
+    ));
+  };
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-xs md:max-w-md lg:max-w-lg">
+    <div
+      ref={containerRef}
+      className="relative w-full max-w-xs md:max-w-md lg:max-w-lg"
+    >
       <div
         className={`border rounded-md p-2 flex justify-between items-center cursor-pointer ${
-          disabled ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : 'bg-white dark:bg-gray-700'
+          disabled
+            ? "bg-gray-100 dark:bg-gray-800 cursor-not-allowed"
+            : "bg-white dark:bg-gray-700"
         }`}
         onClick={() => !disabled && setIsOpen(!isOpen)}
       >
@@ -98,7 +111,12 @@ const Cascader: React.FC<CascaderProps> = ({
           )}
         </div>
         <div className="flex items-center">
-          {filterable && <Search size={16} className="text-gray-400 dark:text-gray-500 mr-1" />}
+          {filterable && (
+            <Search
+              size={16}
+              className="text-gray-400 dark:text-gray-500 mr-1"
+            />
+          )}
           {clearable && selectedOptions.length > 0 && (
             <X
               size={16}
@@ -109,7 +127,7 @@ const Cascader: React.FC<CascaderProps> = ({
           <ChevronDown
             size={16}
             className={`text-gray-400 dark:text-gray-500 transition-transform duration-300 ${
-              isOpen ? 'transform rotate-180' : ''
+              isOpen ? "transform rotate-180" : ""
             }`}
           />
         </div>
@@ -136,7 +154,7 @@ const Cascader: React.FC<CascaderProps> = ({
         )}
       </AnimatePresence>
     </div>
-  )
-}
+  );
+};
 
-export default Cascader
+export default Cascader;

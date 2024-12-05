@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { INDIPanel } from "./indi/INDIPanel";
+import { INDIPanel } from "@/components/indi/INDIPanel";
 import { INDIDevice } from "@/types/indi";
 import { Toaster } from "@/components/ui/toaster";
 import { initialDevices } from "@/utils/mock-indi";

@@ -23,17 +23,17 @@ import { Offcanvas } from "../components/Offcanvas";
 import { Sidebar } from "../components/Sidebar";
 import FocusAssistant from "../components/FocusAssistant";
 import SequenceEditor from "../components/SequenceEditor";
-import LiveStacking from "../components/LiveStacking";
 import DeviceConnection from "../components/DeviceConnection";
 import PluginPage from "../components/Plugin";
 import StarSearch from "../components/StarSearch";
 import ToolPanel from "../components/ToolPanel";
+import SettingsPage from "../components/Settings";
 
-import CameraPage from "../../components/device/camera/page";
-import FocuserPage from "../../components/device/focuser/page";
-import FilterWheelPage from "../../components/device/filter-wheel/page";
-import GuiderPage from "../../components/device/guider/page";
-import TelescopePage from "../../components/device/telescope/page";
+import { CameraPage } from "../../components/device/camera/page";
+import { FocuserPage } from "../../components/device/focuser/page";
+import { FilterWheelPage } from "../../components/device/filter-wheel/page";
+import { GuiderPage } from "../../components/device/guider/page";
+import { TelescopePage } from "../../components/device/telescope/page";
 
 import Log from "../components/Log";
 
@@ -104,13 +104,6 @@ export default function CameraInterface() {
       id: "sequenceEditor",
       name: "Sequence Editor",
       icon: "list",
-      active: false,
-      params: {},
-    },
-    {
-      id: "liveStacking",
-      name: "Live Stacking",
-      icon: "layers",
       active: false,
       params: {},
     },
@@ -287,6 +280,8 @@ export default function CameraInterface() {
         return <CameraPage />;
       case "Logs":
         return <Log />;
+      case "Settings":
+        return <SettingsPage />;
       default:
         return null;
     }

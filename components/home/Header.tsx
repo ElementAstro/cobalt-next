@@ -1,15 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Download, Upload, Moon, Sun, Plus } from "lucide-react";
 import { useTheme } from "next-themes";
-import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import AddEditSiteDialog from "./AddEditSiteDialog";
 
 interface HeaderProps {
   exportData: () => void;
   importData: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onAddNewSite: () => void; // 添加此行
 }
 
-const Header: React.FC<HeaderProps> = ({ exportData, importData }) => {
+const Header: React.FC<HeaderProps> = ({ exportData, importData, onAddNewSite }) => {
   const { theme, setTheme } = useTheme();
 
   return (
@@ -62,18 +63,11 @@ const Header: React.FC<HeaderProps> = ({ exportData, importData }) => {
             <Button
               variant="default"
               className="bg-indigo-600 hover:bg-indigo-500 text-white"
+              onClick={onAddNewSite} // 修改此行
             >
-              <Plus className="mr-2 h-4 w-4" /> Add New Site
+              <Plus className="mr-2 h-4 w-4" /> 添加新站点
             </Button>
           </DialogTrigger>
-          <DialogContent>
-            <AddEditSiteDialog
-              addSite={() => {}}
-              editingSite={null}
-              updateSite={() => {}}
-              setEditingSite={() => {}}
-            />
-          </DialogContent>
         </Dialog>
       </div>
     </div>

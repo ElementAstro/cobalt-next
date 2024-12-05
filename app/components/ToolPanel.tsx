@@ -4,7 +4,14 @@ import { useState, useMemo } from "react";
 import { DndContext, DragEndEvent } from "@dnd-kit/core";
 import { CategorySection } from "@/components/toolpanel/CategorySection";
 import { ToolDetail } from "@/components/toolpanel/ToolDetail";
-import { Image, Wand2, SendHorizonal, Webhook, Cloud } from "lucide-react";
+import {
+  Image,
+  Wand2,
+  SendHorizonal,
+  Webhook,
+  Cloud,
+  Paperclip,
+} from "lucide-react";
 import { Tool } from "@/types/toolpanel";
 import SearchBar from "@/components/toolpanel/SearchBar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -15,9 +22,11 @@ import ClientInfo from "./ClientInfo";
 import AllINDIPanel from "./INDIPanel";
 import HttpTester from "./HttpClient";
 import OnlineStorage from "./OnlineStorage";
+import ScriptsPage from "./Scripts";
 import SerialMonitor from "./SerialMonitor";
 import SoftwareManagement from "./Software";
 import WeatherInfo from "./WeatherInfo";
+import TerminalPage from "./Terminal";
 import TodoList from "./TodoList";
 
 function arrayMove<T>(array: T[], from: number, to: number): T[] {
@@ -67,6 +76,15 @@ const initialTools: Tool[] = [
     usageCount: 0,
     category: "客户端",
     CustomComponent: HttpTester,
+  },
+  {
+    id: "5",
+    name: "终端",
+    description: "终端命令行",
+    icon: SendHorizonal,
+    usageCount: 0,
+    category: "系统",
+    CustomComponent: TerminalPage,
   },
   {
     id: "6",
@@ -139,6 +157,15 @@ const initialTools: Tool[] = [
     usageCount: 0,
     category: "客户端",
     CustomComponent: AllINDIPanel,
+  },
+  {
+    id: "11",
+    name: "脚本管理",
+    description: "管理脚本",
+    icon: Paperclip,
+    usageCount: 0,
+    category: "系统",
+    CustomComponent: ScriptsPage,
   },
 ];
 

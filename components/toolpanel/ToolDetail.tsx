@@ -46,8 +46,8 @@ export function ToolDetail({
           <Button onClick={onBack} variant="outline">
             返回
           </Button>
-          <Icon className="h-8 w-8" />
-          <h2 className="text-2xl font-bold">{name}</h2>
+          <Icon className="h-6 w-6" />
+          <h2 className="text-xl font-bold">{name}</h2>
         </div>
         {CustomComponent ? (
           <div className="overflow-auto max-h-[450px]">
@@ -55,7 +55,7 @@ export function ToolDetail({
           </div>
         ) : (
           <>
-            <div className="space-y-2">
+            <div className="space-y-1">
               <label htmlFor="input" className="text-sm font-medium">
                 输入:
               </label>

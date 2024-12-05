@@ -10,6 +10,7 @@ interface SiteListProps {
   toggleQuickAccess: (site: Site) => void;
   setEditingSite: (site: Site) => void;
   controls: any;
+  onPreview: (site: Site) => void;
 }
 
 const SiteList: React.FC<SiteListProps> = ({
@@ -19,6 +20,7 @@ const SiteList: React.FC<SiteListProps> = ({
   toggleQuickAccess,
   setEditingSite,
   controls,
+  onPreview
 }) => {
   return (
     <DragDropContext onDragEnd={onDragEnd}>
@@ -46,6 +48,7 @@ const SiteList: React.FC<SiteListProps> = ({
                       removeSite={removeSite}
                       toggleQuickAccess={toggleQuickAccess}
                       setEditingSite={setEditingSite}
+                      onPreview={onPreview}
                     />
                   )}
                 </Draggable>
