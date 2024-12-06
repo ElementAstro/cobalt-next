@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
-import { WifiList } from "@/components/setting/wifi-list";
+import WifiList from "@/components/setting/WifiList";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export default function SettingsPage() {
@@ -165,35 +165,7 @@ export default function SettingsPage() {
         isDarkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-black"
       }`}
     >
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className={`border-b ${
-          isDarkMode
-            ? "border-gray-800 bg-gray-800"
-            : "border-gray-200 bg-white"
-        } p-4 flex justify-between items-center`}
-      >
-        <h1 className="text-xl font-semibold">AstroStation 设置</h1>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
-                {isDarkMode ? (
-                  <Sun className="h-5 w-5 text-yellow-400" />
-                ) : (
-                  <Moon className="h-5 w-5 text-blue-600" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{isDarkMode ? "切换到亮色模式" : "切换到暗色模式"}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </motion.div>
-      <div className="p-4 md:p-6 flex flex-col gap-4 md:gap-6 max-w-6xl mx-auto">
+      <div className="p-4 md:p-3 flex flex-col gap-3 md:gap-6 max-w-6xl mx-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             {tabs.map((tab) => (
@@ -388,16 +360,8 @@ export default function SettingsPage() {
                       }`}
                     >
                       <div className="p-4">
-                        <h2 className="text-lg font-semibold mb-4">网络设置</h2>
                         <div className="space-y-4">
                           <div>
-                            <div
-                              className={`text-sm ${
-                                isDarkMode ? "text-gray-400" : "text-gray-600"
-                              } mb-2`}
-                            >
-                              网络管理
-                            </div>
                             <div className="flex flex-col sm:flex-row gap-2">
                               <Button
                                 className={`flex-1 ${
@@ -452,14 +416,7 @@ export default function SettingsPage() {
                             </div>
                           </div>
                           <div>
-                            <div
-                              className={`text-sm ${
-                                isDarkMode ? "text-gray-400" : "text-gray-600"
-                              } mb-2`}
-                            >
-                              Wi-Fi 网络
-                            </div>
-                            <WifiList isDarkMode={isDarkMode} />
+                            <WifiList />
                           </div>
                         </div>
                       </div>

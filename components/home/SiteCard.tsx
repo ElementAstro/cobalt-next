@@ -22,7 +22,7 @@ const SiteCard: React.FC<SiteCardProps> = ({
   onPreview,
 }) => {
   const getFullUrl = (url: string) => {
-    if (url.startsWith("/")) {
+    if (typeof window !== "undefined" && url.startsWith("/")) {
       console.log(window.location.origin);
       console.log(`${window.location.origin}${url}`);
       return `${window.location.origin}${url}`;

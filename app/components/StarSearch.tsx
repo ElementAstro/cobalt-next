@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { CelestialObjectCard } from "@/components/celestial-object-card";
+import { CelestialObjectCard } from "@/components/search/CelestialObjectCard";
 import { SearchBar } from "@/components/search-bar";
-import { FilterPanel } from "@/components/filter-panel";
+import { FilterPanel } from "@/components/search/FilterPanel";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -25,8 +25,8 @@ import {
   DialogDescription,
   DialogClose,
 } from "@/components/ui/dialog";
-import { RealTimeData } from "@/components/real-time-data";
-import { Pagination } from "@/components/pagination";
+import { RealTimeData } from "@/components/search/RealTimeData";
+import { Pagination } from "@/components/search/Pagination";
 import { motion, AnimatePresence } from "framer-motion";
 
 // 假设我们有一个更大的模拟数据集
@@ -84,6 +84,8 @@ export default function StarSearch() {
     types: [] as string[],
     minMagnitude: "",
     maxMagnitude: "",
+    minDistance: "",
+    maxDistance: "",
   });
   const [sortBy, setSortBy] = useState("name");
   const [sortOrder, setSortOrder] = useState("asc");

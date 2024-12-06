@@ -10,6 +10,9 @@ import {
   Battery,
   Wifi,
   Settings,
+  WifiOff,
+  WifiZero,
+  Info
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -46,6 +49,7 @@ export function TopBar({ onOpenOffcanvas }: TopBarProps) {
     { id: "guider", name: "Guider", icon: Compass },
     { id: "Logs", name: "Logs", icon: Logs },
     { id: "Settings", name: "Settings", icon: Settings },
+    { id: "Info", name: "Info", icon: Info },
   ];
 
   useEffect(() => {
@@ -130,17 +134,21 @@ export function TopBar({ onOpenOffcanvas }: TopBarProps) {
           className="flex items-center space-x-1 text-white"
           variants={itemVariants}
         >
-          <Wifi className="w-5 h-5" />
           <span>
-            {wifiStatus !== null
-              ? wifiStatus
-                ? "Connected"
-                : "Disconnected"
-              : "N/A"}
+            {wifiStatus !== null ? (
+              wifiStatus ? (
+                <Wifi className="w-5 h-5" />
+              ) : (
+                <WifiOff className="w-5 h-5" />
+              )
+            ) : (
+              <WifiZero className="w-5 h-5" />
+            )}
           </span>
         </motion.div>
-        <motion.div className="text-white" variants={itemVariants}>
-          {time.toLocaleTimeString()}
+        <motion.div className="text-white text-center" variants={itemVariants}>
+          <div>{time.toLocaleDateString()}</div>
+          <div>{time.toLocaleTimeString()}</div>
         </motion.div>
         {devices.map((device) => (
           <motion.div key={device.id} variants={itemVariants}>

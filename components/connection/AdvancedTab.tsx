@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useApiService } from "@/services/api";
+import { motion } from "framer-motion";
 
 export function AdvancedTab() {
   const { fetchAdvancedSettings, updateAdvancedSettings } = useApiService();
@@ -10,14 +11,17 @@ export function AdvancedTab() {
     updateInterval: 1000,
     connectionTimeout: 30,
     debugMode: false,
+    newSetting: "", // 新的设置项
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
-    fetchAdvancedSettings().then(setSettings);
+    fetchAdvancedSettings().then((data) =>
+      setSettings({ ...data, newSetting: "" })
+    );
   }, [fetchAdvancedSettings]);
 
-  const validate = (field: string, value: number | boolean) => {
+  const validate = (field: string, value: number | boolean | string) => {
     let error = "";
     if (
       field === "updateInterval" &&
@@ -37,7 +41,7 @@ export function AdvancedTab() {
     return error === "";
   };
 
-  const handleChange = (field: string, value: number | boolean) => {
+  const handleChange = (field: string, value: number | boolean | string) => {
     if (validate(field, value)) {
       setSettings((prev) => ({ ...prev, [field]: value }));
       updateAdvancedSettings({ [field]: value }).catch((error) => {
@@ -47,10 +51,19 @@ export function AdvancedTab() {
   };
 
   return (
-    <div className="space-y-4">
+    <motion.div
+      className="space-y-4 p-4 bg-gray-900 text-white rounded-lg"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="grid md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="updateInterval">Update Interval (ms)</Label>
+        <motion.div
+          initial={{ x: -50, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Label htmlFor="updateInterval">更新间隔 (ms)</Label>
           <Input
             id="updateInterval"
             type="number"
@@ -58,14 +71,18 @@ export function AdvancedTab() {
             onChange={(e) =>
               handleChange("updateInterval", parseInt(e.target.value))
             }
-            className="mt-1"
+            className="mt-1 bg-gray-800 text-white"
           />
           {errors.updateInterval && (
             <span className="text-red-500">{errors.updateInterval}</span>
           )}
-        </div>
-        <div>
-          <Label htmlFor="timeout">Connection Timeout (s)</Label>
+        </motion.div>
+        <motion.div
+          initial={{ x: 50, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Label htmlFor="timeout">连接超时 (s)</Label>
           <Input
             id="timeout"
             type="number"
@@ -73,21 +90,40 @@ export function AdvancedTab() {
             onChange={(e) =>
               handleChange("connectionTimeout", parseInt(e.target.value))
             }
-            className="mt-1"
+            className="mt-1 bg-gray-800 text-white"
           />
           {errors.connectionTimeout && (
             <span className="text-red-500">{errors.connectionTimeout}</span>
           )}
-        </div>
+        </motion.div>
       </div>
-      <div className="flex items-center space-x-2">
+      <motion.div
+        className="flex items-center space-x-2"
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         <Switch
           id="debugMode"
           checked={settings.debugMode}
           onCheckedChange={(checked) => handleChange("debugMode", checked)}
         />
-        <Label htmlFor="debugMode">Enable Debug Mode</Label>
-      </div>
-    </div>
+        <Label htmlFor="debugMode">启用调试模式</Label>
+      </motion.div>
+      <motion.div
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Label htmlFor="newSetting">新的设置项</Label>
+        <Input
+          id="newSetting"
+          type="text"
+          value={settings.newSetting}
+          onChange={(e) => handleChange("newSetting", e.target.value)}
+          className="mt-1 bg-gray-800 text-white"
+        />
+      </motion.div>
+    </motion.div>
   );
 }

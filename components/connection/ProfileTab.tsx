@@ -58,6 +58,9 @@ export function ProfileTab({ toast }: ProfileTabProps) {
     if (field === "port" && typeof value === "string" && !/^\d+$/.test(value)) {
       error = "端口必须是数字";
     }
+    if (field === "host" && typeof value === "string" && value.trim() === "") {
+      error = "主机地址不能为空";
+    }
     setErrors((prev) => ({ ...prev, [field]: error }));
     return error === "";
   };
@@ -169,6 +172,7 @@ export function ProfileTab({ toast }: ProfileTabProps) {
             onChange={(e) => handleChange("host", e.target.value)}
             className="mt-1 dark:bg-gray-700 dark:text-gray-200"
           />
+          {errors.host && <span className="text-red-500">{errors.host}</span>}
         </div>
         <div>
           <Label htmlFor="port">Port</Label>

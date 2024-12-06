@@ -56,7 +56,7 @@ export function Offcanvas({
             aria-labelledby="offcanvas-title"
           >
             {title && (
-              <div className="flex justify-between items-center p-4 border-b border-gray-700">
+              <div className="flex justify-between items-center border-b border-gray-700">
                 <h2
                   id="offcanvas-title"
                   className="text-xl font-semibold text-white"
@@ -74,7 +74,7 @@ export function Offcanvas({
               </div>
             )}
             {/* 使用 flex-1 和 overflow-y-auto 实现内部滚动 */}
-            <div className="flex-1 overflow-y-auto p-4">{children}</div>
+            <div className="flex-1 overflow-y-auto">{children}</div>
           </motion.div>
         </>
       )}

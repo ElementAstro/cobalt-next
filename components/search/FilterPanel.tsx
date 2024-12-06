@@ -10,6 +10,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useState } from "react";
+import { motion } from "framer-motion";
 
 interface FilterPanelProps {
   filters: {
@@ -48,6 +50,8 @@ const OBJECT_TYPES = [
 ];
 
 export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
+  const [search, setSearch] = useState("");
+
   const handleCheckboxChange = (
     key: "constellations" | "types",
     value: string
@@ -66,36 +70,57 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
     onFilterChange({ ...filters, [key]: value[0] });
   };
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  };
+
+  const filteredConstellations = CONSTELLATIONS.filter((constellation) =>
+    constellation.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <div className="space-y-6 p-4">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg"
+    >
+      <Input
+        placeholder="搜索星座..."
+        value={search}
+        onChange={handleSearchChange}
+        className="mb-4 dark:bg-gray-700 dark:text-white"
+      />
       <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="constellations">
-          <AccordionTrigger>Constellations</AccordionTrigger>
+          <AccordionTrigger>星座</AccordionTrigger>
           <AccordionContent>
-            <div className="grid grid-cols-2 gap-2">
-              {CONSTELLATIONS.map((constellation) => (
-                <div
-                  key={constellation}
-                  className="flex items-center space-x-2"
-                >
-                  <Checkbox
-                    id={`constellation-${constellation}`}
-                    checked={filters.constellations.includes(constellation)}
-                    onCheckedChange={() =>
-                      handleCheckboxChange("constellations", constellation)
-                    }
-                  />
-                  <Label htmlFor={`constellation-${constellation}`}>
-                    {constellation}
-                  </Label>
-                </div>
-              ))}
-            </div>
+            <ScrollArea className="h-[200px]">
+              <div className="grid grid-cols-2 gap-2">
+                {filteredConstellations.map((constellation) => (
+                  <div
+                    key={constellation}
+                    className="flex items-center space-x-2"
+                  >
+                    <Checkbox
+                      id={`constellation-${constellation}`}
+                      checked={filters.constellations.includes(constellation)}
+                      onCheckedChange={() =>
+                        handleCheckboxChange("constellations", constellation)
+                      }
+                    />
+                    <Label htmlFor={`constellation-${constellation}`}>
+                      {constellation}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="types">
-          <AccordionTrigger>Object Types</AccordionTrigger>
+          <AccordionTrigger>对象类型</AccordionTrigger>
           <AccordionContent>
             <div className="grid grid-cols-2 gap-2">
               {OBJECT_TYPES.map((type) => (
@@ -113,11 +138,11 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
         </AccordionItem>
 
         <AccordionItem value="magnitude">
-          <AccordionTrigger>Magnitude</AccordionTrigger>
+          <AccordionTrigger>星等</AccordionTrigger>
           <AccordionContent>
             <div className="space-y-4">
               <div>
-                <Label>Minimum Magnitude: {filters.minMagnitude}</Label>
+                <Label>最小星等: {filters.minMagnitude}</Label>
                 <Slider
                   min={-30}
                   max={30}
@@ -129,7 +154,7 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
                 />
               </div>
               <div>
-                <Label>Maximum Magnitude: {filters.maxMagnitude}</Label>
+                <Label>最大星等: {filters.maxMagnitude}</Label>
                 <Slider
                   min={-30}
                   max={30}
@@ -145,11 +170,11 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
         </AccordionItem>
 
         <AccordionItem value="distance">
-          <AccordionTrigger>Distance (Light Years)</AccordionTrigger>
+          <AccordionTrigger>距离 (光年)</AccordionTrigger>
           <AccordionContent>
             <div className="space-y-4">
               <div>
-                <Label>Minimum Distance: {filters.minDistance} ly</Label>
+                <Label>最小距离: {filters.minDistance} ly</Label>
                 <Slider
                   min={0}
                   max={1000000}
@@ -161,7 +186,7 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
                 />
               </div>
               <div>
-                <Label>Maximum Distance: {filters.maxDistance} ly</Label>
+                <Label>最大距离: {filters.maxDistance} ly</Label>
                 <Slider
                   min={0}
                   max={1000000}
@@ -188,9 +213,10 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
             maxDistance: 1000000,
           })
         }
+        className="w-full"
       >
-        Reset Filters
+        重置筛选
       </Button>
-    </div>
+    </motion.div>
   );
 }
