@@ -1,8 +1,8 @@
+// FILE: Offcanvas.tsx
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import React, { useEffect } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface OffcanvasProps {
   isOpen: boolean;
@@ -46,7 +46,7 @@ export function Offcanvas({
 
           {/* 侧边栏面板 */}
           <motion.div
-            className="fixed top-0 right-0 w-80 max-w-full h-full bg-gray-800 shadow-lg z-50 flex flex-col"
+            className="fixed top-0 right-0 w-80 md:w-1/2 max-w-full h-full bg-gray-800 dark:bg-gray-900 shadow-lg z-50 flex flex-col"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
@@ -56,7 +56,7 @@ export function Offcanvas({
             aria-labelledby="offcanvas-title"
           >
             {title && (
-              <div className="flex justify-between items-center border-b border-gray-700">
+              <div className="flex justify-between items-center border-b border-gray-700 p-4">
                 <h2
                   id="offcanvas-title"
                   className="text-xl font-semibold text-white"
@@ -67,14 +67,14 @@ export function Offcanvas({
                   variant="ghost"
                   size="icon"
                   onClick={onClose}
-                  aria-label="Close Offcanvas"
+                  aria-label="关闭侧边栏"
                 >
                   <X className="w-5 h-5 text-white" />
                 </Button>
               </div>
             )}
             {/* 使用 flex-1 和 overflow-y-auto 实现内部滚动 */}
-            <div className="flex-1 overflow-y-auto">{children}</div>
+            <div className="flex-1 overflow-y-auto p-4">{children}</div>
           </motion.div>
         </>
       )}

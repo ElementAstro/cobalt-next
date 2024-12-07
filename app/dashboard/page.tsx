@@ -19,7 +19,7 @@ import ExposureControls from "../components/ExposureControls";
 import DeviceWindow from "../components/DeviceWindow";
 import ParameterAdjust from "../components/ParameterAdjust";
 import { TopBar } from "../components/TopBar";
-import { Offcanvas } from "../components/Offcanvas";
+import { Offcanvas } from "../../components/Offcanvas";
 import { Sidebar } from "../components/Sidebar";
 import FocusAssistant from "../components/FocusAssistant";
 import SequenceEditor from "../components/SequenceEditor";
