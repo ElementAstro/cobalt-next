@@ -1,32 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { HardDrive } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { useStorageStore } from "@/lib/store/system";
 
-export default function StorageSettings({
-  isDarkMode,
-}: {
-  isDarkMode: boolean;
-}) {
+export default function StorageSettings() {
   const { toast } = useToast();
-  const [defaultStorage, setDefaultStorage] = useState<string>("internal");
-  const [storageUsage, setStorageUsage] = useState<{
-    used: number;
-    total: number;
-  }>({
-    used: 0,
-    total: 0,
-  });
+  const {
+    defaultStorage,
+    storageUsage,
+    setDefaultStorage,
+    updateStorageUsage,
+  } = useStorageStore();
 
   useEffect(() => {
-    // Simulate fetching storage usage
-    setStorageUsage({ used: 75, total: 128 });
-  }, []);
+    // 模拟获取存储使用情况
+    updateStorageUsage({ used: 75, total: 128 });
+  }, [updateStorageUsage]);
 
   const handleStorageChange = (value: string) => {
     setDefaultStorage(value);
@@ -38,6 +33,21 @@ export default function StorageSettings({
     });
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  };
+
   return (
     <AnimatePresence>
       <motion.div
@@ -45,53 +55,40 @@ export default function StorageSettings({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.3 }}
+        className="flex justify-center p-4"
       >
-        <Card
-          className={`border ${
-            isDarkMode
-              ? "bg-gray-800 border-gray-700"
-              : "bg-white border-gray-200"
-          }`}
-        >
-          <div className="p-4">
-            <div className="space-y-6">
-              <motion.div
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <div
-                  className={`flex items-center text-sm ${
-                    isDarkMode ? "text-gray-400" : "text-gray-600"
-                  } mb-2`}
-                >
+        <Card className="w-full max-w-md dark:bg-gray-800 bg-white border dark:border-gray-700 border-gray-200 shadow-lg rounded-lg">
+          <div className="p-6">
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              <motion.div variants={itemVariants} className="mb-6">
+                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
                   <HardDrive className="mr-2" />
                   默认存储
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Button
+                    variant={
+                      defaultStorage === "internal" ? "default" : "outline"
+                    }
                     className={`flex-1 ${
                       defaultStorage === "internal"
-                        ? isDarkMode
-                          ? "bg-blue-600 hover:bg-blue-700"
-                          : "bg-blue-500 hover:bg-blue-600"
-                        : isDarkMode
-                        ? "bg-gray-700 hover:bg-gray-600"
-                        : "bg-gray-200 hover:bg-gray-300"
+                        ? "bg-blue-600 text-white hover:bg-blue-700"
+                        : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
                     } transition-colors duration-200`}
                     onClick={() => handleStorageChange("internal")}
                   >
                     内置存储
                   </Button>
                   <Button
+                    variant={defaultStorage === "sd" ? "default" : "outline"}
                     className={`flex-1 ${
                       defaultStorage === "sd"
-                        ? isDarkMode
-                          ? "bg-blue-600 hover:bg-blue-700"
-                          : "bg-blue-500 hover:bg-blue-600"
-                        : isDarkMode
-                        ? "bg-gray-700 hover:bg-gray-600"
-                        : "bg-gray-200 hover:bg-gray-300"
+                        ? "bg-blue-600 text-white hover:bg-blue-700"
+                        : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
                     } transition-colors duration-200`}
                     onClick={() => handleStorageChange("sd")}
                   >
@@ -100,44 +97,22 @@ export default function StorageSettings({
                 </div>
               </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <div
-                  className={`flex items-center text-sm ${
-                    isDarkMode ? "text-gray-400" : "text-gray-600"
-                  } mb-2`}
-                >
+              <motion.div variants={itemVariants} className="mb-6">
+                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
                   存储空间使用情况
                 </div>
                 <Progress
                   value={(storageUsage.used / storageUsage.total) * 100}
-                  className={`w-full ${
-                    isDarkMode ? "bg-gray-700" : "bg-gray-200"
-                  } rounded-full h-4`}
+                  className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4"
                 />
-                <div
-                  className={`text-sm ${
-                    isDarkMode ? "text-gray-400" : "text-gray-600"
-                  } mt-2`}
-                >
+                <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                   已使用 {storageUsage.used}GB / 总共 {storageUsage.total}GB
                 </div>
               </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-              >
+              <motion.div variants={itemVariants}>
                 <Button
-                  className={`w-full ${
-                    isDarkMode
-                      ? "bg-green-600 hover:bg-green-700"
-                      : "bg-green-500 hover:bg-green-600"
-                  } transition-colors duration-200`}
+                  className="w-full bg-green-500 dark:bg-green-600 text-white hover:bg-green-600 dark:hover:bg-green-700 transition-colors duration-200"
                   onClick={() =>
                     toast({
                       title: "操作成功",
@@ -148,7 +123,7 @@ export default function StorageSettings({
                   保存设置
                 </Button>
               </motion.div>
-            </div>
+            </motion.div>
           </div>
         </Card>
       </motion.div>

@@ -1,17 +1,40 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useMediaQuery } from "react-responsive";
-import {
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { create } from "zustand";
+import { useTheme } from "next-themes";
+
+// Zustand store
+interface AgreementStore {
+  isVisible: boolean;
+  showAgreement: () => void;
+  hideAgreement: () => void;
+  hasInteracted: boolean;
+  setHasInteracted: (value: boolean) => void;
+  hasReadAgreement: boolean;
+  setHasReadAgreement: (value: boolean) => void;
+  hasReadPrivacy: boolean;
+  setHasReadPrivacy: (value: boolean) => void;
+}
+
+const useAgreementStore = create<AgreementStore>((set) => ({
+  isVisible: false,
+  showAgreement: () => set({ isVisible: true }),
+  hideAgreement: () => set({ isVisible: false }),
+  hasInteracted: false,
+  setHasInteracted: (value) => set({ hasInteracted: value }),
+  hasReadAgreement: false,
+  setHasReadAgreement: (value) => set({ hasReadAgreement: value }),
+  hasReadPrivacy: false,
+  setHasReadPrivacy: (value) => set({ hasReadPrivacy: value }),
+}));
 
 interface UserAgreementMaskProps {
   agreementText: Record<string, string>;
@@ -36,24 +59,23 @@ export function UserAgreementMask({
   title = "User Agreement & Privacy Policy",
   allowPrint = false,
 }: UserAgreementMaskProps) {
-  const [isVisible, setIsVisible] = useState(false);
-  const [hasInteracted, setHasInteracted] = useState(false);
-  const [hasReadAgreement, setHasReadAgreement] = useState(false);
-  const [hasReadPrivacy, setHasReadPrivacy] = useState(false);
-  const [lastAgreedDate, setLastAgreedDate] = useState<string | null>(null);
-  const [isAgreementDisabled, setIsAgreementDisabled] = useState(
-    requireReadConfirmation
-  );
+  const {
+    isVisible,
+    hideAgreement,
+    hasInteracted,
+    setHasInteracted,
+    hasReadAgreement,
+    setHasReadAgreement,
+    hasReadPrivacy,
+    setHasReadPrivacy,
+  } = useAgreementStore();
+  const { theme } = useTheme();
   const isMobile = useMediaQuery({ maxWidth: 768 });
 
   useEffect(() => {
     const storedVersion = localStorage.getItem("userAgreedVersion");
-    const storedDate = localStorage.getItem("userAgreedDate");
     if (!storedVersion || storedVersion !== version) {
-      setIsVisible(true);
-    }
-    if (storedDate) {
-      setLastAgreedDate(new Date(storedDate).toLocaleString());
+      useAgreementStore.getState().showAgreement();
     }
   }, [version]);
 
@@ -65,8 +87,7 @@ export function UserAgreementMask({
     const now = new Date().toISOString();
     localStorage.setItem("userAgreedVersion", version);
     localStorage.setItem("userAgreedDate", now);
-    setLastAgreedDate(new Date(now).toLocaleString());
-    setIsVisible(false);
+    hideAgreement();
     onAgree();
   };
 
@@ -91,7 +112,9 @@ export function UserAgreementMask({
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl overflow-hidden"
+            className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl overflow-hidden ${
+              isMobile ? "h-full" : "h-auto"
+            }`}
             initial={{ scale: 0.9, y: 50 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 50 }}
@@ -99,34 +122,33 @@ export function UserAgreementMask({
           >
             <div className="p-6 space-y-6">
               <CardHeader>
-                <CardTitle className="text-2xl font-bold text-white">
+                <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
                   {language === "en" ? title : "用户协议与隐私政策"}
                 </CardTitle>
-                <CardDescription className="text-sm text-gray-400">
+                <CardDescription className="text-sm text-gray-500 dark:text-gray-400">
                   {language === "en"
                     ? `Version: ${version}`
                     : `版本: ${version}`}
                 </CardDescription>
-                {lastAgreedDate && (
-                  <CardDescription className="text-sm text-gray-400">
-                    {language === "en"
-                      ? `Last agreed: ${lastAgreedDate}`
-                      : `上次同意时间: ${lastAgreedDate}`}
-                  </CardDescription>
-                )}
               </CardHeader>
               <Tabs defaultValue="agreement" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-2 bg-gray-700">
-                  <TabsTrigger value="agreement" className="text-white">
+                <TabsList className="grid w-full grid-cols-2 bg-gray-200 dark:bg-gray-700">
+                  <TabsTrigger
+                    value="agreement"
+                    className="text-gray-900 dark:text-white"
+                  >
                     {language === "en" ? "Agreement" : "用户协议"}
                   </TabsTrigger>
-                  <TabsTrigger value="privacy" className="text-white">
+                  <TabsTrigger
+                    value="privacy"
+                    className="text-gray-900 dark:text-white"
+                  >
                     {language === "en" ? "Privacy" : "隐私政策"}
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="agreement">
                   <ScrollArea className="h-60 md:h-72 lg:h-80 mb-4">
-                    <p className="text-sm text-gray-300">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
                       {agreementText[language]}
                     </p>
                   </ScrollArea>
@@ -137,15 +159,12 @@ export function UserAgreementMask({
                         checked={hasReadAgreement}
                         onCheckedChange={(checked) => {
                           setHasReadAgreement(checked as boolean);
-                          setIsAgreementDisabled(
-                            requireReadConfirmation &&
-                              (!(checked as boolean) || !hasReadPrivacy)
-                          );
                         }}
+                        className="text-blue-600"
                       />
                       <label
                         htmlFor="agreement-read"
-                        className="text-sm text-gray-300"
+                        className="text-sm text-gray-700 dark:text-gray-300"
                       >
                         {language === "en"
                           ? "I have read and understood the User Agreement"
@@ -156,7 +175,7 @@ export function UserAgreementMask({
                 </TabsContent>
                 <TabsContent value="privacy">
                   <ScrollArea className="h-60 md:h-72 lg:h-80 mb-4">
-                    <p className="text-sm text-gray-300">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
                       {privacyPolicyText[language]}
                     </p>
                   </ScrollArea>
@@ -167,15 +186,12 @@ export function UserAgreementMask({
                         checked={hasReadPrivacy}
                         onCheckedChange={(checked) => {
                           setHasReadPrivacy(checked as boolean);
-                          setIsAgreementDisabled(
-                            requireReadConfirmation &&
-                              (!hasReadAgreement || !(checked as boolean))
-                          );
                         }}
+                        className="text-blue-600"
                       />
                       <label
                         htmlFor="privacy-read"
-                        className="text-sm text-gray-300"
+                        className="text-sm text-gray-700 dark:text-gray-300"
                       >
                         {language === "en"
                           ? "I have read and understood the Privacy Policy"
@@ -189,14 +205,17 @@ export function UserAgreementMask({
                 <Button
                   onClick={handleAgree}
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                  disabled={isAgreementDisabled}
+                  disabled={
+                    requireReadConfirmation &&
+                    (!hasReadAgreement || !hasReadPrivacy)
+                  }
                 >
                   {language === "en" ? "Agree and Continue" : "同意并继续"}
                 </Button>
                 <Button
                   onClick={handleDisagree}
                   variant="outline"
-                  className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-700"
+                  className="flex-1 border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
                 >
                   {language === "en" ? "Disagree" : "不同意"}
                 </Button>
@@ -206,7 +225,7 @@ export function UserAgreementMask({
                   <Button
                     onClick={handlePrint}
                     variant="outline"
-                    className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                    className="border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
                   >
                     {language === "en" ? "Print" : "打印"}
                   </Button>

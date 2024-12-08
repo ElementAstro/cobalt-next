@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { motion } from "framer-motion";
 
 interface SoftwareListProps {
   software: Software[];
@@ -31,13 +32,21 @@ export function SoftwareList({
   };
 
   return (
-    <div className={getViewClass()}>
+    <motion.div
+      className={getViewClass()}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
       {software.map((item) => (
-        <div
+        <motion.div
           key={item.id}
-          className={`flex items-center gap-4 rounded-lg border p-4 hover:bg-accent ${
+          className={`flex items-center gap-4 rounded-lg border p-4 hover:bg-accent dark:bg-gray-800 ${
             view !== "list" ? "flex-col items-start" : ""
           }`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
         >
           <img
             src={item.icon}
@@ -45,8 +54,8 @@ export function SoftwareList({
             className="h-12 w-12 rounded-lg"
           />
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold truncate">{item.name}</h3>
-            <div className="flex flex-col text-sm text-muted-foreground">
+            <h3 className="font-semibold truncate text-white">{item.name}</h3>
+            <div className="flex flex-col text-sm text-gray-400">
               <span>{item.version}</span>
               <span>{item.author}</span>
               {view !== "list" && (
@@ -58,7 +67,7 @@ export function SoftwareList({
             </div>
           </div>
           {view === "list" && (
-            <div className="hidden sm:flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="hidden sm:flex items-center gap-4 text-sm text-gray-400">
               <span>{item.date}</span>
               <span className="w-24 text-right">{item.size}</span>
             </div>
@@ -68,26 +77,34 @@ export function SoftwareList({
               variant="ghost"
               size="icon"
               onClick={() => onViewDetail(item)}
+              className="dark:bg-gray-700 dark:text-white"
             >
               <Info className="h-4 w-4" />
               <span className="sr-only">查看详情</span>
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="dark:bg-gray-700 dark:text-white"
+                >
                   <MoreVertical className="h-4 w-4" />
                   <span className="sr-only">打开菜单</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent
+                align="end"
+                className="dark:bg-gray-700 dark:text-white"
+              >
                 <DropdownMenuItem>安装</DropdownMenuItem>
                 <DropdownMenuItem>卸载</DropdownMenuItem>
                 <DropdownMenuItem>更新</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </div>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }

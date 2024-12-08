@@ -1,12 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { CelestialObjectCard } from "@/components/search/CelestialObjectCard";
-import { SearchBar } from "@/components/search-bar";
-import { FilterPanel } from "@/components/search/FilterPanel";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Filter } from "lucide-react";
 import {
   Select,
@@ -19,15 +15,16 @@ import {
   Dialog,
   DialogTrigger,
   DialogContent,
-  DialogHeader,
   DialogFooter,
-  DialogTitle,
-  DialogDescription,
   DialogClose,
 } from "@/components/ui/dialog";
+import { motion, AnimatePresence } from "framer-motion";
+
 import { RealTimeData } from "@/components/search/RealTimeData";
 import { Pagination } from "@/components/search/Pagination";
-import { motion, AnimatePresence } from "framer-motion";
+import { CelestialObjectCard } from "@/components/search/CelestialObjectCard";
+import { SearchBar } from "@/components/search/SearchBar";
+import { FilterPanel } from "@/components/search/FilterPanel";
 
 // 假设我们有一个更大的模拟数据集
 const mockObjects = Array.from({ length: 1000 }, (_, i) => ({

@@ -6,6 +6,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FilterOption, SortOption } from "@/types/software";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 
 interface SoftwareFiltersProps {
   sortOptions: SortOption[];
@@ -14,6 +17,8 @@ interface SoftwareFiltersProps {
   selectedFilter: string;
   onSortChange: (value: string) => void;
   onFilterChange: (value: string) => void;
+  onSearchChange: (value: string) => void;
+  onReset: () => void;
   totalCount: number;
 }
 
@@ -24,16 +29,26 @@ export function SoftwareFilters({
   selectedFilter,
   onSortChange,
   onFilterChange,
+  onSearchChange,
+  onReset,
   totalCount,
 }: SoftwareFiltersProps) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="text-sm text-muted-foreground">
-        找到 {totalCount} 个应用
-      </div>
+    <motion.div
+      className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between dark:bg-gray-800 p-4 rounded-lg"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="text-sm text-gray-400">找到 {totalCount} 个应用</div>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <Input
+          placeholder="搜索应用"
+          className="w-[180px] dark:bg-gray-700 dark:text-white"
+          onChange={(e) => onSearchChange(e.target.value)}
+        />
         <Select value={selectedFilter} onValueChange={onFilterChange}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[180px] dark:bg-gray-700 dark:text-white">
             <SelectValue placeholder="筛选条件" />
           </SelectTrigger>
           <SelectContent>
@@ -45,7 +60,7 @@ export function SoftwareFilters({
           </SelectContent>
         </Select>
         <Select value={selectedSort} onValueChange={onSortChange}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[180px] dark:bg-gray-700 dark:text-white">
             <SelectValue placeholder="排序依据" />
           </SelectTrigger>
           <SelectContent>
@@ -56,7 +71,10 @@ export function SoftwareFilters({
             ))}
           </SelectContent>
         </Select>
+        <Button onClick={onReset} className="dark:bg-gray-700 dark:text-white">
+          重置
+        </Button>
       </div>
-    </div>
+    </motion.div>
   );
 }

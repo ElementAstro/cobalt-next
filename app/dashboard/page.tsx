@@ -40,7 +40,7 @@ import AuthorInfo from "../components/AuthorInfo";
 
 import LandscapeDetector from "@/components/LandscapeDetection";
 import SplashScreen from "../../components/loading/SplashScreen";
-import ConnectionForm from "@/components/server/connection-form";
+import ConnectionForm from "@/components/server/ConnectionForm";
 import { UserAgreementMask } from "@/components/UserAgreementMask";
 
 export default function CameraInterface() {
@@ -105,6 +105,20 @@ export default function CameraInterface() {
       id: "sequenceEditor",
       name: "Sequence Editor",
       icon: "list",
+      active: false,
+      params: {},
+    },
+    {
+      id: "liveStacking",
+      name: "Live Stacking",
+      icon: "layers",
+      active: false,
+      params: {},
+    },
+    {
+      id: "tools",
+      name: "Tools",
+      icon: "tool",
       active: false,
       params: {},
     },

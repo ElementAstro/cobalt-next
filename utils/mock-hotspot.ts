@@ -20,5 +20,6 @@ export const mockNetworkData = async (): Promise<Partial<NetworkSettings>> => {
       Math.floor(Math.random() * 3)
     ],
     shareTo: Math.random() > 0.5 ? "WLAN" : "蓝牙",
+    maxDevices: 10,
   };
 };

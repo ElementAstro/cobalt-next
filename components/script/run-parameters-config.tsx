@@ -1,76 +1,110 @@
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Plus, Trash } from 'lucide-react'
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Plus, Trash } from "lucide-react";
+import { motion } from "framer-motion";
+import styled from "styled-components";
 
 interface Parameter {
-  name: string
-  value: string
+  name: string;
+  value: string;
 }
 
 interface RunParametersConfigProps {
-  parameters: Parameter[]
-  onChange: (parameters: Parameter[]) => void
+  parameters: Parameter[];
+  onChange: (parameters: Parameter[]) => void;
 }
 
-export function RunParametersConfig({ parameters, onChange }: RunParametersConfigProps) {
-  const [newParam, setNewParam] = useState<Parameter>({ name: '', value: '' })
+const Container = styled.div`
+  background-color: #121212;
+  color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 600px;
+  margin: 0 auto;
+  @media (max-width: 600px) {
+    padding: 10px;
+  }
+`;
+
+const ParameterRow = styled(motion.div)`
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+`;
+
+const ParameterInput = styled(Input)`
+  margin-right: 10px;
+  flex: 1;
+`;
+
+const ErrorText = styled.p`
+  color: red;
+  margin-top: 10px;
+`;
+
+export function RunParametersConfig({
+  parameters,
+  onChange,
+}: RunParametersConfigProps) {
+  const [newParam, setNewParam] = useState<Parameter>({ name: "", value: "" });
+  const [error, setError] = useState<string | null>(null);
 
   const handleAddParameter = () => {
     if (newParam.name && newParam.value) {
-      onChange([...parameters, newParam])
-      setNewParam({ name: '', value: '' })
+      onChange([...parameters, newParam]);
+      setNewParam({ name: "", value: "" });
+      setError(null);
+    } else {
+      setError("参数名称和值不能为空");
     }
-  }
+  };
 
   const handleRemoveParameter = (index: number) => {
-    const updatedParams = parameters.filter((_, i) => i !== index)
-    onChange(updatedParams)
-  }
-
-  const handleParameterChange = (index: number, field: 'name' | 'value', value: string) => {
-    const updatedParams = parameters.map((param, i) =>
-      i === index ? { ...param, [field]: value } : param
-    )
-    onChange(updatedParams)
-  }
+    const updatedParams = parameters.filter((_, i) => i !== index);
+    onChange(updatedParams);
+  };
 
   return (
-    <div className="space-y-4">
+    <Container>
+      <h2>运行参数配置</h2>
       {parameters.map((param, index) => (
-        <div key={index} className="flex items-center space-x-2">
-          <Input
-            value={param.name}
-            onChange={(e) => handleParameterChange(index, 'name', e.target.value)}
-            placeholder="Parameter name"
-          />
-          <Input
-            value={param.value}
-            onChange={(e) => handleParameterChange(index, 'value', e.target.value)}
-            placeholder="Parameter value"
-          />
-          <Button variant="outline" size="icon" onClick={() => handleRemoveParameter(index)}>
-            <Trash className="h-4 w-4" />
+        <ParameterRow
+          key={index}
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 10 }}
+          transition={{ duration: 0.3 }}
+        >
+          <ParameterInput value={param.name} readOnly />
+          <ParameterInput value={param.value} readOnly />
+          <Button onClick={() => handleRemoveParameter(index)}>
+            <Trash />
           </Button>
-        </div>
+        </ParameterRow>
       ))}
-      <div className="flex items-center space-x-2">
-        <Input
+      <ParameterRow
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 10 }}
+        transition={{ duration: 0.3 }}
+      >
+        <ParameterInput
+          placeholder="参数名称"
           value={newParam.name}
           onChange={(e) => setNewParam({ ...newParam, name: e.target.value })}
-          placeholder="New parameter name"
         />
-        <Input
+        <ParameterInput
+          placeholder="参数值"
           value={newParam.value}
           onChange={(e) => setNewParam({ ...newParam, value: e.target.value })}
-          placeholder="New parameter value"
         />
-        <Button variant="outline" size="icon" onClick={handleAddParameter}>
-          <Plus className="h-4 w-4" />
+        <Button onClick={handleAddParameter}>
+          <Plus />
         </Button>
-      </div>
-    </div>
-  )
+      </ParameterRow>
+      {error && <ErrorText>{error}</ErrorText>}
+    </Container>
+  );
 }
-

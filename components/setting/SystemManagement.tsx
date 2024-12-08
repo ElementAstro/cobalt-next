@@ -1,4 +1,3 @@
-"typescript";
 "use client";
 
 import { useState } from "react";
@@ -16,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { useSystemManagementStore } from "@/lib/store/settings";
 
 interface SystemManagementProps {
   isDarkMode: boolean;
@@ -25,15 +25,15 @@ export default function SystemManagement({
   isDarkMode,
 }: SystemManagementProps) {
   const { toast } = useToast();
-  const [isRestartOpen, setIsRestartOpen] = useState(false);
-  const [isShutdownOpen, setIsShutdownOpen] = useState(false);
+  const { isRestartOpen, isShutdownOpen, setRestartOpen, setShutdownOpen } =
+    useSystemManagementStore();
 
   const handleRestart = () => {
     toast({
       title: "重启中",
       description: "Lithium 正在重新启动，请稍候...",
     });
-    setIsRestartOpen(false);
+    setRestartOpen(false);
   };
 
   const handleShutdown = () => {
@@ -41,7 +41,7 @@ export default function SystemManagement({
       title: "关机中",
       description: "Lithium 正在安全关闭，请稍候...",
     });
-    setIsShutdownOpen(false);
+    setShutdownOpen(false);
   };
 
   return (
@@ -57,20 +57,20 @@ export default function SystemManagement({
             isDarkMode
               ? "bg-gray-800 border-gray-700"
               : "bg-white border-gray-200"
-          }`}
+          } p-4 rounded-lg shadow-md`}
         >
-          <div className="space-y-4 p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
                 <div
                   className={`text-sm ${
                     isDarkMode ? "text-gray-400" : "text-gray-600"
-                  } mb-2`}
+                  } mb-3`}
                 >
                   系统操作
                 </div>
-                <div className="flex space-x-4">
-                  <Dialog open={isRestartOpen} onOpenChange={setIsRestartOpen}>
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+                  <Dialog open={isRestartOpen} onOpenChange={setRestartOpen}>
                     <DialogTrigger asChild>
                       <Button
                         className={`flex-1 ${
@@ -99,7 +99,7 @@ export default function SystemManagement({
                       <DialogFooter>
                         <Button
                           variant="outline"
-                          onClick={() => setIsRestartOpen(false)}
+                          onClick={() => setRestartOpen(false)}
                         >
                           取消
                         </Button>
@@ -112,10 +112,7 @@ export default function SystemManagement({
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
-                  <Dialog
-                    open={isShutdownOpen}
-                    onOpenChange={setIsShutdownOpen}
-                  >
+                  <Dialog open={isShutdownOpen} onOpenChange={setShutdownOpen}>
                     <DialogTrigger asChild>
                       <Button
                         className={`flex-1 ${
@@ -144,7 +141,7 @@ export default function SystemManagement({
                       <DialogFooter>
                         <Button
                           variant="outline"
-                          onClick={() => setIsShutdownOpen(false)}
+                          onClick={() => setShutdownOpen(false)}
                         >
                           取消
                         </Button>
@@ -165,11 +162,11 @@ export default function SystemManagement({
               <div
                 className={`text-sm ${
                   isDarkMode ? "text-gray-400" : "text-gray-600"
-                } mb-2`}
+                } mb-3`}
               >
                 Lithium 版本
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span>App</span>
                   <span>v1.0.2.20240816</span>
@@ -192,7 +189,7 @@ export default function SystemManagement({
                     isDarkMode
                       ? "bg-blue-600 hover:bg-blue-700"
                       : "bg-blue-500 hover:bg-blue-600"
-                  } mt-2`}
+                  } mt-4`}
                   disabled
                 >
                   检查更新

@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTheme } from "next-themes";
-import { useWifiStore } from "@/lib/store/wifi";
-import { mockWifiService } from "@/utils/mock-wifi";
+import { create } from "zustand";
 import { toast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
@@ -14,6 +13,54 @@ import { useMediaQuery } from "react-responsive";
 import NetworkItem from "./WiFiItem";
 import WiFiSettings from "./WiFiSettings";
 import { WiFiNetwork } from "@/types/wifi";
+import { mockWifiService } from "@/utils/mock-wifi";
+
+interface WiFiState {
+  isWifiOn: boolean;
+  networks: WiFiNetwork[];
+  connectedNetwork: string | null;
+  isMockMode: boolean;
+  isLoading: boolean;
+  autoJoinNetworks: boolean;
+  notifyAvailableNetworks: boolean;
+  askToJoinNetworks: boolean;
+  preferredBand: string;
+  recentNetworks: WiFiNetwork[];
+  setWifiOn: (on: boolean) => void;
+  setNetworks: (nets: WiFiNetwork[]) => void;
+  connectToNetwork: (id: string) => void;
+  disconnectFromNetwork: () => void;
+  toggleMockMode: () => void;
+  setLoading: (loading: boolean) => void;
+  setAutoJoinNetworks: (autoJoin: boolean) => void;
+  setNotifyAvailableNetworks: (notify: boolean) => void;
+  setAskToJoinNetworks: (ask: boolean) => void;
+  setPreferredBand: (band: string) => void;
+}
+
+export const useWifiStore = create<WiFiState>((set) => ({
+  isWifiOn: true,
+  networks: [],
+  connectedNetwork: null,
+  isMockMode: false,
+  isLoading: false,
+  autoJoinNetworks: true,
+  notifyAvailableNetworks: true,
+  askToJoinNetworks: true,
+  preferredBand: "auto",
+  recentNetworks: [],
+  setWifiOn: (on) => set({ isWifiOn: on }),
+  setNetworks: (nets) => set({ networks: nets }),
+  connectToNetwork: (id) => set({ connectedNetwork: id }),
+  disconnectFromNetwork: () => set({ connectedNetwork: null }),
+  toggleMockMode: () => set((state) => ({ isMockMode: !state.isMockMode })),
+  setLoading: (loading) => set({ isLoading: loading }),
+  setAutoJoinNetworks: (autoJoin) => set({ autoJoinNetworks: autoJoin }),
+  setNotifyAvailableNetworks: (notify) =>
+    set({ notifyAvailableNetworks: notify }),
+  setAskToJoinNetworks: (ask) => set({ askToJoinNetworks: ask }),
+  setPreferredBand: (band) => set({ preferredBand: band }),
+}));
 
 export default function WiFiList() {
   const {
@@ -174,7 +221,7 @@ export default function WiFiList() {
   return (
     <ScrollArea className="mb-2">
       <div
-        className={`max-w-4xl mx-auto p-4 bg-background dark:bg-background-dark text-foreground dark:text-foreground-dark ${
+        className={`max-w-4xl mx-auto p-4 bg-background dark:bg-gray-900 text-foreground dark:text-white ${
           isLandscape && !isNarrowLandscape ? "flex" : ""
         }`}
       >
@@ -218,7 +265,7 @@ export default function WiFiList() {
                         <Loader2 className="animate-spin text-primary" />
                       </div>
                       <Progress value={scanProgress} className="w-full" />
-                      <p className="text-center text-sm text-muted-foreground">
+                      <p className="text-center text-sm text-gray-500 dark:text-gray-400">
                         正在扫描WiFi网络...
                       </p>
                     </div>
@@ -234,7 +281,7 @@ export default function WiFiList() {
                     ))
                   )}
                   {sortedNetworks.length === 0 && !isLoading && (
-                    <p className="text-center text-sm text-muted-foreground">
+                    <p className="text-center text-sm text-gray-500 dark:text-gray-400">
                       未找到匹配的网络
                     </p>
                   )}
@@ -245,8 +292,13 @@ export default function WiFiList() {
         </motion.div>
 
         {isLandscape && !isNarrowLandscape && (
-          <div className="pb-4 border-b dark:border-b-dark">
-            <h2 className="text-lg font-semibold">网络详情</h2>
+          <motion.div
+            className="pb-4 border-b dark:border-gray-700 w-1/2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="text-lg font-semibold mb-2">网络详情</h2>
             {connectedNetwork ? (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -290,11 +342,11 @@ export default function WiFiList() {
             ) : (
               <p>未连接到任何网络</p>
             )}
-          </div>
+          </motion.div>
         )}
 
         {isNarrowLandscape && (
-          <div className="bottom-0 left-0 right-0 bg-background dark:bg-background-dark border-t dark:border-t-dark p-2 flex justify-between items-center">
+          <div className="fixed bottom-0 left-0 right-0 bg-background dark:bg-gray-900 border-t dark:border-gray-700 p-2 flex justify-between items-center">
             <Button
               variant="outline"
               size="sm"

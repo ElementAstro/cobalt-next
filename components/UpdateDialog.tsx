@@ -17,7 +17,23 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, CheckCircle, XCircle } from "lucide-react";
+import { create } from "zustand";
 import { useTheme } from "next-themes";
+
+// Zustand store
+interface UpdateStore {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+  theme: string;
+  toggleTheme: () => void;
+}
+
+const useUpdateStore = create<UpdateStore>((set, get) => ({
+  isOpen: true,
+  setIsOpen: (open) => set({ isOpen: open }),
+  theme: "light",
+  toggleTheme: () => set({ theme: get().theme === "dark" ? "light" : "dark" }),
+}));
 
 interface UpdateDialogProps {
   version: string;
@@ -47,7 +63,7 @@ export function UpdateDialog({
   onCancel,
   customStyles = {},
 }: UpdateDialogProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  const { isOpen, setIsOpen, theme, toggleTheme } = useUpdateStore();
   const [isUpdating, setIsUpdating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [autoUpdate, setAutoUpdate] = useState(false);
@@ -60,7 +76,6 @@ export function UpdateDialog({
   const [retryCount, setRetryCount] = useState(0);
   const [retryDelay, setRetryDelay] = useState(INITIAL_RETRY_DELAY);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     if (isUpdating) {
@@ -101,7 +116,7 @@ export function UpdateDialog({
     } finally {
       setIsUpdating(false);
     }
-  }, [onUpdate]);
+  }, [onUpdate, setIsOpen]);
 
   const handleCancel = () => {
     onCancel();
@@ -126,17 +141,13 @@ export function UpdateDialog({
     }
   }, [retryCount, retryDelay, handleUpdate]);
 
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
-
   return (
     <>
       <AnimatePresence>
         {isOpen && (
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogContent
-              className="sm:max-w-[500px] w-full"
+              className="sm:max-w-md w-full p-6"
               style={{
                 backgroundColor: customStyles.backgroundColor || "",
                 color: customStyles.textColor || "",
@@ -156,10 +167,8 @@ export function UpdateDialog({
                 </DialogHeader>
                 <div className="py-4">
                   <p className="text-sm text-muted-foreground">{description}</p>
-                  <ScrollArea className="h-[200px] mt-4 p-4 rounded-md border dark:border-gray-700">
-                    <h4 className="mb-4 text-sm font-medium leading-none">
-                      更新日志
-                    </h4>
+                  <ScrollArea className="h-48 mt-4 p-4 rounded-md border dark:border-gray-700">
+                    <h4 className="mb-4 text-sm font-medium">更新日志</h4>
                     {changelog.map((log, index) => (
                       <motion.p
                         key={index}
@@ -229,7 +238,7 @@ export function UpdateDialog({
                   <Button
                     onClick={handleUpdate}
                     disabled={isUpdating}
-                    style={{ backgroundColor: customStyles.buttonColor }}
+                    className="bg-blue-500 hover:bg-blue-600"
                   >
                     {isUpdating ? (
                       <span className="flex items-center">
@@ -298,7 +307,7 @@ function UpdateConfirmationDialog({
 }: UpdateConfirmationDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] w-full">
+      <DialogContent className="sm:max-w-md w-full p-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -318,7 +327,9 @@ function UpdateConfirmationDialog({
             </p>
           </div>
           <DialogFooter>
-            <Button onClick={onClose}>确定</Button>
+            <Button onClick={onClose} className="w-full">
+              确定
+            </Button>
           </DialogFooter>
         </motion.div>
       </DialogContent>

@@ -1,17 +1,30 @@
 import { useState, useEffect } from "react";
 
-export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
+export function useMediaQuery(queries: string | string[]): boolean[] {
+  const [matches, setMatches] = useState<boolean[]>(
+    Array.isArray(queries) ? queries.map(() => false) : [false]
+  );
 
   useEffect(() => {
-    const media = window.matchMedia(query);
-    if (media.matches !== matches) {
-      setMatches(media.matches);
-    }
-    const listener = () => setMatches(media.matches);
-    window.addEventListener("resize", listener);
-    return () => window.removeEventListener("resize", listener);
-  }, [matches, query]);
+    const queryList = Array.isArray(queries) ? queries : [queries];
+    const mediaQueryLists = queryList.map((query) => window.matchMedia(query));
+
+    const updateMatches = () => {
+      setMatches(mediaQueryLists.map((mql) => mql.matches));
+    };
+
+    updateMatches();
+
+    mediaQueryLists.forEach((mql) => {
+      mql.addEventListener("change", updateMatches);
+    });
+
+    return () => {
+      mediaQueryLists.forEach((mql) => {
+        mql.removeEventListener("change", updateMatches);
+      });
+    };
+  }, [queries]);
 
   return matches;
 }

@@ -1,3 +1,4 @@
+// NetworkSettings.tsx
 "use client";
 
 import { useState } from "react";
@@ -15,7 +16,8 @@ import {
 } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
-import WifiList from "@/components/setting/WifiList";
+import WifiList from "@/components/setting/WiFiList";
+import { useNetworkStore } from "@/lib/store/settings";
 
 interface NetworkSettingsProps {
   isDarkMode: boolean;
@@ -24,9 +26,10 @@ interface NetworkSettingsProps {
 export default function NetworkSettings({ isDarkMode }: NetworkSettingsProps) {
   const { toast } = useToast();
   const [showResetDialog, setShowResetDialog] = useState(false);
+  const { resetSettings } = useNetworkStore();
 
   const handleNetworkReset = () => {
-    // Simulating network reset
+    resetSettings();
     toast({
       title: "网络设置已重置",
       description: "请重新配置您的网络连接",
@@ -34,85 +37,119 @@ export default function NetworkSettings({ isDarkMode }: NetworkSettingsProps) {
     setShowResetDialog(false);
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3 }}
-    >
-      <Card
-        className={`border ${
-          isDarkMode
-            ? "bg-gray-800 border-gray-700"
-            : "bg-white border-gray-200"
-        }`}
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.3 }}
+        className="p-4 space-y-4 dark:bg-gray-900 min-h-screen"
       >
-        <div className="p-4">
-          <div className="space-y-4">
-            <div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  className={`flex-1 ${
-                    isDarkMode
-                      ? "bg-gray-700 hover:bg-gray-600"
-                      : "bg-gray-200 hover:bg-gray-300"
-                  }`}
+        <Card
+          className={`border ${
+            isDarkMode
+              ? "bg-gray-800 border-gray-700"
+              : "bg-white border-gray-200"
+          } rounded-lg shadow-lg`}
+        >
+          <div className="p-4">
+            <div className="space-y-4">
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="space-y-4"
+              >
+                <motion.div
+                  variants={itemVariants}
+                  className="flex flex-col sm:flex-row gap-2"
                 >
-                  修改
-                </Button>
-                <Dialog
-                  open={showResetDialog}
-                  onOpenChange={setShowResetDialog}
-                >
-                  <DialogTrigger asChild>
-                    <Button
-                      className={`flex-1 ${
-                        isDarkMode
-                          ? "bg-red-600 hover:bg-red-700"
-                          : "bg-red-500 hover:bg-red-600"
-                      }`}
-                    >
-                      重置
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent
-                    className={
+                  <Button
+                    className={`flex-1 ${
                       isDarkMode
-                        ? "bg-gray-800 text-white"
-                        : "bg-white text-black"
-                    }
+                        ? "bg-gray-700 hover:bg-gray-600"
+                        : "bg-gray-200 hover:bg-gray-300"
+                    } transition-colors duration-200 flex items-center justify-center`}
+                    onClick={() => {
+                      /* 添加修改功能 */
+                    }}
                   >
-                    <DialogHeader>
-                      <DialogTitle>确认重置网络设置</DialogTitle>
-                      <DialogDescription>
-                        此操作将重置所有网络设置。您确定要继续吗？
-                      </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
+                    <Cog className="mr-2 h-4 w-4" />
+                    修改
+                  </Button>
+                  <Dialog
+                    open={showResetDialog}
+                    onOpenChange={setShowResetDialog}
+                  >
+                    <DialogTrigger asChild>
                       <Button
-                        variant="outline"
-                        onClick={() => setShowResetDialog(false)}
+                        className={`flex-1 ${
+                          isDarkMode
+                            ? "bg-red-600 hover:bg-red-700"
+                            : "bg-red-500 hover:bg-red-600"
+                        } transition-colors duration-200 flex items-center justify-center`}
                       >
-                        取消
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        重置
                       </Button>
-                      <Button
-                        className="bg-red-600 hover:bg-red-700"
-                        onClick={handleNetworkReset}
-                      >
-                        确认重置
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </div>
-            <div>
-              <WifiList />
+                    </DialogTrigger>
+                    <DialogContent
+                      className={`${
+                        isDarkMode
+                          ? "bg-gray-800 text-white"
+                          : "bg-white text-black"
+                      } rounded-lg p-6`}
+                    >
+                      <DialogHeader>
+                        <DialogTitle>确认重置网络设置</DialogTitle>
+                        <DialogDescription>
+                          此操作将重置所有网络设置。您确定要继续吗？
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter className="flex justify-end space-x-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowResetDialog(false)}
+                          className={`${
+                            isDarkMode ? "text-gray-300" : "text-gray-700"
+                          }`}
+                        >
+                          取消
+                        </Button>
+                        <Button
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                          onClick={handleNetworkReset}
+                        >
+                          确认重置
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </motion.div>
+                <motion.div variants={itemVariants}>
+                  <WifiList />
+                </motion.div>
+              </motion.div>
             </div>
           </div>
-        </div>
-      </Card>
-    </motion.div>
+        </Card>
+      </motion.div>
+    </AnimatePresence>
   );
 }

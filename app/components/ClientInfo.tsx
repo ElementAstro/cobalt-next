@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { UAParser } from "ua-parser-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { motion } from "framer-motion";
 
 type ClientInfo = {

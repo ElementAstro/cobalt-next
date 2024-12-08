@@ -9,6 +9,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { motion } from "framer-motion";
 
 interface SoftwareDetailProps {
   software: Software | null;
@@ -20,12 +21,19 @@ export function SoftwareDetail({ software, onClose }: SoftwareDetailProps) {
 
   return (
     <Dialog open={!!software} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] dark:bg-gray-800">
         <DialogHeader>
-          <DialogTitle>{software.name}</DialogTitle>
-          <DialogDescription>软件详细信息</DialogDescription>
+          <DialogTitle className="text-white">{software.name}</DialogTitle>
+          <DialogDescription className="text-gray-400">
+            软件详细信息
+          </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <motion.div
+          className="grid gap-4 py-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
           <div className="flex items-center gap-4">
             <img
               src={software.icon}
@@ -33,22 +41,27 @@ export function SoftwareDetail({ software, onClose }: SoftwareDetailProps) {
               className="h-16 w-16 rounded-lg"
             />
             <div>
-              <p className="font-semibold">{software.version}</p>
-              <p className="text-sm text-muted-foreground">{software.author}</p>
+              <p className="font-semibold text-white">{software.version}</p>
+              <p className="text-sm text-gray-400">{software.author}</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="grid grid-cols-2 gap-2 text-sm text-white">
             <p>安装日期：</p>
             <p>{software.date}</p>
             <p>大小：</p>
             <p>{software.size}</p>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-gray-400">
             这里可以添加更多软件的详细信息，如描述、系统要求、许可证等。
           </p>
-        </div>
+        </motion.div>
         <DialogFooter>
-          <Button onClick={onClose}>关闭</Button>
+          <Button
+            onClick={onClose}
+            className="dark:bg-gray-700 dark:text-white"
+          >
+            关闭
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
