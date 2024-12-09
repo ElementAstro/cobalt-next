@@ -49,6 +49,7 @@
     "color-namer": "^1.4.0",
     "colord": "^2.9.3",
     "embla-carousel-react": "^8.5.1",
+    "emoji-picker-react": "^4.12.0",
     "framer-motion": "^11.12.0",
     "fuse.js": "^7.0.0",
     "lodash": "^4.17.21",
@@ -93,7 +94,8 @@
     "uuid": "^11.0.3",
     "vaul": "^1.1.1",
     "zod": "^3.23.8",
-    "zustand": "^5.0.2"
+    "zustand": "^5.0.2",
+    "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
     "@types/archiver": "^6.0.3",
@@ -105,6 +107,7 @@
     "@types/react": "^18",
     "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-dom": "^18",
+    "@types/zxcvbn": "^4.4.5",
     "eslint": "^8",
     "eslint-config-next": "14.2.16",
     "postcss": "^8",

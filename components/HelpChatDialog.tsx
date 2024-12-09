@@ -22,9 +22,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
-import { useChatStore } from "./store/chatStore";
+import { Message, useChatStore } from "@/lib/store/chat";
 import EmojiPicker from "emoji-picker-react";
-import { ShortcutList } from "./components/shortcut-list";
+import { ShortcutList } from "@/components/custom/ShortCutList";
 
 const botResponses = [
   "感谢您的提问。我们的客服人员会尽快回复您。",
