@@ -1,3 +1,4 @@
+// ConnectionForm.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -43,6 +44,8 @@ import { LoginForm } from "./LoginForm";
 import { AdvancedSettings } from "./AdvancedSettings";
 import { ConnectionHistory } from "./ConnectionHistory";
 
+import { useConnectionStore } from "@/lib/store/server";
+
 // 定义表单模式
 const formSchema = z.object({
   ip: z.string().min(1, "IP/Hostname is required").max(255),
@@ -54,30 +57,46 @@ const formSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-export default function ConnectionForm({ onConnect }: { onConnect: () => void }) {
-  const [isSSL, setIsSSL] = useState(false);
-  const [rememberLogin, setRememberLogin] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+export default function ConnectionForm({
+  onConnect,
+}: {
+  onConnect: () => void;
+}) {
+  const {
+    formData,
+    isConnected,
+    isLoading,
+    connectionStrength,
+    connectionHistory,
+    isDarkMode,
+    isRegistered, // 获取注册状态
+    loadFromCookies,
+    loadRegistration, // 加载注册状态
+    saveToCookies,
+    updateFormData,
+    setConnected,
+    setLoading,
+    setConnectionStrength,
+    addConnectionHistory,
+    toggleDarkMode,
+  } = useConnectionStore();
+
   const [showAlert, setShowAlert] = useState(false);
   const [alertType, setAlertType] = useState<"success" | "error">("success");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [connectionStrength, setConnectionStrength] = useState(0);
   const [activeTab, setActiveTab] = useState("connection");
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [connectionHistory, setConnectionHistory] = useState<string[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      ip: "",
-      port: 5950,
-      username: "",
-      password: "",
-    },
+    defaultValues: formData,
   });
+
+  useEffect(() => {
+    loadFromCookies();
+    loadRegistration(); // 加载注册状态
+  }, [loadFromCookies, loadRegistration]);
 
   useEffect(() => {
     if (isConnected) {
@@ -86,40 +105,56 @@ export default function ConnectionForm({ onConnect }: { onConnect: () => void })
       }, 5000);
       return () => clearInterval(interval);
     }
-  }, [isConnected]);
+  }, [isConnected, setConnectionStrength]);
 
   useEffect(() => {
     document.body.classList.toggle("dark", isDarkMode);
   }, [isDarkMode]);
 
   const handleConnect = async (values: z.infer<typeof formSchema>) => {
-    setIsLoading(true);
+    setLoading(true);
     // 模拟连接过程
     await new Promise((resolve) => setTimeout(resolve, 2000));
     if (values.ip && values.username && values.password) {
-      setIsConnected(true);
+      setConnected(true);
       onConnect();
       setAlertType("success");
       setShowAlert(true);
       setConnectionStrength(Math.floor(Math.random() * 100) + 1);
-      setConnectionHistory((prev) => [...prev, `${values.ip}:${values.port}`]);
+      addConnectionHistory(`${values.ip}:${values.port}`);
+      updateFormData({
+        ip: values.ip,
+        port: values.port,
+        username: values.username,
+        password: "", // 不保存密码
+        isSSL: formData.isSSL,
+        rememberLogin: formData.rememberLogin,
+      });
+      saveToCookies();
     } else {
       setAlertType("error");
       setShowAlert(true);
     }
-    setIsLoading(false);
+    setLoading(false);
   };
 
   const handleDisconnect = () => {
-    setIsConnected(false);
+    setConnected(false);
     setShowAlert(false);
     setConnectionStrength(0);
   };
 
   const handleReset = () => {
     form.reset();
-    setIsSSL(false);
-    setRememberLogin(false);
+    updateFormData({
+      ip: "",
+      port: 5950,
+      username: "",
+      password: "",
+      isSSL: false,
+      rememberLogin: false,
+    });
+    saveToCookies();
   };
 
   const toggleCollapse = () => {
@@ -140,11 +175,7 @@ export default function ConnectionForm({ onConnect }: { onConnect: () => void })
     console.log("Loading configuration");
   };
 
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-  };
-
-  const toggleHistory = () => {
+  const toggleHistoryVisibility = () => {
     setShowHistory(!showHistory);
   };
 
@@ -187,7 +218,7 @@ export default function ConnectionForm({ onConnect }: { onConnect: () => void })
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={toggleTheme}
+                      onClick={toggleDarkMode}
                       className="text-yellow-400"
                     >
                       {isDarkMode ? (
@@ -208,7 +239,7 @@ export default function ConnectionForm({ onConnect }: { onConnect: () => void })
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={toggleHistory}
+                      onClick={toggleHistoryVisibility}
                       className="text-purple-400"
                     >
                       <History className="h-4 w-4" />
@@ -265,8 +296,8 @@ export default function ConnectionForm({ onConnect }: { onConnect: () => void })
                           >
                             <ConnectionDetails
                               form={form}
-                              isSSL={isSSL}
-                              setIsSSL={setIsSSL}
+                              isSSL={formData.isSSL}
+                              setIsSSL={(val) => updateFormData({ isSSL: val })}
                             />
                             <LoginForm
                               form={form}
@@ -276,40 +307,13 @@ export default function ConnectionForm({ onConnect }: { onConnect: () => void })
                               }
                             />
 
-                            <div className="space-y-2">
-                              <Label className="text-white">
-                                租赁票据文件（即将推出）
-                              </Label>
-                              <div className="flex gap-2">
-                                <Input
-                                  disabled
-                                  placeholder="选择票据文件（即将推出）"
-                                  className="bg-gray-700 text-white"
-                                />
-                                <Button type="button" variant="secondary">
-                                  浏览
-                                </Button>
-                              </div>
-                              <p className="text-sm text-gray-400">
-                                连接前请选择电脑中的租赁票据文件
-                              </p>
-                            </div>
-
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className="w-full border-orange-500 text-orange-500 hover:bg-orange-500/10"
-                              onClick={handleReset}
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              重置登录/票据数据
-                            </Button>
-
                             <div className="flex items-center gap-2">
                               <Switch
                                 id="remember"
-                                checked={rememberLogin}
-                                onCheckedChange={setRememberLogin}
+                                checked={formData.rememberLogin}
+                                onCheckedChange={(checked) =>
+                                  updateFormData({ rememberLogin: checked })
+                                }
                               />
                               <Label htmlFor="remember" className="text-white">
                                 记住登录数据/票据
@@ -378,8 +382,7 @@ export default function ConnectionForm({ onConnect }: { onConnect: () => void })
 
       <ConnectionHistory
         isVisible={showHistory}
-        onClose={toggleHistory}
-        history={connectionHistory}
+        onClose={toggleHistoryVisibility}
       />
     </div>
   );

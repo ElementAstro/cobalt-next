@@ -142,6 +142,12 @@ export default function SoftwareManagement() {
         onSortChange={setSelectedSort}
         onFilterChange={setSelectedFilter}
         totalCount={filteredSoftware.length}
+        onSearchChange={setSearch}
+        onReset={() => {
+          setSearch("");
+          setSelectedSort("name-asc");
+          setSelectedFilter("all");
+        }}
       />
 
       <AnimatePresence>

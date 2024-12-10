@@ -1,6 +1,7 @@
+// Log.tsx
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { FixedSizeList as List } from "react-window";
 import Prism from "prismjs";
 import "prismjs/themes/prism-tomorrow.css";
@@ -44,53 +45,65 @@ import { LogChart } from "@/components/log/LogChart";
 import { TimeSeriesChart } from "@/components/log/TimeSeriesChart";
 import { LogComparison } from "@/components/log/LogComparison";
 import { useWebSocket } from "@/hooks/use-websocket";
-import { LogEntry } from "@/types/log";
 import { uploadLogs } from "@/utils/log-uploader";
 import { motion } from "framer-motion";
+import { generateMockLogs } from "@/utils/mock-log-data";
+import { useLogStore } from "@/lib/store/log";
 
 Prism.manual = true;
 
-interface LogPanelProps {
-  initialLogCount?: number;
-  enablePagination?: boolean;
-  websocketUrl?: string;
-}
+const LogPanel: React.FC = () => {
+  const {
+    logs,
+    setLogs,
+    filteredLogs,
+    setFilteredLogs,
+    filter,
+    setFilter,
+    search,
+    setSearch,
+    isCollapsed,
+    setIsCollapsed,
+    logCount,
+    setLogCount,
+    isPaginationEnabled,
+    setIsPaginationEnabled,
+    currentPage,
+    setCurrentPage,
+    selectedLogs,
+    setSelectedLogs,
+    activeTab,
+    setActiveTab,
+    selectedLogForNote,
+    setSelectedLogForNote,
+    newNote,
+    setNewNote,
+    newTag,
+    setNewTag,
+    isRealTimeEnabled,
+    setIsRealTimeEnabled,
+    exportFormat,
+    setExportFormat,
+    comparisonTimeRange,
+    setComparisonTimeRange,
+    isMockMode,
+    setIsMockMode,
+    theme,
+    toggleTheme,
+  } = useLogStore();
 
-const LogPanel: React.FC<LogPanelProps> = ({
-  initialLogCount = 1000,
-  enablePagination = false,
-  websocketUrl = "ws://localhost:3001",
-}) => {
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [filteredLogs, setFilteredLogs] = useState<LogEntry[]>([]);
-  const [filter, setFilter] = useState("");
-  const [search, setSearch] = useState("");
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [logCount, setLogCount] = useState(initialLogCount);
-  const [isPaginationEnabled, setIsPaginationEnabled] = useState(enablePagination);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedLogs, setSelectedLogs] = useState<number[]>([]);
-  const [activeTab, setActiveTab] = useState("logs");
-  const [selectedLogForNote, setSelectedLogForNote] = useState<LogEntry | null>(null);
-  const [newNote, setNewNote] = useState("");
-  const [newTag, setNewTag] = useState("");
-  const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(true);
-  const [exportFormat, setExportFormat] = useState<"json" | "csv">("json");
-  const [comparisonTimeRange, setComparisonTimeRange] = useState<"1h" | "24h" | "7d">("24h");
-  const [isMockMode, setIsMockMode] = useState(false);
   const listRef = useRef<List>(null);
   const workerRef = useRef<Worker | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const logsPerPage = 100;
-
-  const { lastMessage, sendMessage } = useWebSocket(websocketUrl);
+  const { lastMessage, sendMessage } = useWebSocket("ws://localhost:3001");
 
   useEffect(() => {
     if (lastMessage && isRealTimeEnabled && !isMockMode) {
       const newLog = JSON.parse(lastMessage.data);
-      setLogs((prevLogs) => [newLog, ...prevLogs.slice(0, 9999)]);
+      setLogs([newLog, ...logs.slice(0, 9999)]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastMessage, isRealTimeEnabled, isMockMode]);
 
   useEffect(() => {
@@ -109,14 +122,16 @@ const LogPanel: React.FC<LogPanelProps> = ({
 
     fetchLogs();
 
-    workerRef.current = new Worker(new URL("../../workers/log-worker.ts", import.meta.url));
+    workerRef.current = new Worker(
+      new URL("../../workers/log-worker.ts", import.meta.url)
+    );
 
     return () => {
       if (workerRef.current) {
         workerRef.current.terminate();
       }
     };
-  }, [logCount, isMockMode]);
+  }, [logCount, isMockMode, setFilteredLogs, setLogs]);
 
   useEffect(() => {
     if (workerRef.current) {
@@ -124,32 +139,38 @@ const LogPanel: React.FC<LogPanelProps> = ({
         setFilteredLogs(event.data);
       };
     }
-  }, []);
+  }, [setFilteredLogs]);
 
   useEffect(() => {
     if (workerRef.current) {
       workerRef.current.postMessage({ logs, filter, search });
     }
-  }, [logs, filter, search]);
+  }, [logs, filter, search, setFilteredLogs]);
 
   const Row = useCallback(
     ({ index, style }: { index: number; style: React.CSSProperties }) => {
       const log = filteredLogs[index];
-      const highlightedMessage = Prism.highlight(log.message, Prism.languages.javascript, "javascript");
+      const highlightedMessage = Prism.highlight(
+        log.message,
+        Prism.languages.javascript,
+        "javascript"
+      );
 
       return (
         <motion.div
           style={style}
           className="px-2 py-1 border-b last:border-b-0 flex items-center text-sm dark:border-gray-700"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: index * 0.02 }}
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.01 }}
         >
           <Checkbox
             checked={selectedLogs.includes(log.id)}
             onCheckedChange={(checked) => {
-              setSelectedLogs((prev) =>
-                checked ? [...prev, log.id] : prev.filter((id) => id !== log.id)
+              setSelectedLogs(
+                checked
+                  ? [...selectedLogs, log.id]
+                  : selectedLogs.filter((id) => id !== log.id)
               );
             }}
             className="mr-2"
@@ -159,7 +180,9 @@ const LogPanel: React.FC<LogPanelProps> = ({
               <span className="text-xs text-gray-500 dark:text-gray-400">
                 {new Date(log.timestamp).toLocaleString()}
               </span>
-              <span className={`px-1 rounded text-xs ${getLevelClass(log.level)}`}>
+              <span
+                className={`px-1 rounded text-xs ${getLevelClass(log.level)}`}
+              >
                 {log.level}
               </span>
               {log.tags &&
@@ -197,12 +220,15 @@ const LogPanel: React.FC<LogPanelProps> = ({
             </DialogTrigger>
             <DialogContent className="dark:bg-gray-800">
               <DialogHeader>
-                <DialogTitle>Add Note and Tags</DialogTitle>
+                <DialogTitle>添加备注和标签</DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="note" className="text-right dark:text-gray-300">
-                    Note
+                  <Label
+                    htmlFor="note"
+                    className="text-right dark:text-gray-300"
+                  >
+                    备注
                   </Label>
                   <Textarea
                     id="note"
@@ -212,8 +238,11 @@ const LogPanel: React.FC<LogPanelProps> = ({
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="tag" className="text-right dark:text-gray-300">
-                    Tag
+                  <Label
+                    htmlFor="tag"
+                    className="text-right dark:text-gray-300"
+                  >
+                    标签
                   </Label>
                   <Input
                     id="tag"
@@ -243,14 +272,24 @@ const LogPanel: React.FC<LogPanelProps> = ({
                 }}
                 className="dark:bg-blue-600 dark:text-white"
               >
-                Save
+                保存
               </Button>
             </DialogContent>
           </Dialog>
         </motion.div>
       );
     },
-    [filteredLogs, selectedLogs, logs]
+    [
+      filteredLogs,
+      selectedLogs,
+      logs,
+      setSelectedLogs,
+      setSelectedLogForNote,
+      newNote,
+      newTag,
+      setLogs,
+      setFilteredLogs,
+    ]
   );
 
   const getLevelClass = (level: string) => {
@@ -266,30 +305,13 @@ const LogPanel: React.FC<LogPanelProps> = ({
     }
   };
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilter(e.target.value);
-  };
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
-  };
-
   const handleClearFilter = () => {
     setFilter("");
     setSearch("");
   };
 
-  const handleLogCountChange = (value: number[]) => {
-    setLogCount(value[0]);
-  };
-
-  const handlePaginationToggle = (checked: boolean) => {
-    setIsPaginationEnabled(checked);
-    setCurrentPage(1);
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
   };
 
   const handleDownloadLogs = async () => {
@@ -332,28 +354,15 @@ const LogPanel: React.FC<LogPanelProps> = ({
     setSelectedLogs([]);
   };
 
-  const handleRealTimeToggle = (checked: boolean) => {
-    setIsRealTimeEnabled(checked);
-  };
-
-  const handleMockModeToggle = (checked: boolean) => {
-    setIsMockMode(checked);
-    if (checked) {
-      const mockLogs = generateMockLogs(logCount);
-      setLogs(mockLogs);
-      setFilteredLogs(mockLogs);
-    } else {
-      sendMessage("refresh");
-    }
-  };
-
   const handleUploadLogs = async () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (file) {
       try {
@@ -361,27 +370,30 @@ const LogPanel: React.FC<LogPanelProps> = ({
         setLogs(uploadedLogs);
         setFilteredLogs(uploadedLogs);
       } catch (error) {
-        console.error("Error uploading logs:", error);
+        console.error("上传日志时出错:", error);
       }
     }
   };
 
   const paginatedLogs = isPaginationEnabled
-    ? filteredLogs.slice(
-        (currentPage - 1) * logsPerPage,
-        currentPage * logsPerPage
-      )
+    ? filteredLogs.slice((currentPage - 1) * 100, currentPage * 100)
     : filteredLogs;
 
   return (
-    <div className="h-full flex flex-col border rounded-lg shadow-sm dark:border-gray-700 dark:bg-gray-900">
+    <div
+      className={`h-full flex flex-col border rounded-lg shadow-sm ${
+        theme === "dark"
+          ? "dark:border-gray-700 dark:bg-gray-900"
+          : "border-gray-300 bg-white"
+      }`}
+    >
       <Collapsible open={!isCollapsed} onOpenChange={setIsCollapsed}>
         <CollapsibleTrigger asChild>
           <Button
             variant="ghost"
             className="w-full flex justify-between items-center p-2 dark:text-gray-200"
           >
-            <span className="font-semibold">Log Panel</span>
+            <span className="font-semibold">日志面板</span>
             {isCollapsed ? (
               <ChevronDown className="h-4 w-4" />
             ) : (
@@ -393,74 +405,96 @@ const LogPanel: React.FC<LogPanelProps> = ({
           <motion.div
             className="p-2 space-y-2"
             initial={{ height: 0 }}
-            animate={{ height: 'auto' }}
+            animate={{ height: "auto" }}
             transition={{ duration: 0.3 }}
           >
             <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-2">
               <Input
                 type="text"
-                placeholder="Filter logs..."
+                placeholder="过滤日志..."
                 value={filter}
-                onChange={handleFilterChange}
+                onChange={(e) => setFilter(e.target.value)}
                 className="flex-grow text-sm dark:bg-gray-700 dark:text-gray-200"
               />
               <Input
                 type="text"
-                placeholder="Search logs..."
+                placeholder="搜索日志..."
                 value={search}
-                onChange={handleSearchChange}
+                onChange={(e) => setSearch(e.target.value)}
                 className="flex-grow text-sm dark:bg-gray-700 dark:text-gray-200"
               />
               <Button onClick={handleClearFilter} variant="outline" size="sm">
-                Clear
+                清除
               </Button>
             </div>
             <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
               <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium dark:text-gray-200">Log count:</span>
+                <span className="text-sm font-medium dark:text-gray-200">
+                  日志数量:
+                </span>
                 <Slider
                   min={100}
                   max={10000}
                   step={100}
                   value={[logCount]}
-                  onValueChange={handleLogCountChange}
+                  onValueChange={(value) => setLogCount(value[0])}
                   className="w-[150px]"
                 />
                 <span className="text-sm dark:text-gray-200">{logCount}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium dark:text-gray-200">Pagination:</span>
+                <span className="text-sm font-medium dark:text-gray-200">
+                  分页:
+                </span>
                 <Switch
                   checked={isPaginationEnabled}
-                  onCheckedChange={handlePaginationToggle}
+                  onCheckedChange={(checked) => {
+                    setIsPaginationEnabled(checked);
+                    setCurrentPage(1);
+                  }}
                 />
               </div>
               <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium dark:text-gray-200">Real-time:</span>
+                <span className="text-sm font-medium dark:text-gray-200">
+                  实时:
+                </span>
                 <Switch
                   checked={isRealTimeEnabled}
-                  onCheckedChange={handleRealTimeToggle}
+                  onCheckedChange={setIsRealTimeEnabled}
                 />
               </div>
               <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium dark:text-gray-200">Mock mode:</span>
+                <span className="text-sm font-medium dark:text-gray-200">
+                  模拟模式:
+                </span>
                 <Switch
                   checked={isMockMode}
-                  onCheckedChange={handleMockModeToggle}
+                  onCheckedChange={(checked) => {
+                    setIsMockMode(checked);
+                    if (checked) {
+                      const mockLogs = generateMockLogs(logCount);
+                      setLogs(mockLogs);
+                      setFilteredLogs(mockLogs);
+                    } else {
+                      sendMessage("refresh");
+                    }
+                  }}
                 />
               </div>
             </div>
             <div className="flex flex-wrap items-center space-x-2">
               <Button onClick={handleDownloadLogs} variant="outline" size="sm">
                 <Download className="h-4 w-4 mr-2" />
-                Download
+                下载
               </Button>
               <Select
                 value={exportFormat}
-                onValueChange={(value: "json" | "csv") => setExportFormat(value)}
+                onValueChange={(value: "json" | "csv") =>
+                  setExportFormat(value)
+                }
               >
                 <SelectTrigger className="w-[100px] dark:bg-gray-700 dark:text-gray-200">
-                  <SelectValue placeholder="Format" />
+                  <SelectValue placeholder="格式" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="json">JSON</SelectItem>
@@ -474,7 +508,7 @@ const LogPanel: React.FC<LogPanelProps> = ({
                 className="text-red-600 dark:text-red-400"
               >
                 <Trash className="h-4 w-4 mr-2" />
-                Delete Selected
+                删除选中
               </Button>
               <Button
                 onClick={() => sendMessage("refresh")}
@@ -482,11 +516,11 @@ const LogPanel: React.FC<LogPanelProps> = ({
                 size="sm"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh Logs
+                刷新日志
               </Button>
               <Button onClick={handleUploadLogs} variant="outline" size="sm">
                 <Upload className="h-4 w-4 mr-2" />
-                Upload Logs
+                上传日志
               </Button>
               <input
                 type="file"
@@ -495,6 +529,14 @@ const LogPanel: React.FC<LogPanelProps> = ({
                 onChange={handleFileChange}
                 accept=".json,.csv"
               />
+              <Button
+                onClick={toggleTheme}
+                variant="outline"
+                size="sm"
+                className="dark:bg-gray-700 dark:text-gray-200"
+              >
+                {theme === "dark" ? "浅色模式" : "暗色模式"}
+              </Button>
             </div>
           </motion.div>
         </CollapsibleContent>
@@ -505,10 +547,10 @@ const LogPanel: React.FC<LogPanelProps> = ({
         className="flex-grow flex flex-col dark:text-gray-200"
       >
         <TabsList className="justify-start">
-          <TabsTrigger value="logs">Logs</TabsTrigger>
-          <TabsTrigger value="analysis">Analysis</TabsTrigger>
-          <TabsTrigger value="timeseries">Time Series</TabsTrigger>
-          <TabsTrigger value="comparison">Comparison</TabsTrigger>
+          <TabsTrigger value="logs">日志</TabsTrigger>
+          <TabsTrigger value="analysis">分析</TabsTrigger>
+          <TabsTrigger value="timeseries">时间序列</TabsTrigger>
+          <TabsTrigger value="comparison">对比</TabsTrigger>
         </TabsList>
         <TabsContent value="logs" className="flex-grow">
           <div className="h-[calc(100vh-300px)]">
@@ -530,20 +572,19 @@ const LogPanel: React.FC<LogPanelProps> = ({
                 variant="outline"
                 size="sm"
               >
-                Previous
+                上一页
               </Button>
               <span className="text-sm">
-                Page {currentPage} of {Math.ceil(filteredLogs.length / logsPerPage)}
+                第 {currentPage} 页，共 {Math.ceil(filteredLogs.length / 100)}{" "}
+                页
               </span>
               <Button
                 onClick={() => handlePageChange(currentPage + 1)}
-                disabled={
-                  currentPage === Math.ceil(filteredLogs.length / logsPerPage)
-                }
+                disabled={currentPage === Math.ceil(filteredLogs.length / 100)}
                 variant="outline"
                 size="sm"
               >
-                Next
+                下一页
               </Button>
             </div>
           )}
@@ -558,15 +599,17 @@ const LogPanel: React.FC<LogPanelProps> = ({
           <div className="mb-2">
             <Select
               value={comparisonTimeRange}
-              onValueChange={(value: "1h" | "24h" | "7d") => setComparisonTimeRange(value)}
+              onValueChange={(value: "1h" | "24h" | "7d") =>
+                setComparisonTimeRange(value)
+              }
             >
               <SelectTrigger className="w-[150px] dark:bg-gray-700 dark:text-gray-200">
-                <SelectValue placeholder="Time Range" />
+                <SelectValue placeholder="时间范围" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1h">Last 1 hour</SelectItem>
-                <SelectItem value="24h">Last 24 hours</SelectItem>
-                <SelectItem value="7d">Last 7 days</SelectItem>
+                <SelectItem value="1h">最近1小时</SelectItem>
+                <SelectItem value="24h">最近24小时</SelectItem>
+                <SelectItem value="7d">最近7天</SelectItem>
               </SelectContent>
             </Select>
           </div>

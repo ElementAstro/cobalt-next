@@ -42,6 +42,7 @@ import LandscapeDetector from "@/components/LandscapeDetection";
 import SplashScreen from "../../components/loading/SplashScreen";
 import ConnectionForm from "@/components/server/ConnectionForm";
 import { UserAgreementMask } from "@/components/UserAgreementMask";
+import CookieConsent from "@/components/CookieConsent";
 
 export default function CameraInterface() {
   type DeviceParams = {
@@ -491,6 +492,7 @@ export default function CameraInterface() {
         requireReadConfirmation={true}
         allowPrint={true}
       />
+      <CookieConsent />
     </>
   );
 }

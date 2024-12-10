@@ -11,7 +11,7 @@ import { ProfileTab } from "../../components/connection/ProfileTab";
 import { DevicesTab } from "../../components/connection/DevicesTab";
 import { AdvancedTab } from "../../components/connection/AdvancedTab";
 import { LogsTab } from "../../components/connection/LogsTab";
-import { useApiService } from "@/services/api";
+import { useApiService } from "@/services/connection";
 import { motion, AnimatePresence } from "framer-motion";
 
 const containerVariants = {

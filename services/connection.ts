@@ -1,6 +1,13 @@
 import { useState, useCallback } from "react";
+import api from "./axios";
 
-// Define types for our API responses
+// API endpoints
+const API_ENDPOINTS = {
+  profile: "/api/profile",
+  devices: "/api/devices",
+  advancedSettings: "/api/settings/advanced",
+};
+
 type ProfileData = {
   name: string;
   autoConnect: boolean;
@@ -23,7 +30,6 @@ type AdvancedSettings = {
   debugMode: boolean;
 };
 
-// Mock data
 const mockProfileData: ProfileData = {
   name: "测试",
   autoConnect: true,
@@ -47,7 +53,6 @@ const mockAdvancedSettings: AdvancedSettings = {
   debugMode: false,
 };
 
-// API Service
 export function useApiService() {
   const [useMock, setUseMock] = useState(true);
 
@@ -60,11 +65,11 @@ export function useApiService() {
       return new Promise((resolve) =>
         setTimeout(() => resolve(mockProfileData), 500)
       );
-    } else {
-      const response = await fetch("/api/profile");
-      if (!response.ok) throw new Error("Failed to fetch profile data");
-      return response.json();
     }
+    return api.request<ProfileData>({
+      url: API_ENDPOINTS.profile,
+      method: "GET",
+    });
   }, [useMock]);
 
   const updateProfileData = useCallback(
@@ -73,15 +78,12 @@ export function useApiService() {
         return new Promise((resolve) =>
           setTimeout(() => resolve({ ...mockProfileData, ...data }), 500)
         );
-      } else {
-        const response = await fetch("/api/profile", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
-        if (!response.ok) throw new Error("Failed to update profile data");
-        return response.json();
       }
+      return api.request<ProfileData>({
+        url: API_ENDPOINTS.profile,
+        method: "PUT",
+        data,
+      });
     },
     [useMock]
   );
@@ -91,11 +93,11 @@ export function useApiService() {
       return new Promise((resolve) =>
         setTimeout(() => resolve(mockDevices), 500)
       );
-    } else {
-      const response = await fetch("/api/devices");
-      if (!response.ok) throw new Error("Failed to fetch devices");
-      return response.json();
     }
+    return api.request<DeviceData[]>({
+      url: API_ENDPOINTS.devices,
+      method: "GET",
+    });
   }, [useMock]);
 
   const connectDevice = useCallback(
@@ -112,13 +114,11 @@ export function useApiService() {
             }
           }, 1000);
         });
-      } else {
-        const response = await fetch(`/api/devices/${deviceName}/connect`, {
-          method: "POST",
-        });
-        if (!response.ok) throw new Error("Failed to connect device");
-        return response.json();
       }
+      return api.request<DeviceData>({
+        url: `${API_ENDPOINTS.devices}/${deviceName}/connect`,
+        method: "POST",
+      });
     },
     [useMock]
   );
@@ -137,13 +137,11 @@ export function useApiService() {
             }
           }, 1000);
         });
-      } else {
-        const response = await fetch(`/api/devices/${deviceName}/disconnect`, {
-          method: "POST",
-        });
-        if (!response.ok) throw new Error("Failed to disconnect device");
-        return response.json();
       }
+      return api.request<DeviceData>({
+        url: `${API_ENDPOINTS.devices}/${deviceName}/disconnect`,
+        method: "POST",
+      });
     },
     [useMock]
   );
@@ -154,11 +152,11 @@ export function useApiService() {
         return new Promise((resolve) =>
           setTimeout(() => resolve(mockAdvancedSettings), 500)
         );
-      } else {
-        const response = await fetch("/api/settings/advanced");
-        if (!response.ok) throw new Error("Failed to fetch advanced settings");
-        return response.json();
       }
+      return api.request<AdvancedSettings>({
+        url: API_ENDPOINTS.advancedSettings,
+        method: "GET",
+      });
     }, [useMock]);
 
   const updateAdvancedSettings = useCallback(
@@ -167,15 +165,12 @@ export function useApiService() {
         return new Promise((resolve) =>
           setTimeout(() => resolve({ ...mockAdvancedSettings, ...data }), 500)
         );
-      } else {
-        const response = await fetch("/api/settings/advanced", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
-        if (!response.ok) throw new Error("Failed to update advanced settings");
-        return response.json();
       }
+      return api.request<AdvancedSettings>({
+        url: API_ENDPOINTS.advancedSettings,
+        method: "PUT",
+        data,
+      });
     },
     [useMock]
   );

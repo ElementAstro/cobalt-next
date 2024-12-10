@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,36 +22,28 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
+import { useCookieStore } from "@/lib/store/storage";
 
-interface Cookie {
-  name: string;
-  value: string;
-  selected?: boolean;
-}
+export function CookieManager({ isLandscape }: { isLandscape: boolean }) {
+  const {
+    cookies,
+    loadCookies,
+    addCookie,
+    updateCookie,
+    deleteCookie,
+    selectAll,
+    toggleSelect,
+    deleteSelected,
+  } = useCookieStore();
 
-interface CookieManagerProps {
-  isLandscape: boolean;
-}
+  const [newCookie, setNewCookie] = useState({ name: "", value: "" });
+  const [editCookie, setEditCookie] = useState<{
+    name: string;
+    value: string;
+  } | null>(null);
+  const [selectAllChecked, setSelectAllChecked] = useState(false);
 
-export function CookieManager({ isLandscape }: CookieManagerProps) {
-  const [cookies, setCookies] = useState<Cookie[]>([]);
-  const [newCookie, setNewCookie] = useState<Cookie>({ name: "", value: "" });
-  const [editCookie, setEditCookie] = useState<Cookie | null>(null);
-  const [selectAll, setSelectAll] = useState(false);
-
-  useEffect(() => {
-    loadCookies();
-  }, []);
-
-  const loadCookies = () => {
-    const allCookies = document.cookie.split(";").map((cookie) => {
-      const [name, value] = cookie.split("=").map((c) => c.trim());
-      return { name, value, selected: false };
-    });
-    setCookies(allCookies);
-  };
-
-  const addCookie = () => {
+  const handleAddCookie = () => {
     if (!newCookie.name || !newCookie.value) {
       toast({
         title: "添加失败",
@@ -59,20 +51,18 @@ export function CookieManager({ isLandscape }: CookieManagerProps) {
       });
       return;
     }
-    document.cookie = `${newCookie.name}=${newCookie.value}`;
+    addCookie(newCookie);
     setNewCookie({ name: "", value: "" });
-    loadCookies();
     toast({
       title: "Cookie 已添加",
       description: `Cookie "${newCookie.name}" 已成功添加。`,
     });
   };
 
-  const updateCookie = () => {
+  const handleUpdateCookie = () => {
     if (editCookie) {
-      document.cookie = `${editCookie.name}=${editCookie.value}`;
+      updateCookie(editCookie);
       setEditCookie(null);
-      loadCookies();
       toast({
         title: "Cookie 已更新",
         description: `Cookie "${editCookie.name}" 已成功更新。`,
@@ -80,38 +70,14 @@ export function CookieManager({ isLandscape }: CookieManagerProps) {
     }
   };
 
-  const deleteCookie = (name: string) => {
-    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-    loadCookies();
+  const handleDeleteSelected = () => {
+    deleteSelected();
     toast({
-      title: "Cookie 已删除",
-      description: `Cookie "${name}" 已成功删除。`,
+      title: "选中 Cookie 已删除",
     });
   };
 
-  const handleSelectAll = (checked: boolean) => {
-    setSelectAll(checked);
-    setCookies(cookies.map((cookie) => ({ ...cookie, selected: checked })));
-  };
-
-  const handleSelect = (name: string, checked: boolean) => {
-    setCookies(
-      cookies.map((cookie) =>
-        cookie.name === name ? { ...cookie, selected: checked } : cookie
-      )
-    );
-  };
-
-  const deleteSelected = () => {
-    cookies.forEach((cookie) => {
-      if (cookie.selected) {
-        deleteCookie(cookie.name);
-      }
-    });
-    setSelectAll(false);
-  };
-
-  const exportCookies = () => {
+  const handleExport = () => {
     const selectedCookies = cookies.filter((cookie) => cookie.selected);
     if (selectedCookies.length === 0) {
       toast({
@@ -136,36 +102,21 @@ export function CookieManager({ isLandscape }: CookieManagerProps) {
     });
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
+  const handleSelectAll = (checked: boolean) => {
+    setSelectAllChecked(checked);
+    selectAll(checked);
   };
 
   return (
     <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className={`space-y-4 ${isLandscape ? "landscape-layout" : ""}`}
     >
-      <motion.h2
-        variants={itemVariants}
-        className="text-2xl font-bold dark:text-white"
-      >
+      <motion.h2 className="text-2xl font-bold dark:text-white">
         Cookie 管理器
       </motion.h2>
       <motion.div
-        variants={itemVariants}
         className={`flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2`}
       >
         <Input
@@ -184,12 +135,11 @@ export function CookieManager({ isLandscape }: CookieManagerProps) {
           aria-label="Cookie 值"
           className="w-full md:w-1/3"
         />
-        <Button onClick={addCookie} className="w-full md:w-1/3">
+        <Button onClick={handleAddCookie} className="w-full md:w-1/3">
           添加 Cookie
         </Button>
       </motion.div>
       <motion.div
-        variants={itemVariants}
         className={`flex ${
           isLandscape ? "flex-col" : "justify-between"
         } items-center space-y-2 md:space-y-0`}
@@ -197,7 +147,7 @@ export function CookieManager({ isLandscape }: CookieManagerProps) {
         <div className="flex items-center space-x-2">
           <Checkbox
             id="select-all"
-            checked={selectAll}
+            checked={selectAllChecked}
             onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
           />
           <label htmlFor="select-all" className="dark:text-gray-300">
@@ -210,7 +160,7 @@ export function CookieManager({ isLandscape }: CookieManagerProps) {
           } space-y-2 md:space-y-0 md:space-x-2`}
         >
           <Button
-            onClick={deleteSelected}
+            onClick={handleDeleteSelected}
             variant="destructive"
             disabled={!cookies.some((c) => c.selected)}
             className={isLandscape ? "w-full" : ""}
@@ -218,7 +168,7 @@ export function CookieManager({ isLandscape }: CookieManagerProps) {
             删除选中
           </Button>
           <Button
-            onClick={exportCookies}
+            onClick={handleExport}
             disabled={!cookies.some((c) => c.selected)}
             className={isLandscape ? "w-full" : ""}
           >
@@ -227,7 +177,6 @@ export function CookieManager({ isLandscape }: CookieManagerProps) {
         </div>
       </motion.div>
       <motion.div
-        variants={itemVariants}
         className={`overflow-x-auto ${isLandscape ? "landscape-table" : ""}`}
       >
         <Table>
@@ -246,7 +195,7 @@ export function CookieManager({ isLandscape }: CookieManagerProps) {
                   <Checkbox
                     checked={cookie.selected}
                     onCheckedChange={(checked) =>
-                      handleSelect(cookie.name, checked as boolean)
+                      toggleSelect(cookie.name, checked as boolean)
                     }
                   />
                 </TableCell>
@@ -266,7 +215,12 @@ export function CookieManager({ isLandscape }: CookieManagerProps) {
                       <DialogTrigger asChild>
                         <Button
                           variant="outline"
-                          onClick={() => setEditCookie(cookie)}
+                          onClick={() =>
+                            setEditCookie({
+                              name: cookie.name,
+                              value: cookie.value,
+                            })
+                          }
                           className={isLandscape ? "w-full" : ""}
                         >
                           编辑
@@ -286,7 +240,7 @@ export function CookieManager({ isLandscape }: CookieManagerProps) {
                             </Label>
                             <Input
                               id="name"
-                              value={editCookie?.name}
+                              value={editCookie?.name || ""}
                               className="col-span-3 bg-gray-700 text-white"
                               onChange={(e) =>
                                 setEditCookie({
@@ -305,7 +259,7 @@ export function CookieManager({ isLandscape }: CookieManagerProps) {
                             </Label>
                             <Input
                               id="value"
-                              value={editCookie?.value}
+                              value={editCookie?.value || ""}
                               className="col-span-3 bg-gray-700 text-white"
                               onChange={(e) =>
                                 setEditCookie({
@@ -316,7 +270,7 @@ export function CookieManager({ isLandscape }: CookieManagerProps) {
                             />
                           </div>
                         </div>
-                        <Button onClick={updateCookie} className="w-full">
+                        <Button onClick={handleUpdateCookie} className="w-full">
                           更新 Cookie
                         </Button>
                       </DialogContent>

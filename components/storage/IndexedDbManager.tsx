@@ -1,112 +1,40 @@
-import { useEffect, useState } from "react";
+// IndexedDBManager.tsx
+"use client";
+
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
+import { useIndexedDBStore } from "@/lib/store/storage";
 
 export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
-  const [isDBOpen, setIsDBOpen] = useState(false);
-  const [db, setDb] = useState<IDBDatabase | null>(null);
-  const [dbVersion, setDbVersion] = useState<number>(1);
-
-  const openDB = async () => {
-    try {
-      const request = indexedDB.open("myDB", dbVersion);
-
-      request.onerror = (event) => {
-        console.error("Error opening database:", event);
-        setIsDBOpen(false);
-      };
-
-      request.onsuccess = (event) => {
-        setDb(request.result);
-        setIsDBOpen(true);
-        console.log("Database opened successfully:", request.result);
-      };
-
-      request.onupgradeneeded = (event) => {
-        const target = event.target as IDBOpenDBRequest;
-        if (!target) {
-          console.error("Error: event.target is null");
-          return;
-        }
-        const db = target.result;
-        if (!db.objectStoreNames.contains("landscape")) {
-          db.createObjectStore("landscape", {
-            keyPath: "id",
-            autoIncrement: true,
-          });
-        }
-        if (!db.objectStoreNames.contains("portrait")) {
-          db.createObjectStore("portrait", {
-            keyPath: "id",
-            autoIncrement: true,
-          });
-        }
-      };
-    } catch (error) {
-      console.error("Error opening database:", error);
-      setIsDBOpen(false);
-    }
-  };
+  const { isDBOpen, openDB, addImage, deleteImage, clearDB, getAllImages } =
+    useIndexedDBStore();
 
   useEffect(() => {
     openDB();
-  }, [dbVersion]);
+  }, [openDB]);
 
-  const addImage = async (image: any, orientation: string) => {
-    if (!db) return;
-    const transaction = db.transaction([orientation], "readwrite");
-    const objectStore = transaction.objectStore(orientation);
-    const request = objectStore.add(image);
-
-    request.onsuccess = () => {
-      console.log("Image added successfully:", image);
-    };
-
-    request.onerror = (event) => {
-      console.error("Error adding image:", event);
-    };
+  const handleAddImage = () => {
+    const image = { url: "test" };
+    addImage(image, isLandscape ? "landscape" : "portrait");
   };
 
-  const getAllImages = async (orientation: string) => {
-    if (!db) return [];
-    return new Promise<any[]>((resolve, reject) => {
-      const transaction = db.transaction([orientation], "readonly");
-      const objectStore = transaction.objectStore(orientation);
-      const request = objectStore.getAll();
-
-      request.onsuccess = () => {
-        resolve(request.result);
-      };
-
-      request.onerror = (event) => {
-        reject(event);
-      };
-    });
+  const handleDeleteImage = () => {
+    deleteImage(1, isLandscape ? "landscape" : "portrait");
   };
 
-  const deleteImage = async (id: number, orientation: string) => {
-    if (!db) return;
-    const transaction = db.transaction([orientation], "readwrite");
-    const objectStore = transaction.objectStore(orientation);
-    const request = objectStore.delete(id);
-
-    request.onsuccess = () => {
-      console.log("Image deleted successfully:", id);
-    };
-
-    request.onerror = (event) => {
-      console.error("Error deleting image:", event);
-    };
+  const handleClearDB = () => {
+    clearDB();
   };
 
-  const clearDB = async () => {
-    if (!db) return;
-    const transaction = db.transaction(["landscape", "portrait"], "readwrite");
-    const landscapeStore = transaction.objectStore("landscape");
-    const portraitStore = transaction.objectStore("portrait");
-    landscapeStore.clear();
-    portraitStore.clear();
+  const handleFetchImages = async () => {
+    try {
+      const images = await getAllImages(isLandscape ? "landscape" : "portrait");
+      console.log("Fetched Images:", images);
+    } catch (error) {
+      console.error("Error fetching images:", error);
+    }
   };
 
   return (
@@ -132,33 +60,23 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
         </motion.p>
         <div className="mt-4 space-x-2">
           <Button onClick={openDB} variant="default">
-            Open DB
+            打开数据库
           </Button>
-          <Button onClick={clearDB} variant="secondary">
-            Clear DB
+          <Button onClick={handleClearDB} variant="secondary">
+            清空数据库
           </Button>
-          <Button
-            onClick={() =>
-              addImage(
-                { id: 1, url: "test" },
-                isLandscape ? "landscape" : "portrait"
-              )
-            }
-            variant="default"
-          >
-            Add Image
+          <Button onClick={handleAddImage} variant="default">
+            添加图片
           </Button>
-          <Button
-            onClick={() =>
-              deleteImage(1, isLandscape ? "landscape" : "portrait")
-            }
-            variant="destructive"
-          >
-            Delete Image
+          <Button onClick={handleDeleteImage} variant="destructive">
+            删除图片
+          </Button>
+          <Button onClick={handleFetchImages} variant="ghost">
+            获取所有图片
           </Button>
         </div>
         <p className="text-gray-300 mt-2">
-          DB Open: {isDBOpen ? "true" : "false"}
+          数据库打开: {isDBOpen ? "是" : "否"}
         </p>
       </Card>
     </motion.div>

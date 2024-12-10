@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { DiskInfo } from "@/types/settings";
+import { mockDiskService } from "@/utils/mock-settings";
 
 interface HotspotSettings {
   hotspotEnabled: boolean;
@@ -117,3 +119,29 @@ export const useSystemManagementStore = create<SystemManagementState>(
     setShutdownOpen: (open) => set({ isShutdownOpen: open }),
   })
 );
+
+interface DiskStore {
+  disks: DiskInfo[];
+  isLoading: boolean;
+  error: string | null;
+  isMockMode: boolean;
+  fetchDisks: () => Promise<void>;
+  setMockMode: (isMockMode: boolean) => void;
+}
+
+export const useDiskStore = create<DiskStore>((set) => ({
+  disks: [],
+  isLoading: false,
+  error: null,
+  isMockMode: true,
+  fetchDisks: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const disks = await mockDiskService.getDisks();
+      set({ disks, isLoading: false });
+    } catch (error) {
+      set({ error: "Failed to fetch disk info", isLoading: false });
+    }
+  },
+  setMockMode: (isMockMode: boolean) => set({ isMockMode }),
+}));

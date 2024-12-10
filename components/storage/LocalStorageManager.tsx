@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
+import { useLocalStorageStore } from "@/lib/store/storage";
 
 interface StorageItem {
   key: string;
@@ -35,47 +36,50 @@ interface LocalStorageManagerProps {
 }
 
 export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
-  const [items, setItems] = useState<StorageItem[]>([]);
+  const {
+    items,
+    loadItems,
+    addItem,
+    updateItem,
+    deleteItem,
+    selectAll,
+    toggleSelect,
+    deleteSelected,
+    exportItems,
+    importItems,
+    searchTerm,
+    setSearchTerm,
+  } = useLocalStorageStore();
+
   const [newItem, setNewItem] = useState<StorageItem>({ key: "", value: "" });
   const [editItem, setEditItem] = useState<StorageItem | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectAll, setSelectAll] = useState(false);
+  const [selectAllChecked, setSelectAllChecked] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadItems();
-  }, []);
+  }, [loadItems]);
 
-  const loadItems = () => {
-    const allItems: StorageItem[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key) {
-        allItems.push({
-          key,
-          value: localStorage.getItem(key) || "",
-          selected: false,
-        });
-      }
+  const handleAddItem = () => {
+    if (!newItem.key || !newItem.value) {
+      toast({
+        title: "添加失败",
+        description: `请填写项的键和值。`,
+      });
+      return;
     }
-    setItems(allItems);
-  };
-
-  const addItem = () => {
-    localStorage.setItem(newItem.key, newItem.value);
+    addItem(newItem);
     setNewItem({ key: "", value: "" });
-    loadItems();
     toast({
       title: "添加成功",
       description: `项 "${newItem.key}" 已成功添加。`,
     });
   };
 
-  const updateItem = () => {
+  const handleUpdateItem = () => {
     if (editItem) {
-      localStorage.setItem(editItem.key, editItem.value);
+      updateItem(editItem);
       setEditItem(null);
-      loadItems();
       toast({
         title: "更新成功",
         description: `项 "${editItem.key}" 已成功更新。`,
@@ -83,61 +87,23 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
     }
   };
 
-  const deleteItem = (key: string) => {
-    localStorage.removeItem(key);
-    loadItems();
-    toast({
-      title: "删除成功",
-      description: `项 "${key}" 已成功删除。`,
-    });
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    setSelectAll(checked);
-    setItems(items.map((item) => ({ ...item, selected: checked })));
-  };
-
-  const handleSelect = (key: string, checked: boolean) => {
-    setItems(
-      items.map((item) =>
-        item.key === key ? { ...item, selected: checked } : item
-      )
-    );
-  };
-
-  const deleteSelected = () => {
-    items.forEach((item) => {
-      if (item.selected) {
-        localStorage.removeItem(item.key);
-      }
-    });
-    loadItems();
-    setSelectAll(false);
+  const handleDeleteSelected = () => {
+    deleteSelected();
     toast({
       title: "批量删除成功",
       description: "选中的项已成功删除。",
     });
   };
 
-  const exportItems = () => {
-    const selectedItems = items.filter((item) => item.selected);
-    const itemsData = JSON.stringify(selectedItems, null, 2);
-    const blob = new Blob([itemsData], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "localstorage_items.json";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleExport = () => {
+    exportItems();
     toast({
       title: "导出成功",
-      description: `${selectedItems.length} 个项已成功导出。`,
+      description: "选中的项已成功导出。",
     });
   };
 
-  const importItems = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -146,14 +112,11 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
       const contents = e.target?.result;
       if (typeof contents === "string") {
         try {
-          const items = JSON.parse(contents);
-          items.forEach((item: StorageItem) => {
-            localStorage.setItem(item.key, item.value);
-          });
-          loadItems();
+          const importedItems: StorageItem[] = JSON.parse(contents);
+          importItems(importedItems);
           toast({
             title: "导入成功",
-            description: `${items.length} 个项已成功导入。`,
+            description: `${importedItems.length} 个项已成功导入。`,
           });
         } catch (error) {
           console.error("解析 JSON 时出错:", error);
@@ -166,6 +129,15 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    setSelectAllChecked(checked);
+    selectAll(checked);
+  };
+
+  const handleSelect = (key: string, checked: boolean) => {
+    toggleSelect(key, checked);
   };
 
   const filteredItems = items.filter(
@@ -205,7 +177,7 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
             onChange={(e) => setNewItem({ ...newItem, value: e.target.value })}
             aria-label="Item Value"
           />
-          <Button onClick={addItem}>添加项</Button>
+          <Button onClick={handleAddItem}>添加项</Button>
         </motion.div>
         <motion.div
           initial={{ opacity: 0 }}
@@ -222,7 +194,7 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
           <div className="flex items-center space-x-2">
             <Checkbox
               id="select-all"
-              checked={selectAll}
+              checked={selectAllChecked}
               onCheckedChange={handleSelectAll}
             />
             <Label htmlFor="select-all" className="text-white">
@@ -236,14 +208,14 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
           className="flex justify-end space-x-2"
         >
           <Button
-            onClick={deleteSelected}
+            onClick={handleDeleteSelected}
             variant="destructive"
             disabled={!items.some((i) => i.selected)}
           >
             删除选中项
           </Button>
           <Button
-            onClick={exportItems}
+            onClick={handleExport}
             disabled={!items.some((i) => i.selected)}
           >
             导出选中项
@@ -252,7 +224,7 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
           <input
             type="file"
             ref={fileInputRef}
-            onChange={importItems}
+            onChange={handleImport}
             accept=".json"
             style={{ display: "none" }}
           />
@@ -310,14 +282,14 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
                               <div className="grid grid-cols-4 items-center gap-4">
                                 <Label
                                   htmlFor="edit-key"
-                                  className="text-right"
+                                  className="text-right text-white"
                                 >
                                   键
                                 </Label>
                                 <Input
                                   id="edit-key"
                                   value={editItem.key}
-                                  className="col-span-3"
+                                  className="col-span-3 bg-gray-700 text-white"
                                   onChange={(e) =>
                                     setEditItem({
                                       ...editItem,
@@ -329,14 +301,14 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
                               <div className="grid grid-cols-4 items-center gap-4">
                                 <Label
                                   htmlFor="edit-value"
-                                  className="text-right"
+                                  className="text-right text-white"
                                 >
                                   值
                                 </Label>
                                 <Input
                                   id="edit-value"
                                   value={editItem.value}
-                                  className="col-span-3"
+                                  className="col-span-3 bg-gray-700 text-white"
                                   onChange={(e) =>
                                     setEditItem({
                                       ...editItem,
@@ -346,7 +318,7 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
                                 />
                               </div>
                             </div>
-                            <Button onClick={updateItem}>更新项</Button>
+                            <Button onClick={handleUpdateItem}>更新项</Button>
                           </DialogContent>
                         )}
                       </Dialog>

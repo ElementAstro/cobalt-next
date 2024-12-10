@@ -19,7 +19,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Search } from "lucide-react";
-import { useApiService } from "@/services/api";
+import { useApiService } from "@/services/connection";
 import { motion } from "framer-motion";
 
 interface ProfileTabProps {

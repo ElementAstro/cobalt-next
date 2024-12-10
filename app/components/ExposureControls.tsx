@@ -1,5 +1,7 @@
-import React, { useReducer, useEffect } from "react";
-import { motion } from "framer-motion";
+"use client";
+
+import React, { useEffect } from "react";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,20 +21,26 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Camera, Pause, Play, RefreshCw, Settings } from "lucide-react";
+import {
+  useExposureStore,
+  ExposureSettings,
+  State,
+} from "@/lib/store/dashboard";
 
-interface ExposureSettings {
-  shutterSpeed: string;
-  iso: string;
-  aperture: string;
-  focusPoint: string;
-  filterType: string;
-  exposureTime: number;
-  exposureMode: string;
-  whiteBalance: string;
-  gain: number;
-  offset: number;
-  binning: string;
-}
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
 
 interface ExposureControlsProps {
   settings: ExposureSettings;
@@ -49,109 +57,6 @@ interface ExposureControlsProps {
   progress: number;
 }
 
-type State = {
-  exposureTime: number;
-  burstMode: boolean;
-  burstCount: number;
-  intervalMode: boolean;
-  intervalTime: number;
-  exposureMode: string;
-  whiteBalance: string;
-  iso: number;
-  aperture: number;
-  focusPoint: number;
-  filterType: string;
-  gain: number;
-  offset: number;
-  binning: string;
-};
-
-type Action =
-  | { type: "SET_EXPOSURE_TIME"; payload: number }
-  | { type: "TOGGLE_BURST_MODE"; payload: boolean }
-  | { type: "SET_BURST_COUNT"; payload: number }
-  | { type: "TOGGLE_INTERVAL_MODE"; payload: boolean }
-  | { type: "SET_INTERVAL_TIME"; payload: number }
-  | { type: "SET_EXPOSURE_MODE"; payload: string }
-  | { type: "SET_WHITE_BALANCE"; payload: string }
-  | { type: "SET_ISO"; payload: number }
-  | { type: "SET_APERTURE"; payload: number }
-  | { type: "SET_FOCUS_POINT"; payload: number }
-  | { type: "SET_FILTER_TYPE"; payload: string }
-  | { type: "SET_GAIN"; payload: number }
-  | { type: "SET_OFFSET"; payload: number }
-  | { type: "SET_BINNING"; payload: string }
-  | { type: "RESET"; payload: ExposureSettings };
-
-const initialState = (settings: ExposureSettings): State => ({
-  exposureTime: settings.exposureTime,
-  burstMode: false,
-  burstCount: 3,
-  intervalMode: false,
-  intervalTime: 60,
-  exposureMode: settings.exposureMode || "Manual",
-  whiteBalance: settings.whiteBalance || "Auto",
-  iso: parseInt(settings.iso) || 100,
-  aperture: parseFloat(settings.aperture) || 2.8,
-  focusPoint: parseInt(settings.focusPoint) || 50,
-  filterType: settings.filterType || "None",
-  gain: settings.gain || 0,
-  offset: settings.offset || 0,
-  binning: settings.binning || "1x1",
-});
-
-const reducer = (state: State, action: Action): State => {
-  switch (action.type) {
-    case "SET_EXPOSURE_TIME":
-      return { ...state, exposureTime: action.payload };
-    case "TOGGLE_BURST_MODE":
-      return { ...state, burstMode: action.payload };
-    case "SET_BURST_COUNT":
-      return { ...state, burstCount: action.payload };
-    case "TOGGLE_INTERVAL_MODE":
-      return { ...state, intervalMode: action.payload };
-    case "SET_INTERVAL_TIME":
-      return { ...state, intervalTime: action.payload };
-    case "SET_EXPOSURE_MODE":
-      return { ...state, exposureMode: action.payload };
-    case "SET_WHITE_BALANCE":
-      return { ...state, whiteBalance: action.payload };
-    case "SET_ISO":
-      return { ...state, iso: action.payload };
-    case "SET_APERTURE":
-      return { ...state, aperture: action.payload };
-    case "SET_FOCUS_POINT":
-      return { ...state, focusPoint: action.payload };
-    case "SET_FILTER_TYPE":
-      return { ...state, filterType: action.payload };
-    case "SET_GAIN":
-      return { ...state, gain: action.payload };
-    case "SET_OFFSET":
-      return { ...state, offset: action.payload };
-    case "SET_BINNING":
-      return { ...state, binning: action.payload };
-    case "RESET":
-      return initialState(action.payload);
-    default:
-      return state;
-  }
-};
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.2,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
-};
-
 const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
   ({
     settings,
@@ -162,50 +67,39 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
     isPaused,
     progress,
   }) => {
-    const [state, dispatch] = useReducer(reducer, settings, initialState);
+    const {
+      exposureTime,
+      burstMode,
+      burstCount,
+      filterType,
+      gain,
+      offset,
+      binning,
+      resetSettings,
+      setExposureTime,
+      toggleBurstMode,
+      setBurstCount,
+      setFilterType,
+      setGain,
+      setOffset,
+      setBinning,
+    } = useExposureStore();
 
     useEffect(() => {
-      dispatch({ type: "RESET", payload: settings });
-    }, [settings]);
-
-    const handleExposureTimeChange = (value: number[]) => {
-      dispatch({ type: "SET_EXPOSURE_TIME", payload: value[0] });
-    };
-
-    const handleBurstCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = Number(e.target.value);
-      if (value >= 2 && value <= 10) {
-        dispatch({ type: "SET_BURST_COUNT", payload: value });
-      }
-    };
-
-    const handleFilterTypeChange = (value: string) => {
-      dispatch({ type: "SET_FILTER_TYPE", payload: value });
-    };
-
-    const handleGainChange = (value: number[]) => {
-      dispatch({ type: "SET_GAIN", payload: value[0] });
-    };
-
-    const handleOffsetChange = (value: number[]) => {
-      dispatch({ type: "SET_OFFSET", payload: value[0] });
-    };
-
-    const handleBinningChange = (value: string) => {
-      dispatch({ type: "SET_BINNING", payload: value });
-    };
-
-    const handleReset = () => {
-      dispatch({ type: "RESET", payload: settings });
-    };
+      resetSettings(settings);
+    }, [settings, resetSettings]);
 
     const handleCaptureClick = () => {
       onCapture(
-        state.exposureTime,
-        state.burstMode,
-        state.exposureMode,
-        state.whiteBalance
+        exposureTime,
+        burstMode,
+        settings.exposureMode,
+        settings.whiteBalance
       );
+    };
+
+    const handleReset = () => {
+      resetSettings(settings);
     };
 
     return (
@@ -213,7 +107,7 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="flex flex-col items-center justify-center h-full p-4 rounded-lg shadow-lg"
+        className="flex flex-col items-center justify-center h-full p-4 rounded-lg shadow-lg bg-gray-900 dark:bg-gray-800"
       >
         <motion.div
           variants={containerVariants}
@@ -224,7 +118,7 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
           <motion.div variants={itemVariants}>
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" className="text-white">
                   <Settings />
                 </Button>
               </PopoverTrigger>
@@ -245,16 +139,12 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
                     <Label htmlFor="burstMode">连拍模式</Label>
                     <Switch
                       id="burstMode"
-                      checked={state.burstMode}
-                      onCheckedChange={(checked) =>
-                        dispatch({
-                          type: "TOGGLE_BURST_MODE",
-                          payload: checked,
-                        })
-                      }
+                      checked={burstMode}
+                      onCheckedChange={(checked) => toggleBurstMode(checked)}
+                      className="bg-gray-600"
                     />
                   </motion.div>
-                  {state.burstMode && (
+                  {burstMode && (
                     <motion.div
                       variants={itemVariants}
                       className="flex flex-col"
@@ -265,9 +155,9 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
                         type="number"
                         min="2"
                         max="10"
-                        value={state.burstCount}
-                        onChange={handleBurstCountChange}
-                        className="mt-1"
+                        value={burstCount}
+                        onChange={(e) => setBurstCount(Number(e.target.value))}
+                        className="mt-1 bg-gray-700 text-white"
                       />
                     </motion.div>
                   )}
@@ -278,19 +168,19 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
                       min={1}
                       max={3600}
                       step={1}
-                      value={[state.exposureTime]}
-                      onValueChange={handleExposureTimeChange}
+                      value={[exposureTime]}
+                      onValueChange={(value) => setExposureTime(value[0])}
                       className="mt-2"
                     />
-                    <div className="text-sm text-right">
-                      {state.exposureTime} 秒
+                    <div className="text-sm text-right text-gray-400">
+                      {exposureTime} 秒
                     </div>
                   </motion.div>
                   <motion.div variants={itemVariants} className="flex flex-col">
                     <Label htmlFor="filterType">滤镜类型</Label>
                     <Select
-                      value={state.filterType}
-                      onValueChange={handleFilterTypeChange}
+                      value={filterType}
+                      onValueChange={(value) => setFilterType(value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="选择滤镜类型" />
@@ -310,11 +200,13 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
                       min={0}
                       max={100}
                       step={1}
-                      value={[state.gain]}
-                      onValueChange={handleGainChange}
+                      value={[gain]}
+                      onValueChange={(value) => setGain(value[0])}
                       className="mt-2"
                     />
-                    <div className="text-sm text-right">{state.gain}</div>
+                    <div className="text-sm text-right text-gray-400">
+                      {gain}
+                    </div>
                   </motion.div>
                   <motion.div variants={itemVariants} className="flex flex-col">
                     <Label htmlFor="offset">偏置</Label>
@@ -323,17 +215,19 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
                       min={0}
                       max={100}
                       step={1}
-                      value={[state.offset]}
-                      onValueChange={handleOffsetChange}
+                      value={[offset]}
+                      onValueChange={(value) => setOffset(value[0])}
                       className="mt-2"
                     />
-                    <div className="text-sm text-right">{state.offset}</div>
+                    <div className="text-sm text-right text-gray-400">
+                      {offset}
+                    </div>
                   </motion.div>
                   <motion.div variants={itemVariants} className="flex flex-col">
                     <Label htmlFor="binning">像素合并</Label>
                     <Select
-                      value={state.binning}
-                      onValueChange={handleBinningChange}
+                      value={binning}
+                      onValueChange={(value) => setBinning(value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="选择像素合并" />
@@ -349,7 +243,7 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
                   <motion.div variants={itemVariants}>
                     <Button
                       variant="secondary"
-                      className="w-full flex items-center justify-center space-x-2"
+                      className="w-full flex items-center justify-center space-x-2 bg-gray-700 hover:bg-gray-600"
                       onClick={handleReset}
                     >
                       <RefreshCw />
@@ -386,6 +280,7 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
             variants={itemVariants}
             initial="hidden"
             animate="visible"
+            className="w-full mb-4"
           >
             <Progress value={progress} className="w-full mb-4" />
             <motion.div variants={itemVariants} className="w-full">
@@ -398,16 +293,21 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
             </motion.div>
           </motion.div>
         )}
-        <motion.div variants={itemVariants} initial="hidden" animate="visible">
-          <Button
-            variant="secondary"
-            className="w-full mt-4 flex items-center justify-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white"
-            onClick={handleReset}
+        <AnimatePresence>
+          <motion.div
+            variants={itemVariants}
+            initial="hidden"
+            animate="visible"
           >
-            <RefreshCw />
-            <span>重置</span>
-          </Button>
-        </motion.div>
+            <Button
+              variant="secondary"
+              className="w-full mt-4 flex items-center justify-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white"
+              onClick={handleReset}
+            >
+              <RefreshCw />
+            </Button>
+          </motion.div>
+        </AnimatePresence>
       </motion.div>
     );
   }

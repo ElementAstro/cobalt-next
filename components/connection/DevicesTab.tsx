@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useApiService } from "@/services/api";
+import { useApiService } from "@/services/connection";
 import { motion } from "framer-motion";
 
 interface DeviceData {
