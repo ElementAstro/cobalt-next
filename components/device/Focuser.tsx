@@ -13,9 +13,9 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { useMockBackend } from "@/utils/mock-device";
-import { DeviceSelector } from "../components/DeviceSelector";
+import { DeviceSelector } from "./DeviceSelector";
 import { motion } from "framer-motion";
+import { useFocuserStore } from "@/lib/store/device";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -33,10 +33,16 @@ const itemVariants = {
 };
 
 export function FocuserPage() {
-  const [targetPosition, setTargetPosition] = useState("12500");
+  const [inputPosition, setInputPosition] = useState("12500");
   const { toast } = useToast();
-  const { focuserInfo, moveFocuser, setTemperatureCompensation } =
-    useMockBackend();
+  const {
+    targetPosition,
+    temperatureCompensation,
+    focuserInfo,
+    setTargetPosition,
+    setTemperatureCompensation,
+    moveFocuser,
+  } = useFocuserStore();
 
   const handleMove = (steps: number) => {
     moveFocuser(steps);
@@ -47,8 +53,9 @@ export function FocuserPage() {
   };
 
   const handleMoveToPosition = () => {
-    const position = parseInt(targetPosition);
-    moveFocuser(position - focuserInfo.position);
+    const position = parseInt(inputPosition);
+    const steps = position - focuserInfo.position;
+    moveFocuser(steps);
     toast({
       title: "Moving Focuser",
       description: `Moving focuser to position ${position}`,
@@ -70,19 +77,22 @@ export function FocuserPage() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-4 p-4 text-white"
+      className="min-h-screen bg-gray-900 text-white p-4 dark:bg-gray-800"
     >
       <DeviceSelector
         deviceType="Focuser"
         devices={["ZWO EAF", "Moonlite CSL", "Pegasus FocusCube2"]}
         onDeviceChange={(device) => console.log(`Selected focuser: ${device}`)}
       />
-      <motion.div variants={itemVariants} className="flex flex-col gap-4">
-        <Card className="bg-slate-800/50">
+      <motion.div
+        variants={itemVariants}
+        className="mt-6 grid gap-4 lg:grid-cols-2"
+      >
+        <Card className="bg-slate-800/50 shadow-lg rounded-lg">
           <CardHeader>
-            <CardTitle>Focuser Control</CardTitle>
+            <CardTitle>Focuser Information</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-6">
+          <CardContent>
             <motion.div
               variants={containerVariants}
               initial="hidden"
@@ -104,28 +114,35 @@ export function FocuserPage() {
                 <Label htmlFor="temp-comp">Temperature Compensation</Label>
                 <Switch
                   id="temp-comp"
-                  checked={focuserInfo.temperatureCompensation}
+                  checked={temperatureCompensation}
                   onCheckedChange={handleTemperatureCompensation}
                 />
               </motion.div>
             </motion.div>
+          </CardContent>
+        </Card>
 
+        <Card className="bg-slate-800/50 shadow-lg rounded-lg">
+          <CardHeader>
+            <CardTitle>Focuser Control</CardTitle>
+          </CardHeader>
+          <CardContent>
             <motion.div
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="space-y-4"
+              className="space-y-6"
             >
               <motion.div
                 variants={itemVariants}
                 className="flex flex-col sm:flex-row items-center gap-4"
               >
-                <Label htmlFor="target-position">Target position</Label>
+                <Label htmlFor="target-position">Target Position</Label>
                 <Input
                   id="target-position"
                   type="number"
-                  value={targetPosition}
-                  onChange={(e) => setTargetPosition(e.target.value)}
+                  value={inputPosition}
+                  onChange={(e) => setInputPosition(e.target.value)}
                   className="max-w-[200px] text-black"
                 />
                 <Button onClick={handleMoveToPosition}>Move</Button>
@@ -133,7 +150,7 @@ export function FocuserPage() {
 
               <motion.div
                 variants={itemVariants}
-                className="flex flex-wrap justify-center gap-2"
+                className="flex justify-center gap-2"
               >
                 <Button
                   variant="secondary"

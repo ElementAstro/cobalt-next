@@ -29,11 +29,11 @@ import StarSearch from "../components/StarSearch";
 import ToolPanel from "../components/ToolPanel";
 import SettingsPage from "../components/Settings";
 
-import { CameraPage } from "../../components/device/camera/page";
-import { FocuserPage } from "../../components/device/focuser/page";
-import { FilterWheelPage } from "../../components/device/filter-wheel/page";
-import { GuiderPage } from "../../components/device/guider/page";
-import { TelescopePage } from "../../components/device/telescope/page";
+import { CameraPage } from "../../components/device/Camera";
+import { FocuserPage } from "../../components/device/Focuser";
+import { FilterWheelPage } from "../../components/device/FilterWheel";
+import { GuiderPage } from "../../components/device/Guider";
+import { TelescopePage } from "../../components/device/Telescope";
 
 import Log from "../components/Log";
 import AuthorInfo from "../components/AuthorInfo";

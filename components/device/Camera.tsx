@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import styled from "styled-components";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -8,16 +7,18 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { LineChart } from "../components/LineChart";
+import { LineChart } from "@/components/chart/TemperatureLineChart";
 import { useMockBackend } from "@/utils/mock-device";
-import { DeviceSelector } from "../components/DeviceSelector";
+import { DeviceSelector } from "./DeviceSelector";
 import { motion } from "framer-motion";
+import { useCameraStore, TempDataPoint } from "@/lib/store/device";
 
 const Container = styled.div`
   color: white;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  padding: 2rem;
 
   @media (max-width: 768px) {
     padding: 1rem;
@@ -27,6 +28,7 @@ const Container = styled.div`
 const StyledCard = styled(Card)`
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background-color: #1f2937;
 `;
 
 const Grid = styled(motion.div)`
@@ -81,20 +83,32 @@ const itemVariants = {
 };
 
 export function CameraPage() {
-  const [exposure, setExposure] = useState("1");
-  const [gain, setGain] = useState("0");
-  const [binning, setBinning] = useState("1");
+  const {
+    exposure,
+    gain,
+    binning,
+    coolerOn,
+    targetTemperature,
+    temperatureHistory,
+    setExposure,
+    setGain,
+    setBinning,
+    toggleCooler,
+    setTargetTemperature,
+    addTemperatureHistory,
+  } = useCameraStore();
+
   const { toast } = useToast();
   const {
     cameraInfo,
     startExposure,
     abortExposure,
     setTemperature,
-    toggleCooler,
+    toggleCooler: mockToggleCooler,
   } = useMockBackend();
 
   const handleStartExposure = () => {
-    startExposure(parseFloat(exposure), parseInt(gain), parseInt(binning));
+    startExposure(exposure, gain, binning);
     toast({
       title: "开始曝光",
       description: `曝光时间: ${exposure}s, 增益: ${gain}, 像素合并: ${binning}x${binning}`,
@@ -110,19 +124,28 @@ export function CameraPage() {
   };
 
   const handleSetTemperature = () => {
-    setTemperature(cameraInfo.targetTemperature);
+    setTemperature(targetTemperature);
     toast({
       title: "设置温度",
-      description: `目标温度已设置为 ${cameraInfo.targetTemperature}°C`,
+      description: `目标温度已设置为 ${targetTemperature}°C`,
     });
   };
 
   const handleToggleCooler = () => {
     toggleCooler();
+    mockToggleCooler();
     toast({
       title: "切换制冷器",
-      description: `制冷器已${cameraInfo.coolerOn ? "启用" : "禁用"}`,
+      description: `制冷器已${coolerOn ? "启用" : "禁用"}`,
     });
+  };
+
+  const handleZoomIn = () => {
+    // 实现缩放逻辑
+  };
+
+  const handleZoomOut = () => {
+    // 实现缩放逻辑
   };
 
   return (
@@ -180,7 +203,7 @@ export function CameraPage() {
                 id="exposure"
                 type="number"
                 value={exposure}
-                onChange={(e) => setExposure(e.target.value)}
+                onChange={(e) => setExposure(parseFloat(e.target.value))}
                 min="0.001"
                 step="0.001"
                 className="bg-gray-700 text-white"
@@ -192,7 +215,7 @@ export function CameraPage() {
                 id="gain"
                 type="number"
                 value={gain}
-                onChange={(e) => setGain(e.target.value)}
+                onChange={(e) => setGain(parseInt(e.target.value))}
                 min="0"
                 className="bg-gray-700 text-white"
               />
@@ -203,7 +226,7 @@ export function CameraPage() {
                 id="binning"
                 type="number"
                 value={binning}
-                onChange={(e) => setBinning(e.target.value)}
+                onChange={(e) => setBinning(parseInt(e.target.value))}
                 min="1"
                 max="4"
                 className="bg-gray-700 text-white"
@@ -245,7 +268,7 @@ export function CameraPage() {
               <Label htmlFor="cooler">制冷器</Label>
               <Switch
                 id="cooler"
-                checked={cameraInfo.coolerOn}
+                checked={coolerOn}
                 onCheckedChange={handleToggleCooler}
               />
             </motion.div>
@@ -257,8 +280,8 @@ export function CameraPage() {
             <Input
               id="target-temp"
               type="number"
-              value={cameraInfo.targetTemperature}
-              onChange={(e) => setTemperature(parseFloat(e.target.value))}
+              value={targetTemperature}
+              onChange={(e) => setTargetTemperature(parseFloat(e.target.value))}
               className="w-full sm:w-24 bg-gray-700 text-white"
             />
             <motion.div variants={itemVariants}>
@@ -271,7 +294,7 @@ export function CameraPage() {
             </motion.div>
           </FlexRowCentered>
           <motion.div variants={itemVariants} className="mt-6">
-            <LineChart data={cameraInfo.temperatureHistory} />
+            <LineChart data={temperatureHistory} />
           </motion.div>
         </CardContent>
       </StyledCard>

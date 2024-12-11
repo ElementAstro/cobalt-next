@@ -12,8 +12,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useMockBackend } from "@/utils/mock-device";
-import { DeviceSelector } from "../components/DeviceSelector";
+import { useFilterWheelStore } from "@/lib/store/device";
+import { DeviceSelector } from "./DeviceSelector";
 import { motion } from "framer-motion";
 
 const containerVariants = {
@@ -32,15 +32,15 @@ const itemVariants = {
 };
 
 export function FilterWheelPage() {
-  const [selectedFilter, setSelectedFilter] = useState("1");
   const { toast } = useToast();
-  const { filterWheelInfo, changeFilter } = useMockBackend();
+  const { filterWheelInfo, selectedFilter, setSelectedFilter, changeFilter } =
+    useFilterWheelStore();
 
   const handleFilterChange = () => {
     changeFilter(parseInt(selectedFilter));
     toast({
-      title: "Changing Filter",
-      description: `Changing to filter ${selectedFilter}`,
+      title: "更换滤镜",
+      description: `已切换至滤镜 ${selectedFilter}`,
     });
   };
 
@@ -49,7 +49,7 @@ export function FilterWheelPage() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-4 p-4 text-white"
+      className="min-h-screen bg-gray-900 text-white p-4 dark:bg-gray-800"
     >
       <DeviceSelector
         deviceType="Filter Wheel"
@@ -58,10 +58,13 @@ export function FilterWheelPage() {
           console.log(`Selected filter wheel: ${device}`)
         }
       />
-      <motion.div variants={itemVariants} className="grid gap-4">
-        <Card className="bg-slate-800/50">
+      <motion.div
+        variants={itemVariants}
+        className="mt-6 grid gap-4 lg:grid-cols-2"
+      >
+        <Card className="bg-slate-800/50 shadow-lg rounded-lg">
           <CardHeader>
-            <CardTitle>Filter Wheel Control</CardTitle>
+            <CardTitle>滤镜轮信息</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-6">
             <motion.div
@@ -71,15 +74,15 @@ export function FilterWheelPage() {
               className="grid grid-cols-1 sm:grid-cols-2 gap-4"
             >
               <motion.div variants={itemVariants} className="space-y-2">
-                <Label>Name</Label>
+                <Label>名称</Label>
                 <div className="text-sm">{filterWheelInfo.name}</div>
               </motion.div>
               <motion.div variants={itemVariants} className="space-y-2">
-                <Label>Driver info</Label>
+                <Label>驱动信息</Label>
                 <div className="text-sm">{filterWheelInfo.driverInfo}</div>
               </motion.div>
               <motion.div variants={itemVariants} className="space-y-2">
-                <Label>Driver version</Label>
+                <Label>驱动版本</Label>
                 <div className="text-sm">{filterWheelInfo.driverVersion}</div>
               </motion.div>
             </motion.div>
@@ -91,11 +94,11 @@ export function FilterWheelPage() {
               className="space-y-4"
             >
               <motion.div variants={itemVariants} className="space-y-2">
-                <Label>Current Filter</Label>
+                <Label>当前滤镜</Label>
                 <div className="text-sm">{filterWheelInfo.currentFilter}</div>
               </motion.div>
               <motion.div variants={itemVariants} className="space-y-2">
-                <Label htmlFor="filter-select">Select Filter</Label>
+                <Label htmlFor="filter-select">选择滤镜</Label>
                 <Select
                   value={selectedFilter}
                   onValueChange={setSelectedFilter}
@@ -104,7 +107,7 @@ export function FilterWheelPage() {
                     id="filter-select"
                     className="w-full sm:w-[200px]"
                   >
-                    <SelectValue />
+                    <SelectValue placeholder="请选择滤镜" />
                   </SelectTrigger>
                   <SelectContent>
                     {filterWheelInfo.filters.map((filter, index) => (
@@ -124,13 +127,13 @@ export function FilterWheelPage() {
                   onClick={handleFilterChange}
                   className="w-full sm:w-auto"
                 >
-                  Change Filter
+                  更换滤镜
                 </Button>
               </motion.div>
             </motion.div>
 
             <motion.div variants={itemVariants} className="space-y-2">
-              <Label>Description</Label>
+              <Label>描述</Label>
               <div className="text-sm">{filterWheelInfo.description}</div>
             </motion.div>
           </CardContent>

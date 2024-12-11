@@ -15,8 +15,9 @@ import {
   ParkingSquare,
 } from "lucide-react";
 import { useMockBackend } from "@/utils/mock-device";
-import { DeviceSelector } from "../components/DeviceSelector";
+import { DeviceSelector } from "./DeviceSelector";
 import { motion } from "framer-motion";
+import { useMountStore } from "@/lib/store/device";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -77,12 +78,14 @@ export function TelescopePage() {
     });
   };
 
+  const mountStore = useMountStore();
+
   return (
     <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-4 p-4 text-white"
+      className="space-y-4 p-4 text-white bg-gray-900 min-h-screen"
     >
       <DeviceSelector
         deviceType="Telescope"
@@ -92,7 +95,7 @@ export function TelescopePage() {
         }
       />
       <motion.div variants={itemVariants} className="flex flex-col gap-4">
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-gray-800 border-gray-700 shadow-lg rounded-lg">
           <CardHeader>
             <CardTitle>Telescope Information</CardTitle>
           </CardHeader>
@@ -101,10 +104,10 @@ export function TelescopePage() {
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
             >
               <motion.div variants={itemVariants} className="space-y-2">
-                <Label>Site latitude</Label>
+                <Label>Site Latitude</Label>
                 <Input
                   value={telescopeInfo.siteLatitude}
                   readOnly
@@ -112,7 +115,7 @@ export function TelescopePage() {
                 />
               </motion.div>
               <motion.div variants={itemVariants} className="space-y-2">
-                <Label>Site longitude</Label>
+                <Label>Site Longitude</Label>
                 <Input
                   value={telescopeInfo.siteLongitude}
                   readOnly
@@ -155,7 +158,7 @@ export function TelescopePage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-gray-800 border-gray-700 shadow-lg rounded-lg">
           <CardHeader>
             <CardTitle>Manual Control</CardTitle>
           </CardHeader>
@@ -241,7 +244,7 @@ export function TelescopePage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-gray-800 border-gray-700 shadow-lg rounded-lg">
           <CardHeader>
             <CardTitle>Slew to Coordinates</CardTitle>
           </CardHeader>

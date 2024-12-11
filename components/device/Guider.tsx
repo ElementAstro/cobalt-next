@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useMockBackend } from "@/utils/mock-device";
-import { DeviceSelector } from "../components/DeviceSelector";
+import { useGuiderStore } from "@/lib/store/device";
+import { DeviceSelector } from "./DeviceSelector";
 import { motion } from "framer-motion";
 
 const containerVariants = {
@@ -37,14 +37,22 @@ export function GuiderPage() {
   const [ditherPixels, setDitherPixels] = useState("5");
   const [settleTimeout, setSettleTimeout] = useState("40");
   const { toast } = useToast();
-  const { guiderInfo, startGuiding, stopGuiding, dither, setGuiderSettings } =
-    useMockBackend();
+  const {
+    guiderInfo,
+    startGuiding,
+    stopGuiding,
+    dither,
+    setGuiderSettings,
+    selectedFilter,
+    setSelectedFilter,
+    changeFilter,
+  } = useGuiderStore();
 
   const handleStartGuiding = () => {
     startGuiding();
     toast({
       title: "Guiding Started",
-      description: "The guider has started guiding.",
+      description: "导星已开始。",
     });
   };
 
@@ -52,7 +60,7 @@ export function GuiderPage() {
     stopGuiding();
     toast({
       title: "Guiding Stopped",
-      description: "The guider has stopped guiding.",
+      description: "导星已停止。",
     });
   };
 
@@ -60,7 +68,7 @@ export function GuiderPage() {
     dither(parseInt(ditherPixels));
     toast({
       title: "Dithering",
-      description: `Dithering by ${ditherPixels} pixels.`,
+      description: `已进行 ${ditherPixels} 像素的抖动。`,
     });
   };
 
@@ -68,11 +76,18 @@ export function GuiderPage() {
     setGuiderSettings({
       ditherPixels: parseInt(ditherPixels),
       settleTimeout: parseInt(settleTimeout),
-      showCorrections: guiderInfo.showCorrections,
     });
     toast({
       title: "Settings Updated",
-      description: "Guider settings have been updated.",
+      description: "导星仪设置已更新。",
+    });
+  };
+
+  const handleFilterChange = () => {
+    changeFilter(parseInt(selectedFilter));
+    toast({
+      title: "更换滤镜",
+      description: `已切换至滤镜 ${selectedFilter}`,
     });
   };
 
@@ -81,7 +96,7 @@ export function GuiderPage() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="w-full h-screen max-h-screen overflow-hidden bg-gray-900 text-white p-4 space-y-4"
+      className="min-h-screen bg-gray-900 text-white p-4 dark:bg-gray-800"
     >
       <DeviceSelector
         deviceType="Guider"
@@ -92,37 +107,39 @@ export function GuiderPage() {
         ]}
         onDeviceChange={(device) => console.log(`Selected guider: ${device}`)}
       />
-      <motion.div variants={itemVariants} className="space-y-4">
-        <Card className="bg-gray-800 border-gray-700">
+      <motion.div
+        variants={itemVariants}
+        className="mt-6 grid gap-4 lg:grid-cols-2"
+      >
+        <Card className="bg-slate-800/50 shadow-lg rounded-lg">
           <CardHeader>
-            <CardTitle>Guider Settings</CardTitle>
+            <CardTitle>导星仪设置</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="grid gap-6">
             <motion.div
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
             >
               <motion.div variants={itemVariants} className="space-y-2">
-                <Label>Pixel scale</Label>
+                <Label>像素刻度</Label>
                 <div className="text-sm">{guiderInfo.pixelScale} arcsec/px</div>
               </motion.div>
               <motion.div variants={itemVariants} className="space-y-2">
-                <Label>State</Label>
+                <Label>状态</Label>
                 <div className="text-sm">{guiderInfo.state}</div>
               </motion.div>
               <motion.div
                 variants={itemVariants}
                 className="flex items-center space-x-2"
               >
-                <Label htmlFor="show-corrections">Show Corrections</Label>
+                <Label htmlFor="show-corrections">显示校正</Label>
                 <Switch
                   id="show-corrections"
                   checked={guiderInfo.showCorrections}
                   onCheckedChange={(checked) =>
                     setGuiderSettings({
-                      ...guiderInfo,
                       showCorrections: checked,
                     })
                   }
@@ -138,34 +155,33 @@ export function GuiderPage() {
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
             >
               <motion.div variants={itemVariants} className="space-y-2">
-                <Label htmlFor="dither-pixels">Dither pixels</Label>
+                <Label htmlFor="dither-pixels">抖动像素</Label>
                 <Input
                   id="dither-pixels"
                   type="number"
                   value={ditherPixels}
                   onChange={(e) => setDitherPixels(e.target.value)}
-                  placeholder="Enter pixels"
+                  placeholder="输入像素"
                   className="bg-gray-700 text-white"
                 />
               </motion.div>
               <motion.div variants={itemVariants} className="space-y-2">
-                <Label htmlFor="settle-timeout">Settle timeout</Label>
+                <Label htmlFor="settle-timeout">稳定超时</Label>
                 <Input
                   id="settle-timeout"
                   type="number"
                   value={settleTimeout}
                   onChange={(e) => setSettleTimeout(e.target.value)}
-                  placeholder="Enter timeout"
+                  placeholder="输入超时"
                   className="bg-gray-700 text-white"
                 />
               </motion.div>
               <motion.div variants={itemVariants} className="space-y-2">
-                <Label htmlFor="phd2-profile">PHD2 profile</Label>
+                <Label htmlFor="phd2-profile">PHD2 配置文件</Label>
                 <Select
-                  defaultValue={guiderInfo.phd2Profile}
+                  value={guiderInfo.phd2Profile}
                   onValueChange={(value) =>
                     setGuiderSettings({
-                      ...guiderInfo,
                       phd2Profile: value,
                     })
                   }
@@ -177,9 +193,9 @@ export function GuiderPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-700 text-white">
-                    <SelectItem value="default">Default</SelectItem>
-                    <SelectItem value="aggressive">Aggressive</SelectItem>
-                    <SelectItem value="conservative">Conservative</SelectItem>
+                    <SelectItem value="default">默认</SelectItem>
+                    <SelectItem value="aggressive">激进</SelectItem>
+                    <SelectItem value="conservative">保守</SelectItem>
                   </SelectContent>
                 </Select>
               </motion.div>
@@ -189,20 +205,20 @@ export function GuiderPage() {
                 onClick={handleSettingsChange}
                 className="w-full bg-gray-700 hover:bg-gray-600"
               >
-                Apply Settings
+                应用设置
               </Button>
             </motion.div>
 
             <motion.div variants={itemVariants} className="space-y-2 mt-4">
-              <Label>Description</Label>
+              <Label>描述</Label>
               <div className="text-sm">{guiderInfo.description}</div>
             </motion.div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-slate-800/50 shadow-lg rounded-lg">
           <CardHeader>
-            <CardTitle>Guider Control</CardTitle>
+            <CardTitle>导星控制</CardTitle>
           </CardHeader>
           <CardContent>
             <motion.div
@@ -211,32 +227,32 @@ export function GuiderPage() {
               animate="visible"
               className="flex flex-col sm:flex-row gap-4"
             >
-              <motion.div variants={itemVariants}>
+              <motion.div variants={itemVariants} className="flex-1">
                 <Button
                   onClick={handleStartGuiding}
                   disabled={guiderInfo.state === "Guiding"}
-                  className="w-full sm:w-auto bg-gray-700 hover:bg-gray-600"
+                  className="w-full bg-gray-700 hover:bg-gray-600"
                 >
-                  Start Guiding
+                  开始导星
                 </Button>
               </motion.div>
-              <motion.div variants={itemVariants}>
+              <motion.div variants={itemVariants} className="flex-1">
                 <Button
                   variant="destructive"
                   onClick={handleStopGuiding}
                   disabled={guiderInfo.state !== "Guiding"}
-                  className="w-full sm:w-auto bg-red-700 hover:bg-red-600"
+                  className="w-full bg-red-700 hover:bg-red-600"
                 >
-                  Stop Guiding
+                  停止导星
                 </Button>
               </motion.div>
-              <motion.div variants={itemVariants}>
+              <motion.div variants={itemVariants} className="flex-1">
                 <Button
                   onClick={handleDither}
                   disabled={guiderInfo.state !== "Guiding"}
-                  className="w-full sm:w-auto bg-gray-700 hover:bg-gray-600"
+                  className="w-full bg-gray-700 hover:bg-gray-600"
                 >
-                  Dither
+                  抖动
                 </Button>
               </motion.div>
             </motion.div>
