@@ -12,30 +12,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { create } from "zustand";
+import useLandscapeStore from "@/lib/store/landscape-detection";
 import { useTheme } from "next-themes";
 import { useMediaQuery } from "react-responsive";
-
-// Zustand store
-interface LandscapeStore {
-  isVisible: boolean;
-  showDialog: () => void;
-  hideDialog: () => void;
-  hasInteracted: boolean;
-  setHasInteracted: (value: boolean) => void;
-  isFullscreen: boolean;
-  setIsFullscreen: (value: boolean) => void;
-}
-
-const useLandscapeStore = create<LandscapeStore>((set) => ({
-  isVisible: false,
-  showDialog: () => set({ isVisible: true }),
-  hideDialog: () => set({ isVisible: false }),
-  hasInteracted: false,
-  setHasInteracted: (value) => set({ hasInteracted: value }),
-  isFullscreen: false,
-  setIsFullscreen: (value) => set({ isFullscreen: value }),
-}));
 
 interface LandscapeDetectorProps {
   children: React.ReactNode;
@@ -86,9 +65,9 @@ export default function LandscapeDetector({
         await (docEl as any).webkitRequestFullscreen();
       }
       checkFullscreen();
-      console.log("Entered fullscreen");
+      console.log("进入全屏模式");
     } catch (error) {
-      console.error("Failed to enter fullscreen:", error);
+      console.error("进入全屏模式失败:", error);
     }
   }, [checkFullscreen]);
 
@@ -100,9 +79,9 @@ export default function LandscapeDetector({
         await (document as any).webkitExitFullscreen();
       }
       checkFullscreen();
-      console.log("Exited fullscreen");
+      console.log("退出全屏模式");
     } catch (error) {
-      console.error("Failed to exit fullscreen:", error);
+      console.error("退出全屏模式失败:", error);
     }
   }, [checkFullscreen]);
 
@@ -130,7 +109,6 @@ export default function LandscapeDetector({
         /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
           navigator.userAgent
         );
-      // Additional logic if needed
     };
 
     checkOrientation();
@@ -142,7 +120,7 @@ export default function LandscapeDetector({
     window.addEventListener("fullscreenchange", checkFullscreen);
     window.addEventListener("webkitfullscreenchange", checkFullscreen);
 
-    // Load user preference
+    // 加载用户偏好
     if (persistPreference) {
       const savedPreference = localStorage.getItem("landscapePreference");
       if (savedPreference === "ignored") {

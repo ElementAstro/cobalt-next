@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import api from "./axios";
+import { DeviceData, AdvancedSettings } from "@/types/connection";
 
 // API endpoints
 const API_ENDPOINTS = {
@@ -18,18 +19,6 @@ type ProfileData = {
   indiWebManager: boolean;
 };
 
-type DeviceData = {
-  name: string;
-  type: string;
-  connected: boolean;
-};
-
-type AdvancedSettings = {
-  updateInterval: number;
-  connectionTimeout: number;
-  debugMode: boolean;
-};
-
 const mockProfileData: ProfileData = {
   name: "测试",
   autoConnect: true,
@@ -40,17 +29,71 @@ const mockProfileData: ProfileData = {
   indiWebManager: false,
 };
 
+// 更新模拟设备数据
 const mockDevices: DeviceData[] = [
-  { name: "Mount", type: "Mount Simulator", connected: false },
-  { name: "Camera 1", type: "CCD Simulator", connected: false },
-  { name: "Focuser", type: "Focuser Simulator", connected: false },
-  { name: "Filter Wheel", type: "Filter Simulator", connected: false },
+  {
+    id: "mount-01",
+    name: "Mount",
+    type: "Mount Simulator",
+    connected: false,
+    status: "offline",
+    lastConnected: "2023-07-01T10:00:00Z",
+    ipAddress: "192.168.1.100",
+    properties: {
+      model: "EQ6-R Pro",
+      firmware: "v1.0.0",
+    },
+  },
+  {
+    id: "camera-01",
+    name: "Camera 1",
+    type: "CCD Simulator",
+    connected: false,
+    status: "offline",
+    lastConnected: "2023-07-01T10:00:00Z",
+    ipAddress: "192.168.1.101",
+    properties: {
+      resolution: "3096x2080",
+      pixelSize: "3.8um",
+    },
+  },
+  {
+    id: "focuser-01",
+    name: "Focuser",
+    type: "Focuser Simulator",
+    connected: false,
+    status: "offline",
+    lastConnected: "2023-07-01T10:00:00Z",
+    ipAddress: "192.168.1.102",
+    properties: {
+      maxTravel: 100000,
+      position: 0,
+    },
+  },
+  {
+    id: "filterwheel-01",
+    name: "Filter Wheel",
+    type: "Filter Simulator",
+    connected: false,
+    status: "offline",
+    lastConnected: "2023-07-01T10:00:00Z",
+    ipAddress: "192.168.1.103",
+    properties: {
+      positions: 8,
+      currentPosition: 1,
+    },
+  },
 ];
 
 const mockAdvancedSettings: AdvancedSettings = {
   updateInterval: 1000,
   connectionTimeout: 30,
   debugMode: false,
+  newSetting: "default",
+  theme: "dark",
+  notifications: true,
+  autoSave: true,
+  language: "en",
 };
 
 export function useApiService() {
@@ -107,10 +150,15 @@ export function useApiService() {
           setTimeout(() => {
             const device = mockDevices.find((d) => d.name === deviceName);
             if (device) {
-              device.connected = true;
-              resolve(device);
+              const updatedDevice = {
+                ...device,
+                connected: true,
+                status: "online" as const,
+                lastConnected: new Date().toISOString(),
+              };
+              resolve(updatedDevice);
             } else {
-              throw new Error("Device not found");
+              throw new Error("设备未找到");
             }
           }, 1000);
         });
@@ -130,10 +178,14 @@ export function useApiService() {
           setTimeout(() => {
             const device = mockDevices.find((d) => d.name === deviceName);
             if (device) {
-              device.connected = false;
-              resolve(device);
+              const updatedDevice = {
+                ...device,
+                connected: false,
+                status: "offline" as const,
+              };
+              resolve(updatedDevice);
             } else {
-              throw new Error("Device not found");
+              throw new Error("设备未找到");
             }
           }, 1000);
         });

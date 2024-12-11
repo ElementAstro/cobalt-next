@@ -2,16 +2,15 @@ import { Grid, LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { motion } from "framer-motion";
+import { useStore } from "@/lib/store/software";
 
-interface ViewToggleProps {
-  view: "list" | "grid" | "detail";
-  onViewChange: (view: "list" | "grid" | "detail") => void;
-}
+export function ViewToggle() {
+  const view = useStore((state) => state.view);
+  const setView = useStore((state) => state.setView);
 
-export function ViewToggle({ view, onViewChange }: ViewToggleProps) {
   return (
     <motion.div
-      className="flex space-x-2 p-2 rounded-lg dark:bg-gray-800"
+      className="flex space-x-2 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-md"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -19,8 +18,8 @@ export function ViewToggle({ view, onViewChange }: ViewToggleProps) {
       <ToggleGroup
         type="single"
         value={view}
-        onValueChange={(v) => onViewChange(v as "list" | "grid" | "detail")}
-        className="flex space-x-2"
+        onValueChange={(v) => setView(v as "list" | "grid" | "detail")}
+        className="flex space-x-2 w-full"
       >
         <ToggleGroupItem
           value="list"

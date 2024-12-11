@@ -21,7 +21,7 @@ export function SoftwareDetail({ software, onClose }: SoftwareDetailProps) {
 
   return (
     <Dialog open={!!software} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] dark:bg-gray-800">
+      <DialogContent className="sm:max-w-[425px] dark:bg-gray-800 p-6 rounded-lg shadow-lg">
         <DialogHeader>
           <DialogTitle className="text-white">{software.name}</DialogTitle>
           <DialogDescription className="text-gray-400">

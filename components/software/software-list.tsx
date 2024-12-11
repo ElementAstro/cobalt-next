@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { motion } from "framer-motion";
+import { useStore } from "@/lib/store/software";
 
 interface SoftwareListProps {
   software: Software[];
@@ -15,11 +16,10 @@ interface SoftwareListProps {
   onViewDetail: (software: Software) => void;
 }
 
-export function SoftwareList({
-  software,
-  view,
-  onViewDetail,
-}: SoftwareListProps) {
+export function SoftwareList({ onViewDetail }: SoftwareListProps) {
+  const software = useStore((state) => state.software);
+  const view = useStore((state) => state.view);
+
   const getViewClass = () => {
     switch (view) {
       case "grid":
@@ -33,7 +33,7 @@ export function SoftwareList({
 
   return (
     <motion.div
-      className={getViewClass()}
+      className={`${getViewClass()} dark:bg-gray-800 p-4 rounded-lg`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -41,7 +41,7 @@ export function SoftwareList({
       {software.map((item) => (
         <motion.div
           key={item.id}
-          className={`flex items-center gap-4 rounded-lg border p-4 hover:bg-accent dark:bg-gray-800 ${
+          className={`flex items-center gap-4 rounded-lg border p-4 hover:bg-accent dark:bg-gray-700 transition-transform transform hover:scale-105 ${
             view !== "list" ? "flex-col items-start" : ""
           }`}
           initial={{ opacity: 0, y: 20 }}

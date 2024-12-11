@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { AdvancedSettings, DeviceData } from "@/types/connection";
+import { useApiService } from "@/services/connection";
 
 interface SettingsStore {
   settings: AdvancedSettings;
@@ -98,7 +99,7 @@ interface DevicesState {
 export const useDevicesStore = create<DevicesState>()(
   devtools(
     persist(
-      (set, get) => {
+      (set) => {
         const api = useApiService();
 
         return {
@@ -173,3 +174,114 @@ export const useDevicesStore = create<DevicesState>()(
     )
   )
 );
+
+interface Log {
+  timestamp: string;
+  message: string;
+  type: "info" | "error" | "warning";
+}
+
+interface LogsStore {
+  logs: Log[];
+  filter: string;
+  setFilter: (filter: string) => void;
+  addLog: (log: Log) => void;
+  clearLogs: () => void;
+}
+
+export const useLogsStore = create<LogsStore>((set) => ({
+  logs: [
+    {
+      timestamp: "2023-07-01 10:00:15",
+      message: "Connected to Mount",
+      type: "info",
+    },
+    {
+      timestamp: "2023-07-01 10:00:16",
+      message: "Camera 1 initialized",
+      type: "info",
+    },
+    {
+      timestamp: "2023-07-01 10:00:17",
+      message: "Focuser ready",
+      type: "info",
+    },
+    {
+      timestamp: "2023-07-01 10:00:18",
+      message: "Filter wheel connected",
+      type: "info",
+    },
+    {
+      timestamp: "2023-07-01 10:00:19",
+      message: "Weather station data received",
+      type: "warning",
+    },
+    {
+      timestamp: "2023-07-01 10:00:20",
+      message: "All systems operational",
+      type: "info",
+    },
+  ],
+  filter: "",
+  setFilter: (filter) => set({ filter }),
+  addLog: (log) => set((state) => ({ logs: [...state.logs, log] })),
+  clearLogs: () => set({ logs: [] }),
+}));
+
+export interface Profile {
+  id: string
+  name: string
+  autoConnect: boolean
+  mode: "local" | "remote"
+  host: string
+  port: string
+  guiding: "internal" | "external"
+  indiWebManager: boolean
+  theme: "light" | "dark" | "system"
+  isConnected: boolean
+  lastConnected?: Date
+}
+
+export type ActiveProfile = Profile | undefined;
+
+interface ProfileState {
+  profiles: Profile[]
+  activeProfile: Profile | null
+  isLoading: boolean
+  error: string | null
+  setActiveProfile: (profile: Profile) => void
+  addProfile: (profile: Profile) => void
+  updateProfile: (id: string, data: Partial<Profile>) => void
+  deleteProfile: (id: string) => void
+  setLoading: (status: boolean) => void
+  setError: (error: string | null) => void
+}
+
+export const useProfileStore = create<ProfileState>()(
+  persist(
+    (set) => ({
+      profiles: [],
+      activeProfile: null,
+      isLoading: false,
+      error: null,
+      setActiveProfile: (profile) => set({ activeProfile: profile }),
+      addProfile: (profile) => 
+        set((state) => ({ profiles: [...state.profiles, profile] })),
+      updateProfile: (id, data) =>
+        set((state) => ({
+          profiles: state.profiles.map((p) =>
+            p.id === id ? { ...p, ...data } : p
+          ),
+        })),
+      deleteProfile: (id) =>
+        set((state) => ({
+          profiles: state.profiles.filter((p) => p.id !== id),
+        })),
+      setLoading: (status) => set({ isLoading: status }),
+      setError: (error) => set({ error }),
+    }),
+    {
+      name: 'profile-storage',
+    }
+  )
+)

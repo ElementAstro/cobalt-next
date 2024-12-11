@@ -18,41 +18,48 @@ import { ImageCaptcha } from "./ImageCaptcha";
 import { SliderCaptcha } from "./SliderCaptcha";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useCaptchaStore } from "@/lib/store/captcha";
+import { set } from "lodash";
 
 type CaptchaType = "math" | "image" | "slider";
 
 export function Captcha() {
+  const {
+    isDarkMode,
+    isHighContrast,
+    errorCount,
+    isDisabled,
+    timeLeft,
+    setDarkMode,
+    setHighContrast,
+    incrementError,
+    resetError,
+    disableCaptcha,
+    decrementTime,
+    setIsDisabled, // 添加 setIsDisabled
+  } = useCaptchaStore();
   const [captchaType, setCaptchaType] = useState<CaptchaType>("math");
-  const [isDarkMode, setIsDarkMode] = useState(true);
-  const [isHighContrast, setIsHighContrast] = useState(false);
-  const [errorCount, setErrorCount] = useState(0);
-  const [isDisabled, setIsDisabled] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(0);
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (isDisabled && timeLeft > 0) {
-      timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+      timer = setTimeout(() => decrementTime(), 1000);
     } else if (timeLeft === 0) {
       setIsDisabled(false);
     }
     return () => clearTimeout(timer);
-  }, [isDisabled, timeLeft]);
+  }, [isDisabled, timeLeft, decrementTime, setIsDisabled]);
 
   const handleError = () => {
-    setErrorCount((prevCount) => {
-      const newCount = prevCount + 1;
-      if (newCount >= 5) {
-        setIsDisabled(true);
-        setTimeLeft(30);
-      }
-      return newCount;
-    });
+    incrementError();
+    if (errorCount + 1 >= 5) {
+      disableCaptcha(30);
+    }
   };
 
   const handleSuccess = () => {
-    setErrorCount(0);
+    resetError();
   };
 
   const renderCaptcha = () => {
@@ -62,6 +69,7 @@ export function Captcha() {
       onError: handleError,
       onSuccess: handleSuccess,
       isDisabled,
+      setIsDisabled, // 添加 setIsDisabled
     };
     switch (captchaType) {
       case "math":
@@ -76,12 +84,17 @@ export function Captcha() {
   };
 
   return (
-    <div
-      className={`flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4`}
+    <motion.div
+      className={`flex justify-center items-center min-h-screen p-4 ${
+        isDarkMode ? "bg-gray-900" : "bg-gray-100"
+      }`}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
     >
       <Card
         className={`w-full max-w-sm ${
-          isDarkMode ? "dark" : ""
+          isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800"
         } shadow-lg rounded-lg`}
       >
         <CardHeader className="flex justify-between items-center">
@@ -93,7 +106,7 @@ export function Captcha() {
             <Switch
               id="dark-mode"
               checked={isDarkMode}
-              onCheckedChange={() => setIsDarkMode((prev) => !prev)}
+              onCheckedChange={(checked) => setDarkMode(checked)}
             />
           </div>
         </CardHeader>
@@ -149,6 +162,6 @@ export function Captcha() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 }

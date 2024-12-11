@@ -4,22 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { useCaptchaStore } from "@/lib/store/captcha";
+import { CaptchaProps } from "@/types/captcha";
 
-interface SliderCaptchaProps {
-  isDarkMode: boolean;
-  isHighContrast: boolean;
-  onError: () => void;
-  onSuccess: () => void;
-  isDisabled: boolean;
-}
+export function SliderCaptcha(props: CaptchaProps) {
+  const { isDarkMode, isHighContrast, onError, onSuccess, isDisabled } =
+    useCaptchaStore();
 
-export function SliderCaptcha({
-  isDarkMode,
-  isHighContrast,
-  onError,
-  onSuccess,
-  isDisabled,
-}: SliderCaptchaProps) {
   const [sliderValue, setSliderValue] = useState(0);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [attempts, setAttempts] = useState(0);
@@ -92,7 +83,7 @@ export function SliderCaptcha({
           onValueChange={(value) => setSliderValue(value[0])}
           max={100}
           step={1}
-          className={isDarkMode ? "bg-gray-700" : ""}
+          className={`w-full ${isDarkMode ? "bg-gray-700" : ""}`}
           disabled={isDisabled}
           aria-label="滑块验证"
         />

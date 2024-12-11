@@ -4,22 +4,18 @@ import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { useCaptchaStore } from "@/lib/store/captcha";
+import { CaptchaProps } from "@/types/captcha";
 
-interface ImageCaptchaProps {
-  isDarkMode: boolean;
-  isHighContrast: boolean;
-  onError: () => void;
-  onSuccess: () => void;
-  isDisabled: boolean;
-}
+export function ImageCaptcha(props: CaptchaProps) {
+  const {
+    isDarkMode,
+    isHighContrast,
+    onError,
+    onSuccess,
+    isDisabled,
+  } = useCaptchaStore();
 
-export function ImageCaptcha({
-  isDarkMode,
-  isHighContrast,
-  onError,
-  onSuccess,
-  isDisabled,
-}: ImageCaptchaProps) {
   const [captchaText, setCaptchaText] = useState("");
   const [userInput, setUserInput] = useState("");
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);

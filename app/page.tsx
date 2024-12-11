@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Header from "@/components/home/Header";
-import SearchBar from "@/components/home/SearchBar";
+import SearchBar from "@/components/custom/SearchBar";
 import QuickAccess from "@/components/home/QuickAccess";
 import CategoryFilter from "@/components/home/CategoryFilter";
 import SiteList from "@/components/home/SiteList";
@@ -194,12 +194,18 @@ export default function Home() {
       ref={ref}
     >
       <div className="max-w-6xl mx-auto space-y-8">
-        <Header 
-          exportData={exportData} 
-          importData={importData} 
+        <Header
+          exportData={exportData}
+          importData={importData}
           onAddNewSite={handleAddNewSite} // 添加此行
         />
-        <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
+        <SearchBar
+          initialSuggestions={sites.map((site) => site.name)}
+          placeholder="搜索站点..."
+          onSearch={setSearchTerm}
+          className="mb-4"
+          variant="default"
+        />
         <QuickAccess quickAccessSites={quickAccessSites} />
         <CategoryFilter
           categories={categories}

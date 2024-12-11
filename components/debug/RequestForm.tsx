@@ -15,70 +15,25 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash, Edit, Save, Eye } from "lucide-react";
-
-const BUILT_IN_TEMPLATES = [
-  {
-    name: "GET Request",
-    config: {
-      method: "GET",
-      url: "https://api.example.com/users",
-      headers: {},
-    },
-  },
-  {
-    name: "POST JSON",
-    config: {
-      method: "POST",
-      url: "https://api.example.com/users",
-      headers: { "Content-Type": "application/json" },
-      data: { name: "John Doe", email: "john@example.com" },
-    },
-  },
-  {
-    name: "PUT with Authentication",
-    config: {
-      method: "PUT",
-      url: "https://api.example.com/users/1",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer YOUR_TOKEN_HERE",
-      },
-      data: { name: "Jane Doe", email: "jane@example.com" },
-    },
-  },
-  {
-    name: "DELETE Request",
-    config: {
-      method: "DELETE",
-      url: "https://api.example.com/users/1",
-      headers: { Authorization: "Bearer YOUR_TOKEN_HERE" },
-    },
-  },
-];
+import { Plus, Trash, Edit, Save, Eye, Search } from "lucide-react";
+import { useRequestStore } from "@/lib/store/debug";
 
 interface RequestFormProps {
   onSubmit: (config: any) => void;
   settings: { defaultTimeout: number };
 }
 
-interface TemplateConfig {
-  method: string;
-  url: string;
-  headers: { [key: string]: string };
-  data?: { [key: string]: any };
-  timeout?: number;
-  retries?: number;
-  retryDelay?: number;
-  rejectUnauthorized?: boolean;
-}
-
-interface Template {
-  name: string;
-  config: TemplateConfig;
-}
-
 export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
+  const {
+    templates,
+    addTemplate,
+    updateTemplate,
+    deleteTemplate,
+    history,
+    addHistory,
+    clearHistory,
+  } = useRequestStore();
+
   const [method, setMethod] = useState("GET");
   const [url, setUrl] = useState("");
   const [headers, setHeaders] = useState("");
@@ -88,22 +43,10 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
   const [retryDelay, setRetryDelay] = useState(1000);
   const [validateSSL, setValidateSSL] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState("none");
-  const [templates, setTemplates] = useState<Template[]>(BUILT_IN_TEMPLATES);
   const [isEditing, setIsEditing] = useState(false);
   const [editTemplateName, setEditTemplateName] = useState("");
   const [showHistory, setShowHistory] = useState(false);
-  const [history, setHistory] = useState<any[]>([]);
-
-  useEffect(() => {
-    const savedTemplates = JSON.parse(
-      localStorage.getItem("customTemplates") || "[]"
-    );
-    setTemplates([...BUILT_IN_TEMPLATES, ...savedTemplates]);
-    const savedHistory = JSON.parse(
-      localStorage.getItem("requestHistory") || "[]"
-    );
-    setHistory(savedHistory);
-  }, []);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (selectedTemplate !== "none") {
@@ -135,14 +78,15 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
         rejectUnauthorized: validateSSL,
       };
       onSubmit(config);
-      // 保存请求到历史记录
-      const newHistory = [
-        { ...config, timestamp: new Date().toISOString() },
-        ...history,
-      ];
-      setHistory(newHistory);
-      localStorage.setItem("requestHistory", JSON.stringify(newHistory));
-    } catch (error) {
+      const newHistory = {
+        id: Date.now().toString(),
+        config: {
+          ...config,
+          timestamp: Date.now(),
+        },
+      };
+      addHistory(newHistory);
+    } catch {
       alert("Headers 或 Body 必须是有效的 JSON 格式");
     }
   };
@@ -163,69 +107,26 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
           rejectUnauthorized: validateSSL,
         },
       };
-      const updatedTemplates = [...templates, newTemplate];
-      setTemplates(updatedTemplates);
-      localStorage.setItem(
-        "customTemplates",
-        JSON.stringify(
-          updatedTemplates.filter(
-            (t) => !BUILT_IN_TEMPLATES.some((bt) => bt.name === t.name)
-          )
-        )
-      );
+      addTemplate(newTemplate);
     }
   };
 
-  const deleteTemplate = (templateName: string) => {
-    const updatedTemplates = templates.filter((t) => t.name !== templateName);
-    setTemplates(updatedTemplates);
-    localStorage.setItem(
-      "customTemplates",
-      JSON.stringify(
-        updatedTemplates.filter(
-          (t) => !BUILT_IN_TEMPLATES.some((bt) => bt.name === t.name)
-        )
-      )
-    );
-  };
-
-  const editTemplate = (templateName: string) => {
-    const template = templates.find((t) => t.name === templateName);
-    if (template) {
-      setSelectedTemplate(templateName);
-      setIsEditing(true);
-      setEditTemplateName(templateName);
-    }
-  };
-
-  const saveEditedTemplate = () => {
+  const handleEditTemplate = () => {
     if (editTemplateName) {
-      const updatedTemplates = templates.map((t) =>
-        t.name === editTemplateName
-          ? {
-              ...t,
-              config: {
-                method,
-                url,
-                headers: headers ? JSON.parse(headers) : {},
-                data: body ? JSON.parse(body) : undefined,
-                timeout,
-                retries,
-                retryDelay,
-                rejectUnauthorized: validateSSL,
-              },
-            }
-          : t
-      );
-      setTemplates(updatedTemplates);
-      localStorage.setItem(
-        "customTemplates",
-        JSON.stringify(
-          updatedTemplates.filter(
-            (t) => !BUILT_IN_TEMPLATES.some((bt) => bt.name === t.name)
-          )
-        )
-      );
+      const updatedTemplate = {
+        name: editTemplateName,
+        config: {
+          method,
+          url,
+          headers: headers ? JSON.parse(headers) : {},
+          data: body ? JSON.parse(body) : undefined,
+          timeout,
+          retries,
+          retryDelay,
+          rejectUnauthorized: validateSSL,
+        },
+      };
+      updateTemplate(updatedTemplate);
       setIsEditing(false);
       setEditTemplateName("");
     }
@@ -243,11 +144,6 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
     setSelectedTemplate("none");
     setIsEditing(false);
     setEditTemplateName("");
-  };
-
-  const clearHistory = () => {
-    setHistory([]);
-    localStorage.removeItem("requestHistory");
   };
 
   return (
@@ -279,8 +175,8 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">无模板</SelectItem>
-                  {templates.map((template, index) => (
-                    <SelectItem key={index} value={template.name}>
+                  {templates.map((template) => (
+                    <SelectItem key={template.name} value={template.name}>
                       {template.name}
                       {!BUILT_IN_TEMPLATES.some(
                         (bt) => bt.name === template.name
@@ -305,7 +201,8 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
                             size="icon"
                             onClick={(e) => {
                               e.stopPropagation();
-                              editTemplate(template.name);
+                              setIsEditing(true);
+                              setEditTemplateName(template.name);
                             }}
                             className="ml-1"
                           >
@@ -321,7 +218,7 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
               {isEditing && (
                 <Button
                   type="button"
-                  onClick={saveEditedTemplate}
+                  onClick={handleEditTemplate}
                   variant="outline"
                   className="mt-2 sm:mt-0 flex items-center"
                 >
@@ -484,7 +381,7 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
 
       {/* 请求历史记录 */}
       <Card className="mt-6">
-        <CardHeader>
+        <CardHeader className="flex justify-between items-center">
           <CardTitle>请求历史记录</CardTitle>
           <Button
             type="button"
@@ -498,6 +395,22 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
           </Button>
         </CardHeader>
         <CardContent>
+          <div className="flex items-center mb-4">
+            <Input
+              placeholder="搜索历史记录..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-grow dark:bg-gray-700 dark:text-gray-200"
+            />
+            <Button
+              type="button"
+              onClick={() => setShowHistory(!showHistory)}
+              variant="ghost"
+              className="ml-2"
+            >
+              {showHistory ? "隐藏历史记录" : "显示历史记录"}
+            </Button>
+          </div>
           <AnimatePresence>
             {showHistory && (
               <motion.div
@@ -505,61 +418,55 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.5 }}
-                className="space-y-4"
+                className="space-y-4 overflow-y-auto max-h-64"
               >
-                {history.length > 0 ? (
-                  history.map((req, index) => (
-                    <Card key={index} className="bg-gray-50 dark:bg-gray-700">
-                      <CardHeader className="flex justify-between items-center">
-                        <CardTitle className="text-lg font-bold text-gray-800 dark:text-gray-200">
-                          {req.method} {req.url}
-                        </CardTitle>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {new Date(req.timestamp).toLocaleString()}
+                {history
+                  .filter(
+                    (item) =>
+                      item.config.method
+                        .toLowerCase()
+                        .includes(search.toLowerCase()) ||
+                      item.config.url
+                        .toLowerCase()
+                        .includes(search.toLowerCase())
+                  )
+                  .map((req) => (
+                    <motion.div
+                      key={req.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.3 }}
+                      className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow"
+                    >
+                      <div className="flex justify-between items-center mb-2">
+                        <div>
+                          <span className="font-bold">{req.config.method}</span>{" "}
+                          {req.config.url}
+                        </div>
+                        <span className="text-sm text-gray-500 dark:text-gray-300">
+                          {new Date(req.config.timestamp).toLocaleString()}
                         </span>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm">
-                          <strong>Headers:</strong>{" "}
-                          {JSON.stringify(req.headers)}
-                        </p>
-                        {req.data && (
-                          <p className="text-sm">
-                            <strong>Body:</strong> {JSON.stringify(req.data)}
-                          </p>
-                        )}
-                        <p className="text-sm">
-                          <strong>Timeout:</strong> {req.timeout} ms
-                        </p>
-                        <p className="text-sm">
-                          <strong>Retries:</strong> {req.retries}
-                        </p>
-                        <p className="text-sm">
-                          <strong>Retry Delay:</strong> {req.retryDelay} ms
-                        </p>
-                        <p className="text-sm">
-                          <strong>Validate SSL:</strong>{" "}
-                          {req.rejectUnauthorized ? "是" : "否"}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
+                      </div>
+                      <pre className="bg-gray-200 dark:bg-gray-600 p-2 rounded overflow-x-auto">
+                        <code>{JSON.stringify(req, null, 2)}</code>
+                      </pre>
+                    </motion.div>
+                  ))}
+                {history.filter(
+                  (item) =>
+                    item.config.method
+                      .toLowerCase()
+                      .includes(search.toLowerCase()) ||
+                    item.config.url.toLowerCase().includes(search.toLowerCase())
+                ).length === 0 && (
                   <p className="text-center text-gray-500 dark:text-gray-400">
-                    没有历史记录。
+                    暂无匹配的历史记录
                   </p>
                 )}
               </motion.div>
             )}
           </AnimatePresence>
-          <Button
-            type="button"
-            onClick={() => setShowHistory(!showHistory)}
-            variant="ghost"
-            className="mt-4 flex items-center"
-          >
-            {showHistory ? "隐藏历史记录" : "显示历史记录"}
-          </Button>
         </CardContent>
       </Card>
     </motion.div>

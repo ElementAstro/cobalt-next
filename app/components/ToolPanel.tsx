@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useMemo } from "react";
 import { DndContext, DragEndEvent } from "@dnd-kit/core";
 import { CategorySection } from "@/components/toolpanel/CategorySection";
@@ -13,7 +11,7 @@ import {
   Paperclip,
 } from "lucide-react";
 import { Tool } from "@/types/toolpanel";
-import SearchBar from "@/components/toolpanel/SearchBar";
+import SearchBar from "@/components/custom/SearchBar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
@@ -240,9 +238,8 @@ export default function ToolPanel() {
           ))}
         </TabsList>
         <SearchBar
-          searchTerm={searchTerm}
-          onSearch={(e) => setSearchTerm(e.target.value)}
-          onClearHistory={() => setSearchTerm("")}
+          initialSuggestions={tools.map((tool) => tool.name)}
+          onSearch={(term) => setSearchTerm(term)}
           disabled={false}
         />
       </div>

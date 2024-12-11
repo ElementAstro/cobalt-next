@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
+import { useRequestStore } from "@/lib/store/debug";
 
 const BUILT_IN_TEMPLATES = [
   {
@@ -14,49 +15,22 @@ const BUILT_IN_TEMPLATES = [
       method: "GET",
       url: "https://api.example.com/users",
       headers: {},
+      timeout: 5000,
+      retries: 3,
+      retryDelay: 1000,
+      rejectUnauthorized: true,
     },
   },
-  {
-    name: "POST JSON",
-    config: {
-      method: "POST",
-      url: "https://api.example.com/users",
-      headers: { "Content-Type": "application/json" },
-      data: { name: "John Doe", email: "john@example.com" },
-    },
-  },
-  {
-    name: "PUT with Authentication",
-    config: {
-      method: "PUT",
-      url: "https://api.example.com/users/1",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer YOUR_TOKEN_HERE",
-      },
-      data: { name: "Jane Doe", email: "jane@example.com" },
-    },
-  },
-  {
-    name: "DELETE Request",
-    config: {
-      method: "DELETE",
-      url: "https://api.example.com/users/1",
-      headers: { Authorization: "Bearer YOUR_TOKEN_HERE" },
-    },
-  },
+  // 其他内置模板...
 ];
 
 export default function TemplateManager() {
-  const [templates, setTemplates] = useState(BUILT_IN_TEMPLATES);
+  const { templates, addTemplate, deleteTemplate } = useRequestStore();
   const [name, setName] = useState("");
   const [config, setConfig] = useState("");
 
   useEffect(() => {
-    const savedTemplates = JSON.parse(
-      localStorage.getItem("customTemplates") || "[]"
-    );
-    setTemplates([...BUILT_IN_TEMPLATES, ...savedTemplates]);
+    // 初始化模板
   }, []);
 
   const handleSave = () => {
@@ -64,37 +38,17 @@ export default function TemplateManager() {
       try {
         const parsedConfig = JSON.parse(config);
         const newTemplate = { name, config: parsedConfig };
-        const updatedTemplates = [...templates, newTemplate];
-        setTemplates(updatedTemplates);
-        localStorage.setItem(
-          "customTemplates",
-          JSON.stringify(
-            updatedTemplates.filter(
-              (t) => !BUILT_IN_TEMPLATES.some((bt) => bt.name === t.name)
-            )
-          )
-        );
+        addTemplate(newTemplate);
         setName("");
         setConfig("");
-      } catch (error) {
-        alert("Invalid JSON configuration");
+      } catch {
+        alert("无效的 JSON 配置");
       }
     }
   };
 
-  const handleRemove = (templateToRemove: { name: string }) => {
-    const updatedTemplates = templates.filter(
-      (t) => t.name !== templateToRemove.name
-    );
-    setTemplates(updatedTemplates);
-    localStorage.setItem(
-      "customTemplates",
-      JSON.stringify(
-        updatedTemplates.filter(
-          (t) => !BUILT_IN_TEMPLATES.some((bt) => bt.name === t.name)
-        )
-      )
-    );
+  const handleRemove = (templateName: string) => {
+    deleteTemplate(templateName);
   };
 
   return (
@@ -107,7 +61,7 @@ export default function TemplateManager() {
     >
       <Card className="w-full max-w-lg">
         <CardHeader>
-          <CardTitle>Request Templates</CardTitle>
+          <CardTitle>请求模板管理</CardTitle>
         </CardHeader>
         <CardContent>
           <motion.div
@@ -118,20 +72,20 @@ export default function TemplateManager() {
           >
             <div className="space-y-2 mb-4">
               <Input
-                placeholder="Template Name"
+                placeholder="模板名称"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full"
               />
               <Textarea
-                placeholder="Request Configuration (JSON)"
+                placeholder='请求配置 (JSON 格式，例如: {"method": "GET", "url": "https://api.example.com"} )'
                 value={config}
                 onChange={(e) => setConfig(e.target.value)}
                 rows={4}
                 className="w-full"
               />
               <Button onClick={handleSave} className="w-full">
-                Save Template
+                保存模板
               </Button>
             </div>
             <ul className="space-y-2">
@@ -150,9 +104,9 @@ export default function TemplateManager() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => handleRemove(template)}
+                      onClick={() => handleRemove(template.name)}
                     >
-                      Remove
+                      移除
                     </Button>
                   )}
                 </motion.li>

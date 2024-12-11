@@ -103,8 +103,17 @@ export default function StarSearch() {
           obj.magnitude >= parseFloat(filters.minMagnitude)) &&
         (!filters.maxMagnitude ||
           obj.magnitude <= parseFloat(filters.maxMagnitude));
+      const matchesDistance =
+        (!filters.minDistance ||
+          parseFloat(obj.distance) >= parseFloat(filters.minDistance)) &&
+        (!filters.maxDistance ||
+          parseFloat(obj.distance) <= parseFloat(filters.maxDistance));
       return (
-        matchesTerm && matchesConstellation && matchesType && matchesMagnitude
+        matchesTerm &&
+        matchesConstellation &&
+        matchesType &&
+        matchesMagnitude &&
+        matchesDistance
       );
     });
   }, [searchTerm, filters]);
@@ -180,17 +189,17 @@ export default function StarSearch() {
                   Filters
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+                <DialogContent>
                 <FilterPanel
                   filters={filters}
                   onFilterChange={handleFilterChange}
                 />
                 <DialogFooter>
                   <DialogClose asChild>
-                    <Button variant="outline">Close</Button>
+                  <Button variant="outline">Close</Button>
                   </DialogClose>
                 </DialogFooter>
-              </DialogContent>
+                </DialogContent>
             </Dialog>
           </div>
         </div>
@@ -203,23 +212,27 @@ export default function StarSearch() {
         <div className="max-w-5xl mx-auto">
           <AnimatePresence>
             <ScrollArea
-              as={motion.div}
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
+              asChild
               className="space-y-4 overflow-y-auto"
               style={{ maxHeight: "calc(100vh - 200px)" }}
             >
-              {paginatedObjects.map((item) => (
-                <motion.div key={item.id} variants={itemVariants}>
-                  <CelestialObjectCard
-                    key={item.id}
-                    {...item}
-                    isLoggedIn={false}
-                  />
-                </motion.div>
-              ))}
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+              >
+                {paginatedObjects.map((item) => (
+                  <motion.div key={item.id} variants={itemVariants}>
+                    <CelestialObjectCard
+                      key={item.id}
+                      {...item}
+                      isLoggedIn={false}
+                      thumbnail=""
+                    />
+                  </motion.div>
+                ))}
+              </motion.div>
             </ScrollArea>
           </AnimatePresence>
           <motion.div variants={itemVariants}>

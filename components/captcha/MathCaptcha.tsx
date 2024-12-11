@@ -4,16 +4,18 @@ import { useState, useEffect } from 'react'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { motion } from 'framer-motion'
+import { useCaptchaStore } from "@/lib/store/captcha";
+import { CaptchaProps } from '@/types/captcha'
 
-interface MathCaptchaProps {
-  isDarkMode: boolean
-  isHighContrast: boolean
-  onError: () => void
-  onSuccess: () => void
-  isDisabled: boolean
-}
+export function MathCaptcha(props: CaptchaProps) {
+  const {
+    isDarkMode,
+    isHighContrast,
+    onError,
+    onSuccess,
+    isDisabled,
+  } = useCaptchaStore();
 
-export function MathCaptcha({ isDarkMode, isHighContrast, onError, onSuccess, isDisabled }: MathCaptchaProps) {
   const [num1, setNum1] = useState(0)
   const [num2, setNum2] = useState(0)
   const [operator, setOperator] = useState<'+' | '-' | '*'>()
@@ -85,7 +87,7 @@ export function MathCaptcha({ isDarkMode, isHighContrast, onError, onSuccess, is
         value={userAnswer}
         onChange={(e) => setUserAnswer(e.target.value)}
         placeholder="输入答案"
-        className={isDarkMode ? 'bg-gray-700 text-white' : ''}
+        className={`w-full ${isDarkMode ? 'bg-gray-700 text-white' : ''}`}
         disabled={isDisabled}
         aria-label="数学问题答案"
       />

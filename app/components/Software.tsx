@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { SearchBar } from "../../components/software/search-bar";
+import { SearchBar } from "@/components/custom/SearchBar";
 import { ViewToggle } from "../../components/software/view-toggle";
 import { SoftwareFilters } from "../../components/software/software-filters";
 import { SoftwareList } from "../../components/software/software-list";
@@ -129,9 +129,14 @@ export default function SoftwareManagement() {
     <div className="container mx-auto p-4 space-y-6 dark:bg-gray-900 dark:text-white">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex-1 max-w-md">
-          <SearchBar value={search} onChange={setSearch} />
+          <SearchBar
+            initialSuggestions={[]}
+            placeholder="搜索软件..."
+            onSearch={setSearch}
+            variant="minimal"
+          />
         </div>
-        <ViewToggle view={view} onViewChange={setView} />
+        <ViewToggle />
       </div>
 
       <SoftwareFilters

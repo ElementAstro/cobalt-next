@@ -1,3 +1,4 @@
+// HelpChatDialog.tsx
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -22,7 +23,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
-import { Message, useChatStore } from "@/lib/store/chat";
+import { Message, useChatStore } from "@/lib/store/help-chat-dialog";
 import EmojiPicker from "emoji-picker-react";
 import { ShortcutList } from "@/components/custom/ShortCutList";
 
@@ -34,7 +35,7 @@ const botResponses = [
   "非常感谢您的反馈。我们会继续改进我们的服务。",
 ];
 
-export default function MergedChatComponent() {
+export default function HelpChatDialog() {
   const {
     isOpen,
     setIsOpen,
@@ -79,7 +80,7 @@ export default function MergedChatComponent() {
     resetUnreadCount();
   };
 
-  const toggleTheme = () => {
+  const toggleThemeMode = () => {
     setTheme(theme === "light" ? "dark" : "light");
   };
 
@@ -89,6 +90,7 @@ export default function MergedChatComponent() {
         switch (input.split(" ")[0]) {
           case "/hello":
             addMessage({
+              id: Date.now().toString(),
               text: "您好！有什么我可以帮您的吗？",
               sender: "bot",
               timestamp: new Date(),
@@ -96,6 +98,7 @@ export default function MergedChatComponent() {
             break;
           case "/help":
             addMessage({
+              id: Date.now().toString(),
               text: "这里是帮助信息。您可以问我任何问题，我会尽力回答。",
               sender: "bot",
               timestamp: new Date(),
@@ -106,17 +109,24 @@ export default function MergedChatComponent() {
             break;
           default:
             addMessage({
+              id: Date.now().toString(),
               text: "抱歉，我不理解这个指令。",
               sender: "bot",
               timestamp: new Date(),
             });
         }
       } else {
-        addMessage({ text: input, sender: "user", timestamp: new Date() });
+        addMessage({
+          id: Date.now().toString(),
+          text: input,
+          sender: "user",
+          timestamp: new Date(),
+        });
         setIsTyping(true);
 
         setTimeout(() => {
           addMessage({
+            id: Date.now().toString(),
             text: botResponses[Math.floor(Math.random() * botResponses.length)],
             sender: "bot",
             timestamp: new Date(),
@@ -190,7 +200,7 @@ export default function MergedChatComponent() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={toggleTheme}
+                onClick={toggleThemeMode}
                 className="mr-2"
               >
                 {theme === "light" ? (
@@ -208,7 +218,7 @@ export default function MergedChatComponent() {
               </Button>
             </div>
           </DialogHeader>
-          <div className="flex flex-col h-[400px]">
+          <div className="flex flex-col h-[500px]">
             <div className="flex items-center p-2 border-b">
               <Input
                 value={searchQuery}

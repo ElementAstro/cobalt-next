@@ -35,7 +35,7 @@ export function SoftwareFilters({
 }: SoftwareFiltersProps) {
   return (
     <motion.div
-      className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between dark:bg-gray-800 p-4 rounded-lg"
+      className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}

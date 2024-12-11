@@ -1,17 +1,26 @@
+// WebSocketTester.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
+import { useWebSocketStore } from "@/lib/store/debug";
 
 export default function WebSocketTester() {
-  const [url, setUrl] = useState("");
-  const [message, setMessage] = useState("");
-  const [logs, setLogs] = useState<string[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
+  const {
+    url,
+    setUrl,
+    message,
+    setMessage,
+    logs,
+    addLog,
+    isConnected,
+    setIsConnected,
+  } = useWebSocketStore();
+
   const socketRef = useRef<WebSocket | null>(null);
 
   const connect = () => {
@@ -44,10 +53,6 @@ export default function WebSocketTester() {
     }
   };
 
-  const addLog = (log: string) => {
-    setLogs((prevLogs) => [...prevLogs, log]);
-  };
-
   useEffect(() => {
     return () => {
       if (socketRef.current) {
@@ -70,40 +75,61 @@ export default function WebSocketTester() {
         </CardHeader>
         <CardContent>
           <motion.div
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: { opacity: 0, y: -20 },
+              visible: { opacity: 1, y: 0 },
+            }}
+            transition={{ duration: 0.5, staggerChildren: 0.2 }}
             className="space-y-4"
           >
-            <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
+            <motion.div
+              variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
+              className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2"
+            >
               <Input
                 placeholder="WebSocket URL"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                className="flex-1"
+                className="flex-1 bg-gray-800 text-white"
               />
-              <Button onClick={isConnected ? disconnect : connect}>
+              <Button
+                onClick={isConnected ? disconnect : connect}
+                className="mt-2 md:mt-0"
+              >
                 {isConnected ? "Disconnect" : "Connect"}
               </Button>
-            </div>
-            <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
+            </motion.div>
+            <motion.div
+              variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
+              className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2"
+            >
               <Input
                 placeholder="Message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 disabled={!isConnected}
-                className="flex-1"
+                className="flex-1 bg-gray-800 text-white"
               />
-              <Button onClick={sendMessage} disabled={!isConnected}>
+              <Button
+                onClick={sendMessage}
+                disabled={!isConnected}
+                className="mt-2 md:mt-0"
+              >
                 Send
               </Button>
-            </div>
-            <Textarea
-              value={logs.join("\n")}
-              readOnly
-              rows={10}
-              className="font-mono text-sm bg-gray-800 text-white"
-            />
+            </motion.div>
+            <motion.div
+              variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
+            >
+              <Textarea
+                value={logs.join("\n")}
+                readOnly
+                rows={10}
+                className="font-mono text-sm bg-gray-800 text-white"
+              />
+            </motion.div>
           </motion.div>
         </CardContent>
       </Card>

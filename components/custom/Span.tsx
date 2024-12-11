@@ -9,7 +9,7 @@ import {
 import { LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 
-interface EnhancedSpanProps extends React.HTMLAttributes<HTMLSpanElement> {
+interface SpanProps extends React.HTMLAttributes<HTMLSpanElement> {
   children: React.ReactNode;
   icon?: LucideIcon;
   tooltip?: string;
@@ -24,7 +24,7 @@ interface EnhancedSpanProps extends React.HTMLAttributes<HTMLSpanElement> {
   highlightOnHover?: boolean;
 }
 
-export const EnhancedSpan: React.FC<EnhancedSpanProps> = ({
+export const Span: React.FC<SpanProps> = ({
   children,
   icon: Icon,
   tooltip,
