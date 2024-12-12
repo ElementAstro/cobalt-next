@@ -26,6 +26,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Message, useChatStore } from "@/lib/store/help-chat-dialog";
 import EmojiPicker from "emoji-picker-react";
 import { ShortcutList } from "@/components/custom/ShortCutList";
+import { Span } from "@/components/custom/Span";
 
 const botResponses = [
   "感谢您的提问。我们的客服人员会尽快回复您。",
@@ -181,9 +182,14 @@ export default function HelpChatDialog() {
             <Button onClick={handleOpen} size="icon" className="relative">
               <MessageCircle className="h-6 w-6" />
               {unreadCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                <Span
+                  variant="error"
+                  size="sm"
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                  tooltip="未读消息"
+                >
                   {unreadCount}
-                </span>
+                </Span>
               )}
               <span className="sr-only">打开聊天帮助</span>
             </Button>
@@ -241,18 +247,24 @@ export default function HelpChatDialog() {
                     message.sender === "user" ? "text-right" : "text-left"
                   }`}
                 >
-                  <span
-                    className={`inline-block p-2 rounded-lg ${
+                  <Span
+                    variant={message.sender === "user" ? "success" : "info"}
+                    copyable
+                    className={`inline-block px-4 py-2 rounded-lg ${
                       message.sender === "user"
                         ? "bg-primary text-primary-foreground"
                         : "bg-secondary text-secondary-foreground"
                     }`}
                   >
                     {message.text}
-                  </span>
-                  <div className="text-xs text-gray-500 mt-1">
+                  </Span>
+                  <Span
+                    variant="default"
+                    size="sm"
+                    className="block text-xs text-gray-500 mt-1"
+                  >
                     {new Date(message.timestamp).toLocaleTimeString()}
-                  </div>
+                  </Span>
                 </motion.div>
               ))}
               {isTyping && (
@@ -261,9 +273,12 @@ export default function HelpChatDialog() {
                   animate={{ opacity: 1 }}
                   className="text-left"
                 >
-                  <span className="inline-block p-2 rounded-lg bg-secondary text-secondary-foreground">
+                  <Span
+                    variant="info"
+                    className="inline-block px-4 py-2 rounded-lg bg-secondary text-secondary-foreground"
+                  >
                     正在输入...
-                  </span>
+                  </Span>
                 </motion.div>
               )}
             </ScrollArea>

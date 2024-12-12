@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { AdvancedSettings, DeviceData } from "@/types/connection";
-import { useApiService } from "@/services/connection";
+import { createApiService } from "@/services/connection";
 
 interface SettingsStore {
   settings: AdvancedSettings;
@@ -100,7 +100,7 @@ export const useDevicesStore = create<DevicesState>()(
   devtools(
     persist(
       (set) => {
-        const api = useApiService();
+        const api = createApiService(true); // 使用默认的 mock 模式
 
         return {
           devices: [],
@@ -229,32 +229,32 @@ export const useLogsStore = create<LogsStore>((set) => ({
 }));
 
 export interface Profile {
-  id: string
-  name: string
-  autoConnect: boolean
-  mode: "local" | "remote"
-  host: string
-  port: string
-  guiding: "internal" | "external"
-  indiWebManager: boolean
-  theme: "light" | "dark" | "system"
-  isConnected: boolean
-  lastConnected?: Date
+  id: string;
+  name: string;
+  autoConnect: boolean;
+  mode: "local" | "remote";
+  host: string;
+  port: string;
+  guiding: "internal" | "external";
+  indiWebManager: boolean;
+  theme: "light" | "dark" | "system";
+  isConnected: boolean;
+  lastConnected?: Date;
 }
 
 export type ActiveProfile = Profile | undefined;
 
 interface ProfileState {
-  profiles: Profile[]
-  activeProfile: Profile | null
-  isLoading: boolean
-  error: string | null
-  setActiveProfile: (profile: Profile) => void
-  addProfile: (profile: Profile) => void
-  updateProfile: (id: string, data: Partial<Profile>) => void
-  deleteProfile: (id: string) => void
-  setLoading: (status: boolean) => void
-  setError: (error: string | null) => void
+  profiles: Profile[];
+  activeProfile: Profile | null;
+  isLoading: boolean;
+  error: string | null;
+  setActiveProfile: (profile: Profile) => void;
+  addProfile: (profile: Profile) => void;
+  updateProfile: (id: string, data: Partial<Profile>) => void;
+  deleteProfile: (id: string) => void;
+  setLoading: (status: boolean) => void;
+  setError: (error: string | null) => void;
 }
 
 export const useProfileStore = create<ProfileState>()(
@@ -265,7 +265,7 @@ export const useProfileStore = create<ProfileState>()(
       isLoading: false,
       error: null,
       setActiveProfile: (profile) => set({ activeProfile: profile }),
-      addProfile: (profile) => 
+      addProfile: (profile) =>
         set((state) => ({ profiles: [...state.profiles, profile] })),
       updateProfile: (id, data) =>
         set((state) => ({
@@ -281,7 +281,7 @@ export const useProfileStore = create<ProfileState>()(
       setError: (error) => set({ error }),
     }),
     {
-      name: 'profile-storage',
+      name: "profile-storage",
     }
   )
-)
+);

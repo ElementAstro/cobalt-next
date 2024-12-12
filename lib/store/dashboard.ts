@@ -94,3 +94,50 @@ export const useExposureStore = create<State>((set) => ({
   setOffset: (value) => set({ offset: value }),
   setBinning: (value) => set({ binning: value }),
 }));
+
+export interface ViewerSettings {
+  zoom: number;
+  brightness: number;
+  contrast: number;
+  saturation: number;
+  rotation: number;
+  exposure: number;
+  iso: number;
+  whiteBalance: string;
+  focusPoint: { x: number; y: number };
+}
+
+interface CameraState extends ViewerSettings {
+  setZoom: (zoom: number) => void;
+  setBrightness: (brightness: number) => void;
+  setContrast: (contrast: number) => void;
+  setSaturation: (saturation: number) => void;
+  setRotation: (rotation: number) => void;
+  setExposure: (exposure: number) => void;
+  setISO: (iso: number) => void;
+  setWhiteBalance: (whiteBalance: string) => void;
+  setFocusPoint: (focusPoint: { x: number; y: number }) => void;
+  resetSettings: (settings: Partial<ViewerSettings>) => void;
+}
+
+export const useViewerStore = create<CameraState>((set) => ({
+  zoom: 1,
+  brightness: 100,
+  contrast: 100,
+  saturation: 100,
+  rotation: 0,
+  exposure: 50,
+  iso: 100,
+  whiteBalance: "Auto",
+  focusPoint: { x: 50, y: 50 },
+  setZoom: (zoom) => set({ zoom }),
+  setBrightness: (brightness) => set({ brightness }),
+  setContrast: (contrast) => set({ contrast }),
+  setSaturation: (saturation) => set({ saturation }),
+  setRotation: (rotation) => set({ rotation }),
+  setExposure: (exposure) => set({ exposure }),
+  setISO: (iso) => set({ iso }),
+  setWhiteBalance: (whiteBalance) => set({ whiteBalance }),
+  setFocusPoint: (focusPoint) => set({ focusPoint }),
+  resetSettings: (settings) => set((state) => ({ ...state, ...settings })),
+}));

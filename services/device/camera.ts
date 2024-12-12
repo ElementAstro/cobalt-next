@@ -1,5 +1,6 @@
 import { api } from "../axios";
 import { useCameraStore } from "@/lib/store/device";
+import { useExposureStore } from "@/lib/store/dashboard";
 import logger from "@/lib/logger";
 import * as yup from "yup";
 
@@ -94,6 +95,7 @@ export const cameraApi = {
         data: { exposure },
       });
       useCameraStore.getState().setExposure(exposure);
+      useExposureStore.getState().setExposureTime(exposure);
       logger.info(`Exposure set to ${exposure}.`);
     } catch (error) {
       if (error instanceof yup.ValidationError) {
@@ -115,6 +117,7 @@ export const cameraApi = {
         data: { gain },
       });
       useCameraStore.getState().setGain(gain);
+      useExposureStore.getState().setGain(gain);
       logger.info(`Gain set to ${gain}.`);
     } catch (error) {
       if (error instanceof yup.ValidationError) {
@@ -136,6 +139,7 @@ export const cameraApi = {
         data: { iso },
       });
       useCameraStore.getState().setISO(iso);
+      useExposureStore.getState().setISO(iso);
       logger.info(`ISO set to ${iso}.`);
     } catch (error) {
       if (error instanceof yup.ValidationError) {
@@ -157,6 +161,7 @@ export const cameraApi = {
         data: { offset },
       });
       useCameraStore.getState().setOffset(offset);
+      useExposureStore.getState().setOffset(offset);
       logger.info(`Offset set to ${offset}.`);
     } catch (error) {
       if (error instanceof yup.ValidationError) {
@@ -178,6 +183,7 @@ export const cameraApi = {
         data: { binning },
       });
       useCameraStore.getState().setBinning(binning);
+      useExposureStore.getState().setBinning(`${binning}x${binning}`);
       logger.info(`Binning set to ${binning}.`);
     } catch (error) {
       if (error instanceof yup.ValidationError) {

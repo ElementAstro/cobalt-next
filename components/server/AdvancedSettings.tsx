@@ -40,16 +40,6 @@ export function AdvancedSettings({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={handleSave}>
-          <Save className="w-4 h-4 mr-2" />
-          保存配置
-        </Button>
-        <Button variant="outline" onClick={handleLoad}>
-          <RotateCcw className="w-4 h-4 mr-2" />
-          加载配置
-        </Button>
-      </div>
       <div className="space-y-2">
         <Label>连接超时（秒）</Label>
         <Input
@@ -77,6 +67,16 @@ export function AdvancedSettings({
           onCheckedChange={(checked) => updateSettings({ debugMode: checked })}
         />
         <Label htmlFor="debug">启用调试模式</Label>
+      </div>
+      <div className="flex justify-between w-full">
+        <Button variant="outline" onClick={handleSave} className="flex-1 mr-2">
+          <Save className="w-4 h-4 mr-2" />
+          保存配置
+        </Button>
+        <Button variant="outline" onClick={handleLoad} className="flex-1 ml-2">
+          <RotateCcw className="w-4 h-4 mr-2" />
+          加载配置
+        </Button>
       </div>
     </div>
   );

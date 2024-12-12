@@ -112,7 +112,7 @@ const initialTools: Tool[] = [
     CustomComponent: AllINDIPanel,
   },
   {
-    id: "6",
+    id: "9",
     name: "串口助手",
     description: "基础串口调试助手",
     icon: SendHorizonal,
@@ -121,40 +121,13 @@ const initialTools: Tool[] = [
     CustomComponent: SerialMonitor,
   },
   {
-    id: "7",
+    id: "10",
     name: "客户端信息",
     description: "客户端信息面板",
     icon: Webhook,
     usageCount: 0,
     category: "基础",
     CustomComponent: ClientInfo,
-  },
-  {
-    id: "8",
-    name: "存储管理",
-    description: "管理本地存储",
-    icon: Wand2,
-    usageCount: 0,
-    category: "基础",
-    CustomComponent: OnlineStorage,
-  },
-  {
-    id: "9",
-    name: "天气信息",
-    description: "获取天气信息",
-    icon: Webhook,
-    usageCount: 0,
-    category: "数据",
-    CustomComponent: (props) => <WeatherInfo {...props} onClose={() => {}} />,
-  },
-  {
-    id: "10",
-    name: "INDI 面板",
-    description: "INDI 设备控制面板",
-    icon: Cloud,
-    usageCount: 0,
-    category: "客户端",
-    CustomComponent: AllINDIPanel,
   },
   {
     id: "11",
@@ -229,8 +202,8 @@ export default function ToolPanel() {
 
   return (
     <Tabs defaultValue={CATEGORY_ORDER[0]}>
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 bg-gray-900">
-        <TabsList>
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 p-4 bg-gray-900">
+        <TabsList className="w-full md:w-auto">
           {CATEGORY_ORDER.map((category) => (
             <TabsTrigger key={category} value={category}>
               {category}
@@ -241,6 +214,9 @@ export default function ToolPanel() {
           initialSuggestions={tools.map((tool) => tool.name)}
           onSearch={(term) => setSearchTerm(term)}
           disabled={false}
+          placeholder="搜索工具..."
+          variant="minimal"
+          className="w-full md:w-1/3"
         />
       </div>
 
@@ -248,12 +224,12 @@ export default function ToolPanel() {
         <TabsContent
           key={category}
           value={category}
-          className="transition-opacity duration-500 ease-in-out" // 添加过渡类
+          className="transition-opacity duration-500 ease-in-out p-4"
         >
-          <ScrollArea className="overflow-y-auto max-h-[450px]">
+          <ScrollArea className="overflow-y-auto max-h-[450px] h-full">
             <DndContext onDragEnd={handleDragEnd}>
               <motion.div
-                className="p-4 bg-gray-800 flex flex-wrap"
+                className="p-4 bg-gray-800 flex flex-col md:flex-row flex-wrap"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}

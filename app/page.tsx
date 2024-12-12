@@ -190,10 +190,10 @@ export default function Home() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gradient-to-br from-indigo-900 to-purple-900 dark:from-gray-900 dark:to-black p-4 sm:p-8 transition-colors duration-300"
+      className="min-h-screen bg-gradient-to-br from-indigo-900 to-purple-900 dark:from-gray-900 dark:to-black p-2 sm:p-8 transition-colors duration-300"
       ref={ref}
     >
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-4">
         <Header
           exportData={exportData}
           importData={importData}
@@ -203,8 +203,7 @@ export default function Home() {
           initialSuggestions={sites.map((site) => site.name)}
           placeholder="搜索站点..."
           onSearch={setSearchTerm}
-          className="mb-4"
-          variant="default"
+          variant="minimal"
         />
         <QuickAccess quickAccessSites={quickAccessSites} />
         <CategoryFilter

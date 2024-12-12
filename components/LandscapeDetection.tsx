@@ -47,7 +47,6 @@ export default function LandscapeDetector({
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
   const isMobile = useMediaQuery({ maxWidth: 768 });
-  const resizeTimeout = useRef<number | null>(null);
 
   const checkFullscreen = useCallback(() => {
     const fullscreen =
@@ -85,38 +84,34 @@ export default function LandscapeDetector({
     }
   }, [checkFullscreen]);
 
-  const debounce = (func: () => void, delay: number) => {
+  const checkOrientation = useCallback(() => {
+    const aspectRatio = window.innerWidth / window.innerHeight;
+    if (aspectRatio < aspectRatioThreshold) {
+      showDialog();
+    } else {
+      hideDialog();
+    }
+  }, [aspectRatioThreshold, showDialog, hideDialog]);
+
+  const debounce = useCallback((func: () => void, delay: number) => {
+    let timer: number | null = null;
     return () => {
-      if (resizeTimeout.current) {
-        clearTimeout(resizeTimeout.current);
+      if (timer) {
+        clearTimeout(timer);
       }
-      resizeTimeout.current = window.setTimeout(func, delay);
+      timer = window.setTimeout(func, delay);
     };
-  };
+  }, []);
+
+  const debouncedCheckOrientation = useRef(debounce(checkOrientation, 300));
 
   useEffect(() => {
-    const checkOrientation = () => {
-      const aspectRatio = window.innerWidth / window.innerHeight;
-      if (aspectRatio < aspectRatioThreshold) {
-        showDialog();
-      } else {
-        hideDialog();
-      }
-    };
-
-    const checkDevice = () => {
-      const mobile =
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-          navigator.userAgent
-        );
-    };
+    const handleResize = debouncedCheckOrientation.current;
 
     checkOrientation();
-    checkDevice();
     checkFullscreen();
 
-    const debouncedCheckOrientation = debounce(checkOrientation, 300);
-    window.addEventListener("resize", debouncedCheckOrientation);
+    window.addEventListener("resize", handleResize);
     window.addEventListener("fullscreenchange", checkFullscreen);
     window.addEventListener("webkitfullscreenchange", checkFullscreen);
 
@@ -129,16 +124,20 @@ export default function LandscapeDetector({
     }
 
     return () => {
-      window.removeEventListener("resize", debouncedCheckOrientation);
+      window.removeEventListener("resize", handleResize);
       window.removeEventListener("fullscreenchange", checkFullscreen);
       window.removeEventListener("webkitfullscreenchange", checkFullscreen);
+      // 确保组件存在时再尝试移除
+      if (isVisible) {
+        hideDialog();
+      }
     };
   }, [
-    aspectRatioThreshold,
-    persistPreference,
-    showDialog,
-    hideDialog,
+    checkOrientation,
     checkFullscreen,
+    hideDialog,
+    persistPreference,
+    isVisible,
   ]);
 
   useEffect(() => {

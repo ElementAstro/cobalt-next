@@ -28,7 +28,7 @@ import { FilterPanel } from "@/components/search/FilterPanel";
 
 // 假设我们有一个更大的模拟数据集
 const mockObjects = Array.from({ length: 1000 }, (_, i) => ({
-  id: i + 1,
+  id: (i + 1).toString(),
   name: `Celestial Object ${i + 1}`,
   type: ["OPNCL", "DRKNB", "BRTNB", "GALXY", "PLNTN", "STAR"][
     Math.floor(Math.random() * 6)
@@ -43,8 +43,8 @@ const mockObjects = Array.from({ length: 1000 }, (_, i) => ({
     Math.random() * 60
   )}' ${Math.floor(Math.random() * 60)}"`,
   magnitude: Math.random() * 100,
-  size: `${Math.floor(Math.random() * 1000)} arcmin`,
-  distance: `${Math.floor(Math.random() * 10000)} ly`,
+  size: Math.floor(Math.random() * 1000),
+  distance: Math.floor(Math.random() * 10000),
   riseTime: `${Math.floor(Math.random() * 24)}:${Math.floor(
     Math.random() * 60
   )}`,
@@ -79,10 +79,10 @@ export default function StarSearch() {
   const [filters, setFilters] = useState({
     constellations: [] as string[],
     types: [] as string[],
-    minMagnitude: "",
-    maxMagnitude: "",
-    minDistance: "",
-    maxDistance: "",
+    minMagnitude: 0,
+    maxMagnitude: 0,
+    minDistance: 0,
+    maxDistance: 0,
   });
   const [sortBy, setSortBy] = useState("name");
   const [sortOrder, setSortOrder] = useState("asc");
@@ -99,15 +99,11 @@ export default function StarSearch() {
       const matchesType =
         filters.types.length === 0 || filters.types.includes(obj.type);
       const matchesMagnitude =
-        (!filters.minMagnitude ||
-          obj.magnitude >= parseFloat(filters.minMagnitude)) &&
-        (!filters.maxMagnitude ||
-          obj.magnitude <= parseFloat(filters.maxMagnitude));
+        (!filters.minMagnitude || obj.magnitude >= filters.minMagnitude) &&
+        (!filters.maxMagnitude || obj.magnitude <= filters.maxMagnitude);
       const matchesDistance =
-        (!filters.minDistance ||
-          parseFloat(obj.distance) >= parseFloat(filters.minDistance)) &&
-        (!filters.maxDistance ||
-          parseFloat(obj.distance) <= parseFloat(filters.maxDistance));
+        (!filters.minDistance || obj.distance >= filters.minDistance) &&
+        (!filters.maxDistance || obj.distance <= filters.maxDistance);
       return (
         matchesTerm &&
         matchesConstellation &&
@@ -161,6 +157,7 @@ export default function StarSearch() {
       initial="hidden"
       animate="visible"
       className="flex flex-col max-h-screen bg-background overflow-hidden"
+      exit={{ opacity: 0 }}
     >
       <motion.div variants={itemVariants} className="flex-none p-4 border-b">
         <div className="flex flex-col md:flex-row items-center justify-between max-w-5xl mx-auto gap-4">
@@ -189,17 +186,17 @@ export default function StarSearch() {
                   Filters
                 </Button>
               </DialogTrigger>
-                <DialogContent>
+              <DialogContent>
                 <FilterPanel
                   filters={filters}
                   onFilterChange={handleFilterChange}
                 />
                 <DialogFooter>
                   <DialogClose asChild>
-                  <Button variant="outline">Close</Button>
+                    <Button variant="outline">Close</Button>
                   </DialogClose>
                 </DialogFooter>
-                </DialogContent>
+              </DialogContent>
             </Dialog>
           </div>
         </div>
@@ -208,6 +205,7 @@ export default function StarSearch() {
       <motion.div
         variants={itemVariants}
         className="flex-grow p-4 overflow-hidden"
+        exit={{ opacity: 0 }}
       >
         <div className="max-w-5xl mx-auto">
           <AnimatePresence>
@@ -225,7 +223,6 @@ export default function StarSearch() {
                 {paginatedObjects.map((item) => (
                   <motion.div key={item.id} variants={itemVariants}>
                     <CelestialObjectCard
-                      key={item.id}
                       {...item}
                       isLoggedIn={false}
                       thumbnail=""

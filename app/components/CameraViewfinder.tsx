@@ -1,3 +1,4 @@
+// FILE: CameraViewfinder.tsx
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
@@ -38,6 +39,7 @@ import {
   TooltipContent,
   TooltipProvider,
 } from "@/components/ui/tooltip";
+import { useViewerStore } from "@/lib/store/dashboard";
 
 interface CameraViewfinderProps {
   isShooting: boolean;
@@ -58,21 +60,35 @@ interface Preset {
 export default function CameraViewfinder({
   isShooting,
 }: CameraViewfinderProps) {
-  const [zoom, setZoom] = useState(1);
-  const [brightness, setBrightness] = useState(100);
-  const [contrast, setContrast] = useState(100);
-  const [saturation, setSaturation] = useState(100);
-  const [rotation, setRotation] = useState(0);
-  const [exposure, setExposure] = useState(50);
-  const [iso, setIso] = useState(100);
-  const [whiteBalance, setWhiteBalance] = useState("Auto");
-  const [showGrid, setShowGrid] = useState(false);
-  const [focusPoint, setFocusPoint] = useState({ x: 50, y: 50 });
+  const {
+    zoom,
+    brightness,
+    contrast,
+    saturation,
+    rotation,
+    exposure,
+    iso,
+    whiteBalance,
+    focusPoint,
+    setZoom,
+    setBrightness,
+    setContrast,
+    setSaturation,
+    setRotation,
+    setExposure,
+    setISO,
+    setWhiteBalance,
+    setFocusPoint,
+    resetSettings,
+    // Add other setters if needed
+  } = useViewerStore();
+
   const [presets, setPresets] = useState<Preset[]>([]);
   const [isPresetDialogOpen, setIsPresetDialogOpen] = useState(false);
   const [presetName, setPresetName] = useState("");
   const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
   const viewfinderRef = useRef<HTMLDivElement>(null);
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   // 加载预设
   useEffect(() => {
@@ -88,16 +104,16 @@ export default function CameraViewfinder({
   }, [presets]);
 
   const handleZoomIn = useCallback(
-    () => setZoom((z) => Math.min(z + 0.1, 3)),
-    []
+    () => setZoom(Math.min(zoom + 0.1, 3)),
+    [zoom, setZoom]
   );
   const handleZoomOut = useCallback(
-    () => setZoom((z) => Math.max(z - 0.1, 0.5)),
-    []
+    () => setZoom(Math.max(zoom - 0.1, 0.5)),
+    [zoom, setZoom]
   );
   const handleRotate = useCallback(
-    () => setRotation((r) => (r + 90) % 360),
-    []
+    () => setRotation((rotation + 90) % 360),
+    [rotation, setRotation]
   );
 
   const handleViewfinderClick = useCallback(
@@ -109,23 +125,26 @@ export default function CameraViewfinder({
         setFocusPoint({ x, y });
       }
     },
-    []
+    [setFocusPoint]
   );
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.key === "g") setShowGrid((grid) => !grid);
+      if (e.key === "d") setIsDarkMode((mode) => !mode);
     };
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, []);
 
+  const [showGrid, setShowGrid] = useState(false);
+
   const handleStartFocus = () => {
-    // 可以在这里添加开始拍摄的逻辑
+    // 添加开始拍摄的逻辑
   };
 
   const handleStopFocus = () => {
-    // 可以在这里添加停止拍摄的逻辑
+    // 添加停止拍摄的逻辑
   };
 
   const openPresetDialog = () => setIsPresetDialogOpen(true);
@@ -156,20 +175,12 @@ export default function CameraViewfinder({
     setSaturation(preset.saturation);
     setRotation(preset.rotation);
     setExposure(preset.exposure);
-    setIso(preset.iso);
+    setISO(preset.iso);
     setWhiteBalance(preset.whiteBalance);
   };
 
-  const resetSettings = () => {
-    setZoom(1);
-    setBrightness(100);
-    setContrast(100);
-    setSaturation(100);
-    setRotation(0);
-    setExposure(50);
-    setIso(100);
-    setWhiteBalance("Auto");
-    setFocusPoint({ x: 50, y: 50 });
+  const handleToggleDarkMode = () => {
+    setIsDarkMode((mode) => !mode);
   };
 
   const formatPresetActions = (preset: Preset) => (
@@ -189,7 +200,11 @@ export default function CameraViewfinder({
 
   return (
     <TooltipProvider>
-      <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <div
+        className={`absolute inset-0 flex items-center justify-center overflow-hidden ${
+          isDarkMode ? "bg-gray-900 text-white" : "bg-white text-black"
+        }`}
+      >
         <motion.div
           ref={viewfinderRef}
           className="relative w-full h-full max-w-4xl max-h-4xl cursor-crosshair"
@@ -198,8 +213,9 @@ export default function CameraViewfinder({
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >
           <div
-            className="absolute inset-0 bg-black"
+            className="absolute inset-0"
             style={{
+              backgroundColor: isDarkMode ? "#000" : "#fff",
               filter: `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`,
             }}
           ></div>
@@ -254,8 +270,8 @@ export default function CameraViewfinder({
             <TooltipContent>Toggle Toolbar</TooltipContent>
           </Tooltip>
           <div
-            className={`flex items-center justify-center gap-2 overflow-x-auto transition-all duration-300 ${
-              isToolbarCollapsed ? "max-h-0 opacity-0" : "max-h-16 opacity-100"
+            className={`flex flex-wrap items-center justify-center gap-2 overflow-x-auto transition-all duration-300 ${
+              isToolbarCollapsed ? "max-h-0 opacity-0" : "max-h-96 opacity-100"
             }`}
           >
             <Tooltip>
@@ -328,7 +344,18 @@ export default function CameraViewfinder({
                 <Button
                   size="icon"
                   variant="secondary"
-                  onClick={resetSettings}
+                  onClick={() =>
+                    resetSettings({
+                      zoom: 1,
+                      brightness: 100,
+                      contrast: 100,
+                      saturation: 100,
+                      rotation: 0,
+                      exposure: 50,
+                      iso: 100,
+                      whiteBalance: "Auto",
+                    })
+                  }
                   aria-label="Reset Settings"
                 >
                   <RefreshCcw className="h-4 w-4" />
@@ -443,6 +470,23 @@ export default function CameraViewfinder({
               </TooltipTrigger>
               <TooltipContent>Take Photo</TooltipContent>
             </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  onClick={handleToggleDarkMode}
+                  aria-label="Toggle Dark Mode"
+                >
+                  {isDarkMode ? (
+                    <Sun className="h-4 w-4" />
+                  ) : (
+                    <Sun className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Toggle Dark Mode</TooltipContent>
+            </Tooltip>
           </div>
         </div>
 
@@ -460,7 +504,7 @@ export default function CameraViewfinder({
                 type="text"
                 value={presetName}
                 onChange={(e) => setPresetName(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md"
+                className="w-full p-2 border border-gray-300 rounded-md dark:border-gray-700 bg-gray-800 text-white"
                 placeholder="Preset Name"
                 aria-label="Preset Name"
               />

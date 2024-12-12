@@ -29,9 +29,17 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [suggestions, setSuggestions] = useState(initialSuggestions);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true); // 默认使用暗色
   const inputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [darkMode]);
 
   useEffect(() => {
     if (searchTerm) {
@@ -78,7 +86,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
-    document.documentElement.classList.toggle("dark");
   };
 
   return (
@@ -96,25 +103,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: animationDuration }}
     >
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200">
-          搜索
-        </h2>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={toggleDarkMode}
-          className="text-gray-700 dark:text-gray-200"
-        >
-          {darkMode ? (
-            <Sun className="h-4 w-4" />
-          ) : (
-            <Moon className="h-4 w-4" />
-          )}
-          <span className="sr-only">切换主题</span>
-        </Button>
-      </div>
       <div className="relative">
         <Input
           ref={inputRef}
@@ -138,28 +126,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           <Search className="h-4 w-4" />
           <span className="sr-only">聚焦搜索</span>
         </Button>
-        <AnimatePresence>
-          {searchTerm && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0 }}
-              transition={{ duration: 0.2 }}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2"
-            >
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 h-8 w-8 p-0"
-                onClick={handleClear}
-              >
-                <X className="h-4 w-4" />
-                <span className="sr-only">清除搜索</span>
-              </Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
       {variant !== "minimal" && (
         <Button
@@ -202,10 +168,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           variant="ghost"
           size="sm"
           className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-          onClick={() => setShowSuggestions(!showSuggestions)}
+          onClick={toggleDarkMode}
         >
-          <ChevronDown className="h-4 w-4" />
-          <span className="sr-only">切换建议</span>
+          {darkMode ? (
+            <Sun className="h-4 w-4" />
+          ) : (
+            <Moon className="h-4 w-4" />
+          )}
+          <span className="sr-only">切换主题</span>
         </Button>
       )}
     </motion.form>

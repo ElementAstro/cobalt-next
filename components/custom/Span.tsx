@@ -109,7 +109,7 @@ export const Span: React.FC<SpanProps> = ({
       style={{ maxWidth: maxWidth }}
       initial={false}
       variants={animationVariants}
-      animate={animate !== "none" ? animationVariants[animate] : undefined}
+      animate={animate !== "none" ? animate : undefined}
       {...props}
     >
       {Icon && <Icon className="mr-1 h-4 w-4" />}

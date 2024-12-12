@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import api from "./axios";
 import { DeviceData, AdvancedSettings } from "@/types/connection";
+import logger from "@/lib/logger";
 
 // API endpoints
 const API_ENDPOINTS = {
@@ -96,140 +97,212 @@ const mockAdvancedSettings: AdvancedSettings = {
   language: "en",
 };
 
-export function useApiService() {
-  const [useMock, setUseMock] = useState(true);
-
-  const toggleMockMode = useCallback(() => {
-    setUseMock((prev) => !prev);
-  }, []);
-
-  const fetchProfileData = useCallback(async (): Promise<ProfileData> => {
+export function createApiService(useMock: boolean) {
+  const fetchProfileData = async (): Promise<ProfileData> => {
+    logger.info("Fetching profile data...");
     if (useMock) {
+      logger.info("Using mock data for profile");
       return new Promise((resolve) =>
-        setTimeout(() => resolve(mockProfileData), 500)
+        setTimeout(() => {
+          logger.info("Returning mock profile data");
+          resolve(mockProfileData);
+        }, 500)
       );
     }
-    return api.request<ProfileData>({
-      url: API_ENDPOINTS.profile,
-      method: "GET",
-    });
-  }, [useMock]);
+    logger.info("Fetching profile data from API");
+    try {
+      const response = await api.request<ProfileData>({
+        url: API_ENDPOINTS.profile,
+        method: "GET",
+      });
+      logger.info("Profile data fetched successfully");
+      return response;
+    } catch (error) {
+      logger.error("Failed to fetch profile data:", error);
+      throw new Error("Failed to fetch profile data");
+    }
+  };
 
-  const updateProfileData = useCallback(
-    async (data: Partial<ProfileData>): Promise<ProfileData> => {
-      if (useMock) {
-        return new Promise((resolve) =>
-          setTimeout(() => resolve({ ...mockProfileData, ...data }), 500)
-        );
-      }
-      return api.request<ProfileData>({
+  const updateProfileData = async (
+    data: Partial<ProfileData>
+  ): Promise<ProfileData> => {
+    logger.info("Updating profile data...", data);
+    if (useMock) {
+      logger.info("Using mock data for profile update");
+      return new Promise((resolve) =>
+        setTimeout(() => {
+          logger.info("Returning updated mock profile data");
+          resolve({ ...mockProfileData, ...data });
+        }, 500)
+      );
+    }
+    logger.info("Updating profile data via API");
+    try {
+      const response = await api.request<ProfileData>({
         url: API_ENDPOINTS.profile,
         method: "PUT",
         data,
       });
-    },
-    [useMock]
-  );
+      logger.info("Profile data updated successfully");
+      return response;
+    } catch (error) {
+      logger.error("Failed to update profile data:", error);
+      throw new Error("Failed to update profile data");
+    }
+  };
 
-  const fetchDevices = useCallback(async (): Promise<DeviceData[]> => {
+  const fetchDevices = async (): Promise<DeviceData[]> => {
+    logger.info("Fetching devices...");
     if (useMock) {
+      logger.info("Using mock data for devices");
       return new Promise((resolve) =>
-        setTimeout(() => resolve(mockDevices), 500)
+        setTimeout(() => {
+          logger.info("Returning mock devices data");
+          resolve(mockDevices);
+        }, 500)
       );
     }
-    return api.request<DeviceData[]>({
-      url: API_ENDPOINTS.devices,
-      method: "GET",
-    });
-  }, [useMock]);
+    logger.info("Fetching devices data from API");
+    try {
+      const response = await api.request<DeviceData[]>({
+        url: API_ENDPOINTS.devices,
+        method: "GET",
+      });
+      logger.info("Devices data fetched successfully");
+      return response;
+    } catch (error) {
+      logger.error("Failed to fetch devices data:", error);
+      throw new Error("Failed to fetch devices data");
+    }
+  };
 
-  const connectDevice = useCallback(
-    async (deviceName: string): Promise<DeviceData> => {
-      if (useMock) {
-        return new Promise((resolve) => {
-          setTimeout(() => {
-            const device = mockDevices.find((d) => d.name === deviceName);
-            if (device) {
-              const updatedDevice = {
-                ...device,
-                connected: true,
-                status: "online" as const,
-                lastConnected: new Date().toISOString(),
-              };
-              resolve(updatedDevice);
-            } else {
-              throw new Error("设备未找到");
-            }
-          }, 1000);
-        });
-      }
-      return api.request<DeviceData>({
+  const connectDevice = async (deviceName: string): Promise<DeviceData> => {
+    logger.info(`Connecting to device: ${deviceName}...`);
+    if (useMock) {
+      logger.info("Using mock data for device connection");
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const device = mockDevices.find((d) => d.name === deviceName);
+          if (device) {
+            const updatedDevice = {
+              ...device,
+              connected: true,
+              status: "online" as const,
+              lastConnected: new Date().toISOString(),
+            };
+            logger.info("Returning updated mock device data", updatedDevice);
+            resolve(updatedDevice);
+          } else {
+            logger.error("Device not found");
+            throw new Error("设备未找到");
+          }
+        }, 1000);
+      });
+    }
+    logger.info("Connecting to device via API");
+    try {
+      const response = await api.request<DeviceData>({
         url: `${API_ENDPOINTS.devices}/${deviceName}/connect`,
         method: "POST",
       });
-    },
-    [useMock]
-  );
+      logger.info("Device connected successfully");
+      return response;
+    } catch (error) {
+      logger.error("Failed to connect to device:", error);
+      throw new Error("Failed to connect to device");
+    }
+  };
 
-  const disconnectDevice = useCallback(
-    async (deviceName: string): Promise<DeviceData> => {
-      if (useMock) {
-        return new Promise((resolve) => {
-          setTimeout(() => {
-            const device = mockDevices.find((d) => d.name === deviceName);
-            if (device) {
-              const updatedDevice = {
-                ...device,
-                connected: false,
-                status: "offline" as const,
-              };
-              resolve(updatedDevice);
-            } else {
-              throw new Error("设备未找到");
-            }
-          }, 1000);
-        });
-      }
-      return api.request<DeviceData>({
+  const disconnectDevice = async (deviceName: string): Promise<DeviceData> => {
+    logger.info(`Disconnecting from device: ${deviceName}...`);
+    if (useMock) {
+      logger.info("Using mock data for device disconnection");
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const device = mockDevices.find((d) => d.name === deviceName);
+          if (device) {
+            const updatedDevice = {
+              ...device,
+              connected: false,
+              status: "offline" as const,
+            };
+            logger.info("Returning updated mock device data", updatedDevice);
+            resolve(updatedDevice);
+          } else {
+            logger.error("Device not found");
+            throw new Error("设备未找到");
+          }
+        }, 1000);
+      });
+    }
+    logger.info("Disconnecting from device via API");
+    try {
+      const response = await api.request<DeviceData>({
         url: `${API_ENDPOINTS.devices}/${deviceName}/disconnect`,
         method: "POST",
       });
-    },
-    [useMock]
-  );
+      logger.info("Device disconnected successfully");
+      return response;
+    } catch (error) {
+      logger.error("Failed to disconnect from device:", error);
+      throw new Error("Failed to disconnect from device");
+    }
+  };
 
-  const fetchAdvancedSettings =
-    useCallback(async (): Promise<AdvancedSettings> => {
-      if (useMock) {
-        return new Promise((resolve) =>
-          setTimeout(() => resolve(mockAdvancedSettings), 500)
-        );
-      }
-      return api.request<AdvancedSettings>({
+  const fetchAdvancedSettings = async (): Promise<AdvancedSettings> => {
+    logger.info("Fetching advanced settings...");
+    if (useMock) {
+      logger.info("Using mock data for advanced settings");
+      return new Promise((resolve) =>
+        setTimeout(() => {
+          logger.info("Returning mock advanced settings data");
+          resolve(mockAdvancedSettings);
+        }, 500)
+      );
+    }
+    logger.info("Fetching advanced settings data from API");
+    try {
+      const response = await api.request<AdvancedSettings>({
         url: API_ENDPOINTS.advancedSettings,
         method: "GET",
       });
-    }, [useMock]);
+      logger.info("Advanced settings data fetched successfully");
+      return response;
+    } catch (error) {
+      logger.error("Failed to fetch advanced settings data:", error);
+      throw new Error("Failed to fetch advanced settings data");
+    }
+  };
 
-  const updateAdvancedSettings = useCallback(
-    async (data: Partial<AdvancedSettings>): Promise<AdvancedSettings> => {
-      if (useMock) {
-        return new Promise((resolve) =>
-          setTimeout(() => resolve({ ...mockAdvancedSettings, ...data }), 500)
-        );
-      }
-      return api.request<AdvancedSettings>({
+  const updateAdvancedSettings = async (
+    data: Partial<AdvancedSettings>
+  ): Promise<AdvancedSettings> => {
+    logger.info("Updating advanced settings...", data);
+    if (useMock) {
+      logger.info("Using mock data for advanced settings update");
+      return new Promise((resolve) =>
+        setTimeout(() => {
+          logger.info("Returning updated mock advanced settings data");
+          resolve({ ...mockAdvancedSettings, ...data });
+        }, 500)
+      );
+    }
+    logger.info("Updating advanced settings via API");
+    try {
+      const response = await api.request<AdvancedSettings>({
         url: API_ENDPOINTS.advancedSettings,
         method: "PUT",
         data,
       });
-    },
-    [useMock]
-  );
+      logger.info("Advanced settings updated successfully");
+      return response;
+    } catch (error) {
+      logger.error("Failed to update advanced settings:", error);
+      throw new Error("Failed to update advanced settings");
+    }
+  };
 
   return {
-    useMock,
-    toggleMockMode,
     fetchProfileData,
     updateProfileData,
     fetchDevices,
@@ -237,5 +310,23 @@ export function useApiService() {
     disconnectDevice,
     fetchAdvancedSettings,
     updateAdvancedSettings,
+  };
+}
+
+export function useApiService() {
+  const [useMock, setUseMock] = useState(true);
+
+  const toggleMockMode = useCallback(() => {
+    logger.info("Toggling mock mode...");
+    setUseMock((prev) => !prev);
+    logger.info(`Mock mode is now ${!useMock}`);
+  }, [useMock]);
+
+  const apiService = createApiService(useMock);
+
+  return {
+    useMock,
+    toggleMockMode,
+    ...apiService,
   };
 }

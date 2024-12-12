@@ -15,7 +15,6 @@ interface LoginFormProps {
 export function LoginForm({ form, showPassword, togglePasswordVisibility }: LoginFormProps) {
   return (
     <div className="space-y-2">
-      <Label>Login data</Label>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField
           control={form.control}
@@ -57,9 +56,6 @@ export function LoginForm({ form, showPassword, togglePasswordVisibility }: Logi
           )}
         />
       </div>
-      <p className="text-sm text-muted-foreground">
-        Insert Username and Password as set in Lithium before connection
-      </p>
     </div>
   )
 }

@@ -1,18 +1,20 @@
 import { Button } from "@/components/ui/button";
-import { Download, Upload, Moon, Sun, Plus } from "lucide-react";
-import { useTheme } from "next-themes";
+import { Download, Upload, Plus } from "lucide-react";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import AddEditSiteDialog from "./AddEditSiteDialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface HeaderProps {
   exportData: () => void;
   importData: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onAddNewSite: () => void; // 添加此行
+  onAddNewSite: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ exportData, importData, onAddNewSite }) => {
-  const { theme, setTheme } = useTheme();
-
+const Header: React.FC<HeaderProps> = ({
+  exportData,
+  importData,
+  onAddNewSite,
+}) => {
   return (
     <div className="flex justify-between items-center">
       <h1 className="text-4xl sm:text-5xl font-bold text-indigo-300 dark:text-indigo-400">
@@ -28,7 +30,7 @@ const Header: React.FC<HeaderProps> = ({ exportData, importData, onAddNewSite })
           <Download className="h-4 w-4" />
           <span className="sr-only">Export data</span>
         </Button>
-        <label htmlFor="import-data">
+        <Label htmlFor="import-data">
           <Button
             variant="outline"
             size="icon"
@@ -37,33 +39,20 @@ const Header: React.FC<HeaderProps> = ({ exportData, importData, onAddNewSite })
             <Upload className="h-4 w-4" />
             <span className="sr-only">Import data</span>
           </Button>
-        </label>
-        <input
+        </Label>
+        <Input
           id="import-data"
           type="file"
           accept=".json"
           onChange={importData}
           className="hidden"
         />
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="bg-indigo-700 hover:bg-indigo-600 text-white"
-        >
-          {theme === "dark" ? (
-            <Sun className="h-6 w-6" />
-          ) : (
-            <Moon className="h-6 w-6" />
-          )}
-          <span className="sr-only">Toggle theme</span>
-        </Button>
         <Dialog>
           <DialogTrigger asChild>
             <Button
               variant="default"
               className="bg-indigo-600 hover:bg-indigo-500 text-white"
-              onClick={onAddNewSite} // 修改此行
+              onClick={onAddNewSite}
             >
               <Plus className="mr-2 h-4 w-4" /> 添加新站点
             </Button>

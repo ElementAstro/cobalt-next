@@ -31,9 +31,12 @@ export const useCookieStore = create<CookieState>((set, get) => ({
       return value || null;
     } else {
       const allCookies: CookieData[] = [];
-      for (let i = 0; i < document.cookie.length; i++) {
-        const [key, value] = document.cookie.split(";")[i].split("=");
-        allCookies.push({ name: key, value, selected: false });
+      for (let i = 0; i < document.cookie.split(";").length; i++) {
+        const cookie = document.cookie.split(";")[i];
+        if (cookie) {
+          const [key, value] = cookie.split("=");
+          allCookies.push({ name: key, value, selected: false });
+        }
       }
       set({ cookies: allCookies });
       return null;

@@ -45,6 +45,7 @@ import { AdvancedSettings } from "./AdvancedSettings";
 import { ConnectionHistory } from "./ConnectionHistory";
 
 import { useConnectionStore } from "@/lib/store/server";
+import ServerPortScanModal from "./ServerPortScan";
 
 // 定义表单模式
 const formSchema = z.object({
@@ -179,11 +180,17 @@ export default function ConnectionForm({
     setShowHistory(!showHistory);
   };
 
+  const [isPortScanModalOpen, setIsPortScanModalOpen] = useState(false);
+
+  const togglePortScanModal = () => {
+    setIsPortScanModalOpen(!isPortScanModalOpen);
+  };
+
   return (
     <div
-      className={`max-h-screen bg-background p-4 flex flex-col ${
+      className={`h-screen w-screen bg-background p-2 flex flex-row ${
         isDarkMode ? "dark" : ""
-      }`}
+      } overflow-hidden`}
     >
       <ConnectionAlert showAlert={showAlert} alertType={alertType} />
 
@@ -191,11 +198,11 @@ export default function ConnectionForm({
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="flex-grow flex flex-col sm:flex-row items-center justify-center"
+        className="flex-grow flex flex-row items-center justify-center h-full space-x-4"
       >
-        <Card className="w-full max-w-xl bg-gray-800 shadow-lg">
+        <Card className="w-full max-w-md bg-gray-800 shadow-lg h-full flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-2xl font-normal flex items-center gap-2 text-white">
+            <CardTitle className="text-xl font-normal flex items-center gap-2 text-white">
               <Plug className="w-6 h-6 text-blue-400" />
               连接
             </CardTitle>
@@ -212,27 +219,6 @@ export default function ConnectionForm({
                   {connectionStrength}%
                 </Badge>
               )}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={toggleDarkMode}
-                      className="text-yellow-400"
-                    >
-                      {isDarkMode ? (
-                        <Sun className="h-4 w-4" />
-                      ) : (
-                        <Moon className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{isDarkMode ? "切换为浅色模式" : "切换为暗色模式"}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -264,7 +250,7 @@ export default function ConnectionForm({
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1">
             <Tabs
               value={activeTab}
               onValueChange={setActiveTab}
@@ -286,13 +272,12 @@ export default function ConnectionForm({
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.3 }}
-                      className="mt-4"
                     >
-                      <ScrollArea className="h-[50vh] sm:h-[60vh] pr-4">
+                      <ScrollArea className="h-full pr-4 overflow-hidden">
                         <Form {...form}>
                           <form
                             onSubmit={form.handleSubmit(handleConnect)}
-                            className="space-y-6"
+                            className="space-y-3"
                           >
                             <ConnectionDetails
                               form={form}
@@ -316,11 +301,18 @@ export default function ConnectionForm({
                                 }
                               />
                               <Label htmlFor="remember" className="text-white">
-                                记住登录数据/票据
+                                记住登录数据
                               </Label>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-3 gap-4">
+                              <Button
+                                onClick={togglePortScanModal}
+                                className="w-full flex items-center justify-center"
+                                disabled={isConnected}
+                              >
+                                打开端口扫描
+                              </Button>
                               <Button
                                 type="submit"
                                 className="w-full flex items-center justify-center"
@@ -369,16 +361,19 @@ export default function ConnectionForm({
             </Tabs>
 
             {isConnected && (
-              <div className="mt-4 space-y-2">
+              <div className="mt-1 space-y-1">
                 <Label className="text-white">连接强度</Label>
                 <Progress value={connectionStrength} className="w-full" />
               </div>
             )}
-
-            <p className="text-center text-gray-400 mt-4">连接到锂应用服务器</p>
           </CardContent>
         </Card>
       </motion.div>
+
+      <ServerPortScanModal
+        isOpen={isPortScanModalOpen}
+        onClose={togglePortScanModal}
+      />
 
       <ConnectionHistory
         isVisible={showHistory}

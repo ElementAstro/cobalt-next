@@ -69,13 +69,7 @@ export default function SettingsPage() {
           </TabsList>
           <motion.div>
             <TabsContent value="storage">
-              <StorageSettings
-                isDarkMode={isDarkMode}
-                defaultStorage={defaultStorage}
-                setDefaultStorage={setDefaultStorage}
-                storageUsage={storageUsage}
-                setStorageUsage={setStorageUsage}
-              />
+              <StorageSettings />
             </TabsContent>
             <TabsContent value="network">
               <NetworkSettings isDarkMode={isDarkMode} />

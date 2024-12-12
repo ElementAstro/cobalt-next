@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -27,50 +27,36 @@ import { motion } from "framer-motion";
 import { Terminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
 
-interface CommandHistory {
-  command: string;
-  timestamp: string;
-  status: "success" | "error" | "running";
-  output: string;
-}
-
-const THEMES = {
-  default: "bg-background text-foreground",
-  dark: "bg-gray-900 text-white",
-  light: "bg-white text-black",
-  blue: "bg-blue-900 text-blue-100",
-  red: "bg-red-900 text-red-100",
-  green: "bg-green-900 text-green-100",
-};
-
-const themeOptions = Object.keys(THEMES) as Array<keyof typeof THEMES>;
+import { useTerminalStore, CommandHistory, THEMES } from "@/lib/store/terminal";
 
 export default function TerminalPage() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState<string[]>([
-    "欢迎使用增强终端。请输入命令。",
-  ]);
-  const [commandHistory, setCommandHistory] = useState<CommandHistory[]>(() => {
-    const saved = localStorage.getItem("commandHistory");
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [selectedTheme, setSelectedTheme] =
-    useState<keyof typeof THEMES>("dark");
+  const {
+    input,
+    setInput,
+    output,
+    addOutput,
+    commandHistory,
+    addCommandHistory,
+    isExecuting,
+    setExecuting,
+    selectedTheme,
+    setTheme,
+    clearTerminal,
+    downloadHistory,
+  } = useTerminalStore();
+
   const outputRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<Terminal | null>(null);
 
   useEffect(() => {
-    localStorage.setItem("commandHistory", JSON.stringify(commandHistory));
-  }, [commandHistory]);
-
-  useEffect(() => {
-    if (terminalRef.current) {
+    if (terminalRef.current && !xtermRef.current) {
       const xterm = new Terminal({
         theme: {
-          background: selectedTheme === "dark" ? "#1e1e1e" : "#ffffff",
-          foreground: selectedTheme === "dark" ? "#ffffff" : "#000000",
+          background: THEMES[selectedTheme],
+          foreground: THEMES[selectedTheme].includes("dark")
+            ? "#ffffff"
+            : "#000000",
         },
       });
       xterm.open(terminalRef.current);
@@ -78,18 +64,20 @@ export default function TerminalPage() {
       xtermRef.current = xterm;
 
       xterm.onData((data) => {
-        setInput((prev) => prev + data);
+        setInput((prevInput) => prevInput + data);
       });
     }
 
     return () => {
       xtermRef.current?.dispose();
     };
-  }, [selectedTheme]);
+  }, [selectedTheme, setInput]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(e.target.value);
-  };
+  useEffect(() => {
+    if (outputRef.current) {
+      outputRef.current.scrollTop = outputRef.current.scrollHeight;
+    }
+  }, [output]);
 
   const executeCommand = async (command: string): Promise<string> => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -102,7 +90,7 @@ export default function TerminalPage() {
       case "date":
         return new Date().toLocaleString();
       case "clear":
-        setOutput([]);
+        clearTerminal();
         return "";
       case "theme":
         return `可用主题: ${Object.keys(THEMES).join(
@@ -123,7 +111,7 @@ export default function TerminalPage() {
         if (command.toLowerCase().startsWith("theme ")) {
           const newTheme = command.slice(6).trim() as keyof typeof THEMES;
           if (THEMES[newTheme]) {
-            setSelectedTheme(newTheme);
+            setTheme(newTheme);
             return `主题已更改为 ${newTheme}`;
           } else {
             return `无效的主题。可用主题: ${Object.keys(THEMES).join(", ")}`;
@@ -136,9 +124,8 @@ export default function TerminalPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() && !isExecuting) {
-      setIsExecuting(true);
-      const newOutput = [...output, `$ ${input}`];
-      setOutput(newOutput);
+      setExecuting(true);
+      addOutput(`$ ${input}`);
       xtermRef.current?.writeln(`$ ${input}`);
 
       const newCommand: CommandHistory = {
@@ -147,70 +134,43 @@ export default function TerminalPage() {
         status: "running",
         output: "",
       };
-      setCommandHistory([newCommand, ...commandHistory]);
+      addCommandHistory(newCommand);
 
       try {
         const commandOutput = await executeCommand(input);
-        const updatedOutput = commandOutput
-          ? [...newOutput, commandOutput]
-          : newOutput;
-        setOutput(updatedOutput);
-        xtermRef.current?.writeln(commandOutput);
-
-        newCommand.status = "success";
-        newCommand.output = commandOutput;
+        if (commandOutput) {
+          addOutput(commandOutput);
+          xtermRef.current?.writeln(commandOutput);
+          newCommand.status = "success";
+          newCommand.output = commandOutput;
+        } else {
+          newCommand.status = "success";
+          newCommand.output = "";
+        }
       } catch (error) {
         const errorMessage = `错误: ${(error as Error).message}`;
-        setOutput([...newOutput, errorMessage]);
+        addOutput(errorMessage);
         xtermRef.current?.writeln(errorMessage);
-
         newCommand.status = "error";
         newCommand.output = errorMessage;
       } finally {
-        setCommandHistory([
-          { ...newCommand, timestamp: new Date().toLocaleTimeString() },
-          ...commandHistory,
-        ]);
+        addCommandHistory({
+          ...newCommand,
+          timestamp: new Date().toLocaleTimeString(),
+        });
         setInput("");
-        setIsExecuting(false);
+        setExecuting(false);
       }
     }
   };
 
-  const handleClearTerminal = () => {
-    setOutput([]);
-    setCommandHistory([]);
-    localStorage.removeItem("commandHistory");
-    xtermRef.current?.clear();
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
   };
-
-  const handleDownloadHistory = () => {
-    const historyText = commandHistory
-      .map(
-        (cmd) =>
-          `${cmd.timestamp} - ${cmd.command} (${cmd.status})\n${cmd.output}`
-      )
-      .join("\n\n");
-    const blob = new Blob([historyText], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "terminal_history.txt";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  useEffect(() => {
-    if (outputRef.current) {
-      outputRef.current.scrollTop = outputRef.current.scrollHeight;
-    }
-  }, [output]);
 
   return (
     <motion.div
-      className="flex flex-col space-y-4 p-2 md:p-4"
+      className="flex flex-col space-y-4 p-2 md:p-4 bg-gray-800 min-h-screen"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
@@ -221,19 +181,17 @@ export default function TerminalPage() {
         animate={{ y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h1 className="text-2xl md:text-3xl font-bold">终端</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-white">终端</h1>
         <div className="flex items-center space-x-2 flex-wrap gap-2">
           <Select
             value={selectedTheme}
-            onValueChange={(value) =>
-              setSelectedTheme(value as keyof typeof THEMES)
-            }
+            onValueChange={(value) => setTheme(value as keyof typeof THEMES)}
           >
             <SelectTrigger className="w-[100px] md:w-[120px]">
               <SelectValue placeholder="主题" />
             </SelectTrigger>
             <SelectContent>
-              {themeOptions.map((theme) => (
+              {Object.keys(THEMES).map((theme) => (
                 <SelectItem key={theme} value={theme}>
                   {theme.charAt(0).toUpperCase() + theme.slice(1)}
                 </SelectItem>
@@ -243,7 +201,7 @@ export default function TerminalPage() {
           <Button
             variant="outline"
             size="icon"
-            onClick={handleClearTerminal}
+            onClick={clearTerminal}
             title="清除终端"
           >
             <RotateCcw className="h-4 w-4 md:h-5 md:w-5" />
@@ -251,7 +209,7 @@ export default function TerminalPage() {
           <Button
             variant="outline"
             size="icon"
-            onClick={handleDownloadHistory}
+            onClick={downloadHistory}
             title="下载历史记录"
           >
             <Download className="h-4 w-4 md:h-5 md:w-5" />
@@ -264,9 +222,11 @@ export default function TerminalPage() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3, duration: 0.5 }}
       >
-        <Card className="md:col-span-1">
+        <Card className="md:col-span-1 bg-gray-700">
           <CardHeader className="p-2 md:p-4">
-            <CardTitle className="text-lg md:text-xl">交互式终端</CardTitle>
+            <CardTitle className="text-lg md:text-xl text-white">
+              交互式终端
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-2 md:p-4">
             <div
@@ -285,7 +245,7 @@ export default function TerminalPage() {
                 placeholder="输入命令..."
                 value={input}
                 onChange={handleInputChange}
-                className="flex-grow text-sm md:text-base"
+                className="flex-grow text-sm md:text-base bg-gray-600 text-white"
                 disabled={isExecuting}
                 autoFocus
               />
@@ -303,9 +263,11 @@ export default function TerminalPage() {
             </form>
           </CardContent>
         </Card>
-        <Card className="md:col-span-1">
+        <Card className="md:col-span-1 bg-gray-700">
           <CardHeader className="p-2 md:p-4">
-            <CardTitle className="text-lg md:text-xl">命令历史记录</CardTitle>
+            <CardTitle className="text-lg md:text-xl text-white">
+              命令历史记录
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-2 md:p-4">
             <Tabs defaultValue="history">
@@ -318,27 +280,27 @@ export default function TerminalPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[40%] text-sm md:text-base">
+                        <TableHead className="w-[40%] text-sm md:text-base text-white">
                           命令
                         </TableHead>
-                        <TableHead className="w-[30%] text-sm md:text-base">
+                        <TableHead className="w-[30%] text-sm md:text-base text-white">
                           时间
                         </TableHead>
-                        <TableHead className="w-[30%] text-sm md:text-base">
+                        <TableHead className="w-[30%] text-sm md:text-base text-white">
                           状态
                         </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {commandHistory.map((cmd, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="font-mono text-xs md:text-sm">
+                        <TableRow key={index} className="hover:bg-gray-600">
+                          <TableCell className="font-mono text-xs md:text-sm text-white">
                             {cmd.command}
                           </TableCell>
-                          <TableCell className="text-xs md:text-sm">
+                          <TableCell className="text-xs md:text-sm text-white">
                             {cmd.timestamp}
                           </TableCell>
-                          <TableCell className="text-xs md:text-sm">
+                          <TableCell className="text-xs md:text-sm text-white">
                             {cmd.status === "success" ? (
                               <Check className="inline text-green-500" />
                             ) : cmd.status === "error" ? (
@@ -362,16 +324,16 @@ export default function TerminalPage() {
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.5 }}
                     >
-                      <h3 className="font-bold text-sm md:text-base">
+                      <h3 className="font-bold text-sm md:text-base text-white">
                         最近命令详情
                       </h3>
-                      <p className="text-xs md:text-sm">
+                      <p className="text-xs md:text-sm text-white">
                         <strong>命令:</strong> {commandHistory[0].command}
                       </p>
-                      <p className="text-xs md:text-sm">
+                      <p className="text-xs md:text-sm text-white">
                         <strong>执行时间:</strong> {commandHistory[0].timestamp}
                       </p>
-                      <p className="text-xs md:text-sm">
+                      <p className="text-xs md:text-sm text-white">
                         <strong>状态:</strong>{" "}
                         <span
                           className={
@@ -389,7 +351,7 @@ export default function TerminalPage() {
                             : "运行中"}
                         </span>
                       </p>
-                      <p className="text-xs md:text-sm">
+                      <p className="text-xs md:text-sm text-white">
                         <strong>输出:</strong>
                       </p>
                       <pre className="bg-gray-800 text-white p-2 rounded text-xs md:text-sm whitespace-pre-wrap">

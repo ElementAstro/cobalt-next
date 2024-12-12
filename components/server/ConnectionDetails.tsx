@@ -13,12 +13,12 @@ interface ConnectionDetailsProps {
 
 export function ConnectionDetails({ form, isSSL, setIsSSL }: ConnectionDetailsProps) {
   return (
-    <>
+    <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
       <FormField
         control={form.control}
         name="ip"
         render={({ field }) => (
-          <FormItem>
+          <FormItem className="flex-1">
             <FormLabel>IP / Hostname</FormLabel>
             <FormControl>
               <Input placeholder="Write here address" {...field} />
@@ -35,19 +35,21 @@ export function ConnectionDetails({ form, isSSL, setIsSSL }: ConnectionDetailsPr
         control={form.control}
         name="port"
         render={({ field }) => (
-          <FormItem>
+          <FormItem className="flex-1">
             <FormLabel>Port</FormLabel>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
               <FormControl>
-                <Input type="number" className="max-w-[200px]" {...field} />
+                <Input type="number" className="w-24" {...field} />
               </FormControl>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <Switch
                   id="ssl"
                   checked={isSSL}
                   onCheckedChange={setIsSSL}
                 />
-                <Label htmlFor="ssl">SSL</Label>
+                <Label htmlFor="ssl" className="text-sm">
+                  SSL
+                </Label>
               </div>
             </div>
             <FormMessage />
@@ -55,7 +57,6 @@ export function ConnectionDetails({ form, isSSL, setIsSSL }: ConnectionDetailsPr
           </FormItem>
         )}
       />
-    </>
+    </div>
   )
 }
-

@@ -1,3 +1,4 @@
+// UserAgreementMask.tsx
 "use client";
 
 import { useEffect } from "react";
@@ -100,8 +101,6 @@ export function UserAgreementMask({
     window.print();
   };
 
-  if (!isVisible) return null;
-
   return (
     <AnimatePresence>
       {isVisible && (
@@ -110,17 +109,19 @@ export function UserAgreementMask({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          key="overlay"
         >
           <motion.div
-            className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl overflow-hidden ${
-              isMobile ? "h-full" : "h-auto"
+            className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl overflow-hidden flex flex-col ${
+              isMobile ? "max-h-screen" : "max-h-[90vh]"
             }`}
             initial={{ scale: 0.9, y: 50 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 50 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            key="modal"
           >
-            <div className="p-6 space-y-6">
+            <div className="p-6 flex flex-col flex-grow space-y-6">
               <CardHeader>
                 <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
                   {language === "en" ? title : "用户协议与隐私政策"}
@@ -131,7 +132,10 @@ export function UserAgreementMask({
                     : `版本: ${version}`}
                 </CardDescription>
               </CardHeader>
-              <Tabs defaultValue="agreement" className="space-y-4">
+              <Tabs
+                defaultValue="agreement"
+                className="flex-1 flex flex-col space-y-4 overflow-hidden"
+              >
                 <TabsList className="grid w-full grid-cols-2 bg-gray-200 dark:bg-gray-700">
                   <TabsTrigger
                     value="agreement"
@@ -146,8 +150,11 @@ export function UserAgreementMask({
                     {language === "en" ? "Privacy" : "隐私政策"}
                   </TabsTrigger>
                 </TabsList>
-                <TabsContent value="agreement">
-                  <ScrollArea className="h-60 md:h-72 lg:h-80 mb-4">
+                <TabsContent
+                  value="agreement"
+                  className="flex flex-col flex-grow"
+                >
+                  <ScrollArea className="flex-grow mb-4">
                     <p className="text-sm text-gray-700 dark:text-gray-300">
                       {agreementText[language]}
                     </p>
@@ -173,8 +180,11 @@ export function UserAgreementMask({
                     </div>
                   )}
                 </TabsContent>
-                <TabsContent value="privacy">
-                  <ScrollArea className="h-60 md:h-72 lg:h-80 mb-4">
+                <TabsContent
+                  value="privacy"
+                  className="flex flex-col flex-grow"
+                >
+                  <ScrollArea className="flex-grow mb-4">
                     <p className="text-sm text-gray-700 dark:text-gray-300">
                       {privacyPolicyText[language]}
                     </p>
@@ -236,6 +246,8 @@ export function UserAgreementMask({
                   className="text-red-500 text-center"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
                 >
                   {language === "en"
                     ? "You must agree to the User Agreement and Privacy Policy to continue using our services."

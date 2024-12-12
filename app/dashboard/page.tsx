@@ -311,24 +311,48 @@ export default function CameraInterface() {
   const agreementText = {
     en: `
       This is a sample user agreement. In actual use, you should place your full user agreement content here.
-      
+  
       1. Terms of Service: This agreement is a legal agreement between you and us regarding the use of our services.
+      
       2. User Obligations: You agree to comply with all applicable laws and regulations.
+      
       3. Intellectual Property: Our services and content are protected by intellectual property laws.
+      
       4. Disclaimer: We are not responsible for any losses resulting from the use of our services.
+      
       5. Agreement Modification: We reserve the right to modify this agreement at any time.
       
+      6. Governing Law: This agreement shall be governed by and construed in accordance with the laws of the jurisdiction in which we operate.
+      
+      7. Dispute Resolution: Any disputes arising out of or in connection with this agreement shall be resolved through amicable negotiations. If such negotiations fail, the disputes shall be submitted to the competent courts of the jurisdiction in which we operate.
+      
+      8. Termination: We reserve the right to terminate your access to our services if you violate any terms of this agreement.
+      
+      9. Contact Information: If you have any questions about this agreement, please contact us at [contact information].
+  
       Please read the above terms carefully. If you agree, please click the "Agree and Continue" button.
     `,
     zh: `
       这是一个示例用户协议。在实际使用时，您应该在这里放置您的完整用户协议内容。
-      
+  
       1. 服务条款：本协议是您与我们之间关于使用我们服务的法律协议。
+      
       2. 用户义务：您同意遵守所有适用的法律和法规。
+      
       3. 知识产权：我们的服务和内容受知识产权法保护。
+      
       4. 免责声明：我们不对因使用我们的服务而导致的任何损失负责。
+      
       5. 协议修改：我们保留随时修改本协议的权利。
       
+      6. 适用法律：本协议应受我们运营所在司法管辖区的法律管辖并按其解释。
+      
+      7. 争议解决：因本协议引起或与本协议有关的任何争议应通过友好协商解决。如果协商失败，争议应提交我们运营所在司法管辖区的有管辖权的法院解决。
+      
+      8. 终止：如果您违反本协议的任何条款，我们保留终止您访问我们服务的权利。
+      
+      9. 联系信息：如果您对本协议有任何疑问，请通过[联系信息]联系我们。
+  
       请仔细阅读以上条款。如果您同意，请点击"同意并继续"按钮。
     `,
   };
@@ -336,24 +360,52 @@ export default function CameraInterface() {
   const privacyPolicyText = {
     en: `
       This is a sample privacy policy. In actual use, you should place your full privacy policy content here.
-      
+  
       1. Information Collection: We collect information you provide to us and information automatically generated when you use our services.
+      
       2. Information Use: We use the collected information to provide, maintain, and improve our services.
+      
       3. Information Sharing: We do not sell your personal information. In certain circumstances, we may share information with third parties.
+      
       4. Data Security: We take reasonable measures to protect your personal information.
+      
       5. Your Rights: You have the right to access, correct, or delete your personal information.
       
+      6. Cookies: We use cookies to enhance your experience on our website. You can control the use of cookies through your browser settings.
+      
+      7. Third-Party Services: We may use third-party services to help us provide and improve our services. These third parties may have access to your information as necessary to perform their functions.
+      
+      8. Data Retention: We retain your personal information for as long as necessary to fulfill the purposes for which it was collected, or as required by law.
+      
+      9. Changes to Privacy Policy: We may update this privacy policy from time to time. We will notify you of any changes by posting the new privacy policy on our website.
+      
+      10. Contact Information: If you have any questions about this privacy policy, please contact us at [contact information].
+  
       Please read the above privacy policy carefully. If you agree, please click the "Agree and Continue" button.
     `,
     zh: `
       这是一个示例隐私政策。在实际使用时，您应该在这里放置您的完整隐私政策内容。
-      
+  
       1. 信息收集：我们收集您提供给我们的信息，以及您使用我们服务时自动生成的信息。
+      
       2. 信息使用：我们使用收集到的信息来提供、维护和改进我们的服务。
+      
       3. 信息共享：我们不会出售您的个人信息。在某些情况下，我们可能会与第三方共享信息。
+      
       4. 数据安全：我们采取合理的措施来保护您的个人信息。
+      
       5. 您的权利：您有权访问、更正或删除您的个人信息。
       
+      6. Cookies：我们使用Cookies来增强您在我们网站上的体验。您可以通过浏览器设置控制Cookies的使用。
+      
+      7. 第三方服务：我们可能会使用第三方服务来帮助我们提供和改进我们的服务。这些第三方可能会在必要时访问您的信息以执行其功能。
+      
+      8. 数据保留：我们会在必要的时间内保留您的个人信息，以实现收集信息的目的，或根据法律要求保留。
+      
+      9. 隐私政策变更：我们可能会不时更新此隐私政策。我们将在我们的网站上发布新的隐私政策来通知您任何变更。
+      
+      10. 联系信息：如果您对本隐私政策有任何疑问，请通过[联系信息]联系我们。
+  
       请仔细阅读以上隐私政策。如果您同意，请点击"同意并继续"按钮。
     `,
   };
