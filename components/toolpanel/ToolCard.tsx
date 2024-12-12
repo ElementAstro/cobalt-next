@@ -45,52 +45,51 @@ export function ToolCard({
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.2 }}
           >
-            <div
-              ref={setNodeRef}
-              style={style}
-              {...attributes}
-              {...listeners}
-              className="absolute top-0 right-0 p-2 cursor-move"
-            >
-              <GripVertical className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <Card className="w-full sm:w-[300px] hover:shadow-lg transition-shadow flex flex-col">
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Icon className="h-6 w-6" />
-                  <CardTitle>{name}</CardTitle>
+            <Card className="w-full sm:w-[300px] dark:bg-gray-800 hover:shadow-xl transition-all">
+              <CardHeader className="relative">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="flex items-center space-x-3"
+                >
+                  <Icon className="h-6 w-6 text-primary" />
+                  <div>
+                    <CardTitle className="text-lg">{name}</CardTitle>
+                    <CardDescription className="line-clamp-2">
+                      {description}
+                    </CardDescription>
+                  </div>
+                </motion.div>
+                <div className="absolute top-2 right-2">
+                  <Badge variant="secondary" className="text-xs">
+                    使用次数: {usageCount}
+                  </Badge>
                 </div>
-                <CardDescription>{description}</CardDescription>
               </CardHeader>
-              <CardFooter className="mt-auto">
-                <div className="flex space-x-2 w-full">
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelect(id);
-                    }}
-                    className="flex-1"
-                  >
-                    使用工具
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // 跳转到详情页的逻辑
-                    }}
-                  >
-                    详情
-                  </Button>
-                </div>
+
+              <CardFooter className="flex justify-between gap-2 pt-4">
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelect(id);
+                  }}
+                  className="flex-1"
+                >
+                  使用工具
+                </Button>
+                <Button variant="outline" className="w-24">
+                  详情
+                </Button>
               </CardFooter>
             </Card>
           </motion.div>
         </TooltipTrigger>
-        <TooltipContent>
-          <p>点击使用 {name} 或拖动图标调整顺序</p>
+        <TooltipContent side="bottom" className="dark:bg-gray-700">
+          <p>点击使用 {name} 或拖动调整顺序</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

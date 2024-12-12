@@ -1,17 +1,8 @@
 "use client";
 
-import { RefreshCw, Power, Sun, Moon, Check, X } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RefreshCw, Power } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { useSystemManagementStore } from "@/lib/store/settings";
@@ -95,7 +86,7 @@ export default function SystemManagement({
                     <Power className="h-4 w-4" />
                     <span>重启</span>
                   </Button>
-                  
+
                   {/* 关机按钮 */}
                   <Button
                     className={`w-full flex items-center justify-center space-x-2 ${
@@ -188,15 +179,15 @@ export default function SystemManagement({
           </CardContent>
         </Card>
         <ConfirmDialog
-                    isOpen={isRestartOpen}
-                    onClose={() => setRestartOpen(false)}
-                    title="确认重启 Lithium"
-                    message="此操作将重启 Lithium。所有未保存的数据可能会丢失。您确定要继续吗？"
-                    onConfirm={handleRestart}
-                    confirmText="确认重启"
-                    cancelText="取消"
-                    danger={true}
-                  />
+          isOpen={isRestartOpen}
+          onClose={() => setRestartOpen(false)}
+          title="确认重启 Lithium"
+          message="此操作将重启 Lithium。所有未保存的数据可能会丢失。您确定要继续吗？"
+          onConfirm={handleRestart}
+          confirmText="确认重启"
+          cancelText="取消"
+          danger={true}
+        />
       </motion.div>
     </AnimatePresence>
   );

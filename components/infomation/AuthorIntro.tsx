@@ -85,11 +85,9 @@ export function AuthorIntro({
           visible: { opacity: 1, y: 0 },
         }}
         transition={{ duration: 0.5 }}
-        className={`w-full max-w-2xl mx-auto ${
-          theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-black"
-        }`}
+        className="w-full max-w-4xl mx-auto p-4 landscape:md:p-8"
       >
-        <Card className="overflow-hidden rounded-lg shadow-lg">
+        <Card className="overflow-hidden rounded-xl shadow-xl dark:bg-gray-800/50 backdrop-blur-sm border-none">
           <CardHeader>
             <motion.div
               className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4"
@@ -109,8 +107,12 @@ export function AuthorIntro({
               </div>
             </motion.div>
           </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <CardContent className="p-6">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="about">关于</TabsTrigger>
                 <TabsTrigger value="projects">项目</TabsTrigger>
@@ -183,7 +185,7 @@ export function AuthorIntro({
               </TabsContent>
             </Tabs>
           </CardContent>
-          <CardFooter className="flex flex-wrap justify-start gap-2">
+          <CardFooter className="flex flex-wrap justify-center gap-3 p-6">
             {github && (
               <Tooltip>
                 <TooltipTrigger asChild>

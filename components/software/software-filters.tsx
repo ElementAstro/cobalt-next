@@ -36,12 +36,32 @@ export function SoftwareFilters({
   return (
     <motion.div
       className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md"
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.5 }}
+      layout
     >
-      <div className="text-sm text-gray-400">找到 {totalCount} 个应用</div>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <motion.div
+        className="text-sm text-gray-400"
+        whileHover={{ scale: 1.05 }}
+      >
+        找到 {totalCount} 个应用
+      </motion.div>
+      <motion.div
+        className="flex flex-col gap-2 sm:flex-row sm:items-center"
+        variants={{
+          hidden: { opacity: 0, y: 20 },
+          show: {
+            opacity: 1,
+            y: 0,
+            transition: {
+              staggerChildren: 0.1,
+            },
+          },
+        }}
+        initial="hidden"
+        animate="show"
+      >
         <Input
           placeholder="搜索应用"
           className="w-[180px] dark:bg-gray-700 dark:text-white"
@@ -74,7 +94,7 @@ export function SoftwareFilters({
         <Button onClick={onReset} className="dark:bg-gray-700 dark:text-white">
           重置
         </Button>
-      </div>
+      </motion.div>
     </motion.div>
   );
 }

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Moon, Sun, RefreshCw } from "lucide-react";
 import { Theme, SerialPort } from "@/types/serial";
 import { FC } from "react";
+import { motion } from "framer-motion";
 
 interface TitleBarProps {
   ports: SerialPort[];
@@ -28,8 +29,18 @@ const TitleBar: FC<TitleBarProps> = ({
   toggleDarkMode,
 }) => {
   return (
-    <div className={`flex items-center justify-between bg-blue-600 p-2`}>
-      <div className="flex items-center gap-2">
+    <motion.div
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      className={`flex items-center justify-between bg-gray-900 p-3 rounded-t-lg shadow-lg
+        md:px-4 backdrop-blur-sm border-b border-gray-700`}
+    >
+      <motion.div
+        className="flex items-center gap-2"
+        initial={{ x: -20 }}
+        animate={{ x: 0 }}
+        transition={{ delay: 0.2 }}
+      >
         <Select value={activePortId || ""} onValueChange={onPortChange}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select a port" />
@@ -49,21 +60,46 @@ const TitleBar: FC<TitleBarProps> = ({
             ))}
           </SelectContent>
         </Select>
-        <Button variant="outline" size="icon" onClick={onRefresh}>
-          <RefreshCw className="h-4 w-4" />
-        </Button>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={toggleDarkMode}>
-          {isDarkMode ? (
-            <Sun className="h-4 w-4 text-white" />
-          ) : (
-            <Moon className="h-4 w-4 text-white" />
-          )}
-        </Button>
-        <button className="text-white hover:bg-blue-700 px-2">✕</button>
-      </div>
-    </div>
+        <motion.div whileHover={{ scale: 1.05 }}>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={onRefresh}
+            className="bg-gray-800 hover:bg-gray-700"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </motion.div>
+      </motion.div>
+
+      <motion.div
+        className="flex items-center gap-2"
+        initial={{ x: 20 }}
+        animate={{ x: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <motion.div whileHover={{ scale: 1.05 }}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleDarkMode}
+            className="text-gray-200 hover:bg-gray-800"
+          >
+            {isDarkMode ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+          </Button>
+        </motion.div>
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          className="text-gray-200 hover:bg-gray-800 rounded-lg px-3 py-1"
+        >
+          ✕
+        </motion.button>
+      </motion.div>
+    </motion.div>
   );
 };
 

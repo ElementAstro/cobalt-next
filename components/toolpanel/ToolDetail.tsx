@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { LucideIcon } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { useTheme } from "next-themes";
 import { ToolDetailProps } from "@/types/toolpanel";
 import { motion } from "framer-motion";
 
@@ -11,21 +13,41 @@ export function ToolDetail({
   icon: Icon,
   onBack,
   onUse,
-  CustomComponent, // 新增的自定义组件属性
+  CustomComponent,
 }: ToolDetailProps) {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const { theme } = useTheme();
 
-  const handleUse = () => {
+  const handleUse = async () => {
     if (!input.trim()) {
       setError("输入不能为空");
       return;
     }
-    // 模拟工具使用
-    setOutput(`处理结果: ${input}`);
-    setError("");
-    onUse(id);
+
+    setIsLoading(true);
+    setProgress(0);
+
+    try {
+      const interval = setInterval(() => {
+        setProgress((prev) => Math.min(prev + 10, 90));
+      }, 500);
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      clearInterval(interval);
+      setProgress(100);
+
+      setOutput(`处理结果: ${input}`);
+      setError("");
+      onUse(id);
+    } catch (err) {
+      setError("处理失败，请重试");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleReset = () => {
@@ -36,26 +58,40 @@ export function ToolDetail({
 
   return (
     <motion.div
-      className="space-y-4 p-4 flex flex-col md:flex-row"
+      className="space-y-4 p-4 flex flex-col md:flex-row dark:bg-gray-800"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="flex-1">
-        <div className="flex items-center space-x-4 mb-4">
+      <div className="flex-1 space-y-6">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="flex items-center space-x-4"
+        >
           <Button onClick={onBack} variant="outline">
             返回
           </Button>
           <Icon className="h-6 w-6" />
           <h2 className="text-xl font-bold">{name}</h2>
-        </div>
+        </motion.div>
+
         {CustomComponent ? (
-          <div className="overflow-auto max-h-[450px]">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="overflow-auto max-h-[450px] dark:bg-gray-900 rounded-lg p-4"
+          >
             <CustomComponent />
-          </div>
+          </motion.div>
         ) : (
-          <>
-            <div className="space-y-1">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="space-y-6"
+          >
+            <div className="space-y-2">
               <label htmlFor="input" className="text-sm font-medium">
                 输入:
               </label>
@@ -67,22 +103,40 @@ export function ToolDetail({
                 className="w-full"
               />
               {error && <p className="text-red-500 text-sm">{error}</p>}
+              {isLoading && (
+                <Progress value={progress} className="w-full h-2" />
+              )}
             </div>
-            <div className="flex space-x-2">
-              <Button onClick={handleUse}>处理</Button>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={handleUse}
+                disabled={isLoading}
+                className="min-w-[100px]"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                {isLoading ? "处理中" : "处理"}
+              </Button>
               <Button onClick={handleReset} variant="secondary">
                 重置
               </Button>
             </div>
+
             {output && (
-              <div className="space-y-2">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-2"
+              >
                 <label htmlFor="output" className="text-sm font-medium">
                   输出:
                 </label>
                 <Textarea id="output" value={output} readOnly />
-              </div>
+              </motion.div>
             )}
-          </>
+          </motion.div>
         )}
       </div>
     </motion.div>

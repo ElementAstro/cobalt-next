@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Card,
   CardHeader,
@@ -35,8 +35,12 @@ export function ProjectList({ projects }: ProjectListProps) {
   const categories = Array.from(new Set(projects.map((p) => p.category)));
 
   return (
-    <div className="p-4">
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+    <div className="p-4 min-h-screen">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4"
+      >
         <div className="flex items-center mb-4 md:mb-0">
           <Filter className="h-5 w-5 text-gray-500 dark:text-gray-300 mr-2" />
           <select
@@ -62,52 +66,61 @@ export function ProjectList({ projects }: ProjectListProps) {
             className="dark:bg-gray-700 dark:text-white"
           />
         </div>
-      </div>
+      </motion.div>
+
       {filteredProjects.length === 0 ? (
         <p className="text-center text-gray-500 dark:text-gray-300">
           未找到匹配的项目。
         </p>
       ) : (
-        <div className="grid grid-cols-1">
-          {filteredProjects.map((project, index) => (
-            <motion.div
-              key={project.name}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{
-                scale: 1.05,
-                boxShadow: "0px 4px 15px rgba(0, 0, 0, 0.2)",
-              }}
-              className="flex flex-col"
-            >
-              <Card className="w-full dark:bg-gray-800">
-                <CardHeader>
-                  <CardTitle className="text-lg flex justify-between items-center">
-                    {project.name}
-                    <span className="text-sm text-blue-500">
-                      {project.category}
-                    </span>
-                  </CardTitle>
-                  <CardDescription className="mt-2">
-                    {project.description}
-                  </CardDescription>
-                </CardHeader>
-                <div className="p-4">
-                  <Button variant="outline" size="sm" asChild>
-                    <a
-                      href={project.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center"
-                    >
-                      查看项目 <ExternalLink className="ml-2 h-4 w-4" />
-                    </a>
-                  </Button>
-                </div>
-              </Card>
-            </motion.div>
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 landscape:grid-cols-2">
+          <AnimatePresence>
+            {filteredProjects.map((project, index) => (
+              <motion.div
+                key={project.name}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{
+                  delay: index * 0.1,
+                  type: "spring",
+                  stiffness: 200,
+                  damping: 20,
+                }}
+                whileHover={{
+                  scale: 1.02,
+                  transition: { duration: 0.2 },
+                }}
+                className="flex flex-col h-full"
+              >
+                <Card className="w-full h-full dark:bg-gray-800/50 backdrop-blur-sm border-none shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex justify-between items-center">
+                      {project.name}
+                      <span className="text-sm text-blue-500">
+                        {project.category}
+                      </span>
+                    </CardTitle>
+                    <CardDescription className="mt-2">
+                      {project.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <div className="p-4">
+                    <Button variant="outline" size="sm" asChild>
+                      <a
+                        href={project.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center"
+                      >
+                        查看项目 <ExternalLink className="ml-2 h-4 w-4" />
+                      </a>
+                    </Button>
+                  </div>
+                </Card>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
     </div>
