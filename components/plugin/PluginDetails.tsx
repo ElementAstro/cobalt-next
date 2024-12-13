@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Plugin } from "@/types/plugin";
 import { motion } from "framer-motion";
+import { usePluginStore } from "@/lib/store/plugin"; // 新增
 
 interface PluginDetailsProps {
   plugin: Plugin;
@@ -32,11 +33,18 @@ export function PluginDetails({
   onInstallComplete,
   onUninstall,
 }: PluginDetailsProps) {
+  const installPlugin = usePluginStore((state) => state.installPlugin);
+  const uninstallPlugin = usePluginStore((state) => state.uninstallPlugin);
+
   const [isInstalling, setIsInstalling] = useState(false);
   const [installProgress, setInstallProgress] = useState(0);
 
   if (!plugin) {
-    return <div className="text-center text-red-500">插件未找到</div>;
+    return (
+      <div className="text-center text-red-500 dark:text-red-400">
+        插件未找到
+      </div>
+    );
   }
 
   const handleInstall = () => {
@@ -47,6 +55,7 @@ export function PluginDetails({
           clearInterval(interval);
           setIsInstalling(false);
           onInstallComplete(plugin.id);
+          installPlugin(plugin.id);
           return 100;
         }
         return prev + 10;
@@ -55,7 +64,7 @@ export function PluginDetails({
   };
 
   const handleUninstall = () => {
-    onUninstall(plugin.id);
+    uninstallPlugin(plugin.id);
   };
 
   return (
@@ -63,7 +72,7 @@ export function PluginDetails({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="container mx-auto px-4 py-8"
+      className="container mx-auto px-4 py-8 bg-gray-800 rounded-lg shadow-lg dark:bg-gray-900"
     >
       <motion.div variants={itemVariants} className="grid md:grid-cols-2 gap-8">
         <div className="flex justify-center">
@@ -103,7 +112,9 @@ export function PluginDetails({
               <strong>分类:</strong> {plugin.category} / {plugin.subcategory}
             </p>
             <div className="mb-4">
-              <strong className="text-gray-200">标签:</strong>
+              <strong className="text-gray-200 dark:text-gray-300">
+                标签:
+              </strong>
               <div className="flex flex-wrap mt-1">
                 {plugin.tags.map((tag) => (
                   <span
@@ -145,7 +156,9 @@ export function PluginDetails({
             ) : isInstalling ? (
               <div className="w-full flex flex-col items-center">
                 <Progress value={installProgress} className="w-full mb-2" />
-                <p className="text-gray-200">安装中... {installProgress}%</p>
+                <p className="text-gray-200 dark:text-gray-300">
+                  安装中... {installProgress}%
+                </p>
               </div>
             ) : (
               <Button onClick={handleInstall} className="w-full" size="lg">

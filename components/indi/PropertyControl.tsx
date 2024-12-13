@@ -15,7 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { LineChart } from "./LineChart";
+import LineChart from "@/components/chart/LineChart";
 
 interface PropertyControlProps {
   deviceName: string;
@@ -145,14 +145,17 @@ export const PropertyControl: React.FC<PropertyControlProps> = ({
 
   return (
     <motion.div
-      className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100"
+      className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
       <PropertyStateIcon state={property.state} />
       <div className="grid gap-1 flex-1">
-        <Label htmlFor={`${deviceName}-${property.name}`} className="text-sm">
+        <Label
+          htmlFor={`${deviceName}-${property.name}`}
+          className="text-sm dark:text-gray-300"
+        >
           {property.label}
         </Label>
         {renderControl()}
@@ -171,18 +174,28 @@ export const PropertyControl: React.FC<PropertyControlProps> = ({
                   <History className="w-4 h-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
+              <DialogContent className="sm:max-w-[425px] dark:bg-gray-800">
                 <DialogHeader>
-                  <DialogTitle>{property.label} 历史记录</DialogTitle>
+                  <DialogTitle className="dark:text-gray-300">
+                    {property.label} 历史记录
+                  </DialogTitle>
                 </DialogHeader>
                 <div className="py-2">
                   <LineChart
-                    data={property.history.map((h) => ({
-                      x: h.timestamp,
-                      y: h.value as number,
+                    data={property.history.map((h, index) => ({
+                      x: index,
+                      ra: h.value as number,
+                      dec: 0,
                     }))}
-                    xLabel="时间"
-                    yLabel={property.label}
+                    width="100%"
+                    height={300}
+                    darkMode={true}
+                    customize={{
+                      lineColors: {
+                        ra: "#00e676",
+                        dec: "transparent",
+                      },
+                    }}
                   />
                 </div>
               </DialogContent>

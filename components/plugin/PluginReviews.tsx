@@ -4,11 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Review, User as UserType } from "@/types/plugin";
 import { motion } from "framer-motion";
+import { usePluginStore } from "@/lib/store/plugin";
 
 interface PluginReviewsProps {
-  reviews: Review[];
-  onAddReview: (rating: number, comment: string) => void;
-  currentUser: UserType | null;
+  pluginId: number;
 }
 
 const containerVariants = {
@@ -26,18 +25,26 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-export function PluginReviews({
-  reviews,
-  onAddReview,
-  currentUser,
-}: PluginReviewsProps) {
+export function PluginReviews({ pluginId }: PluginReviewsProps) {
+  const currentUser = usePluginStore((state) => state.currentUser);
+  const reviews = usePluginStore((state) => state.reviews);
+  const addReview = usePluginStore((state) => state.addReview);
+
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (rating > 0 && comment.trim()) {
-      onAddReview(rating, comment);
+      const newReview: Review = {
+        id: Date.now().toString(), // 转换为字符串以匹配 Review 接口
+        userId: currentUser?.id || "匿名用户",
+        rating,
+        comment,
+        pluginId,
+        createdAt: new Date().toISOString(),
+      };
+      addReview(newReview);
       setRating(0);
       setComment("");
     }
@@ -52,7 +59,7 @@ export function PluginReviews({
     >
       <motion.h2
         variants={itemVariants}
-        className="text-2xl font-bold mb-4 text-white"
+        className="text-2xl font-bold mb-4 text-white dark:text-gray-200"
       >
         评价
       </motion.h2>
@@ -77,7 +84,7 @@ export function PluginReviews({
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="撰写你的评价..."
-            className="mb-2 text-gray-200 bg-gray-700 focus:border-blue-500"
+            className="mb-2 text-gray-200 bg-gray-700 focus:border-blue-500 dark:bg-gray-800"
             required
           />
           <Button type="submit" className="w-full">
@@ -99,8 +106,8 @@ export function PluginReviews({
               className="border-b pb-4"
             >
               <div className="flex items-center mb-2">
-                <User className="w-6 h-6 mr-2 text-gray-400" />
-                <span className="font-semibold text-white">
+                <User className="w-6 h-6 mr-2 text-gray-400 dark:text-gray-500" />
+                <span className="font-semibold text-white dark:text-gray-200">
                   {review.userId}
                 </span>
               </div>
@@ -116,11 +123,16 @@ export function PluginReviews({
                   />
                 ))}
               </div>
-              <p className="text-gray-200">{review.comment}</p>
+              <p className="text-gray-200 dark:text-gray-300">
+                {review.comment}
+              </p>
             </motion.div>
           ))
         ) : (
-          <motion.p variants={itemVariants} className="text-gray-400">
+          <motion.p
+            variants={itemVariants}
+            className="text-gray-400 dark:text-gray-500"
+          >
             暂无评价。
           </motion.p>
         )}

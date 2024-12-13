@@ -4,12 +4,14 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { LoadingAnimation } from "./LoadingAnimation";
 import Image from "next/image";
+import useMediaQuery from "react-responsive";
 
 export default function SplashScreen() {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [visible, setVisible] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
+  const isLandscape = useMediaQuery({ query: "(orientation: landscape)" });
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -44,48 +46,90 @@ export default function SplashScreen() {
     if (!loading) {
       const hideTimer = setTimeout(() => {
         setVisible(false);
-      }, 700); // 延迟隐藏时间与动画持续时间一致
+      }, 700);
 
       return () => clearTimeout(hideTimer);
     }
   }, [loading]);
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.3,
+      },
+    },
+    exit: {
+      opacity: 0,
+      transition: {
+        duration: 0.5,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        duration: 0.5,
+      },
+    },
+  };
+
   return (
     <AnimatePresence>
       {visible && (
         <motion.div
-          className="min-h-screen bg-gray-900"
-          initial={{ opacity: 1 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.7 }}
+          className="fixed inset-0 z-50 bg-gray-900"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
         >
-          <AnimatePresence>
+          <AnimatePresence mode="wait">
             {loading ? (
               <motion.div
                 key="splash"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.7 }}
-                className="flex flex-col items-center justify-center min-h-screen"
+                className={`flex flex-col items-center justify-center min-h-screen
+                  ${isLandscape ? "lg:flex-row lg:space-x-8" : "space-y-6"}`}
+                variants={containerVariants}
               >
-                <Image src="/logo.png" alt="Logo" width={100} height={100} />
-                <LoadingAnimation progress={progress} />
+                <motion.div variants={itemVariants}>
+                  <Image
+                    src="/logo.png"
+                    alt="Logo"
+                    width={isLandscape ? 150 : 100}
+                    height={isLandscape ? 150 : 100}
+                    className="drop-shadow-2xl"
+                  />
+                </motion.div>
+                <motion.div variants={itemVariants}>
+                  <LoadingAnimation progress={progress} />
+                </motion.div>
               </motion.div>
             ) : (
               <motion.div
                 key="content"
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 50 }}
-                transition={{ duration: 0.5 }}
-                className="flex items-center justify-center min-h-screen"
                 ref={contentRef}
+                className="flex flex-col items-center justify-center min-h-screen p-4"
+                variants={containerVariants}
               >
-                <h1 className="text-4xl font-bold text-gray-100">
-                  欢迎来到Cobalt！
-                </h1>
+                <motion.h1
+                  variants={itemVariants}
+                  className="text-4xl font-bold text-gray-100 text-center
+                    md:text-5xl lg:text-6xl"
+                >
+                  欢迎来到 Cobalt
+                </motion.h1>
+                <motion.p
+                  variants={itemVariants}
+                  className="mt-4 text-gray-400 text-center max-w-lg"
+                >
+                  探索无限可能，开启您的数字之旅
+                </motion.p>
               </motion.div>
             )}
           </AnimatePresence>

@@ -19,7 +19,7 @@ import { SliderCaptcha } from "./SliderCaptcha";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useCaptchaStore } from "@/lib/store/captcha";
-import { set } from "lodash";
+import { useTheme } from "next-themes";
 
 type CaptchaType = "math" | "image" | "slider";
 
@@ -31,15 +31,41 @@ export function Captcha() {
     isDisabled,
     timeLeft,
     setDarkMode,
-    setHighContrast,
     incrementError,
     resetError,
     disableCaptcha,
     decrementTime,
-    setIsDisabled, // 添加 setIsDisabled
+    setIsDisabled,
   } = useCaptchaStore();
+
   const [captchaType, setCaptchaType] = useState<CaptchaType>("math");
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const [showSettings, setShowSettings] = useState(false);
+  const [animationSpeed, setAnimationSpeed] = useState("normal");
+  const { theme, setTheme } = useTheme();
+  const orientation =
+    typeof window !== "undefined"
+      ? window.screen.orientation.type.includes("landscape")
+        ? "landscape"
+        : "portrait"
+      : "portrait";
+
+  // 动画配置
+  const containerVariants = {
+    hidden: { opacity: 0, scale: 0.95 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: {
+        duration: 0.5,
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1 },
+  };
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -69,7 +95,7 @@ export function Captcha() {
       onError: handleError,
       onSuccess: handleSuccess,
       isDisabled,
-      setIsDisabled, // 添加 setIsDisabled
+      setIsDisabled,
     };
     switch (captchaType) {
       case "math":
@@ -85,83 +111,133 @@ export function Captcha() {
 
   return (
     <motion.div
-      className={`flex justify-center items-center min-h-screen p-4 ${
-        isDarkMode ? "bg-gray-900" : "bg-gray-100"
-      }`}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      className={`min-h-screen ${
+        orientation === "landscape" ? "lg:flex-row" : "flex-col"
+      } ${isDarkMode ? "bg-gray-900" : "bg-gray-100"}`}
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
     >
-      <Card
-        className={`w-full max-w-sm ${
-          isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800"
-        } shadow-lg rounded-lg`}
+      <div
+        className={`container mx-auto p-4 ${
+          orientation === "landscape" ? "lg:flex lg:space-x-4" : ""
+        }`}
       >
-        <CardHeader className="flex justify-between items-center">
-          <CardTitle className="text-xl">增强型人机验证</CardTitle>
-          <div className="flex items-center space-x-2">
-            <Label htmlFor="dark-mode" className="text-sm">
-              暗黑模式
-            </Label>
-            <Switch
-              id="dark-mode"
-              checked={isDarkMode}
-              onCheckedChange={(checked) => setDarkMode(checked)}
-            />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <Select
-                onValueChange={(value: CaptchaType) => setCaptchaType(value)}
-                disabled={isDisabled}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="选择验证方式" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="math">数学问题</SelectItem>
-                  <SelectItem value="image">图片验证码</SelectItem>
-                  <SelectItem value="slider">滑块验证</SelectItem>
-                </SelectContent>
-              </Select>
-            </motion.div>
-
-            {isDisabled && (
+        <Card className="flex-1">
+          <CardHeader className="flex justify-between items-center">
+            <CardTitle className="text-xl">增强型人机验证</CardTitle>
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="dark-mode" className="text-sm">
+                暗黑模式
+              </Label>
+              <Switch
+                id="dark-mode"
+                checked={isDarkMode}
+                onCheckedChange={(checked) => setDarkMode(checked)}
+              />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>验证已被禁用</AlertTitle>
-                  <AlertDescription>
-                    由于多次失败,验证已被暂时禁用。请在 {timeLeft} 秒后重试。
-                  </AlertDescription>
-                </Alert>
-              </motion.div>
-            )}
-
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={captchaType}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
+                transition={{ delay: 0.1 }}
               >
-                {renderCaptcha()}
+                <Select
+                  onValueChange={(value: CaptchaType) => setCaptchaType(value)}
+                  disabled={isDisabled}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="选择验证方式" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="math">数学问题</SelectItem>
+                    <SelectItem value="image">图片验证码</SelectItem>
+                    <SelectItem value="slider">滑块验证</SelectItem>
+                  </SelectContent>
+                </Select>
               </motion.div>
-            </AnimatePresence>
-          </div>
-        </CardContent>
-      </Card>
+
+              {isDisabled && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>验证已被禁用</AlertTitle>
+                    <AlertDescription>
+                      由于多次失败,验证已被暂时禁用。请在 {timeLeft} 秒后重试。
+                    </AlertDescription>
+                  </Alert>
+                </motion.div>
+              )}
+
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={captchaType}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {renderCaptcha()}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </CardContent>
+        </Card>
+
+        {showSettings && (
+          <motion.div variants={itemVariants} className="mt-4 lg:mt-0 lg:w-1/3">
+            <Card>
+              <CardHeader>
+                <CardTitle>高级设置</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* 新增的设置选项 */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label>主题</Label>
+                    <Select
+                      value={theme}
+                      onValueChange={(value) => setTheme(value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择主题" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="light">浅色</SelectItem>
+                        <SelectItem value="dark">深色</SelectItem>
+                        <SelectItem value="system">跟随系统</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label>动画速度</Label>
+                    <Select
+                      value={animationSpeed}
+                      onValueChange={setAnimationSpeed}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择动画速度" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="slow">慢速</SelectItem>
+                        <SelectItem value="normal">正常</SelectItem>
+                        <SelectItem value="fast">快速</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </div>
     </motion.div>
   );
 }

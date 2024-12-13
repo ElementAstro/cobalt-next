@@ -31,7 +31,6 @@ import {
 } from "@/types/indi";
 import { PropertyControl } from "./PropertyControl";
 import { toast } from "@/hooks/use-toast";
-import { LineChart } from "./LineChart";
 import { AdvancedFilter } from "./AdvancedFilter";
 import { DeviceDashboard } from "./DeviceDashboard";
 import { motion, AnimatePresence } from "framer-motion";
@@ -252,7 +251,9 @@ export function INDIPanel({
           <Avatar>
             <AvatarFallback>{device.name.charAt(0)}</AvatarFallback>
           </Avatar>
-          <h2 className="text-xl font-semibold">{device.name}</h2>
+          <h2 className="text-xl font-semibold dark:text-gray-300">
+            {device.name}
+          </h2>
         </div>
         <div className="flex gap-2">
           {renderDeviceStateButton(device)}

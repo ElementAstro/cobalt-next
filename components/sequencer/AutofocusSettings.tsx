@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { ExposureTaskList } from "./ExposureTaskList";
 import {
   Collapsible,
@@ -242,34 +243,34 @@ export function AutofocusSettings() {
             </div>
             <div>
               <Label className="text-sm text-gray-400">Dither every #</Label>
-              <input
+              <Input
                 type="number"
                 value={ditherEvery ?? ""}
                 onChange={(e) =>
                   setDitherEvery(e.target.value ? Number(e.target.value) : null)
                 }
-                className="w-full p-2 bg-gray-800 text-white rounded"
                 placeholder="Enter number"
+                className="bg-gray-800 text-white border-gray-700"
               />
             </div>
             <div>
               <Label className="text-sm text-gray-400">Gain</Label>
-              <input
+              <Input
                 type="text"
                 value={gain}
                 onChange={(e) => setGain(e.target.value)}
-                className="w-full p-2 bg-gray-800 text-white rounded"
                 placeholder="Gain value"
+                className="bg-gray-800 text-white border-gray-700"
               />
             </div>
             <div>
               <Label className="text-sm text-gray-400">Offset</Label>
-              <input
+              <Input
                 type="text"
                 value={offset}
                 onChange={(e) => setOffset(e.target.value)}
-                className="w-full p-2 bg-gray-800 text-white rounded"
                 placeholder="Offset value"
+                className="bg-gray-800 text-white border-gray-700"
               />
             </div>
           </div>

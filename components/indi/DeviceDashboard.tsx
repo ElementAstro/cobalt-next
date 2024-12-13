@@ -109,9 +109,11 @@ export const DeviceDashboard: React.FC<DeviceDashboardProps> = ({
                           </DialogTrigger>
                           <DialogContent className="dark:bg-gray-800">
                             <DialogHeader>
-                              <DialogTitle>{device.name} 详细信息</DialogTitle>
+                              <DialogTitle className="dark:text-gray-300">
+                                {device.name} 详细信息
+                              </DialogTitle>
                             </DialogHeader>
-                            <div className="space-y-2">
+                            <div className="space-y-2 dark:text-gray-300">
                               <p>
                                 <strong>状态:</strong> {device.state}
                               </p>

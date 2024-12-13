@@ -9,16 +9,19 @@ interface QuickAccessProps {
 const QuickAccess: React.FC<QuickAccessProps> = ({ quickAccessSites }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.3 }}
-      className="flex flex-wrap gap-4 justify-center my-6"
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="flex flex-wrap gap-4 justify-center my-6 px-4 landscape:flex-col landscape:fixed landscape:right-4 landscape:top-1/2 landscape:-translate-y-1/2"
     >
-      {quickAccessSites.map((site: Site) => (
+      {quickAccessSites.map((site: Site, index) => (
         <motion.div
           key={site.id}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: index * 0.1 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
         >
           <Link
             href={site.url}

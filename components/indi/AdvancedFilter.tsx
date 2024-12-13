@@ -34,18 +34,21 @@ export const AdvancedFilter: React.FC<AdvancedFilterProps> = ({
   };
 
   return (
-    <div className="space-y-4 p-4 bg-gray-100 rounded-lg">
+    <div className="space-y-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
       <div>
-        <Label htmlFor="search">Search</Label>
+        <Label htmlFor="search" className="dark:text-gray-300">
+          搜索
+        </Label>
         <Input
           id="search"
           value={options.searchTerm}
           onChange={(e) => onChange({ ...options, searchTerm: e.target.value })}
-          placeholder="Search properties..."
+          placeholder="搜索属性..."
+          className="dark:bg-gray-700 dark:text-gray-300"
         />
       </div>
       <div>
-        <Label>Property Types</Label>
+        <Label className="dark:text-gray-300">属性类型</Label>
         <div className="grid grid-cols-2 gap-2">
           {propertyTypes.map((type) => (
             <div key={type} className="flex items-center space-x-2">
@@ -55,14 +58,17 @@ export const AdvancedFilter: React.FC<AdvancedFilterProps> = ({
                 onCheckedChange={() =>
                   handleCheckboxChange("propertyTypes", type)
                 }
+                className="dark:bg-gray-700 dark:border-gray-600"
               />
-              <Label htmlFor={`type-${type}`}>{type}</Label>
+              <Label htmlFor={`type-${type}`} className="dark:text-gray-300">
+                {type}
+              </Label>
             </div>
           ))}
         </div>
       </div>
       <div>
-        <Label>Property States</Label>
+        <Label className="dark:text-gray-300">属性状态</Label>
         <div className="grid grid-cols-2 gap-2">
           {propertyStates.map((state) => (
             <div key={state} className="flex items-center space-x-2">
@@ -72,14 +78,17 @@ export const AdvancedFilter: React.FC<AdvancedFilterProps> = ({
                 onCheckedChange={() =>
                   handleCheckboxChange("propertyStates", state)
                 }
+                className="dark:bg-gray-700 dark:border-gray-600"
               />
-              <Label htmlFor={`state-${state}`}>{state}</Label>
+              <Label htmlFor={`state-${state}`} className="dark:text-gray-300">
+                {state}
+              </Label>
             </div>
           ))}
         </div>
       </div>
       <div>
-        <Label>Groups</Label>
+        <Label className="dark:text-gray-300">Groups</Label>
         <div className="grid grid-cols-2 gap-2">
           {groups.map((group) => (
             <div key={group} className="flex items-center space-x-2">
@@ -87,8 +96,11 @@ export const AdvancedFilter: React.FC<AdvancedFilterProps> = ({
                 id={`group-${group}`}
                 checked={options.groups.includes(group)}
                 onCheckedChange={() => handleCheckboxChange("groups", group)}
+                className="dark:bg-gray-700 dark:border-gray-600"
               />
-              <Label htmlFor={`group-${group}`}>{group}</Label>
+              <Label htmlFor={`group-${group}`} className="dark:text-gray-300">
+                {group}
+              </Label>
             </div>
           ))}
         </div>

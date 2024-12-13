@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { Trash, Edit, Search } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface TargetListProps {}
 
@@ -106,7 +107,12 @@ export function TargetList({}: TargetListProps) {
   );
 
   return (
-    <div className="space-y-4">
+    <motion.div
+      className="space-y-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="flex flex-col md:flex-row items-center justify-between space-y-2 md:space-y-0">
         <div className="flex items-center space-x-2">
           <Input
@@ -281,7 +287,7 @@ export function TargetList({}: TargetListProps) {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   );
 }
 

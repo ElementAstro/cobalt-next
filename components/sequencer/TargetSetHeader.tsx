@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface TargetSetOptions {
   coolCamera: boolean;
@@ -96,7 +97,12 @@ export function TargetSetHeader() {
   };
 
   return (
-    <div className="bg-gray-800 p-6 rounded-lg">
+    <motion.div
+      className="bg-gray-800 p-6 rounded-lg"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="space-y-6">
         {/* 开始选项 */}
         <Collapsible
@@ -231,6 +237,6 @@ export function TargetSetHeader() {
           </CollapsibleContent>
         </Collapsible>
       </div>
-    </div>
+    </motion.div>
   );
 }

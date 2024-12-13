@@ -511,13 +511,7 @@ export default function PluginPage() {
                 />
               </motion.div>
               <motion.div variants={itemVariants}>
-                <PluginReviews
-                  reviews={selectedPlugin.reviews || []}
-                  onAddReview={(rating, comment) =>
-                    handleAddReview(selectedPlugin.id, rating, comment)
-                  }
-                  currentUser={currentUser}
-                />
+                <PluginReviews pluginId={selectedPlugin.id} />
               </motion.div>
               <motion.div variants={itemVariants}>
                 <Button

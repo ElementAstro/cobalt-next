@@ -1,6 +1,6 @@
 import React from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { LogEntry } from '../types/log'
+import { LogEntry } from '@/types/log'
 
 interface LogChartProps {
   logs: LogEntry[]

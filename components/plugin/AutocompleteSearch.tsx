@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plugin } from "@/types/plugin";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePluginStore } from "@/lib/store/plugin";
 
 interface AutocompleteSearchProps {
   plugins: Plugin[];
@@ -31,6 +32,10 @@ export function AutocompleteSearch({
   onSearch,
   className,
 }: AutocompleteSearchProps) {
+  const searchPlugins = usePluginStore((state) => state.searchPlugins);
+  const setSearchFilters = usePluginStore((state) => state.setSearchFilters);
+  const searchFilters = usePluginStore((state) => state.searchFilters);
+
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -38,18 +43,12 @@ export function AutocompleteSearch({
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (query) {
-      const filteredSuggestions = plugins
-        .filter((plugin) =>
-          plugin.name.toLowerCase().includes(query.toLowerCase())
-        )
+    setSuggestions(
+      searchPlugins(query)
         .map((plugin) => plugin.name)
-        .slice(0, 5);
-      setSuggestions(filteredSuggestions);
-    } else {
-      setSuggestions([]);
-    }
-  }, [query, plugins]);
+        .slice(0, 5)
+    );
+  }, [query, searchPlugins]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
@@ -65,6 +64,7 @@ export function AutocompleteSearch({
   const handleSearch = () => {
     setShowSuggestions(false);
     onSearch(query);
+    setSearchFilters({ ...searchFilters });
   };
 
   useEffect(() => {
@@ -98,7 +98,7 @@ export function AutocompleteSearch({
           placeholder="搜索插件..."
           value={query}
           onChange={handleInputChange}
-          className="pl-10 pr-12 bg-gray-700 text-white placeholder-gray-400 focus:border-blue-500"
+          className="pl-10 pr-12 bg-gray-700 text-white placeholder-gray-400 focus:border-blue-500 dark:bg-gray-800"
         />
         <Button
           type="button"
@@ -116,14 +116,14 @@ export function AutocompleteSearch({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute z-10 w-full mt-1 bg-gray-700 border border-gray-600 rounded-md shadow-lg"
+            className="absolute z-10 w-full mt-1 bg-gray-700 border border-gray-600 rounded-md shadow-lg dark:bg-gray-800"
           >
             {suggestions.map((suggestion, index) => (
               <motion.li
                 key={index}
                 variants={suggestionVariants}
                 whileHover={{ backgroundColor: "#4B5563" }}
-                className="px-4 py-2 cursor-pointer text-white hover:bg-gray-600"
+                className="px-4 py-2 cursor-pointer text-white hover:bg-gray-600 dark:hover:bg-gray-700"
                 onClick={() => handleSuggestionClick(suggestion)}
               >
                 {suggestion}

@@ -1,6 +1,6 @@
 import React from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { LogEntry } from '../types/log'
+import { LogEntry } from '@/types/log'
 
 interface TimeSeriesChartProps {
   logs: LogEntry[]
