@@ -43,6 +43,7 @@ import SplashScreen from "../../components/loading/SplashScreen";
 import ConnectionForm from "@/components/server/ConnectionForm";
 import { UserAgreementMask } from "@/components/UserAgreementMask";
 import CookieConsent from "@/components/CookieConsent";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 export default function CameraInterface() {
   type DeviceParams = {
@@ -426,125 +427,127 @@ export default function CameraInterface() {
 
   return (
     <>
-      <LandscapeDetector
-        aspectRatioThreshold={4 / 3}
-        enableSound={true}
-        persistPreference={true}
-        forceFullscreen={true}
-      >
-        <SplashScreen />
-        {!isServerConnected ? (
-          <ConnectionForm onConnect={handleConnect} />
-        ) : (
-          <DndContext
-            sensors={sensors}
-            modifiers={[restrictToWindowEdges]}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-          >
-            <div className="flex flex-col h-screen bg-gray-900 text-white overflow-hidden">
-              <TopBar onOpenOffcanvas={handleOpenOffcanvas} />
-              <div className="flex flex-1 overflow-hidden">
-                <Sidebar devices={devices} onToggle={toggleDevice} />
-                <div className="flex-1 relative overflow-hidden">
-                  {!activeDevice && (
-                    <CameraViewfinder isShooting={isShooting} />
-                  )}
-                  <AnimatePresence>
-                    {activeDevice && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        {activeDevice === "device" && <DeviceConnection />}
-                        {activeDevice === "plugin" && <PluginPage />}
-                        {activeDevice === "starChart" && <StarSearch />}
-                        {activeDevice === "focusAssistant" && (
-                          <FocusAssistant
-                            onClose={() => setActiveDevice(null)}
-                          />
-                        )}
-                        {activeDevice === "sequenceEditor" && (
-                          <SequenceEditor
-                            onClose={() => setActiveDevice(null)}
-                          />
-                        )}
-                        {activeDevice === "liveStacking" && <ToolPanel />}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                  <AnimatePresence>
-                    {selectedParameter && (
-                      <ParameterAdjust
-                        parameter={selectedParameter}
-                        value={String(
-                          exposureSettings[
-                            selectedParameter as keyof typeof exposureSettings
-                          ]
-                        )}
-                        onChange={(value) =>
-                          handleParameterChange(selectedParameter, value)
-                        }
-                        onClose={() => setSelectedParameter(null)}
-                      />
-                    )}
-                  </AnimatePresence>
-                </div>
-                <motion.div
-                  className="w-20 border-l border-gray-700"
-                  initial={{ opacity: 0, x: 50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <ExposureControls
-                    settings={exposureSettings}
-                    onParameterClick={handleParameterClick}
-                    onCapture={handleCapture}
-                    onPause={handlePause}
-                    isShooting={isShooting}
-                    isPaused={isPaused}
-                    progress={progress}
-                  />
-                </motion.div>
-              </div>
-            </div>
-            <DragOverlay>
-              {activeId ? (
-                <DeviceWindow
-                  device={devices.find((d) => d.id === activeId)!}
-                  onParamChange={handleDeviceParamChange}
-                  onClose={() => {}}
-                />
-              ) : null}
-            </DragOverlay>
-            <Offcanvas
-              isOpen={offcanvasOpen}
-              onClose={handleCloseOffcanvas}
-              title={
-                offcanvasDevice
-                  ? devices.find((d) => d.id === offcanvasDevice)?.name || ""
-                  : ""
-              }
+      <ErrorBoundary>
+        <LandscapeDetector
+          aspectRatioThreshold={4 / 3}
+          enableSound={true}
+          persistPreference={true}
+          forceFullscreen={true}
+        >
+          <SplashScreen />
+          {!isServerConnected ? (
+            <ConnectionForm onConnect={handleConnect} />
+          ) : (
+            <DndContext
+              sensors={sensors}
+              modifiers={[restrictToWindowEdges]}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
             >
-              {offcanvasDevice && renderOffcanvasContent()}
-            </Offcanvas>
-            <Toaster />
-          </DndContext>
-        )}
-      </LandscapeDetector>
-      <UserAgreementMask
-        agreementText={agreementText}
-        privacyPolicyText={privacyPolicyText}
-        onAgree={handleAgree}
-        onDisagree={handleDisagree}
-        language={language}
-        version="1.0"
-        requireReadConfirmation={true}
-        allowPrint={true}
-      />
-      <CookieConsent />
+              <div className="flex flex-col h-screen bg-gray-900 text-white overflow-hidden">
+                <TopBar onOpenOffcanvas={handleOpenOffcanvas} />
+                <div className="flex flex-1 overflow-hidden">
+                  <Sidebar devices={devices} onToggle={toggleDevice} />
+                  <div className="flex-1 relative overflow-hidden">
+                    {!activeDevice && (
+                      <CameraViewfinder isShooting={isShooting} />
+                    )}
+                    <AnimatePresence>
+                      {activeDevice && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          {activeDevice === "device" && <DeviceConnection />}
+                          {activeDevice === "plugin" && <PluginPage />}
+                          {activeDevice === "starChart" && <StarSearch />}
+                          {activeDevice === "focusAssistant" && (
+                            <FocusAssistant
+                              onClose={() => setActiveDevice(null)}
+                            />
+                          )}
+                          {activeDevice === "sequenceEditor" && (
+                            <SequenceEditor
+                              onClose={() => setActiveDevice(null)}
+                            />
+                          )}
+                          {activeDevice === "liveStacking" && <ToolPanel />}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    <AnimatePresence>
+                      {selectedParameter && (
+                        <ParameterAdjust
+                          parameter={selectedParameter}
+                          value={String(
+                            exposureSettings[
+                              selectedParameter as keyof typeof exposureSettings
+                            ]
+                          )}
+                          onChange={(value) =>
+                            handleParameterChange(selectedParameter, value)
+                          }
+                          onClose={() => setSelectedParameter(null)}
+                        />
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  <motion.div
+                    className="w-20 border-l border-gray-700"
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <ExposureControls
+                      settings={exposureSettings}
+                      onParameterClick={handleParameterClick}
+                      onCapture={handleCapture}
+                      onPause={handlePause}
+                      isShooting={isShooting}
+                      isPaused={isPaused}
+                      progress={progress}
+                    />
+                  </motion.div>
+                </div>
+              </div>
+              <DragOverlay>
+                {activeId ? (
+                  <DeviceWindow
+                    device={devices.find((d) => d.id === activeId)!}
+                    onParamChange={handleDeviceParamChange}
+                    onClose={() => {}}
+                  />
+                ) : null}
+              </DragOverlay>
+              <Offcanvas
+                isOpen={offcanvasOpen}
+                onClose={handleCloseOffcanvas}
+                title={
+                  offcanvasDevice
+                    ? devices.find((d) => d.id === offcanvasDevice)?.name || ""
+                    : ""
+                }
+              >
+                {offcanvasDevice && renderOffcanvasContent()}
+              </Offcanvas>
+              <Toaster />
+            </DndContext>
+          )}
+        </LandscapeDetector>
+        <UserAgreementMask
+          agreementText={agreementText}
+          privacyPolicyText={privacyPolicyText}
+          onAgree={handleAgree}
+          onDisagree={handleDisagree}
+          language={language}
+          version="1.0"
+          requireReadConfirmation={true}
+          allowPrint={true}
+        />
+        <CookieConsent />
+      </ErrorBoundary>
     </>
   );
 }

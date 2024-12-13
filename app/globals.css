@@ -133,6 +133,82 @@
     --input: 0 0% 25%;
     --ring: 0 0% 50%;
   }
+  .solarized-light {
+    --sidebar-background: 45 100% 95%;
+    --sidebar-foreground: 45 100% 20%;
+    --sidebar-primary: 45 100% 50%;
+    --sidebar-primary-foreground: 45 100% 95%;
+    --sidebar-accent: 45 100% 85%;
+    --sidebar-accent-foreground: 45 100% 20%;
+    --sidebar-border: 45 100% 85%;
+    --sidebar-ring: 45 100% 50%;
+
+    --background: 45 100% 95%;
+    --foreground: 45 100% 20%;
+
+    --card-background: 45 100% 90%;
+    --card-foreground: 45 100% 20%;
+
+    --popover: 45 100% 90%;
+    --popover-foreground: 45 100% 20%;
+
+    --primary: 45 100% 50%;
+    --primary-foreground: 45 100% 95%;
+
+    --secondary: 45 100% 70%;
+    --secondary-foreground: 45 100% 20%;
+
+    --muted: 45 100% 70%;
+    --muted-foreground: 45 100% 40%;
+
+    --accent: 45 100% 70%;
+    --accent-foreground: 45 100% 20%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 45 100% 95%;
+
+    --border: 45 100% 85%;
+    --input: 45 100% 85%;
+    --ring: 45 100% 50%;
+  }
+  .solarized-dark {
+    --sidebar-background: 45 100% 10%;
+    --sidebar-foreground: 45 100% 90%;
+    --sidebar-primary: 45 100% 20%;
+    --sidebar-primary-foreground: 45 100% 90%;
+    --sidebar-accent: 45 100% 15%;
+    --sidebar-accent-foreground: 45 100% 90%;
+    --sidebar-border: 45 100% 20%;
+    --sidebar-ring: 45 100% 50%;
+
+    --background: 45 100% 10%;
+    --foreground: 45 100% 90%;
+
+    --card-background: 45 100% 15%;
+    --card-foreground: 45 100% 90%;
+
+    --popover: 45 100% 15%;
+    --popover-foreground: 45 100% 90%;
+
+    --primary: 45 100% 20%;
+    --primary-foreground: 45 100% 90%;
+
+    --secondary: 45 100% 25%;
+    --secondary-foreground: 45 100% 90%;
+
+    --muted: 45 100% 25%;
+    --muted-foreground: 45 100% 70%;
+
+    --accent: 45 100% 25%;
+    --accent-foreground: 45 100% 90%;
+
+    --destructive: 0 50% 30%;
+    --destructive-foreground: 45 100% 90%;
+
+    --border: 45 100% 25%;
+    --input: 45 100% 25%;
+    --ring: 45 100% 50%;
+  }
 }
 
 @layer base {

@@ -96,15 +96,11 @@ const LogPanel: React.FC = () => {
   const workerRef = useRef<Worker | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { lastMessage, sendMessage } = useWebSocket("ws://localhost:3001");
+  const { status, sendMessage } = useWebSocket();
 
   useEffect(() => {
-    if (lastMessage && isRealTimeEnabled && !isMockMode) {
-      const newLog = JSON.parse(lastMessage.data);
-      setLogs([newLog, ...logs.slice(0, 9999)]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lastMessage, isRealTimeEnabled, isMockMode]);
+    // Add logic to handle real-time updates if needed
+  }, [isRealTimeEnabled, isMockMode]);
 
   useEffect(() => {
     const fetchLogs = async () => {

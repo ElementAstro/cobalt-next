@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Header from "@/components/home/Header";
 import SearchBar from "@/components/custom/SearchBar";
 import QuickAccess from "@/components/home/QuickAccess";
@@ -12,8 +12,9 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { motion, useAnimation } from "framer-motion";
 import { useInView } from "react-intersection-observer";
-import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog"; // 确保引入 Dialog 组件
+import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
 import AddEditSiteDialog from "@/components/home/AddEditSiteDialog";
+import { useSiteStore } from "@/lib/store/home";
 
 const defaultSites: Site[] = [
   {
@@ -34,19 +35,24 @@ const defaultSites: Site[] = [
 ];
 
 export default function Home() {
-  const [sites, setSites] = useState<Site[]>(defaultSites);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [newSite, setNewSite] = useState<Site>({
-    id: "",
-    name: "",
-    url: "",
-    icon: "",
-    category: "",
-  });
-  const [activeCategory, setActiveCategory] = useState("All");
+  const {
+    sites,
+    quickAccessSites,
+    searchTerm,
+    activeCategory,
+    addSite,
+    updateSite,
+    removeSite,
+    toggleQuickAccess,
+    setSearchTerm,
+    setActiveCategory,
+    setSites,
+    setQuickAccessSites,
+    reorderSites,
+  } = useSiteStore();
+
   const [previewUrl, setPreviewUrl] = useState("");
   const [editingSite, setEditingSite] = useState<Site | null>(null);
-  const [quickAccessSites, setQuickAccessSites] = useState<Site[]>([]);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -68,10 +74,17 @@ export default function Home() {
 
   useEffect(() => {
     const savedSites = localStorage.getItem("sites");
-    if (savedSites) {
-      setSites(JSON.parse(savedSites));
+    if (savedSites !== null) {
+      const parsedSites = JSON.parse(savedSites);
+      if (parsedSites.length === 0) {
+        setSites(defaultSites);
+      } else {
+        setSites(parsedSites);
+      }
+    } else {
+      setSites(defaultSites);
     }
-  }, []);
+  }, [setSites]);
 
   useEffect(() => {
     localStorage.setItem("sites", JSON.stringify(sites));
@@ -94,51 +107,9 @@ export default function Home() {
     ...Array.from(new Set(sites.map((site) => site.category))),
   ];
 
-  const addSite = (site: Site) => {
-    if (site.name && site.url) {
-      const newSiteWithId = { ...site, id: Date.now().toString() };
-      setSites([...sites, newSiteWithId]);
-      if (quickAccessSites.length < 5) {
-        setQuickAccessSites([...quickAccessSites, newSiteWithId]);
-      }
-      toast.success("Site added successfully!");
-    }
-  };
-
-  const updateSite = (updatedSite: Site) => {
-    setSites(
-      sites.map((site) => (site.id === updatedSite.id ? updatedSite : site))
-    );
-    setEditingSite(null);
-    toast.success("Site updated successfully!");
-  };
-
-  const removeSite = (siteToRemove: Site) => {
-    setSites(sites.filter((site) => site.id !== siteToRemove.id));
-    setQuickAccessSites(
-      quickAccessSites.filter((site) => site.id !== siteToRemove.id)
-    );
-    toast.info("Site removed");
-  };
-
-  const toggleQuickAccess = (site: Site) => {
-    if (quickAccessSites.some((s) => s.id === site.id)) {
-      setQuickAccessSites(quickAccessSites.filter((s) => s.id !== site.id));
-    } else if (quickAccessSites.length < 5) {
-      setQuickAccessSites([...quickAccessSites, site]);
-    } else {
-      toast.error("You can only have up to 5 quick access sites");
-    }
-  };
-
   const onDragEnd = (result: any) => {
     if (!result.destination) return;
-
-    const reorderedSites = Array.from(sites);
-    const [movedSite] = reorderedSites.splice(result.source.index, 1);
-    reorderedSites.splice(result.destination.index, 0, movedSite);
-
-    setSites(reorderedSites);
+    reorderSites(result.source.index, result.destination.index);
   };
 
   const exportData = () => {
@@ -197,7 +168,7 @@ export default function Home() {
         <Header
           exportData={exportData}
           importData={importData}
-          onAddNewSite={handleAddNewSite} // 添加此行
+          onAddNewSite={handleAddNewSite}
         />
         <SearchBar
           initialSuggestions={sites.map((site) => site.name)}
@@ -223,7 +194,6 @@ export default function Home() {
           controls={controls}
           onPreview={openPreview}
         />
-        {/* 预览和其他对话框组件可在此添加 */}
         <PreviewModal
           isOpen={isPreviewOpen}
           onClose={closePreview}
@@ -232,9 +202,7 @@ export default function Home() {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent>
             <AddEditSiteDialog
-              addSite={addSite}
               editingSite={editingSite}
-              updateSite={updateSite}
               setEditingSite={setEditingSite}
             />
           </DialogContent>

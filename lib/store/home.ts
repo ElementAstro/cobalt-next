@@ -21,6 +21,7 @@ interface SiteState {
   setActiveCategory: (category: string) => void;
   setSites: (sites: Site[]) => void;
   setQuickAccessSites: (sites: Site[]) => void;
+  reorderSites: (startIndex: number, endIndex: number) => void;
 }
 
 export const useSiteStore = create<SiteState>((set) => ({
@@ -65,8 +66,16 @@ export const useSiteStore = create<SiteState>((set) => ({
         return {};
       }
     }),
-  setSearchTerm: (term) => set({ searchTerm: term }),
-  setActiveCategory: (category) => set({ activeCategory: category }),
-  setSites: (sites) => set({ sites }),
-  setQuickAccessSites: (sites) => set({ quickAccessSites: sites }),
+  setSearchTerm: (term: string) => set({ searchTerm: term }),
+  setActiveCategory: (category: string) => set({ activeCategory: category }),
+  setSites: (sites: Site[]) => set({ sites }),
+  setQuickAccessSites: (sites: Site[]) => set({ quickAccessSites: sites }),
+  reorderSites: (startIndex: number, endIndex: number) => {
+    set((state) => {
+      const sites = [...state.sites];
+      const [removed] = sites.splice(startIndex, 1);
+      sites.splice(endIndex, 0, removed);
+      return { sites };
+    });
+  },
 }));

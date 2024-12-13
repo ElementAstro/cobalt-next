@@ -115,11 +115,7 @@ export default function DeviceConnection() {
                 onValueChange={setActiveTab}
                 className="w-full"
               >
-                <TabsList
-                  className={`grid w-full ${
-                    isMobile ? "grid-cols-2 gap-2" : "grid-cols-4"
-                  }`}
-                >
+                <TabsList className={`grid w-full ${"grid-cols-4 gap-2"}`}>
                   <TabsTrigger value="profile">Profile</TabsTrigger>
                   <TabsTrigger value="devices">Devices</TabsTrigger>
                   <TabsTrigger

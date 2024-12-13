@@ -46,7 +46,7 @@ export function Offcanvas({
 
           {/* 侧边栏面板 */}
           <motion.div
-            className="fixed top-0 right-0 w-80 md:w-1/2 max-w-full h-full bg-gray-800 dark:bg-gray-900 shadow-lg z-50 flex flex-col"
+            className="fixed top-0 right-0 w-80 md:w-2/3 max-w-full h-full bg-gray-800 dark:bg-gray-900 shadow-lg z-50 flex flex-col"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}

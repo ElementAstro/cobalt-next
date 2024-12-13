@@ -85,9 +85,9 @@ export function AuthorIntro({
           visible: { opacity: 1, y: 0 },
         }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-4xl mx-auto p-4 landscape:md:p-8"
+        className="w-full max-w-4xl mx-auto"
       >
-        <Card className="overflow-hidden rounded-xl shadow-xl dark:bg-gray-800/50 backdrop-blur-sm border-none">
+        <Card className="overflow-hidden rounded-xl shadow-xl dark:bg-gray-800/50 border-none">
           <CardHeader>
             <motion.div
               className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4"

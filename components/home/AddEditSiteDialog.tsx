@@ -3,18 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Site } from "@/types/home";
+import { useSiteStore } from "@/lib/store/home";
 
 interface AddEditSiteDialogProps {
-  addSite: (site: Site) => void;
   editingSite: Site | null;
-  updateSite: (site: Site) => void;
   setEditingSite: (site: Site | null) => void;
 }
 
 const AddEditSiteDialog: React.FC<AddEditSiteDialogProps> = ({
-  addSite,
   editingSite,
-  updateSite,
   setEditingSite,
 }) => {
   const [site, setSite] = useState<Site>({
@@ -24,6 +21,9 @@ const AddEditSiteDialog: React.FC<AddEditSiteDialogProps> = ({
     icon: "",
     category: "",
   });
+
+  const addSite = useSiteStore((state) => state.addSite);
+  const updateSite = useSiteStore((state) => state.updateSite);
 
   useEffect(() => {
     if (editingSite) {

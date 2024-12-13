@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"] });
 
@@ -18,8 +19,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${spaceGrotesk.className} bg-black`}>
-        <div className="fixed inset-0 bg-cyber-grid bg-cyber-grid-size animate-matrix opacity-20 pointer-events-none z-0"></div>
-        {children}
+        <ThemeProvider>
+          <div className="fixed inset-0 bg-cyber-grid bg-cyber-grid-size animate-matrix opacity-20 pointer-events-none z-0"></div>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
