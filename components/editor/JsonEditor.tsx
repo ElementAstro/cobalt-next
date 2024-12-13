@@ -158,12 +158,30 @@ export default function JsonEditor({ initialData, onChange }: JsonEditorProps) {
     });
   };
 
+  const cardVariants = {
+    hidden: { opacity: 0, scale: 0.95 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: { duration: 0.3, staggerChildren: 0.1 },
+    },
+  };
+
   return (
-    <div className={isDarkMode ? "dark" : ""}>
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
-        <Card className="w-full max-w-3xl mx-auto">
-          <CardHeader>
-            <CardTitle className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-2 md:space-y-0">
+    <motion.div
+      className={isDarkMode ? "dark" : ""}
+      variants={cardVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <Card className="w-full bg-card">
+        <CardHeader className="space-y-4">
+          <CardTitle className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <motion.div
+              initial={{ x: -20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              className="flex items-center gap-4"
+            >
               <span className="text-xl font-semibold text-gray-800 dark:text-gray-100">
                 JSON Editor
               </span>
@@ -209,103 +227,108 @@ export default function JsonEditor({ initialData, onChange }: JsonEditorProps) {
                   </label>
                 </div>
               </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="editor" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="editor">编辑器</TabsTrigger>
-                <TabsTrigger value="preview">预览</TabsTrigger>
-              </TabsList>
-              <TabsContent value="editor">
-                <AnimatePresence>
-                  {isLowCodeMode ? (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <DragDropContext onDragEnd={handleDragEnd}>
-                        <ScrollArea className="h-96 md:h-[600px]">
-                          <Droppable droppableId="root">
-                            {(provided) => (
-                              <div
-                                {...provided.droppableProps}
-                                ref={provided.innerRef}
-                              >
-                                <JsonNode
-                                  data={json}
-                                  path={[]}
-                                  onchange={handleNodeChange}
-                                  ondelete={handleDeleteNode}
-                                  onAddChild={(path) => {
-                                    setCurrentPath(path);
-                                    setIsAddNodeDialogOpen(true);
-                                  }}
-                                />
-                                {provided.placeholder}
-                              </div>
-                            )}
-                          </Droppable>
-                        </ScrollArea>
-                      </DragDropContext>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <Textarea
-                        value={stringifyJson(json)}
-                        onChange={(e) => handleJsonChange(e.target.value)}
-                        className="h-96 md:h-[600px] font-mono dark:bg-gray-800 dark:text-gray-100"
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.3, delay: 0.2 }}
-                >
-                  <Button
-                    onClick={() => {
-                      setCurrentPath([]);
-                      setIsAddNodeDialogOpen(true);
-                    }}
-                    className="mt-4"
+            </motion.div>
+            <motion.div
+              initial={{ x: 20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              className="flex flex-wrap gap-2"
+            ></motion.div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="editor" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="editor">编辑器</TabsTrigger>
+              <TabsTrigger value="preview">预览</TabsTrigger>
+            </TabsList>
+            <TabsContent value="editor">
+              <AnimatePresence mode="wait">
+                {isLowCodeMode ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
                   >
-                    添加根节点
-                  </Button>
-                </motion.div>
-              </TabsContent>
-              <TabsContent value="preview">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
+                    <DragDropContext onDragEnd={handleDragEnd}>
+                      <ScrollArea className="h-96 md:h-[600px]">
+                        <Droppable droppableId="root">
+                          {(provided) => (
+                            <div
+                              {...provided.droppableProps}
+                              ref={provided.innerRef}
+                            >
+                              <JsonNode
+                                data={json}
+                                path={[]}
+                                onchange={handleNodeChange}
+                                ondelete={handleDeleteNode}
+                                onAddChild={(path) => {
+                                  setCurrentPath(path);
+                                  setIsAddNodeDialogOpen(true);
+                                }}
+                              />
+                              {provided.placeholder}
+                            </div>
+                          )}
+                        </Droppable>
+                      </ScrollArea>
+                    </DragDropContext>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Textarea
+                      value={stringifyJson(json)}
+                      onChange={(e) => handleJsonChange(e.target.value)}
+                      className="h-96 md:h-[600px] font-mono dark:bg-gray-800 dark:text-gray-100"
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: 0.2 }}
+              >
+                <Button
+                  onClick={() => {
+                    setCurrentPath([]);
+                    setIsAddNodeDialogOpen(true);
+                  }}
+                  className="mt-4"
                 >
-                  <ScrollArea className="h-96 md:h-[600px] bg-gray-50 dark:bg-gray-800 p-4 rounded">
-                    <pre className="whitespace-pre-wrap text-gray-800 dark:text-gray-100">
-                      <code
-                        dangerouslySetInnerHTML={{ __html: highlightedJson }}
-                      />
-                    </pre>
-                  </ScrollArea>
-                </motion.div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-          <AddNodeDialog
-            isOpen={isAddNodeDialogOpen}
-            onClose={() => setIsAddNodeDialogOpen(false)}
-            onAdd={handleAddNode}
-          />
-        </Card>
-      </div>
-    </div>
+                  添加根节点
+                </Button>
+              </motion.div>
+            </TabsContent>
+            <TabsContent value="preview">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ScrollArea className="h-96 md:h-[600px] bg-gray-50 dark:bg-gray-800 p-4 rounded">
+                  <pre className="whitespace-pre-wrap text-gray-800 dark:text-gray-100">
+                    <code
+                      dangerouslySetInnerHTML={{ __html: highlightedJson }}
+                    />
+                  </pre>
+                </ScrollArea>
+              </motion.div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+        <AddNodeDialog
+          isOpen={isAddNodeDialogOpen}
+          onClose={() => setIsAddNodeDialogOpen(false)}
+          onAdd={handleAddNode}
+        />
+      </Card>
+    </motion.div>
   );
 }

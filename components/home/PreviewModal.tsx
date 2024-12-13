@@ -33,14 +33,10 @@ export default function PreviewModal({
         className="bg-indigo-900/90 dark:bg-gray-900/90 rounded-lg shadow-2xl w-11/12 md:w-3/4 lg:w-2/3 xl:w-1/2 max-h-[90vh] overflow-hidden"
       >
         <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="text-xl font-semibold text-gray-100">
             {site.name} 预览
           </h2>
-          <Button
-            onClick={onClose}
-            variant="ghost"
-            className="text-gray-900 dark:text-gray-100"
-          >
+          <Button onClick={onClose} variant="ghost" className="text-gray-100">
             关闭
           </Button>
         </div>
@@ -52,13 +48,13 @@ export default function PreviewModal({
             allowFullScreen={true}
             height="100%"
             loadingComponent={
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-center space-x-2 h-full">
                 <Loader2 className="w-6 h-6 animate-spin" />
                 <span>加载中...</span>
               </div>
             }
             errorComponent={
-              <div className="text-red-500">
+              <div className="flex items-center justify-center text-red-500 h-full">
                 加载失败，请检查网址是否正确或稍后重试
               </div>
             }

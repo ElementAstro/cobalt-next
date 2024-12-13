@@ -58,3 +58,26 @@ export function parseInputData(data: any): any {
     return {};
   }
 }
+
+export function validateJson(json: any): boolean {
+  try {
+    JSON.stringify(json);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function getNodeDepth(path: string[]): number {
+  return path.length;
+}
+
+export function generateUniqueKey(parent: any, baseKey: string): string {
+  let key = baseKey;
+  let counter = 1;
+  while (parent[key] !== undefined) {
+    key = `${baseKey}${counter}`;
+    counter++;
+  }
+  return key;
+}

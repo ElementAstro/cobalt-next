@@ -1,18 +1,22 @@
 "use client";
 
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { Moon, Sun, Menu, X, Globe } from "lucide-react";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { useState } from "react";
 import styled from "styled-components";
 
-const HeaderWrapper = styled.header`
+const HeaderWrapper = styled(motion.header)`
   background-color: ${({ theme }) => theme.background};
   padding: 1rem;
   position: sticky;
   top: 0;
   z-index: 50;
   transition: background-color 0.3s;
+  backdrop-filter: blur(8px);
+  background-color: ${({ theme }) =>
+    theme.dark ? "rgba(17, 24, 39, 0.8)" : "rgba(255, 255, 255, 0.8)"};
 `;
 
 const StyledMenu = styled.div`
@@ -31,6 +35,16 @@ const StyledMenu = styled.div`
   }
 `;
 
+const NavMenu = styled(motion.nav)`
+  @media (orientation: landscape) and (max-width: 768px) {
+    position: fixed;
+    right: 0;
+    top: 0;
+    height: 100vh;
+    width: 300px;
+  }
+`;
+
 export default function Header() {
   const { language, setLanguage, t } = useLanguage();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -39,8 +53,17 @@ export default function Header() {
     setLanguage(language === "en" ? "zh" : "en");
   };
 
+  const menuVariants = {
+    hidden: { x: "100%" },
+    visible: { x: 0, transition: { type: "spring", stiffness: 100 } },
+  };
+
   return (
-    <HeaderWrapper>
+    <HeaderWrapper
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ type: "spring", stiffness: 50 }}
+    >
       <div className="container mx-auto px-4 flex justify-between items-center">
         <div className="flex items-center space-x-2">
           <Image
@@ -95,29 +118,38 @@ export default function Header() {
           </button>
         </div>
       </div>
-      {isMenuOpen && (
-        <StyledMenu>
-          <ul>
-            {[t("overview"), t("features"), t("build"), "GitHub"].map(
-              (item) => (
-                <li key={item}>
-                  <a
-                    href={
-                      item === "GitHub"
-                        ? "https://github.com/yourusername/lithium"
-                        : `#${item.toLowerCase()}`
-                    }
-                    className="block py-2 text-gray-600 hover:text-blue-500 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item}
-                  </a>
-                </li>
-              )
-            )}
-          </ul>
-        </StyledMenu>
-      )}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <NavMenu
+            variants={menuVariants}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+          >
+            <StyledMenu>
+              <ul>
+                {[t("overview"), t("features"), t("build"), "GitHub"].map(
+                  (item) => (
+                    <li key={item}>
+                      <a
+                        href={
+                          item === "GitHub"
+                            ? "https://github.com/yourusername/lithium"
+                            : `#${item.toLowerCase()}`
+                        }
+                        className="block py-2 text-gray-600 hover:text-blue-500 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {item}
+                      </a>
+                    </li>
+                  )
+                )}
+              </ul>
+            </StyledMenu>
+          </NavMenu>
+        )}
+      </AnimatePresence>
     </HeaderWrapper>
   );
 }

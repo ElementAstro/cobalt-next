@@ -154,9 +154,30 @@ const TimeGradientBar = () => {
     </motion.svg>
   );
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.5,
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1 }
+  };
+
   return (
-    <div className={darkMode ? "dark" : ""}>
-      <Card className="w-full max-w-3xl mx-auto bg-white dark:bg-gray-800">
+    <motion.div
+      className={`${darkMode ? "dark" : ""} min-h-screen`}
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <Card className="w-full max-w-3xl mx-auto bg-gray-900 dark:bg-gray-800 text-white">
         <CardHeader>
           <CardTitle className="flex flex-col sm:flex-row justify-between items-center">
             <div className="flex items-center space-x-4 mt-2 sm:mt-0">
@@ -190,9 +211,7 @@ const TimeGradientBar = () => {
         <CardContent>
           <motion.div
             className="relative mb-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1 }}
+            variants={itemVariants}
           >
             <div
               className="h-16 rounded-full relative overflow-hidden cursor-pointer"
@@ -230,42 +249,47 @@ const TimeGradientBar = () => {
               </>
             )}
           </motion.div>
-          <motion.div
-            className="text-center text-2xl font-bold mb-4 text-gray-900 dark:text-white"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.5 }}
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+            variants={itemVariants}
           >
-            {format(currentTime, "HH:mm:ss")}
-          </motion.div>
-          {sunTimes && (
             <motion.div
-              className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700 dark:text-gray-300"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 1 }}
+              className="text-center text-2xl font-bold mb-4 text-gray-900 dark:text-white"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5 }}
             >
-              <div className="flex items-center">
-                <Sunrise className="mr-2" />
-                <span>日出: {format(sunTimes.sunrise, "HH:mm")}</span>
-              </div>
-              <div className="flex items-center">
-                <Sunset className="mr-2" />
-                <span>日落: {format(sunTimes.sunset, "HH:mm")}</span>
-              </div>
-              <div className="flex items-center">
-                <Sun className="mr-2" />
-                <span>正午: {format(sunTimes.solarNoon, "HH:mm")}</span>
-              </div>
-              <div className="flex items-center">
-                <Moon className="mr-2" />
-                <span>天黑: {format(sunTimes.night, "HH:mm")}</span>
-              </div>
+              {format(currentTime, "HH:mm:ss")}
             </motion.div>
-          )}
+            {sunTimes && (
+              <motion.div
+                className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700 dark:text-gray-300"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1 }}
+              >
+                <div className="flex items-center">
+                  <Sunrise className="mr-2" />
+                  <span>日出: {format(sunTimes.sunrise, "HH:mm")}</span>
+                </div>
+                <div className="flex items-center">
+                  <Sunset className="mr-2" />
+                  <span>日落: {format(sunTimes.sunset, "HH:mm")}</span>
+                </div>
+                <div className="flex items-center">
+                  <Sun className="mr-2" />
+                  <span>正午: {format(sunTimes.solarNoon, "HH:mm")}</span>
+                </div>
+                <div className="flex items-center">
+                  <Moon className="mr-2" />
+                  <span>天黑: {format(sunTimes.night, "HH:mm")}</span>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 };
 

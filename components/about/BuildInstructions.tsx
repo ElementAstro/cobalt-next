@@ -5,6 +5,7 @@ import { Copy, Check } from "lucide-react";
 import { Highlight, themes } from "prism-react-renderer";
 import { useLanguage } from "../../contexts/LanguageContext";
 import styled from "styled-components";
+import { motion, AnimatePresence } from "framer-motion";
 
 const Section = styled.section`
   padding: 4rem 0;
@@ -36,7 +37,30 @@ const StyledPre = styled.pre`
   color: #cbd5e1;
 `;
 
-const CodeBlock = ({ code, language }: { code: string; language: string }) => {
+const CodeBlock = styled(motion.div)`
+  position: relative;
+  background: ${({ theme }) => (theme.dark ? "#1a2233" : "#f8fafc")};
+  border-radius: 12px;
+  overflow: hidden;
+
+  @media (orientation: landscape) {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+`;
+
+const CopyNotification = styled(motion.div)`
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 1rem;
+  background: #4ade80;
+  color: white;
+  border-radius: 8px;
+  z-index: 100;
+`;
+
+const CodeBlockComponent = ({ code, language }: { code: string; language: string }) => {
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = () => {
@@ -46,37 +70,54 @@ const CodeBlock = ({ code, language }: { code: string; language: string }) => {
   };
 
   return (
-    <div className="relative">
-      <StyledPre>
-        <Highlight
-          theme={themes.nightOwl}
-          code={code.trim()}
-          language={language as any}
-        >
-          {({ className, style, tokens, getLineProps, getTokenProps }) => (
-            <pre
-              className={`${className} p-4 rounded-lg overflow-x-auto text-sm`}
-              style={style}
-            >
-              {tokens.map((line, i) => (
-                <div key={i} {...getLineProps({ line, key: i })}>
-                  {line.map((token, key) => (
-                    <span key={key} {...getTokenProps({ token, key })} />
-                  ))}
-                </div>
-              ))}
-            </pre>
-          )}
-        </Highlight>
-        <CodeButton onClick={copyToClipboard} aria-label="Copy code">
-          {copied ? (
-            <Check size={16} className="text-green-500" />
-          ) : (
-            <Copy size={16} />
-          )}
-        </CodeButton>
-      </StyledPre>
-    </div>
+    <>
+      <CodeBlock
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring" }}
+      >
+        <StyledPre>
+          <Highlight
+            theme={themes.nightOwl}
+            code={code.trim()}
+            language={language as any}
+          >
+            {({ className, style, tokens, getLineProps, getTokenProps }) => (
+              <pre
+                className={`${className} p-4 rounded-lg overflow-x-auto text-sm`}
+                style={style}
+              >
+                {tokens.map((line, i) => (
+                  <div key={i} {...getLineProps({ line, key: i })}>
+                    {line.map((token, key) => (
+                      <span key={key} {...getTokenProps({ token, key })} />
+                    ))}
+                  </div>
+                ))}
+              </pre>
+            )}
+          </Highlight>
+          <CodeButton onClick={copyToClipboard} aria-label="Copy code">
+            {copied ? (
+              <Check size={16} className="text-green-500" />
+            ) : (
+              <Copy size={16} />
+            )}
+          </CodeButton>
+        </StyledPre>
+      </CodeBlock>
+      <AnimatePresence>
+        {copied && (
+          <CopyNotification
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+          >
+            Code copied to clipboard!
+          </CopyNotification>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
@@ -94,7 +135,7 @@ export default function BuildInstructions() {
             <h3 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">
               {t("windowsMSYS2")}
             </h3>
-            <CodeBlock
+            <CodeBlockComponent
               language="bash"
               code={`
 # Add Tsinghua University mirror source
@@ -110,7 +151,7 @@ pacman -S mingw-w64-x86_64-toolchain mingw-w64-x86_64-dlfcn mingw-w64-x86_64-cfi
             <h3 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">
               {t("ubuntuDebian")}
             </h3>
-            <CodeBlock
+            <CodeBlockComponent
               language="bash"
               code={`
 sudo apt-get update && sudo apt-get upgrade
@@ -129,20 +170,20 @@ sudo apt-get install build-essential cmake libcfitsio-dev zlib1g-dev libssl-dev 
           <ol className="list-decimal list-inside space-y-2 text-gray-800 dark:text-gray-200">
             <li>
               {t("createBuildDirectory")}:{" "}
-              <CodeBlock language="bash" code="mkdir build && cd build" />
+              <CodeBlockComponent language="bash" code="mkdir build && cd build" />
             </li>
             <li>
               {t("configureProject")}:{" "}
-              <CodeBlock language="bash" code="cmake .." />
+              <CodeBlockComponent language="bash" code="cmake .." />
             </li>
             <li>
               {t("compileAndExecute")}:{" "}
-              <CodeBlock language="bash" code="make -jN" /> or{" "}
-              <CodeBlock language="bash" code="cmake --build . --parallel N" />
+              <CodeBlockComponent language="bash" code="make -jN" /> or{" "}
+              <CodeBlockComponent language="bash" code="cmake --build . --parallel N" />
             </li>
             <li>
               {t("launchProgram")}:{" "}
-              <CodeBlock language="bash" code="./lithium_server" />
+              <CodeBlockComponent language="bash" code="./lithium_server" />
             </li>
           </ol>
         </div>

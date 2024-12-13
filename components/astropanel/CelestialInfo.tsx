@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
 
 interface CelestialInfoProps {
   data: CelestialData;
@@ -24,6 +25,26 @@ const tableVariants = {
 };
 
 export default function CelestialInfo({ data }: CelestialInfoProps) {
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!data) {
+      setError("Unable to load celestial data");
+    }
+  }, [data]);
+
+  if (error) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="bg-red-500 text-white p-4 rounded-lg"
+      >
+        {error}
+      </motion.div>
+    );
+  }
+
   const metrics: { label: string; value: string | number }[] = [
     { label: "Current Time", value: data.current_time || "N/A" },
     {

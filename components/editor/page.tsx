@@ -1,9 +1,10 @@
-"use client"
+"use client";
 
-import React, { memo } from 'react'
-import { useState } from 'react'
-import JsonEditor from './JsonEditor'
-import { parseInputData } from './json-utils'
+import React, { memo } from "react";
+import { useState } from "react";
+import JsonEditor from "./JsonEditor";
+import { parseInputData } from "./json-utils";
+import { motion } from "framer-motion";
 
 const sampleData = {
   name: "John Doe",
@@ -11,26 +12,36 @@ const sampleData = {
   address: {
     street: "123 Main St",
     city: "Anytown",
-    country: "USA"
+    country: "USA",
   },
-  hobbies: ["reading", "swimming", "coding"]
-}
+  hobbies: ["reading", "swimming", "coding"],
+};
 
 const Page = memo(function Page() {
-  const [jsonData, setJsonData] = useState(sampleData)
-
-  const handleJsonChange = (newData: any) => {
-    setJsonData(newData)
-    console.log("Updated JSON:", newData)
-  }
+  const [jsonData, setJsonData] = useState(sampleData);
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Enhanced JSON Editor</h1>
-      <JsonEditor initialData={parseInputData(jsonData)} onChange={handleJsonChange} />
-    </div>
-  )
-})
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="min-h-screen bg-background p-4 landscape:p-2"
+    >
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="container mx-auto max-w-7xl"
+      >
+        <h1 className="text-3xl font-bold mb-6 text-foreground text-center">
+          JSON编辑器
+        </h1>
+        <JsonEditor
+          initialData={parseInputData(jsonData)}
+          onChange={(newData) => setJsonData(newData)}
+        />
+      </motion.div>
+    </motion.div>
+  );
+});
 
-export default Page
-
+export default Page;

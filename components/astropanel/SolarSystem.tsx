@@ -1,7 +1,16 @@
-// FILEPATH: /d:/msys64/home/qwdma/cobalt/components/astropanel/SolarSystem.tsx
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { CelestialData } from "@/types/astropanel";
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
 
 interface SolarSystemProps {
   data: CelestialData;
@@ -20,10 +29,10 @@ export default function SolarSystem({ data }: SolarSystemProps) {
 
   return (
     <motion.div
-      className="bg-gray-900 text-white min-h-screen p-4"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 1 }}
+      className="bg-gray-900 text-white p-4 rounded-lg"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
     >
       <h2 className="text-3xl font-bold mb-6 text-center">Solar System</h2>
       <div className="overflow-x-auto">

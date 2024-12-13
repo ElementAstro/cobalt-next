@@ -4,6 +4,7 @@ import { Cpu, Code, Rocket, BookOpen, Globe, Github } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { useLanguage } from "../../contexts/LanguageContext";
 import styled from "styled-components";
+import { motion } from "framer-motion";
 
 const Section = styled.section`
   padding: 4rem 0;
@@ -17,11 +18,22 @@ const FeatureGrid = styled.div`
   gap: 2rem;
 `;
 
-const FeatureCard = styled.div`
+const FeatureCard = styled(motion.div)`
   background-color: ${({ theme }) => theme.cardBackground};
   padding: 1.5rem;
   border-radius: 0.5rem;
   transition: transform 0.3s, background-color 0.3s;
+  background: ${({ theme }) =>
+    theme.dark ? 'linear-gradient(145deg, #1e2837, #2a3548)' : 'white'};
+  box-shadow: ${({ theme }) =>
+    theme.dark ? '0 8px 32px rgba(0, 0, 0, 0.3)' : '0 8px 32px rgba(0, 0, 0, 0.1)'};
+
+  @media (orientation: landscape) and (max-width: 768px) {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+    align-items: center;
+  }
 
   &:hover {
     transform: scale(1.05);
@@ -34,6 +46,15 @@ export default function Features() {
     triggerOnce: true,
     threshold: 0.1,
   });
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 50 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { type: "spring", stiffness: 50 }
+    }
+  };
 
   const features = [
     {
@@ -81,6 +102,12 @@ export default function Features() {
             <FeatureCard
               key={index}
               style={{ animationDelay: `${index * 100}ms` }}
+              variants={cardVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               <feature.icon className="w-12 h-12 mb-4 text-blue-500" />
               <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
