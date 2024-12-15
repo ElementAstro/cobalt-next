@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAchievementStore } from "@/lib/store/achievement";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useOrientation } from "@/hooks/use-orientation";
 
 export function AchievementList() {
   const {
@@ -26,6 +27,8 @@ export function AchievementList() {
   } = useAchievementStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const isLandscape = useOrientation();
+  const [animationPreference, setAnimationPreference] = useState("default");
 
   const categories = useMemo(() => {
     return ["All", ...Array.from(new Set(achievements.map((a) => a.category)))];
@@ -51,8 +54,19 @@ export function AchievementList() {
     return (unlockedCount / achievements.length) * 100;
   }, [achievements]);
 
+  const gridColumns = useMemo(() => {
+    if (isLandscape) {
+      return "grid-cols-1 md:grid-cols-3 lg:grid-cols-4";
+    }
+    return "grid-cols-1 md:grid-cols-2 lg:grid-cols-3";
+  }, [isLandscape]);
+
   return (
-    <div className="space-y-4 p-4 dark:bg-gray-900">
+    <div
+      className={`space-y-4 p-4 dark:bg-gray-900 ${
+        isLandscape ? "h-[100vh] overflow-hidden" : ""
+      }`}
+    >
       <motion.div
         className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4"
         initial={{ opacity: 0 }}
@@ -105,14 +119,33 @@ export function AchievementList() {
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="flex items-center space-x-4 mb-4">
+        <Select
+          value={animationPreference}
+          onValueChange={setAnimationPreference}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Animation Style" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="default">Default</SelectItem>
+            <SelectItem value="bounce">Bounce</SelectItem>
+            <SelectItem value="fade">Fade</SelectItem>
+            <SelectItem value="slide">Slide</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div
+        className={`grid ${gridColumns} gap-4 ${
+          isLandscape ? "h-[calc(100vh-200px)] overflow-y-auto" : ""
+        }`}
+      >
         <AnimatePresence mode="popLayout">
           {filteredAchievements.map((achievement, index) => (
             <motion.div
               key={achievement.id}
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.8 }}
+              initial={getInitialAnimation(animationPreference)}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               layout
             >
@@ -132,3 +165,18 @@ export function AchievementList() {
     </div>
   );
 }
+
+function getInitialAnimation(preference: string) {
+  switch (preference) {
+    case "bounce":
+      return { scale: 0.3, y: 100 };
+    case "fade":
+      return { opacity: 0 };
+    case "slide":
+      return { x: -100, opacity: 0 };
+    default:
+      return { opacity: 0, y: 50 };
+  }
+}
+
+// Add similar functions for animate and exit animations

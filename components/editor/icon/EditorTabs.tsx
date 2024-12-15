@@ -23,6 +23,7 @@ type EditorTabsProps = {
   applyPreset: (preset: string) => void;
   handleExport: (size: number) => void;
   presets: any;
+  isLandscape: boolean;
 };
 
 export default function EditorTabs({
@@ -31,16 +32,17 @@ export default function EditorTabs({
   applyPreset,
   handleExport,
   presets,
+  isLandscape,
 }: EditorTabsProps) {
   return (
     <motion.div
-      className="mt-4"
+      className={`${isLandscape ? "h-[calc(100%-4rem)]" : "mt-4"}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 0.5, duration: 0.5 }}
     >
       <Tabs defaultValue="transform" className="w-full">
-        <TabsList className="grid grid-cols-4 lg:grid-cols-1">
+        <TabsList className={`grid ${isLandscape ? "grid-cols-1" : "grid-cols-4"}`}>
           <TabsTrigger value="transform">变换</TabsTrigger>
           <TabsTrigger value="filters">滤镜</TabsTrigger>
           <TabsTrigger value="effects">效果</TabsTrigger>

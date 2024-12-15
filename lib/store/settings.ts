@@ -2,6 +2,17 @@ import { create } from "zustand";
 import { DiskInfo } from "@/types/settings";
 import { mockDiskService } from "@/utils/mock-settings";
 
+export interface NetworkBridgeConfig {
+  name: string;
+  ipAddress: string;
+  subnetMask: string;
+  gateway: string;
+  dhcp: boolean;
+  mtu: string;
+  interfaceMode: "bridge" | "bond";
+  bondMode?: "active-backup" | "balance-tlb" | "balance-alb";
+}
+
 interface HotspotSettings {
   hotspotEnabled: boolean;
   powerSaving: boolean;
@@ -21,10 +32,12 @@ interface HotspotSettings {
 
 interface NetworkStore {
   settings: HotspotSettings;
+  bridgeConfig: NetworkBridgeConfig;
   isEditing: boolean;
   error: string | null;
   successMessage: string | null;
   setSettings: (updatedSettings: Partial<HotspotSettings>) => void;
+  setBridgeConfig: (updatedConfig: Partial<NetworkBridgeConfig>) => void;
   toggleHotspot: () => void;
   togglePowerSaving: () => void;
   setEditing: (editing: boolean) => void;
@@ -51,12 +64,26 @@ export const useNetworkStore = create<NetworkStore>((set, get) => ({
     connectedDevices: 0,
     maxDevices: 10,
   },
+  bridgeConfig: {
+    name: "",
+    ipAddress: "",
+    subnetMask: "",
+    gateway: "",
+    dhcp: false,
+    mtu: "1500",
+    interfaceMode: "bridge",
+    bondMode: "active-backup",
+  },
   isEditing: false,
   error: null,
   successMessage: null,
   setSettings: (updatedSettings) =>
     set((state) => ({
       settings: { ...state.settings, ...updatedSettings },
+    })),
+  setBridgeConfig: (updatedConfig) =>
+    set((state) => ({
+      bridgeConfig: { ...state.bridgeConfig, ...updatedConfig },
     })),
   toggleHotspot: () =>
     set((state) => ({

@@ -37,6 +37,7 @@ import "react-image-crop/dist/ReactCrop.css";
 import Header from ".//Header";
 import Toolbar from "./Toolbar";
 import EditorTabs from "./EditorTabs";
+import { useOrientation } from "@/hooks/use-orientation";
 
 type EditState = {
   rotation: number;
@@ -90,6 +91,7 @@ const presets = {
 };
 
 export default function IconEditor() {
+  const isLandscape = useOrientation();
   const [iconSrc, setIconSrc] = useState<string | null>(null);
   const [editState, setEditState] = useState<EditState>(initialEditState);
   const [history, setHistory] = useState<EditState[]>([initialEditState]);
@@ -212,12 +214,22 @@ export default function IconEditor() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4">
+    <div className="min-h-screen bg-gray-900 text-white">
       <Header />
-      <div className="w-full max-w-5xl mx-auto p-4 space-y-4 lg:flex lg:flex-row lg:space-y-0 lg:space-x-4">
+      <div
+        className={`w-full max-w-7xl mx-auto p-4 ${
+          isLandscape
+            ? "flex flex-row space-x-4 h-[calc(100vh-5rem)] overflow-hidden"
+            : "space-y-4"
+        }`}
+      >
         <AnimatePresence>
           <motion.div
-            className="flex justify-center items-center h-64 bg-gray-800 rounded-lg overflow-hidden lg:w-1/2 lg:h-auto"
+            className={`flex justify-center items-center bg-gray-800 rounded-lg overflow-hidden ${
+              isLandscape
+                ? "w-1/2 h-full"
+                : "h-64 lg:h-[calc(100vh-16rem)]"
+            }`}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
@@ -264,7 +276,13 @@ export default function IconEditor() {
           onChange={handleFileChange}
           ref={fileInputRef}
         />
-        <div className="lg:w-1/2 lg:overflow-y-auto lg:max-h-[calc(100vh-4rem)]">
+        <div
+          className={`${
+            isLandscape
+              ? "w-1/2 h-full overflow-y-auto"
+              : "w-full"
+          }`}
+        >
           <Toolbar
             onUpload={() => fileInputRef.current?.click()}
             onDelete={handleDelete}
@@ -274,6 +292,7 @@ export default function IconEditor() {
             isCropping={isCropping}
             onCropApply={handleCropApply}
             onCropCancel={() => setIsCropping(false)}
+            isLandscape={isLandscape}
           />
           {iconSrc && (
             <EditorTabs
@@ -282,6 +301,7 @@ export default function IconEditor() {
               applyPreset={applyPreset}
               handleExport={handleExport}
               presets={presets}
+              isLandscape={isLandscape}
             />
           )}
         </div>

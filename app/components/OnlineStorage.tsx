@@ -71,7 +71,7 @@ export default function OnlineStorage() {
 
   return (
     <motion.div
-      className="dark bg-gray-900 min-h-screen "
+      className="dark bg-gray-900 min-h-screen container"
       variants={containerVariants}
       initial="hidden"
       animate="visible"

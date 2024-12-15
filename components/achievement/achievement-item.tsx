@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -15,14 +15,17 @@ interface AchievementItemProps {
   achievement: Achievement;
   onUnlock: (achievement: Achievement) => void;
   isMockMode: boolean;
+  animationStyle?: string;
 }
 
 export function AchievementItem({
   achievement,
   onUnlock,
   isMockMode,
+  animationStyle = "default",
 }: AchievementItemProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const progressPercentage =
     (achievement.progress / achievement.totalRequired) * 100;
 
@@ -37,7 +40,7 @@ export function AchievementItem({
 
   return (
     <motion.div
-      whileHover={{ scale: 1.02 }}
+      whileHover={{ scale: 1.02, y: -5 }}
       whileTap={{ scale: 0.98 }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
@@ -45,14 +48,16 @@ export function AchievementItem({
     >
       <Card
         className={`
-        w-full transition-all duration-300 ease-in-out
-        ${
-          achievement.isUnlocked
-            ? "dark:bg-gradient-to-r dark:from-green-900 dark:to-blue-900"
-            : "dark:bg-gray-800"
-        }
-        hover:shadow-xl dark:shadow-gray-900
-      `}
+          relative w-full transition-all duration-300 ease-in-out
+          ${
+            achievement.isUnlocked
+              ? "dark:bg-gradient-to-r dark:from-green-900 dark:to-blue-900"
+              : "dark:bg-gray-800"
+          }
+          hover:shadow-xl dark:shadow-gray-900
+          ${showDetails ? "transform-gpu translate-y-[-10px]" : ""}
+        `}
+        onClick={() => setShowDetails(!showDetails)}
       >
         <CardHeader className="flex flex-row items-center space-x-4 pb-2">
           <motion.div
@@ -119,6 +124,35 @@ export function AchievementItem({
             )}
           </div>
         </CardContent>
+        <AnimatePresence>
+          {showDetails && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="px-4 pb-4"
+            >
+              <p className="text-sm dark:text-gray-300">
+                {achievement.detailedDescription}
+              </p>
+              <div className="mt-2">
+                <h4 className="font-semibold">Completion Steps:</h4>
+                <ul className="list-disc list-inside">
+                  {achievement.steps?.map((step, index) => (
+                    <li
+                      key={index}
+                      className={`text-sm ${
+                        step.completed ? "text-green-500" : "text-gray-500"
+                      }`}
+                    >
+                      {step.description}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </Card>
     </motion.div>
   );

@@ -27,6 +27,7 @@ type ToolbarProps = {
   isCropping: boolean;
   onCropApply: () => void;
   onCropCancel: () => void;
+  isLandscape: boolean;
 };
 
 export default function Toolbar({
@@ -38,10 +39,13 @@ export default function Toolbar({
   isCropping,
   onCropApply,
   onCropCancel,
+  isLandscape,
 }: ToolbarProps) {
   return (
     <motion.div
-      className="flex flex-wrap justify-center gap-2 mb-4 lg:justify-start"
+      className={`flex flex-wrap gap-2 mb-4 ${
+        isLandscape ? "justify-start" : "justify-center"
+      }`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 0.3, duration: 0.5 }}

@@ -6,14 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -22,14 +14,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import {
   Play,
   Pause,
   Edit,
   Trash,
   Check,
-  X,
   Plus,
   Sun,
   Moon,
@@ -41,6 +31,10 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip";
 import { motion } from "framer-motion";
+import ScriptTable from "@/components/script/ScriptTable";
+import CreateScriptDialog from "@/components/script/CreateScriptDialog";
+import EditScriptDialog from "@/components/script/ScriptEditor";
+import { Label } from "@/components/ui/label";
 
 interface Script {
   id: number;
@@ -180,64 +174,11 @@ export default function ScriptsPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full sm:w-1/3"
           />
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                创建新脚本
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>创建新脚本</DialogTitle>
-                <DialogDescription>输入新脚本的名称和内容。</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label
-                    htmlFor="name"
-                    className="text-right text-gray-700 dark:text-gray-300"
-                  >
-                    名称
-                  </Label>
-                  <Input
-                    id="name"
-                    value={newScript.name}
-                    onChange={(e) =>
-                      setNewScript({ ...newScript, name: e.target.value })
-                    }
-                    className="col-span-3"
-                    placeholder="输入脚本名称"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-start gap-4">
-                  <Label
-                    htmlFor="content"
-                    className="text-right mt-2 text-gray-700 dark:text-gray-300"
-                  >
-                    内容
-                  </Label>
-                  <Textarea
-                    id="content"
-                    value={newScript.content}
-                    onChange={(e) =>
-                      setNewScript({ ...newScript, content: e.target.value })
-                    }
-                    className="col-span-3"
-                    placeholder="输入脚本内容"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  onClick={handleCreateScript}
-                  disabled={!newScript.name || !newScript.content}
-                >
-                  创建脚本
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <CreateScriptDialog
+            newScript={newScript}
+            setNewScript={setNewScript}
+            handleCreateScript={handleCreateScript}
+          />
           <Button onClick={toggleDarkMode} variant="ghost">
             {darkMode ? (
               <Sun className="h-4 w-4" />
@@ -260,104 +201,13 @@ export default function ScriptsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-gray-700 dark:text-gray-300">
-                    名称
-                  </TableHead>
-                  <TableHead className="text-gray-700 dark:text-gray-300">
-                    状态
-                  </TableHead>
-                  <TableHead className="text-gray-700 dark:text-gray-300">
-                    操作
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredScripts.map((script) => (
-                  <TableRow key={script.id}>
-                    <TableCell className="text-gray-800 dark:text-gray-200">
-                      {script.name}
-                    </TableCell>
-                    <TableCell>
-                      {script.status === "running" ? (
-                        <div className="flex items-center space-x-1 text-yellow-500">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>运行中</span>
-                        </div>
-                      ) : script.status === "paused" ? (
-                        <div className="flex items-center space-x-1 text-orange-500">
-                          <Pause className="h-4 w-4" />
-                          <span>已暂停</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center space-x-1 text-green-500">
-                          <Check className="h-4 w-4" />
-                          <span>空闲</span>
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        {script.status !== "running" && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => handleRunScript(script.id)}
-                              >
-                                <Play className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>运行脚本</TooltipContent>
-                          </Tooltip>
-                        )}
-                        {script.status === "running" && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => handlePauseScript(script.id)}
-                              >
-                                <Pause className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>暂停脚本</TooltipContent>
-                          </Tooltip>
-                        )}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => handleEditScript(script)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>编辑脚本</TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="destructive"
-                              size="icon"
-                              onClick={() => handleDeleteScript(script.id)}
-                            >
-                              <Trash className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>删除脚本</TooltipContent>
-                        </Tooltip>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <ScriptTable
+              scripts={filteredScripts}
+              handleRunScript={handleRunScript}
+              handlePauseScript={handlePauseScript}
+              handleEditScript={handleEditScript}
+              handleDeleteScript={handleDeleteScript}
+            />
           </CardContent>
         </Card>
       </motion.div>
@@ -379,9 +229,11 @@ export default function ScriptsPage() {
                 </Label>
                 <Input
                   id="edit-name"
-                  value={editScript.name}
+                  value={editScript?.name || ""}
                   onChange={(e) =>
-                    setEditScript({ ...editScript, name: e.target.value })
+                    setEditScript((prev) =>
+                      prev ? { ...prev, name: e.target.value } : prev
+                    )
                   }
                   className="col-span-3"
                   placeholder="输入脚本名称"
@@ -396,9 +248,11 @@ export default function ScriptsPage() {
                 </Label>
                 <Textarea
                   id="edit-content"
-                  value={editScript.content}
+                  value={editScript?.content || ""}
                   onChange={(e) =>
-                    setEditScript({ ...editScript, content: e.target.value })
+                    setEditScript((prev) =>
+                      prev ? { ...prev, content: e.target.value } : prev
+                    )
                   }
                   className="col-span-3"
                   placeholder="输入脚本内容"
@@ -408,7 +262,7 @@ export default function ScriptsPage() {
             <DialogFooter>
               <Button
                 onClick={saveEditedScript}
-                disabled={!editScript.name || !editScript.content}
+                disabled={!editScript?.name || !editScript?.content}
               >
                 保存修改
               </Button>
