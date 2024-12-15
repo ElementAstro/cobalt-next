@@ -1,4 +1,4 @@
-import { useDomeStore } from "@/lib/store/dome";
+import { useDomeStore } from "@/lib/store/device/dome";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

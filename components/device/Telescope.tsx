@@ -17,7 +17,7 @@ import {
 import { useMockBackend } from "@/utils/mock-device";
 import { DeviceSelector } from "./DeviceSelector";
 import { motion } from "framer-motion";
-import { useMountStore } from "@/lib/store/device";
+import { useMountStore } from "@/lib/store/device/telescope";
 import styled from "styled-components";
 
 const Container = styled(motion.div)`

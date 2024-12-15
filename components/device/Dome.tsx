@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { useDomeStore } from "@/lib/store/device";
+import { useDomeStore } from "@/lib/store/device/dome";
 import { domeApi } from "@/services/device/dome";
 import { mockDomeApi } from "@/utils/mock-dome";
 

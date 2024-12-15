@@ -1,5 +1,5 @@
 import { api } from "@/services/axios";
-import { useDomeStore } from "@/lib/store/device";
+import { useDomeStore } from "@/lib/store/device/dome";
 import * as yup from "yup";
 import logger from "@/lib/logger";
 

@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useFilterWheelStore } from "@/lib/store/device";
+import { useFilterWheelStore } from "@/lib/store/device/filterwheel";
 import { DeviceSelector } from "./DeviceSelector";
 import { motion } from "framer-motion";
 import styled from "styled-components";

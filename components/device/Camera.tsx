@@ -11,7 +11,7 @@ import { LineChart } from "@/components/chart/TemperatureLineChart";
 import { useMockBackend } from "@/utils/mock-device";
 import { DeviceSelector } from "./DeviceSelector";
 import { motion } from "framer-motion";
-import { useCameraStore, TempDataPoint } from "@/lib/store/device";
+import { useCameraStore, TempDataPoint } from "@/lib/store/device/camera";
 
 const Container = styled(motion.div)`
   color: white;

@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMediaQuery } from "react-responsive";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -70,9 +71,9 @@ export default function ConnectionForm({
     connectionStrength,
     connectionHistory,
     isDarkMode,
-    isRegistered, // 获取注册状态
+    isRegistered,
     loadFromCookies,
-    loadRegistration, // 加载注册状态
+    loadRegistration,
     saveToCookies,
     updateFormData,
     setConnected,
@@ -96,7 +97,7 @@ export default function ConnectionForm({
 
   useEffect(() => {
     loadFromCookies();
-    loadRegistration(); // 加载注册状态
+    loadRegistration();
   }, [loadFromCookies, loadRegistration]);
 
   useEffect(() => {
@@ -112,9 +113,10 @@ export default function ConnectionForm({
     document.body.classList.toggle("dark", isDarkMode);
   }, [isDarkMode]);
 
+  const isDesktop = useMediaQuery({ minWidth: 768 });
+
   const handleConnect = async (values: z.infer<typeof formSchema>) => {
     setLoading(true);
-    // 模拟连接过程
     await new Promise((resolve) => setTimeout(resolve, 2000));
     if (values.ip && values.username && values.password) {
       setConnected(true);
@@ -127,7 +129,7 @@ export default function ConnectionForm({
         ip: values.ip,
         port: values.port,
         username: values.username,
-        password: "", // 不保存密码
+        password: "",
         isSSL: formData.isSSL,
         rememberLogin: formData.rememberLogin,
       });
@@ -167,12 +169,10 @@ export default function ConnectionForm({
   };
 
   const handleSaveConfig = () => {
-    // 实现保存配置逻辑
     console.log("Saving configuration:", form.getValues());
   };
 
   const handleLoadConfig = () => {
-    // 实现加载配置逻辑
     console.log("Loading configuration");
   };
 
@@ -188,187 +188,264 @@ export default function ConnectionForm({
 
   return (
     <div
-      className={`h-screen w-screen bg-background p-2 flex flex-row ${
-        isDarkMode ? "dark" : ""
-      } overflow-hidden`}
+      className={`h-screen w-screen bg-background p-2 flex ${
+        isDesktop ? "flex-row" : "flex-col"
+      } ${isDarkMode ? "dark" : ""} overflow-hidden`}
     >
       <ConnectionAlert showAlert={showAlert} alertType={alertType} />
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="flex-grow flex flex-row items-center justify-center h-full space-x-4"
-      >
-        <Card className="w-full max-w-md bg-gray-800 shadow-lg h-full flex flex-col">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xl font-normal flex items-center gap-2 text-white">
-              <Plug className="w-6 h-6 text-blue-400" />
-              连接
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              {isConnected && (
-                <Badge
-                  variant={connectionStrength > 50 ? "default" : "secondary"}
-                >
-                  {connectionStrength > 50 ? (
-                    <Wifi className="w-4 h-4 mr-1 text-green-400" />
-                  ) : (
-                    <WifiOff className="w-4 h-4 mr-1 text-red-400" />
-                  )}
-                  {connectionStrength}%
-                </Badge>
-              )}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={toggleHistoryVisibility}
-                      className="text-purple-400"
-                    >
-                      <History className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>连接历史</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleCollapse}
-                className="text-gray-400"
-              >
-                {isCollapsed ? (
-                  <ChevronDown className="w-4 h-4" />
-                ) : (
-                  <ChevronUp className="w-4 h-4" />
+      {isDesktop ? (
+        // 桌面端布局
+        <div className="flex-grow flex flex-row items-center justify-center h-full space-x-4">
+          <Card className="w-full max-w-lg bg-gray-800 shadow-lg h-full flex flex-col">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-2xl font-semibold flex items-center gap-2 text-white">
+                <Plug className="w-6 h-6 text-blue-400" />
+                连接 (桌面)
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                {isConnected && (
+                  <Badge
+                    variant={connectionStrength > 50 ? "default" : "secondary"}
+                  >
+                    {connectionStrength > 50 ? (
+                      <Wifi className="w-4 h-4 mr-1 text-green-400" />
+                    ) : (
+                      <WifiOff className="w-4 h-4 mr-1 text-red-400" />
+                    )}
+                    {connectionStrength}%
+                  </Badge>
                 )}
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="flex-1">
-            <Tabs
-              value={activeTab}
-              onValueChange={setActiveTab}
-              className="w-full"
-            >
-              <TabsList className="grid w-full grid-cols-2 bg-gray-700 rounded-md">
-                <TabsTrigger value="connection" className="text-white">
-                  连接
-                </TabsTrigger>
-                <TabsTrigger value="advanced" className="text-white">
-                  高级设置
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="connection">
-                <AnimatePresence>
-                  {!isCollapsed && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <ScrollArea className="h-full pr-4 overflow-hidden">
-                        <Form {...form}>
-                          <form
-                            onSubmit={form.handleSubmit(handleConnect)}
-                            className="space-y-3"
-                          >
-                            <ConnectionDetails
-                              form={form}
-                              isSSL={formData.isSSL}
-                              setIsSSL={(val) => updateFormData({ isSSL: val })}
-                            />
-                            <LoginForm
-                              form={form}
-                              showPassword={showPassword}
-                              togglePasswordVisibility={
-                                togglePasswordVisibility
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={toggleHistoryVisibility}
+                        className="text-purple-400"
+                      >
+                        <History className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>连接历史</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleCollapse}
+                  className="text-gray-400"
+                >
+                  {isCollapsed ? (
+                    <ChevronDown className="w-4 h-4" />
+                  ) : (
+                    <ChevronUp className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1">
+              <AnimatePresence>
+                {!isCollapsed && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <ScrollArea className="h-full pr-4 overflow-hidden">
+                      <Form {...form}>
+                        <form
+                          onSubmit={form.handleSubmit(handleConnect)}
+                          className="space-y-3"
+                        >
+                          <ConnectionDetails
+                            form={form}
+                            isSSL={formData.isSSL}
+                            setIsSSL={(val) => updateFormData({ isSSL: val })}
+                          />
+                          <LoginForm
+                            form={form}
+                            showPassword={showPassword}
+                            togglePasswordVisibility={togglePasswordVisibility}
+                          />
+
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              id="remember"
+                              checked={formData.rememberLogin}
+                              onCheckedChange={(checked) =>
+                                updateFormData({ rememberLogin: checked })
                               }
                             />
+                            <Label htmlFor="remember" className="text-white">
+                              记住登录数据
+                            </Label>
+                          </div>
 
-                            <div className="flex items-center gap-2">
-                              <Switch
-                                id="remember"
-                                checked={formData.rememberLogin}
-                                onCheckedChange={(checked) =>
-                                  updateFormData({ rememberLogin: checked })
-                                }
-                              />
-                              <Label htmlFor="remember" className="text-white">
-                                记住登录数据
-                              </Label>
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-4">
-                              <Button
-                                onClick={togglePortScanModal}
-                                className="w-full flex items-center justify-center"
-                                disabled={isConnected}
-                              >
-                                打开端口扫描
-                              </Button>
-                              <Button
-                                type="submit"
-                                className="w-full flex items-center justify-center"
-                                disabled={isConnected || isLoading}
-                              >
-                                {isLoading ? (
-                                  <motion.div
-                                    animate={{ rotate: 360 }}
-                                    transition={{
-                                      duration: 1,
-                                      repeat: Infinity,
-                                      ease: "linear",
-                                    }}
-                                  >
-                                    <Upload className="w-4 h-4 mr-2" />
-                                  </motion.div>
-                                ) : (
+                          <div className="grid grid-cols-3 gap-4">
+                            <Button
+                              onClick={togglePortScanModal}
+                              className="w-full flex items-center justify-center"
+                              disabled={isConnected}
+                            >
+                              打开端口扫描
+                            </Button>
+                            <Button
+                              type="submit"
+                              className="w-full flex items-center justify-center"
+                              disabled={isConnected || isLoading}
+                            >
+                              {isLoading ? (
+                                <motion.div
+                                  animate={{ rotate: 360 }}
+                                  transition={{
+                                    duration: 1,
+                                    repeat: Infinity,
+                                    ease: "linear",
+                                  }}
+                                >
                                   <Upload className="w-4 h-4 mr-2" />
-                                )}
-                                {isLoading ? "连接中..." : "连接"}
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                className="w-full flex items-center justify-center"
-                                onClick={handleDisconnect}
-                                disabled={!isConnected}
-                              >
-                                <Link2Off className="w-4 h-4 mr-2" />
-                                断开连接
-                              </Button>
-                            </div>
-                          </form>
-                        </Form>
-                      </ScrollArea>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </TabsContent>
-              <TabsContent value="advanced">
-                <AdvancedSettings
-                  handleSaveConfig={handleSaveConfig}
-                  handleLoadConfig={handleLoadConfig}
-                />
-              </TabsContent>
-            </Tabs>
+                                </motion.div>
+                              ) : (
+                                <Upload className="w-4 h-4 mr-2" />
+                              )}
+                              {isLoading ? "连接中..." : "连接"}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              className="w-full flex items-center justify-center"
+                              onClick={handleDisconnect}
+                              disabled={!isConnected}
+                            >
+                              <Link2Off className="w-4 h-4 mr-2" />
+                              断开连接
+                            </Button>
+                          </div>
+                        </form>
+                      </Form>
+                    </ScrollArea>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-            {isConnected && (
-              <div className="mt-1 space-y-1">
-                <Label className="text-white">连接强度</Label>
-                <Progress value={connectionStrength} className="w-full" />
+              <AdvancedSettings
+                handleSaveConfig={handleSaveConfig}
+                handleLoadConfig={handleLoadConfig}
+              />
+
+              {isConnected && (
+                <div className="mt-1 space-y-1">
+                  <Label className="text-white">连接强度</Label>
+                  <Progress value={connectionStrength} className="w-full" />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        // 移动端布局
+        <div className="flex-grow flex flex-col items-center justify-center h-full space-y-4">
+          <Card className="w-full p-4 bg-gray-800 shadow-lg">
+            <CardHeader className="flex flex-col items-center">
+              <CardTitle className="text-xl font-semibold text-white">
+                移动端连接
+              </CardTitle>
+              <div className="mt-2">
+                {isConnected && (
+                  <Badge
+                    variant={connectionStrength > 50 ? "default" : "secondary"}
+                  >
+                    {connectionStrength > 50 ? (
+                      <Wifi className="w-4 h-4 mr-1 text-green-400" />
+                    ) : (
+                      <WifiOff className="w-4 h-4 mr-1 text-red-400" />
+                    )}
+                    {connectionStrength}%
+                  </Badge>
+                )}
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(handleConnect)}
+                  className="space-y-3"
+                >
+                  <ConnectionDetails
+                    form={form}
+                    isSSL={formData.isSSL}
+                    setIsSSL={(val) => updateFormData({ isSSL: val })}
+                  />
+                  <LoginForm
+                    form={form}
+                    showPassword={showPassword}
+                    togglePasswordVisibility={togglePasswordVisibility}
+                  />
+
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="remember"
+                      checked={formData.rememberLogin}
+                      onCheckedChange={(checked) =>
+                        updateFormData({ rememberLogin: checked })
+                      }
+                    />
+                    <Label htmlFor="remember" className="text-white">
+                      记住登录数据
+                    </Label>
+                  </div>
+
+                  <div className="flex flex-col space-y-2">
+                    <Button
+                      onClick={togglePortScanModal}
+                      className="w-full flex items-center justify-center"
+                      disabled={isConnected}
+                    >
+                      打开端口扫描
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="w-full flex items-center justify-center"
+                      disabled={isConnected || isLoading}
+                    >
+                      {isLoading ? (
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            duration: 1,
+                            repeat: Infinity,
+                            ease: "linear",
+                          }}
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                        </motion.div>
+                      ) : (
+                        <Upload className="w-4 h-4 mr-2" />
+                      )}
+                      {isLoading ? "连接中..." : "连接"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="w-full flex items-center justify-center"
+                      onClick={handleDisconnect}
+                      disabled={!isConnected}
+                    >
+                      <Link2Off className="w-4 h-4 mr-2" />
+                      断开连接
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <ServerPortScanModal
         isOpen={isPortScanModalOpen}

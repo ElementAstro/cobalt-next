@@ -159,7 +159,7 @@ const LogPanel: React.FC = () => {
                   : selectedLogs.filter((id) => id !== log.id)
               );
             }}
-            className="mr-2"
+            className=""
           />
           <div className="flex-grow overflow-hidden">
             <div className="flex flex-wrap items-center space-x-2">
@@ -373,7 +373,10 @@ const LogPanel: React.FC = () => {
           : "border-gray-300 bg-white"
       }`}
     >
-      <Collapsible open={!isCollapsed} onOpenChange={setIsCollapsed}>
+      <Collapsible
+        open={!isCollapsed}
+        onOpenChange={() => setIsCollapsed(!isCollapsed)}
+      >
         <CollapsibleTrigger asChild>
           <Button
             variant="ghost"
@@ -468,9 +471,14 @@ const LogPanel: React.FC = () => {
                 />
               </div>
             </div>
-            <div className="flex flex-wrap items-center space-x-2">
-              <Button onClick={handleDownloadLogs} variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
+            <div className="flex flex-wrap items-center space-x-2 w-full">
+              <Button
+                onClick={handleDownloadLogs}
+                variant="outline"
+                size="sm"
+                className="flex-1"
+              >
+                <Download className="h-4 w-4 " />
                 下载
               </Button>
               <Select
@@ -491,38 +499,36 @@ const LogPanel: React.FC = () => {
                 onClick={handleDeleteLogs}
                 variant="outline"
                 size="sm"
-                className="text-red-600 dark:text-red-400"
+                className="text-red-600 dark:text-red-400 flex-1"
               >
-                <Trash className="h-4 w-4 mr-2" />
+                <Trash className="h-4 w-4 " />
                 删除选中
               </Button>
               <Button
                 onClick={() => sendMessage("refresh")}
                 variant="outline"
                 size="sm"
+                className="flex-1"
               >
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <RefreshCw className="h-4 w-4 " />
                 刷新日志
               </Button>
-              <Button onClick={handleUploadLogs} variant="outline" size="sm">
-                <Upload className="h-4 w-4 mr-2" />
+              <Button
+                onClick={handleUploadLogs}
+                variant="outline"
+                size="sm"
+                className="flex-1"
+              >
+                <Upload className="h-4 w-4 " />
                 上传日志
               </Button>
-              <input
+              <Input
                 type="file"
                 ref={fileInputRef}
                 style={{ display: "none" }}
                 onChange={handleFileChange}
                 accept=".json,.csv"
               />
-              <Button
-                onClick={toggleTheme}
-                variant="outline"
-                size="sm"
-                className="dark:bg-gray-700 dark:text-gray-200"
-              >
-                {theme === "dark" ? "浅色模式" : "暗色模式"}
-              </Button>
             </div>
           </motion.div>
         </CollapsibleContent>
@@ -530,19 +536,27 @@ const LogPanel: React.FC = () => {
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
-        className="flex-grow flex flex-col dark:text-gray-200"
+        className="flex-grow flex flex-col dark:text-gray-200 "
       >
         <TabsList className="justify-start">
-          <TabsTrigger value="logs">日志</TabsTrigger>
-          <TabsTrigger value="analysis">分析</TabsTrigger>
-          <TabsTrigger value="timeseries">时间序列</TabsTrigger>
-          <TabsTrigger value="comparison">对比</TabsTrigger>
+          <TabsTrigger value="logs" className="flex-1 text-center">
+            日志
+          </TabsTrigger>
+          <TabsTrigger value="analysis" className="flex-1 text-center">
+            分析
+          </TabsTrigger>
+          <TabsTrigger value="timeseries" className="flex-1 text-center">
+            时间序列
+          </TabsTrigger>
+          <TabsTrigger value="comparison" className="flex-1 text-center">
+            对比
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="logs" className="flex-grow">
           <div className="h-[calc(100vh-300px)]">
             <List
               ref={listRef}
-              height={window.innerHeight - 300}
+              height={window.innerHeight - (isCollapsed ? 100 : 250)}
               itemCount={paginatedLogs.length}
               itemSize={80}
               width="100%"
@@ -582,7 +596,7 @@ const LogPanel: React.FC = () => {
           <TimeSeriesChart logs={logs} />
         </TabsContent>
         <TabsContent value="comparison" className="flex-grow p-2">
-          <div className="mb-2">
+          <div className="">
             <Select
               value={comparisonTimeRange}
               onValueChange={(value: "1h" | "24h" | "7d") =>

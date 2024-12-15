@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { DeviceSelector } from "./DeviceSelector";
 import { motion } from "framer-motion";
-import { useFocuserStore } from "@/lib/store/device";
+import { useFocuserStore } from "@/lib/store/device/focuser";
 import styled from "styled-components";
 
 const Container = styled(motion.div)`
