@@ -2,11 +2,11 @@
 
 import React, { useState, useMemo } from "react";
 import { SearchBar } from "@/components/custom/SearchBar";
-import { ViewToggle } from "../../../components/software/view-toggle";
-import { SoftwareFilters } from "../../../components/software/software-filters";
-import { SoftwareList } from "../../../components/software/software-list";
-import { PaginationComponent as Pagination } from "../../../components/software/pagination";
-import { SoftwareDetail } from "../../../components/software/software-detail";
+import { ViewToggle } from "@/components/software/ViewToggle";
+import { SoftwareFilters } from "@/components/software/SoftwareFilters";
+import { SoftwareList } from "@/components/software/SoftwareList";
+import { PaginationComponent as Pagination } from "@/components/custom/Pagination";
+import { SoftwareDetail } from "@/components/software/SoftwareDetail";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Software, SortOption, FilterOption } from "@/types/software";
 

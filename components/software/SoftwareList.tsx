@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { motion } from "framer-motion";
 import { useStore } from "@/lib/store/software";
+import { useEffect, useState } from "react";
 
 interface SoftwareListProps {
   software: Software[];
@@ -19,6 +20,16 @@ interface SoftwareListProps {
 export function SoftwareList({ onViewDetail }: SoftwareListProps) {
   const software = useStore((state) => state.software);
   const view = useStore((state) => state.view);
+  const [isLandscape, setIsLandscape] = useState(false);
+
+  useEffect(() => {
+    const handleOrientationChange = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight);
+    };
+    window.addEventListener("resize", handleOrientationChange);
+    handleOrientationChange();
+    return () => window.removeEventListener("resize", handleOrientationChange);
+  }, []);
 
   const getViewClass = () => {
     switch (view) {
@@ -33,7 +44,9 @@ export function SoftwareList({ onViewDetail }: SoftwareListProps) {
 
   return (
     <motion.div
-      className={`${getViewClass()} dark:bg-gray-800 p-4 rounded-lg`}
+      className={`${getViewClass()} dark:bg-gray-800 p-4 rounded-lg ${
+        isLandscape ? "overflow-hidden" : ""
+      }`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}

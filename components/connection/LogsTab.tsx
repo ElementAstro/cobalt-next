@@ -27,7 +27,7 @@ export function LogsTab() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gray-900 p-4 rounded-lg shadow-xl max-w-4xl mx-auto"
+      className="bg-gray-900 p-4 rounded-lg shadow-xl mx-auto"
     >
       <div className="flex flex-col space-y-4">
         <div className="flex flex-col sm:flex-row gap-4 items-center">

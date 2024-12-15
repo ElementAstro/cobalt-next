@@ -3,14 +3,27 @@ import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { motion } from "framer-motion";
 import { useStore } from "@/lib/store/software";
+import { useEffect, useState } from "react";
 
 export function ViewToggle() {
   const view = useStore((state) => state.view);
   const setView = useStore((state) => state.setView);
+  const [isLandscape, setIsLandscape] = useState(false);
+
+  useEffect(() => {
+    const handleOrientationChange = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight);
+    };
+    window.addEventListener("resize", handleOrientationChange);
+    handleOrientationChange();
+    return () => window.removeEventListener("resize", handleOrientationChange);
+  }, []);
 
   return (
     <motion.div
-      className="flex space-x-2 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-md"
+      className={`flex space-x-2 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-md ${
+        isLandscape ? "flex-row" : "flex-col"
+      }`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}

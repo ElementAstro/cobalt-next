@@ -10,6 +10,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 interface SoftwareDetailProps {
   software: Software | null;
@@ -17,11 +18,26 @@ interface SoftwareDetailProps {
 }
 
 export function SoftwareDetail({ software, onClose }: SoftwareDetailProps) {
+  const [isLandscape, setIsLandscape] = useState(false);
+
+  useEffect(() => {
+    const handleOrientationChange = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight);
+    };
+    window.addEventListener("resize", handleOrientationChange);
+    handleOrientationChange();
+    return () => window.removeEventListener("resize", handleOrientationChange);
+  }, []);
+
   if (!software) return null;
 
   return (
     <Dialog open={!!software} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+      <DialogContent
+        className={`sm:max-w-[425px] dark:bg-gray-800 p-6 rounded-lg shadow-lg ${
+          isLandscape ? "w-full" : ""
+        }`}
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}

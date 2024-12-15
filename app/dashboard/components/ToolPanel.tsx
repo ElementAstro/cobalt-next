@@ -201,7 +201,7 @@ export default function ToolPanel() {
   }
 
   return (
-    <Tabs defaultValue={CATEGORY_ORDER[0]}>
+    <Tabs defaultValue={CATEGORY_ORDER[0]} className="flex flex-col h-full">
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 p-4 bg-gray-900">
         <TabsList className="w-full md:w-auto">
           {CATEGORY_ORDER.map((category) => (
@@ -220,32 +220,34 @@ export default function ToolPanel() {
         />
       </div>
 
-      {CATEGORY_ORDER.map((category) => (
-        <TabsContent
-          key={category}
-          value={category}
-          className="transition-opacity duration-500 ease-in-out p-4"
-        >
-          <ScrollArea className="overflow-y-auto max-h-[450px] h-full">
-            <DndContext onDragEnd={handleDragEnd}>
-              <motion.div
-                className="p-4 bg-gray-800 flex flex-col md:flex-row flex-wrap"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <CategorySection
-                  category={category}
-                  tools={filteredTools.filter(
-                    (tool) => tool.category === category
-                  )}
-                  onSelectTool={handleSelectTool}
-                />
-              </motion.div>
-            </DndContext>
-          </ScrollArea>
-        </TabsContent>
-      ))}
+      <div className="flex-1 overflow-hidden">
+        {CATEGORY_ORDER.map((category) => (
+          <TabsContent
+            key={category}
+            value={category}
+            className="transition-opacity duration-500 ease-in-out p-4 h-full"
+          >
+            <ScrollArea className="overflow-y-auto h-full">
+              <DndContext onDragEnd={handleDragEnd}>
+                <motion.div
+                  className="p-4 bg-gray-800 flex flex-col md:flex-row flex-wrap"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <CategorySection
+                    category={category}
+                    tools={filteredTools.filter(
+                      (tool) => tool.category === category
+                    )}
+                    onSelectTool={handleSelectTool}
+                  />
+                </motion.div>
+              </DndContext>
+            </ScrollArea>
+          </TabsContent>
+        ))}
+      </div>
     </Tabs>
   );
 }

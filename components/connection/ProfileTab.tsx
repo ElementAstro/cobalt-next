@@ -132,7 +132,7 @@ export function ProfileTab({ toast }: ProfileTabProps) {
       animate="animate"
       exit="exit"
       variants={fadeInUp}
-      className="container mx-auto p-4 space-y-6"
+      className="mx-auto space-y-4"
     >
       <Card className="dark:bg-gray-800">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

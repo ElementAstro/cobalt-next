@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import { EnhancedSpan } from "./Span";
+import { Span } from "./Span";
 import { Mail } from "lucide-react";
 
 // Mock framer-motion to avoid animation-related issues in tests
@@ -11,7 +11,7 @@ jest.mock("framer-motion", () => ({
   },
 }));
 
-describe("EnhancedSpan", () => {
+describe("Span", () => {
   const mockClipboard = {
     writeText: jest.fn(),
   };
@@ -34,18 +34,18 @@ describe("EnhancedSpan", () => {
 
   describe("Basic Rendering", () => {
     it("renders children correctly", () => {
-      render(<EnhancedSpan>Test Content</EnhancedSpan>);
+      render(<Span>Test Content</Span>);
       expect(screen.getByText("Test Content")).toBeInTheDocument();
     });
 
     it("renders with icon", () => {
-      render(<EnhancedSpan icon={Mail}>With Icon</EnhancedSpan>);
+      render(<Span icon={Mail}>With Icon</Span>);
       const iconContainer = screen.getByText("With Icon").parentElement;
       expect(iconContainer?.firstChild).toHaveClass("mr-1", "h-4", "w-4");
     });
 
     it("applies custom className", () => {
-      render(<EnhancedSpan className="custom-class">Content</EnhancedSpan>);
+      render(<Span className="custom-class">Content</Span>);
       expect(screen.getByText("Content")).toHaveClass("custom-class");
     });
   });
@@ -54,7 +54,7 @@ describe("EnhancedSpan", () => {
     it.each(["default", "success", "warning", "error", "info"] as const)(
       "applies %s variant styles correctly",
       (variant) => {
-        render(<EnhancedSpan variant={variant}>Content</EnhancedSpan>);
+        render(<Span variant={variant}>Content</Span>);
         const element = screen.getByText("Content");
         const expectedClass = {
           default: "text-gray-800",
@@ -70,7 +70,7 @@ describe("EnhancedSpan", () => {
     it.each(["sm", "md", "lg"] as const)(
       "applies %s size correctly",
       (size) => {
-        render(<EnhancedSpan size={size}>Content</EnhancedSpan>);
+        render(<Span size={size}>Content</Span>);
         const expectedClass = {
           sm: "text-sm",
           md: "text-base",
@@ -83,7 +83,7 @@ describe("EnhancedSpan", () => {
 
   describe("Interactive Features", () => {
     it("handles copy functionality", async () => {
-      render(<EnhancedSpan copyable>Copy Text</EnhancedSpan>);
+      render(<Span copyable>Copy Text</Span>);
       const copyButton = screen.getByRole("button");
 
       fireEvent.click(copyButton);
@@ -97,7 +97,7 @@ describe("EnhancedSpan", () => {
     });
 
     it("renders tooltip when provided", () => {
-      render(<EnhancedSpan tooltip="Tooltip Text">Hover Me</EnhancedSpan>);
+      render(<Span tooltip="Tooltip Text">Hover Me</Span>);
       expect(screen.getByText("Hover Me")).toBeInTheDocument();
       expect(screen.getByText("Tooltip Text")).toBeInTheDocument();
     });
@@ -106,7 +106,7 @@ describe("EnhancedSpan", () => {
   describe("Style Combinations", () => {
     it("combines multiple style props correctly", () => {
       render(
-        <EnhancedSpan
+        <Span
           variant="success"
           size="lg"
           truncate
@@ -114,7 +114,7 @@ describe("EnhancedSpan", () => {
           highlightOnHover
         >
           Content
-        </EnhancedSpan>
+        </Span>
       );
 
       const element = screen.getByText("Content");
@@ -128,7 +128,7 @@ describe("EnhancedSpan", () => {
     });
 
     it("applies maxWidth style correctly", () => {
-      render(<EnhancedSpan maxWidth="200px">Content</EnhancedSpan>);
+      render(<Span maxWidth="200px">Content</Span>);
       expect(screen.getByText("Content")).toHaveStyle({ maxWidth: "200px" });
     });
   });
@@ -137,7 +137,7 @@ describe("EnhancedSpan", () => {
     it.each(["pulse", "bounce", "shake"] as const)(
       "applies %s animation correctly",
       (animate) => {
-        render(<EnhancedSpan animate={animate}>Content</EnhancedSpan>);
+        render(<Span animate={animate}>Content</Span>);
         const element = screen.getByText("Content");
         expect(element).toHaveAttribute("animate");
       }
@@ -148,7 +148,7 @@ describe("EnhancedSpan", () => {
     it.each(["opacity", "scale", "underline"] as const)(
       "applies %s hover effect correctly",
       (effect) => {
-        render(<EnhancedSpan hoverEffect={effect}>Content</EnhancedSpan>);
+        render(<Span hoverEffect={effect}>Content</Span>);
         const expectedClass = {
           opacity: "hover:opacity-80",
           scale: "hover:scale-105",

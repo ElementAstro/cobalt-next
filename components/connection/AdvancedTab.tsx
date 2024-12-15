@@ -43,12 +43,8 @@ export function AdvancedTab() {
       variants={container}
       initial="hidden"
       animate="show"
-      className="p-4 space-y-6 max-w-4xl mx-auto"
+      className="space-y-6 mx-auto"
     >
-      <motion.div variants={item}>
-        <h2 className="text-2xl font-bold text-white mb-6">高级设置</h2>
-      </motion.div>
-
       <motion.div variants={item}>
         <Card className="p-6 bg-gray-800/50 backdrop-blur">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

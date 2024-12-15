@@ -1,11 +1,21 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { AnimatePresence, motion, Reorder } from "framer-motion";
+import { useMediaQuery } from "react-responsive";
 import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+  Camera,
+  Crosshair,
+  ImageIcon,
+  Settings,
+  X,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -20,95 +30,115 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { AnimatePresence, motion } from "framer-motion";
-import {
-  Camera,
-  Crosshair,
-  ImageIcon,
+import { useImageSettingsStore } from "@/lib/store/settings/image";
+
+interface DraggableTagProps {
+  tag: { value: string };
+  onRemove: () => void;
+}
+
+const DraggableTag: React.FC<DraggableTagProps> = ({ tag, onRemove }) => (
+  <div className="bg-primary text-primary-foreground rounded-full px-2 py-1 text-xs flex items-center space-x-1">
+    <span>{tag.value}</span>
+    <button
+      onClick={onRemove}
+      className="focus:outline-none"
+      aria-label="Remove tag"
+    >
+      <X size={12} />
+    </button>
+  </div>
+);
+
+const iconMap: { [key: string]: React.ComponentType<any> } = {
   Settings,
-  Smartphone,
-} from "lucide-react";
-import { useEffect, useState } from "react";
-import { useMediaQuery } from "react-responsive";
+  Camera,
+  Image: ImageIcon,
+  Crosshair,
+};
 
 export default function ImageSettingsPanel() {
-  const [filePath, setFilePath] = useState("C:/Users/Documents/Images");
-  const [filePattern, setFilePattern] = useState(
-    "$$DATEMINUS12$$_$$IMAGETYPE$$_$$FRAMENR$$"
-  );
-  const [darkMode, setDarkMode] = useState(false);
-  const [autoSave, setAutoSave] = useState(true);
-  const [compressionLevel, setCompressionLevel] = useState(5);
+  const {
+    filePath,
+    filePattern,
+    darkMode,
+    autoSave,
+    compressionLevel,
+    tags,
+    filePatternConfig,
+    setFilePath,
+    setFilePattern,
+    setDarkMode,
+    setAutoSave,
+    setCompressionLevel,
+    addTag,
+    removeTag,
+    reorderTags,
+    setFilePatternConfig,
+  } = useImageSettingsStore();
 
-  const isLandscape = useMediaQuery({
+  const [isLandscape, setIsLandscape] = useState(false);
+  const [showLandscapeWarning, setShowLandscapeWarning] = useState(false);
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+
+  const landscapeQuery = useMediaQuery({
     query: "(orientation: landscape) and (max-width: 768px)",
   });
 
   useEffect(() => {
+    setIsLandscape(landscapeQuery);
+  }, [landscapeQuery]);
+
+  useEffect(() => {
     if (isLandscape) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
+      setShowLandscapeWarning(true);
+      const timer = setTimeout(() => setShowLandscapeWarning(false), 5000);
+      return () => clearTimeout(timer);
     }
-    return () => {
-      document.body.style.overflow = "auto";
-    };
   }, [isLandscape]);
 
   const handleDarkModeToggle = () => {
     setDarkMode(!darkMode);
-    // Here you would typically update your app's theme
+  };
+
+  const loadFilePatternFromJSON = (json: string) => {
+    try {
+      const config = JSON.parse(json);
+      setFilePatternConfig(config);
+    } catch (error) {
+      console.error("Invalid JSON for file pattern configuration", error);
+    }
+  };
+
+  const toggleSection = (section: string) => {
+    setExpandedSection(expandedSection === section ? null : section);
   };
 
   return (
     <div
-      className={`w-full max-w-3xl mx-auto p-6 space-y-6 rounded-lg shadow transition-colors duration-300 ${
+      className={`w-full max-w-3xl mx-auto p-4 space-y-4 rounded-lg shadow transition-colors duration-300 ${
         darkMode ? "bg-gray-800 text-white" : "bg-white"
       }`}
     >
-      {isLandscape && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-white p-4 rounded-lg">
-            <Smartphone className="w-12 h-12 mx-auto mb-2" />
-            <p className="text-center">
-              Please rotate your device for the best experience
-            </p>
-          </div>
-        </div>
-      )}
-
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="flex justify-between items-center"
       >
-        <h2 className="text-xl font-semibold">File settings</h2>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Switch
-                checked={darkMode}
-                onCheckedChange={handleDarkModeToggle}
-              />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Toggle dark mode</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <h2 className="text-lg font-semibold">File settings</h2>
       </motion.div>
 
       <motion.div
-        className="space-y-4"
+        className="space-y-3"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.5 }}
       >
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Save image as</label>
+        <div className="space-y-1">
+          <Label className="text-sm font-medium">Save image as</Label>
           <Select defaultValue="FITS">
-            <SelectTrigger>
+            <SelectTrigger className="h-8 text-sm">
               <SelectValue placeholder="Select format" />
             </SelectTrigger>
             <SelectContent>
@@ -117,30 +147,46 @@ export default function ImageSettingsPanel() {
               <SelectItem value="TIFF">TIFF</SelectItem>
             </SelectContent>
           </Select>
-          <p className="text-sm text-muted-foreground">
-            This setting is ignored for DSLRs when using the native driver. The
-            camera's RAW format will be saved instead!
+          <p className="text-xs text-muted-foreground">
+            This setting is ignored for DSLRs when using the native driver.
           </p>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Image file path</label>
+        <div className="space-y-1">
+          <Label className="text-sm font-medium">Image file path</Label>
           <div className="flex gap-2">
             <Input
               value={filePath}
               onChange={(e) => setFilePath(e.target.value)}
-              className="flex-1"
+              className="h-8 text-sm flex-1"
             />
-            <Button variant="outline">Browse</Button>
+            <Button variant="outline" className="h-8 text-sm">
+              Browse
+            </Button>
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Image file pattern</label>
+        <div className="space-y-1">
+          <Label className="text-sm font-medium">Image file pattern</Label>
           <Input
             value={filePattern}
             onChange={(e) => setFilePattern(e.target.value)}
+            className="h-8 text-sm"
           />
+          <div className="mt-1">
+            <Reorder.Group
+              axis="x"
+              values={tags}
+              onReorder={reorderTags}
+              className="flex flex-wrap gap-1"
+            >
+              {tags.map((tag, index) => (
+                <Reorder.Item key={tag.value} value={tag}>
+                  <DraggableTag tag={tag} onRemove={() => removeTag(index)} />
+                </Reorder.Item>
+              ))}
+            </Reorder.Group>
+          </div>
         </div>
 
         <div className="flex items-center space-x-2">
@@ -149,175 +195,104 @@ export default function ImageSettingsPanel() {
             checked={autoSave}
             onCheckedChange={setAutoSave}
           />
-          <Label htmlFor="auto-save">Auto-save settings</Label>
+          <Label htmlFor="auto-save" className="text-sm">
+            Auto-save settings
+          </Label>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
+        <div className="space-y-1">
+          <Label className="text-sm font-medium">
             Compression Level (1-10)
-          </label>
-          <Input
-            type="range"
-            min="1"
-            max="10"
-            value={compressionLevel}
-            onChange={(e) => setCompressionLevel(parseInt(e.target.value))}
-          />
-          <p className="text-sm text-muted-foreground">
-            Current level: {compressionLevel}
-          </p>
+          </Label>
+          <div className="flex items-center space-x-2">
+            <Input
+              type="range"
+              min="1"
+              max="10"
+              value={compressionLevel}
+              onChange={(e) => setCompressionLevel(parseInt(e.target.value))}
+              className="flex-1"
+            />
+            <span className="text-sm font-medium w-8 text-center">
+              {compressionLevel}
+            </span>
+          </div>
         </div>
       </motion.div>
 
-      <Accordion type="single" collapsible className="w-full">
-        <AccordionItem value="time">
-          <AccordionTrigger>
-            <span className="font-medium flex items-center">
-              <Settings className="w-5 h-5 mr-2" />
-              Time Parameters
-            </span>
-          </AccordionTrigger>
-          <AnimatePresence>
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
+      <div className="space-y-2">
+        {filePatternConfig.sections.map((section, index) => (
+          <div key={index} className="border rounded-md overflow-hidden">
+            <button
+              className="w-full p-2 flex justify-between items-center bg-gray-100 hover:bg-gray-200 transition-colors"
+              onClick={() => toggleSection(section.title)}
             >
-              <div className="space-y-4 p-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">$$DATE$$</label>
-                    <p className="text-sm text-muted-foreground">
-                      Date with format YYYY-MM-DD
-                    </p>
+              <span className="font-medium flex items-center text-sm">
+                {React.createElement(
+                  iconMap[section.icon as keyof typeof iconMap],
+                  { className: "w-4 h-4 mr-2" }
+                )}
+                {section.title}
+              </span>
+              {expandedSection === section.title ? (
+                <ChevronUp size={16} />
+              ) : (
+                <ChevronDown size={16} />
+              )}
+            </button>
+            <AnimatePresence>
+              {expandedSection === section.title && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div className="p-2 space-y-1">
+                    {section.tags.map((tag, tagIndex) => (
+                      <div
+                        key={tagIndex}
+                        className="flex items-center justify-between"
+                      >
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={() => addTag(tag)}
+                                className="text-xs font-medium hover:text-primary transition-colors"
+                              >
+                                {tag.value}
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs">{tag.description}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <span className="text-xs text-muted-foreground">
+                          Click to add
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <label className="text-sm font-medium">$$TIME$$</label>
-                    <p className="text-sm text-muted-foreground">
-                      Time with format HH-mm-ss
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </AccordionItem>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ))}
+      </div>
 
-        <AccordionItem value="camera">
-          <AccordionTrigger>
-            <span className="font-medium flex items-center">
-              <Camera className="w-5 h-5 mr-2" />
-              Camera Settings
-            </span>
-          </AccordionTrigger>
-          <AnimatePresence>
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="space-y-4 p-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">$$CAMERA$$</label>
-                    <p className="text-sm text-muted-foreground">Camera name</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">$$GAIN$$</label>
-                    <p className="text-sm text-muted-foreground">Camera gain</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">
-                      $$SENSORTEMP$$
-                    </label>
-                    <p className="text-sm text-muted-foreground">
-                      Camera temperature
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </AccordionItem>
-
-        <AccordionItem value="image">
-          <AccordionTrigger>
-            <span className="font-medium flex items-center">
-              <ImageIcon className="w-5 h-5 mr-2" />
-              Image Properties
-            </span>
-          </AccordionTrigger>
-          <AnimatePresence>
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="space-y-4 p-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">
-                      $$EXPOSURETIME$$
-                    </label>
-                    <p className="text-sm text-muted-foreground">
-                      Camera exposure time, in seconds
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">$$FRAMENR$$</label>
-                    <p className="text-sm text-muted-foreground">
-                      # of the frame with format ####
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">$$IMAGETYPE$$</label>
-                    <p className="text-sm text-muted-foreground">
-                      Light, Flat, Dark, Bias, Snapshot
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </AccordionItem>
-
-        <AccordionItem value="guider">
-          <AccordionTrigger>
-            <span className="font-medium flex items-center">
-              <Crosshair className="w-5 h-5 mr-2" />
-              Guider Settings
-            </span>
-          </AccordionTrigger>
-          <AnimatePresence>
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="space-y-4 p-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">$$PEAKDEC$$</label>
-                    <p className="text-sm text-muted-foreground">
-                      Peak Dec guiding error during exposure in pixels
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">$$PEAKRA$$</label>
-                    <p className="text-sm text-muted-foreground">
-                      Peak RA guiding error during exposure in pixels
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </AccordionItem>
-      </Accordion>
+      <div className="mt-4">
+        <Label className="text-sm font-medium">
+          Load File Pattern Configuration (JSON)
+        </Label>
+        <Textarea
+          className="mt-1"
+          rows={3}
+          placeholder="Paste your JSON configuration here"
+          onChange={(e) => loadFilePatternFromJSON(e.target.value)}
+        ></Textarea>
+      </div>
     </div>
   );
 }

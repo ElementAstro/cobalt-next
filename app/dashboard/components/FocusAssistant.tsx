@@ -52,7 +52,7 @@ export default function FocusAssistant() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="max-w-6xl mx-auto p-4 space-y-4"
+          className="mx-auto p-4 space-y-4"
         >
           <motion.div variants={itemVariants}>
             <Card className="bg-gray-800 border-gray-700 p-4">

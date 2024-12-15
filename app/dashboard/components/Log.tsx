@@ -117,16 +117,6 @@ const LogPanel: React.FC = () => {
     };
 
     fetchLogs();
-
-    workerRef.current = new Worker(
-      new URL("../../workers/log-worker.ts", import.meta.url)
-    );
-
-    return () => {
-      if (workerRef.current) {
-        workerRef.current.terminate();
-      }
-    };
   }, [logCount, isMockMode, setFilteredLogs, setLogs]);
 
   useEffect(() => {

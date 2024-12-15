@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface TargetSetOptions {
   coolCamera: boolean;
@@ -124,47 +124,58 @@ export function TargetSetHeader() {
               )}
             </Button>
           </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="space-y-4 mt-2">
-              <SwitchOption
-                id="cool-camera"
-                label="Cool Camera"
-                checked={options.coolCamera}
-                onChange={() => updateOption("coolCamera")}
-                description="保持相机冷却"
-              />
-              <SwitchOption
-                id="unpark-mount"
-                label="Unpark Mount"
-                checked={options.unparkMount}
-                onChange={() => updateOption("unparkMount")}
-                description="解锁安装架"
-              />
-              <SwitchOption
-                id="meridian-flip"
-                label="Meridian Flip"
-                checked={options.meridianFlip}
-                onChange={() => updateOption("meridianFlip")}
-                description="经过子午线时翻转安装架"
-              />
-              <div className="flex justify-end space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() => toggleAll("start", true)}
-                  className="text-teal-500"
-                >
-                  全部开启
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => toggleAll("start", false)}
-                  className="text-red-500"
-                >
-                  全部关闭
-                </Button>
-              </div>
-            </div>
-          </CollapsibleContent>
+          <AnimatePresence>
+            {!isStartOptionsCollapsed && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+              >
+                <CollapsibleContent>
+                  <div className="space-y-4 mt-2">
+                    <SwitchOption
+                      id="cool-camera"
+                      label="Cool Camera"
+                      checked={options.coolCamera}
+                      onChange={() => updateOption("coolCamera")}
+                      description="保持相机冷却"
+                    />
+                    <SwitchOption
+                      id="unpark-mount"
+                      label="Unpark Mount"
+                      checked={options.unparkMount}
+                      onChange={() => updateOption("unparkMount")}
+                      description="解锁安装架"
+                    />
+                    <SwitchOption
+                      id="meridian-flip"
+                      label="Meridian Flip"
+                      checked={options.meridianFlip}
+                      onChange={() => updateOption("meridianFlip")}
+                      description="经过子午线时翻转安装架"
+                    />
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => toggleAll("start", true)}
+                        className="text-teal-500"
+                      >
+                        全部开启
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => toggleAll("start", false)}
+                        className="text-red-500"
+                      >
+                        全部关闭
+                      </Button>
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Collapsible>
 
         {/* 结束选项 */}
@@ -187,54 +198,65 @@ export function TargetSetHeader() {
               )}
             </Button>
           </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="space-y-4 mt-2">
-              <SwitchOption
-                id="warm-camera"
-                label="Warm Camera"
-                checked={options.warmCamera}
-                onChange={() => updateOption("warmCamera")}
-                description="加热相机"
-              />
-              <SwitchOption
-                id="park-mount"
-                label="Park Mount"
-                checked={options.parkMount}
-                onChange={() => updateOption("parkMount")}
-                description="锁定安装架"
-              />
-              <SwitchOption
-                id="auto-calibrate"
-                label="Auto Calibrate"
-                checked={options.autoCalibrate}
-                onChange={() => updateOption("autoCalibrate")}
-                description="自动校准"
-              />
-              <SwitchOption
-                id="log-data"
-                label="Log Data"
-                checked={options.logData}
-                onChange={() => updateOption("logData")}
-                description="记录数据日志"
-              />
-              <div className="flex justify-end space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() => toggleAll("end", true)}
-                  className="text-teal-500"
-                >
-                  全部开启
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => toggleAll("end", false)}
-                  className="text-red-500"
-                >
-                  全部关闭
-                </Button>
-              </div>
-            </div>
-          </CollapsibleContent>
+          <AnimatePresence>
+            {!isEndOptionsCollapsed && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+              >
+                <CollapsibleContent>
+                  <div className="space-y-4 mt-2">
+                    <SwitchOption
+                      id="warm-camera"
+                      label="Warm Camera"
+                      checked={options.warmCamera}
+                      onChange={() => updateOption("warmCamera")}
+                      description="加热相机"
+                    />
+                    <SwitchOption
+                      id="park-mount"
+                      label="Park Mount"
+                      checked={options.parkMount}
+                      onChange={() => updateOption("parkMount")}
+                      description="锁定安装架"
+                    />
+                    <SwitchOption
+                      id="auto-calibrate"
+                      label="Auto Calibrate"
+                      checked={options.autoCalibrate}
+                      onChange={() => updateOption("autoCalibrate")}
+                      description="自动校准"
+                    />
+                    <SwitchOption
+                      id="log-data"
+                      label="Log Data"
+                      checked={options.logData}
+                      onChange={() => updateOption("logData")}
+                      description="记录数据日志"
+                    />
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => toggleAll("end", true)}
+                        className="text-teal-500"
+                      >
+                        全部开启
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => toggleAll("end", false)}
+                        className="text-red-500"
+                      >
+                        全部关闭
+                      </Button>
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Collapsible>
       </div>
     </motion.div>

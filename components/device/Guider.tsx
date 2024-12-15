@@ -17,6 +17,21 @@ import { useToast } from "@/hooks/use-toast";
 import { useGuiderStore } from "@/lib/store/device";
 import { DeviceSelector } from "./DeviceSelector";
 import { motion } from "framer-motion";
+import styled from "styled-components";
+
+const Container = styled(motion.div)`
+  color: white;
+  background-color: #1f2937;
+  min-height: 100vh;
+  padding: 1rem;
+`;
+
+const StyledCard = styled(Card)`
+  background-color: #374151;
+  border-color: #4b5563;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+`;
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -92,12 +107,7 @@ export function GuiderPage() {
   };
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="min-h-screen bg-gray-900 text-white p-4 dark:bg-gray-800"
-    >
+    <Container variants={containerVariants} initial="hidden" animate="visible">
       <DeviceSelector
         deviceType="Guider"
         devices={[
@@ -111,7 +121,7 @@ export function GuiderPage() {
         variants={itemVariants}
         className="mt-6 grid gap-4 lg:grid-cols-2"
       >
-        <Card className="bg-slate-800/50 shadow-lg rounded-lg">
+        <StyledCard>
           <CardHeader>
             <CardTitle>导星仪设置</CardTitle>
           </CardHeader>
@@ -138,11 +148,7 @@ export function GuiderPage() {
                 <Switch
                   id="show-corrections"
                   checked={guiderInfo.showCorrections}
-                  onCheckedChange={(checked) =>
-                    setGuiderSettings({
-                      showCorrections: checked,
-                    })
-                  }
+                  onCheckedChange={(checked) => setGuiderSettings({})}
                   className="bg-gray-700"
                 />
               </motion.div>
@@ -214,9 +220,9 @@ export function GuiderPage() {
               <div className="text-sm">{guiderInfo.description}</div>
             </motion.div>
           </CardContent>
-        </Card>
+        </StyledCard>
 
-        <Card className="bg-slate-800/50 shadow-lg rounded-lg">
+        <StyledCard>
           <CardHeader>
             <CardTitle>导星控制</CardTitle>
           </CardHeader>
@@ -257,8 +263,8 @@ export function GuiderPage() {
               </motion.div>
             </motion.div>
           </CardContent>
-        </Card>
+        </StyledCard>
       </motion.div>
-    </motion.div>
+    </Container>
   );
 }

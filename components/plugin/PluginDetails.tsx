@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Plugin } from "@/types/plugin";
 import { motion } from "framer-motion";
-import { usePluginStore } from "@/lib/store/plugin"; // 新增
+import { usePluginStore } from "@/lib/store/plugin";
+import { Span } from "@/components/custom/Span";
+import { Label } from "@/components/ui/label";
 
 interface PluginDetailsProps {
   plugin: Plugin;
@@ -72,7 +74,7 @@ export function PluginDetails({
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="container mx-auto px-4 py-8 bg-gray-800 rounded-lg shadow-lg dark:bg-gray-900"
+      className="mx-auto px-4 py-8 bg-gray-800 rounded-lg shadow-lg dark:bg-gray-900"
     >
       <motion.div variants={itemVariants} className="grid md:grid-cols-2 gap-8">
         <div className="flex justify-center">
@@ -94,12 +96,12 @@ export function PluginDetails({
             </p>
             <div className="flex items-center mb-4">
               <Star className="text-yellow-400 mr-1" />
-              <span className="text-gray-200">{plugin.rating.toFixed(1)}</span>
-              <span className="mx-2 text-gray-500">|</span>
+              <Span className="text-gray-200">{plugin.rating.toFixed(1)}</Span>
+              <Span className="mx-2 text-gray-500">|</Span>
               <Download className="mr-1 text-gray-400" />
-              <span className="text-gray-200">
+              <Span className="text-gray-200">
                 {plugin.downloads.toLocaleString()} 次下载
-              </span>
+              </Span>
             </div>
             <p className="mb-2 dark:text-gray-300">
               <strong>版本:</strong> {plugin.version} |{" "}
@@ -117,12 +119,12 @@ export function PluginDetails({
               </strong>
               <div className="flex flex-wrap mt-1">
                 {plugin.tags.map((tag) => (
-                  <span
+                  <Span
                     key={tag}
                     className="inline-block bg-gray-700 text-gray-200 rounded-full px-3 py-1 text-sm font-semibold mr-2 mb-2"
                   >
                     {tag}
-                  </span>
+                  </Span>
                 ))}
               </div>
             </div>
@@ -134,8 +136,8 @@ export function PluginDetails({
                 <h2 className="text-xl font-semibold mb-2">用户评价</h2>
                 {plugin.reviews.map((review, index) => (
                   <div key={index} className="mb-2">
-                    <p className="text-yellow-400">★ {review.rating}</p>
-                    <p className="text-gray-200">{review.comment}</p>
+                    <Span className="text-yellow-400">★ {review.rating}</Span>
+                    <Span className="text-gray-200">{review.comment}</Span>
                   </div>
                 ))}
               </div>
@@ -156,9 +158,9 @@ export function PluginDetails({
             ) : isInstalling ? (
               <div className="w-full flex flex-col items-center">
                 <Progress value={installProgress} className="w-full mb-2" />
-                <p className="text-gray-200 dark:text-gray-300">
+                <Span className="text-gray-200 dark:text-gray-300">
                   安装中... {installProgress}%
-                </p>
+                </Span>
               </div>
             ) : (
               <Button onClick={handleInstall} className="w-full" size="lg">
@@ -170,7 +172,7 @@ export function PluginDetails({
       </motion.div>
       <motion.div variants={itemVariants} className="mt-8">
         <h2 className="text-2xl font-bold mb-4 dark:text-white">详细描述</h2>
-        <p className="dark:text-gray-300">{plugin.longDescription}</p>
+        <Span className="dark:text-gray-300">{plugin.longDescription}</Span>
       </motion.div>
       <motion.div variants={itemVariants} className="mt-8">
         <h2 className="text-2xl font-bold mb-4 dark:text-white">系统要求</h2>

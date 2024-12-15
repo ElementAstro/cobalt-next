@@ -76,7 +76,7 @@ const SequencerEditor: React.FC<SequenceEditorProps> = ({ onClose }) => {
         >
           <ScrollArea style={{ height: "100vh" }}>
             <div className="min-h-screen bg-gray-950 text-white">
-              <div className="max-w-7xl mx-auto">
+              <div className="mx-auto">
                 <div className="space-y-1">
                   <motion.div
                     variants={itemVariants}

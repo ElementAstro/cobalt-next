@@ -18,6 +18,21 @@ import { useMockBackend } from "@/utils/mock-device";
 import { DeviceSelector } from "./DeviceSelector";
 import { motion } from "framer-motion";
 import { useMountStore } from "@/lib/store/device";
+import styled from "styled-components";
+
+const Container = styled(motion.div)`
+  color: white;
+  background-color: #1f2937;
+  min-height: 100vh;
+  padding: 1rem;
+`;
+
+const StyledCard = styled(Card)`
+  background-color: #374151;
+  border-color: #4b5563;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+`;
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -81,12 +96,7 @@ export function TelescopePage() {
   const mountStore = useMountStore();
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-4 p-4 text-white bg-gray-900 min-h-screen"
-    >
+    <Container variants={containerVariants} initial="hidden" animate="visible">
       <DeviceSelector
         deviceType="Telescope"
         devices={["Celestron CGX", "Skywatcher EQ6-R", "iOptron CEM60"]}
@@ -95,7 +105,7 @@ export function TelescopePage() {
         }
       />
       <motion.div variants={itemVariants} className="flex flex-col gap-4">
-        <Card className="bg-gray-800 border-gray-700 shadow-lg rounded-lg">
+        <StyledCard>
           <CardHeader>
             <CardTitle>Telescope Information</CardTitle>
           </CardHeader>
@@ -156,9 +166,9 @@ export function TelescopePage() {
               </motion.div>
             </motion.div>
           </CardContent>
-        </Card>
+        </StyledCard>
 
-        <Card className="bg-gray-800 border-gray-700 shadow-lg rounded-lg">
+        <StyledCard>
           <CardHeader>
             <CardTitle>Manual Control</CardTitle>
           </CardHeader>
@@ -242,9 +252,9 @@ export function TelescopePage() {
               </motion.div>
             </motion.div>
           </CardContent>
-        </Card>
+        </StyledCard>
 
-        <Card className="bg-gray-800 border-gray-700 shadow-lg rounded-lg">
+        <StyledCard>
           <CardHeader>
             <CardTitle>Slew to Coordinates</CardTitle>
           </CardHeader>
@@ -285,8 +295,8 @@ export function TelescopePage() {
               </motion.div>
             </motion.div>
           </CardContent>
-        </Card>
+        </StyledCard>
       </motion.div>
-    </motion.div>
+    </Container>
   );
 }

@@ -13,16 +13,18 @@ import { DeviceSelector } from "./DeviceSelector";
 import { motion } from "framer-motion";
 import { useCameraStore, TempDataPoint } from "@/lib/store/device";
 
-const Container = styled.div`
+const Container = styled(motion.div)`
   color: white;
-  display: flex;
-  flex-direction: column;
+  background-color: #1f2937;
+  min-height: 100vh;
+  padding: 1rem;
 `;
 
 const StyledCard = styled(Card)`
-  border-radius: 12px;
+  background-color: #374151;
+  border-color: #4b5563;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  background-color: #1f2937;
+  border-radius: 12px;
 `;
 
 const Grid = styled(motion.div)`
@@ -143,7 +145,7 @@ export function CameraPage() {
   };
 
   return (
-    <Container>
+    <Container variants={containerVariants} initial="hidden" animate="visible">
       <DeviceSelector
         deviceType="Camera"
         devices={["ZWO ASI294MC Pro", "QHY600M", "Atik 16200"]}

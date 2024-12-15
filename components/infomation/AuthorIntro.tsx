@@ -11,8 +11,7 @@ import {
   ChevronDown,
   ChevronUp,
   Instagram,
-  Sun,
-  Moon,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,8 +31,11 @@ import {
 } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, useAnimation } from "framer-motion";
+import { DependencyList } from "./DependencyList";
 import { ProjectList } from "./ProjectList";
 import { ContactForm } from "./ContactForm";
+import { GPL3LicenseDisplay } from "./GPL3LicenseDisplay";
+import { UpdateLogModal } from "./ChangeLog";
 
 interface AuthorIntroProps {
   name: string;
@@ -85,7 +87,7 @@ export function AuthorIntro({
           visible: { opacity: 1, y: 0 },
         }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-4xl mx-auto"
+        className="w-full mx-auto"
       >
         <Card className="overflow-hidden rounded-xl shadow-xl dark:bg-gray-800/50 border-none">
           <CardHeader>
@@ -105,6 +107,9 @@ export function AuthorIntro({
                 <CardTitle className="text-2xl">{name}</CardTitle>
                 <CardDescription>Project Author</CardDescription>
               </div>
+              <div className="ml-auto">
+                <UpdateLogModal />
+              </div>
             </motion.div>
           </CardHeader>
           <CardContent className="p-6">
@@ -113,10 +118,12 @@ export function AuthorIntro({
               onValueChange={setActiveTab}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="about">关于</TabsTrigger>
                 <TabsTrigger value="projects">项目</TabsTrigger>
                 <TabsTrigger value="contact">联系</TabsTrigger>
+                <TabsTrigger value="license">许可证</TabsTrigger>
+                <TabsTrigger value="dependencies">依赖</TabsTrigger>
               </TabsList>
               <TabsContent value="about">
                 <motion.div
@@ -181,6 +188,24 @@ export function AuthorIntro({
                   exit={{ opacity: 0 }}
                 >
                   <ContactForm />
+                </motion.div>
+              </TabsContent>
+              <TabsContent value="license">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <GPL3LicenseDisplay />
+                </motion.div>
+              </TabsContent>
+              <TabsContent value="dependencies">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <DependencyList />
                 </motion.div>
               </TabsContent>
             </Tabs>

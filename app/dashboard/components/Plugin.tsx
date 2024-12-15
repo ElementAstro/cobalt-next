@@ -4,7 +4,14 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { Search, Moon, Sun, Filter, Home } from "lucide-react";
 import { useTheme } from "next-themes";
-
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +22,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { AdvancedSearch } from "../../../components/plugin/AdvancedSearch";
 import { PluginDetails } from "../../../components/plugin/PluginDetails";
 import { VerticalTabs } from "../../../components/plugin/VerticalTabs";
@@ -234,12 +242,7 @@ export default function PluginPage() {
   };
 
   const renderFeaturedPlugins = () => (
-    <motion.section
-      variants={itemVariants}
-      initial="hidden"
-      animate="visible"
-      className="mt-6"
-    >
+    <motion.section variants={itemVariants} initial="hidden" animate="visible">
       <motion.h2
         variants={headerVariants}
         className="mb-6 text-2xl font-semibold"
@@ -404,49 +407,44 @@ export default function PluginPage() {
         Compare Plugins
       </motion.h2>
       <div className="overflow-x-auto">
-        <motion.table
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="w-full border-collapse"
-        >
-          <thead>
-            <tr>
-              <th className="border p-2">Feature</th>
+        <Table className="w-full border-collapse">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="border p-2">Feature</TableHead>
               {comparePlugins.map((plugin) => (
-                <th key={plugin.id} className="border p-2">
+                <TableHead key={plugin.id} className="border p-2">
                   {plugin.name}
-                </th>
+                </TableHead>
               ))}
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             <motion.tr variants={itemVariants}>
-              <td className="border p-2">Price</td>
+              <TableCell className="border p-2">Price</TableCell>
               {comparePlugins.map((plugin) => (
-                <td key={plugin.id} className="border p-2">
+                <TableCell key={plugin.id} className="border p-2">
                   {plugin.price}
-                </td>
+                </TableCell>
               ))}
             </motion.tr>
             <motion.tr variants={itemVariants}>
-              <td className="border p-2">Rating</td>
+              <TableCell className="border p-2">Rating</TableCell>
               {comparePlugins.map((plugin) => (
-                <td key={plugin.id} className="border p-2">
+                <TableCell key={plugin.id} className="border p-2">
                   {plugin.rating.toFixed(1)}
-                </td>
+                </TableCell>
               ))}
             </motion.tr>
             <motion.tr variants={itemVariants}>
-              <td className="border p-2">Downloads</td>
+              <TableCell className="border p-2">Downloads</TableCell>
               {comparePlugins.map((plugin) => (
-                <td key={plugin.id} className="border p-2">
+                <TableCell key={plugin.id} className="border p-2">
                   {plugin.downloads.toLocaleString()}
-                </td>
+                </TableCell>
               ))}
             </motion.tr>
-          </tbody>
-        </motion.table>
+          </TableBody>
+        </Table>
       </div>
     </motion.section>
   );
@@ -477,14 +475,14 @@ export default function PluginPage() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="flex flex-col h-screen overflow-hidden bg-background"
+      className="flex flex-col h-screen overflow-hidden bg-background w-full"
     >
-      <main className="flex-grow overflow-hidden" ref={mainContentRef}>
+      <ScrollArea className="flex-grow overflow-hidden" ref={mainContentRef}>
         <motion.div
           variants={itemVariants}
           initial="hidden"
           animate="visible"
-          className="container mx-auto py-6 px-4 sm:px-6 lg:px-8 h-full overflow-y-auto"
+          className="mx-auto py-6 px-4 sm:px-6 lg:px-8 h-full overflow-y-auto"
         >
           <AutocompleteSearch
             plugins={plugins}
@@ -558,7 +556,7 @@ export default function PluginPage() {
             </motion.div>
           )}
         </motion.div>
-      </main>
+      </ScrollArea>
       <ConfirmDialog
         isOpen={showConfirmDialog}
         onClose={() => setShowConfirmDialog(false)}

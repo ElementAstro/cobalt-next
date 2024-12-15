@@ -104,7 +104,7 @@ export default function DeviceConnection() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-4xl mx-auto h-full max-h-screen"
+      className="w-full mx-auto h-full max-h-screen mt-2"
     >
       <Card className="h-full">
         <CardContent>
