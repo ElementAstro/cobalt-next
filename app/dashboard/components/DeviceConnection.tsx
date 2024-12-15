@@ -7,10 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, X, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { ProfileTab } from "../../components/connection/ProfileTab";
-import { DevicesTab } from "../../components/connection/DevicesTab";
-import { AdvancedTab } from "../../components/connection/AdvancedTab";
-import { LogsTab } from "../../components/connection/LogsTab";
+import { ProfileTab } from "../../../components/connection/ProfileTab";
+import { DevicesTab } from "../../../components/connection/DevicesTab";
+import { AdvancedTab } from "../../../components/connection/AdvancedTab";
+import { LogsTab } from "../../../components/connection/LogsTab";
 import { useApiService } from "@/services/connection";
 import { motion, AnimatePresence } from "framer-motion";
 

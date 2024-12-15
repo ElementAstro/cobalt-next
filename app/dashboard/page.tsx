@@ -14,20 +14,20 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { toast, Toaster } from "react-hot-toast";
 
-import CameraViewfinder from "../components/CameraViewfinder";
-import ExposureControls from "../components/ExposureControls";
-import DeviceWindow from "../components/DeviceWindow";
-import ParameterAdjust from "../components/ParameterAdjust";
-import { TopBar } from "../components/TopBar";
+import CameraViewfinder from "./components/CameraViewfinder";
+import ExposureControls from "./components/ExposureControls";
+import DeviceWindow from "./components/DeviceWindow";
+import ParameterAdjust from "./components/ParameterAdjust";
+import { TopBar } from "./components/TopBar";
 import { Offcanvas } from "../../components/Offcanvas";
-import { Sidebar } from "../components/Sidebar";
-import FocusAssistant from "../components/FocusAssistant";
-import SequenceEditor from "../components/SequenceEditor";
-import DeviceConnection from "../components/DeviceConnection";
-import PluginPage from "../components/Plugin";
-import StarSearch from "../components/StarSearch";
-import ToolPanel from "../components/ToolPanel";
-import SettingsPage from "../components/Settings";
+import { Sidebar } from "./components/Sidebar";
+import FocusAssistant from "./components/FocusAssistant";
+import SequenceEditor from "./components/SequenceEditor";
+import DeviceConnection from "./components/DeviceConnection";
+import PluginPage from "./components/Plugin";
+import StarSearch from "./components/StarSearch";
+import ToolPanel from "./components/ToolPanel";
+import SettingsPage from "./components/Settings";
 
 import { CameraPage } from "../../components/device/Camera";
 import { FocuserPage } from "../../components/device/Focuser";
@@ -35,8 +35,8 @@ import { FilterWheelPage } from "../../components/device/FilterWheel";
 import { GuiderPage } from "../../components/device/Guider";
 import { TelescopePage } from "../../components/device/Telescope";
 
-import Log from "../components/Log";
-import AuthorInfo from "../components/AuthorInfo";
+import Log from "./components/Log";
+import AuthorInfo from "./components/AuthorInfo";
 
 import LandscapeDetector from "@/components/LandscapeDetection";
 import SplashScreen from "../../components/loading/SplashScreen";

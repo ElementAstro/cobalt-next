@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Todo } from "../../app/components/TodoList";
+import { Todo } from "../../app/dashboard/components/TodoList";
 import { Label } from "@/components/ui/label";
 import { motion, AnimatePresence } from "framer-motion";
 

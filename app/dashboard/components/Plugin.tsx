@@ -15,14 +15,14 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { AdvancedSearch } from "../../components/plugin/AdvancedSearch";
-import { PluginDetails } from "../../components/plugin/PluginDetails";
-import { VerticalTabs } from "../../components/plugin/VerticalTabs";
-import { PluginReviews } from "../../components/plugin/PluginReviews";
+import { AdvancedSearch } from "../../../components/plugin/AdvancedSearch";
+import { PluginDetails } from "../../../components/plugin/PluginDetails";
+import { VerticalTabs } from "../../../components/plugin/VerticalTabs";
+import { PluginReviews } from "../../../components/plugin/PluginReviews";
 import { Plugin, SearchFilters, User } from "@/types/plugin";
 import { mockPlugins } from "@/utils/mock-plugin";
-import { AutocompleteSearch } from "../../components/plugin/AutocompleteSearch";
-import { ConfirmDialog } from "../../components/plugin/ConfirmDialog";
+import { AutocompleteSearch } from "../../../components/plugin/AutocompleteSearch";
+import { ConfirmDialog } from "../../../components/plugin/ConfirmDialog";
 import { motion, AnimatePresence } from "framer-motion";
 
 const containerVariants = {

@@ -3,10 +3,10 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { TargetSetHeader } from "../../components/sequencer/TargetSetHeader";
-import { TimelineGraph } from "../../components/sequencer/TimelineGraph";
-import { TargetControls } from "../../components/sequencer/TargetControls";
-import { AutofocusSettings } from "../../components/sequencer/AutofocusSettings";
+import { TargetSetHeader } from "../../../components/sequencer/TargetSetHeader";
+import { TimelineGraph } from "../../../components/sequencer/TimelineGraph";
+import { TargetControls } from "../../../components/sequencer/TargetControls";
+import { AutofocusSettings } from "../../../components/sequencer/AutofocusSettings";
 import { CoordinateData } from "@/types/sequencer";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import {
