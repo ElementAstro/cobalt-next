@@ -1,13 +1,15 @@
 // WebSocketTester.tsx
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
 import { useWebSocketStore } from "@/lib/store/debug";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function WebSocketTester() {
   const {
@@ -19,9 +21,31 @@ export default function WebSocketTester() {
     addLog,
     isConnected,
     setIsConnected,
+    autoReconnect,
+    setAutoReconnect,
+    reconnectInterval,
+    setReconnectInterval,
   } = useWebSocketStore();
 
+  const [showFormatted, setShowFormatted] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+
+  const tryReconnect = useCallback(() => {
+    if (autoReconnect && url) {
+      reconnectTimeoutRef.current = setTimeout(() => {
+        connect();
+      }, reconnectInterval);
+    }
+  }, [autoReconnect, reconnectInterval, url]);
+
+  const formatMessage = (message: string) => {
+    try {
+      return JSON.stringify(JSON.parse(message), null, 2);
+    } catch {
+      return message;
+    }
+  };
 
   const connect = () => {
     if (!url) return;
@@ -36,6 +60,7 @@ export default function WebSocketTester() {
     socketRef.current.onclose = () => {
       setIsConnected(false);
       addLog("Disconnected from WebSocket");
+      tryReconnect();
     };
   };
 
@@ -124,11 +149,44 @@ export default function WebSocketTester() {
               variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
             >
               <Textarea
-                value={logs.join("\n")}
+                value={
+                  showFormatted
+                    ? logs.map(formatMessage).join("\n")
+                    : logs.join("\n")
+                }
                 readOnly
                 rows={10}
                 className="font-mono text-sm bg-gray-800 text-white"
               />
+            </motion.div>
+            <motion.div>
+              <div className="flex items-center space-x-4 mb-4">
+                <Switch
+                  id="auto-reconnect"
+                  checked={autoReconnect}
+                  onCheckedChange={setAutoReconnect}
+                />
+                <Label htmlFor="auto-reconnect">自动重连</Label>
+                {autoReconnect && (
+                  <Input
+                    type="number"
+                    value={reconnectInterval}
+                    onChange={(e) =>
+                      setReconnectInterval(Number(e.target.value))
+                    }
+                    placeholder="重连间隔(ms)"
+                    className="w-32"
+                  />
+                )}
+              </div>
+              <div className="flex items-center space-x-4 mb-4">
+                <Switch
+                  id="format-messages"
+                  checked={showFormatted}
+                  onCheckedChange={setShowFormatted}
+                />
+                <Label htmlFor="format-messages">格式化消息</Label>
+              </div>
             </motion.div>
           </motion.div>
         </CardContent>

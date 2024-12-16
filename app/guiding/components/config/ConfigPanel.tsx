@@ -136,7 +136,7 @@ export default function StarGuiding() {
             className="space-y-4"
           >
             <p className="text-xs text-muted-foreground">
-              选择一个良好的非饱和的星点(SNR>{customOptions.snrThreshold})并开始导星。
+              选择一个良好的非饱和的星点(SNR{'>'}{customOptions.snrThreshold})并开始导星。
             </p>
 
             <div className={`grid ${isLandscape && isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-1 md:grid-cols-2 gap-3'}`}>

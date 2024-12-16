@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
+import { Progress } from "@/components/ui/progress";
 
 interface RealTimeData {
   timestamp: string;
@@ -20,16 +21,23 @@ interface RealTimeData {
 export function RealTimeData() {
   const [data, setData] = useState<RealTimeData | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchData = async () => {
+    const response = await fetch("/api/real-time-data");
+    if (response.ok) {
+      const newData = await response.json();
+      setData(newData);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchData();
+    setIsRefreshing(false);
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      const response = await fetch("/api/real-time-data");
-      if (response.ok) {
-        const newData = await response.json();
-        setData(newData);
-      }
-    };
-
     fetchData();
     const interval = setInterval(fetchData, 60000); // Update every minute
 
@@ -52,13 +60,25 @@ export function RealTimeData() {
           <CardTitle className="text-sm font-medium text-gray-900 dark:text-white">
             实时天文数据
           </CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </Button>
+          </div>
         </CardHeader>
         {isExpanded && (
           <CardContent>
@@ -85,6 +105,23 @@ export function RealTimeData() {
               <p className="text-sm text-gray-900 dark:text-white">
                 湿度: {data.weather.humidity}%
               </p>
+              <div className="space-y-4 mt-4">
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span>云量</span>
+                    <span>{Math.round(data.weather.cloudCover * 100)}%</span>
+                  </div>
+                  <Progress value={data.weather.cloudCover * 100} />
+                </div>
+
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span>月相</span>
+                    <span>{Math.round(data.moonPhase * 100)}%</span>
+                  </div>
+                  <Progress value={data.moonPhase * 100} />
+                </div>
+              </div>
             </motion.div>
           </CardContent>
         )}

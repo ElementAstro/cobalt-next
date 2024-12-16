@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Review, User as UserType } from "@/types/plugin";
 import { motion } from "framer-motion";
 import { usePluginStore } from "@/lib/store/plugin";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface PluginReviewsProps {
   pluginId: number;
@@ -32,6 +33,7 @@ export function PluginReviews({ pluginId }: PluginReviewsProps) {
 
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [sortBy, setSortBy] = useState<'newest' | 'highest' | 'lowest'>('newest');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +51,29 @@ export function PluginReviews({ pluginId }: PluginReviewsProps) {
       setComment("");
     }
   };
+
+  const getRatingStats = () => {
+    const total = reviews.length;
+    const stats = Array(5).fill(0);
+    reviews.forEach(review => stats[review.rating - 1]++);
+    return stats.map(count => ({
+      count,
+      percentage: total ? (count / total) * 100 : 0
+    }));
+  };
+
+  const sortedReviews = [...reviews].sort((a, b) => {
+    switch (sortBy) {
+      case 'newest':
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      case 'highest':
+        return b.rating - a.rating;
+      case 'lowest':
+        return a.rating - b.rating;
+      default:
+        return 0;
+    }
+  });
 
   return (
     <motion.div
@@ -92,14 +117,43 @@ export function PluginReviews({ pluginId }: PluginReviewsProps) {
           </Button>
         </motion.form>
       )}
+      <div className="mb-6">
+        <h3 className="text-xl font-semibold mb-4 text-white">评分统计</h3>
+        {getRatingStats().reverse().map((stat, index) => (
+          <div key={5 - index} className="flex items-center mb-2">
+            <span className="w-20 text-white">{5 - index} 星</span>
+            <div className="flex-1 mx-4 bg-gray-700 rounded-full h-2">
+              <div
+                className="bg-yellow-400 rounded-full h-2"
+                style={{ width: `${stat.percentage}%` }}
+              />
+            </div>
+            <span className="text-white w-20">{stat.count} 个评价</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-end mb-4">
+        <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="排序方式" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">最新评价</SelectItem>
+            <SelectItem value="highest">最高评分</SelectItem>
+            <SelectItem value="lowest">最低评分</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
         className="space-y-4"
       >
-        {reviews.length > 0 ? (
-          reviews.map((review) => (
+        {sortedReviews.length > 0 ? (
+          sortedReviews.map((review) => (
             <motion.div
               key={review.id}
               variants={itemVariants}

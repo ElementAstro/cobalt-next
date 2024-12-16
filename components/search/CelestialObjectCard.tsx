@@ -1,11 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Lightbulb, Maximize2, Move, Star } from "lucide-react";
+import { Lightbulb, Maximize2, Move, Star, Share2, Info } from "lucide-react";
 import { RiseSetChart } from "./RiseSetChart";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface CelestialObjectProps {
   id: string;
@@ -56,6 +63,18 @@ export function CelestialObjectCard({
 
     if (response.ok) {
       setIsFavorite(!isFavorite);
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      await navigator.share({
+        title: name,
+        text: `查看天体对象：${name}`,
+        url: `/celestial-object/${id}`,
+      });
+    } catch (err) {
+      console.log("分享失败");
     }
   };
 
@@ -145,6 +164,39 @@ export function CelestialObjectCard({
                   {isFavorite ? "Remove from Favorites" : "Add to Favorites"}
                 </Button>
               )}
+              <Button
+                className="w-full"
+                variant="outline"
+                onClick={handleShare}
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                分享
+              </Button>
+
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="w-full" variant="outline">
+                    <Info className="w-4 h-4 mr-2" />
+                    详细信息
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{name} - 详细信息</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-medium">大小</h4>
+                      <p>{size} 角分</p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium">距离</h4>
+                      <p>{distance} 光年</p>
+                    </div>
+                    {/* 添加更多详细信息 */}
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </CardContent>

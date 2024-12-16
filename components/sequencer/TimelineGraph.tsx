@@ -38,12 +38,30 @@ export function TimelineGraph({ data, height }: TimelineGraphProps) {
         <BarChart data={formattedData}>
           <XAxis dataKey="hour" stroke="#ccc" />
           <YAxis stroke="#ccc" />
-          <Tooltip />
-          <Bar dataKey="value" fill="#82ca9d" />
+          <Tooltip
+            contentStyle={{ backgroundColor: "#1f2937", border: "none" }}
+            itemStyle={{ color: "#fff" }}
+            cursor={{ fill: "rgba(255,255,255,0.1)" }}
+          />
+          <Bar
+            dataKey="value"
+            fill="#82ca9d"
+            animationDuration={1000}
+            animationBegin={0}
+            onMouseEnter={(data, index) => {
+              // 处理鼠标悬停事件
+              console.log(`Hovering bar at index ${index}`);
+            }}
+          />
           <ReferenceLine
             x={currentHourLabel}
             stroke="rgb(0, 200, 150)"
-            label="现在"
+            label={{
+              value: "现在",
+              position: "top",
+              fill: "rgb(0, 200, 150)",
+            }}
+            strokeDasharray="3 3"
           />
         </BarChart>
       </ResponsiveContainer>

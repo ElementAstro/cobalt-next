@@ -66,6 +66,21 @@ export function AutofocusSettings() {
   const [offset, setOffset] = useState("(Camera)");
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  const [autofocusSettings, setAutofocusSettings] = useState({
+    enabled: false,
+    interval: 30,
+    temperature: 2,
+    filterChange: true,
+    beforeImaging: true,
+  });
+
+  const [batchProcess, setBatchProcess] = useState({
+    enabled: false,
+    concurrent: 1,
+    retryCount: 3,
+    errorHandling: "continue", // 'stop', 'skip', 'continue'
+  });
+
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   const addTarget = () => {
@@ -272,6 +287,38 @@ export function AutofocusSettings() {
                 placeholder="Offset value"
                 className="bg-gray-800 text-white border-gray-700"
               />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="bg-gray-800 p-4 rounded-lg">
+              <h3 className="text-lg font-medium text-white mb-4">
+                自动聚焦设置
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center justify-between">
+                  <Label>启用自动聚焦</Label>
+                  <Switch
+                    checked={autofocusSettings.enabled}
+                    onCheckedChange={(checked) =>
+                      setAutofocusSettings((prev) => ({
+                        ...prev,
+                        enabled: checked,
+                      }))
+                    }
+                  />
+                </div>
+                {/* 添加其他自动聚焦设置项 */}
+              </div>
+            </div>
+
+            <div className="bg-gray-800 p-4 rounded-lg">
+              <h3 className="text-lg font-medium text-white mb-4">
+                批处理设置
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* 添加批处理设置项 */}
+              </div>
             </div>
           </div>
         </div>

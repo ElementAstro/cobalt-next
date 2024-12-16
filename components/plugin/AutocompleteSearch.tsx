@@ -42,6 +42,24 @@ export function AutocompleteSearch({
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const [searchHistory, setSearchHistory] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      return JSON.parse(localStorage.getItem("searchHistory") || "[]");
+    }
+    return [];
+  });
+
+  const popularSearches = ["天文摄影", "望远镜控制", "图像处理", "自动导星"];
+
+  const addToHistory = (term: string) => {
+    const newHistory = [
+      term,
+      ...searchHistory.filter((item) => item !== term),
+    ].slice(0, 5);
+    setSearchHistory(newHistory);
+    localStorage.setItem("searchHistory", JSON.stringify(newHistory));
+  };
+
   useEffect(() => {
     setSuggestions(
       searchPlugins(query)
@@ -62,9 +80,12 @@ export function AutocompleteSearch({
   };
 
   const handleSearch = () => {
-    setShowSuggestions(false);
-    onSearch(query);
-    setSearchFilters({ ...searchFilters });
+    if (query.trim()) {
+      addToHistory(query.trim());
+      setShowSuggestions(false);
+      onSearch(query);
+      setSearchFilters({ ...searchFilters });
+    }
   };
 
   useEffect(() => {
@@ -111,25 +132,60 @@ export function AutocompleteSearch({
         </Button>
       </div>
       <AnimatePresence>
-        {showSuggestions && suggestions.length > 0 && (
-          <motion.ul
+        {showSuggestions && (
+          <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute z-10 w-full mt-1 bg-gray-700 border border-gray-600 rounded-md shadow-lg dark:bg-gray-800"
+            className="absolute z-10 w-full mt-1 bg-gray-700 rounded-md shadow-lg"
           >
-            {suggestions.map((suggestion, index) => (
-              <motion.li
-                key={index}
-                variants={suggestionVariants}
-                whileHover={{ backgroundColor: "#4B5563" }}
-                className="px-4 py-2 cursor-pointer text-white hover:bg-gray-600 dark:hover:bg-gray-700"
-                onClick={() => handleSuggestionClick(suggestion)}
-              >
-                {suggestion}
-              </motion.li>
-            ))}
-          </motion.ul>
+            {suggestions.length > 0 && (
+              <div className="p-2">
+                <h3 className="text-sm text-gray-400 px-2 py-1">搜索建议</h3>
+                {suggestions.map((suggestion, index) => (
+                  <motion.li
+                    key={index}
+                    variants={suggestionVariants}
+                    whileHover={{ backgroundColor: "#4B5563" }}
+                    className="px-4 py-2 cursor-pointer text-white hover:bg-gray-600 dark:hover:bg-gray-700"
+                    onClick={() => handleSuggestionClick(suggestion)}
+                  >
+                    {suggestion}
+                  </motion.li>
+                ))}
+              </div>
+            )}
+
+            {searchHistory.length > 0 && (
+              <div className="p-2 border-t border-gray-600">
+                <h3 className="text-sm text-gray-400 px-2 py-1">搜索历史</h3>
+                {searchHistory.map((term, index) => (
+                  <motion.div
+                    key={`history-${index}`}
+                    className="flex items-center px-4 py-2 hover:bg-gray-600 cursor-pointer"
+                    onClick={() => handleSuggestionClick(term)}
+                  >
+                    <span className="text-gray-300">{term}</span>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            <div className="p-2 border-t border-gray-600">
+              <h3 className="text-sm text-gray-400 px-2 py-1">热门搜索</h3>
+              <div className="flex flex-wrap gap-2 p-2">
+                {popularSearches.map((term, index) => (
+                  <motion.span
+                    key={`popular-${index}`}
+                    className="px-3 py-1 bg-gray-600 rounded-full text-sm text-gray-200 cursor-pointer hover:bg-gray-500"
+                    onClick={() => handleSuggestionClick(term)}
+                  >
+                    {term}
+                  </motion.span>
+                ))}
+              </div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </motion.div>

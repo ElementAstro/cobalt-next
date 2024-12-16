@@ -36,6 +36,13 @@ import { ProjectList } from "./ProjectList";
 import { ContactForm } from "./ContactForm";
 import { GPL3LicenseDisplay } from "./GPL3LicenseDisplay";
 import { UpdateLogModal } from "./ChangeLog";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 interface AuthorIntroProps {
   name: string;
@@ -73,245 +80,290 @@ export function AuthorIntro({
   const [activeTab, setActiveTab] = useState("about");
   const [theme, setTheme] = useState("dark");
   const controls = useAnimation();
+  const [colorTheme, setColorTheme] = useState<"light" | "dark" | "system">(
+    "system"
+  );
+  const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
     controls.start("visible");
   }, [controls]);
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (e: MediaQueryListEvent) => {
+      if (colorTheme === "system") {
+        setIsDark(e.matches);
+      }
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, [colorTheme]);
+
   return (
-    <TooltipProvider>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={controls}
-        variants={{
-          visible: { opacity: 1, y: 0 },
-        }}
-        transition={{ duration: 0.5 }}
-        className="w-full mx-auto"
-      >
-        <Card className="overflow-hidden rounded-xl shadow-xl dark:bg-gray-800/50 border-none">
-          <CardHeader>
-            <motion.div
-              className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <Image
-                src={avatar}
-                alt={name}
-                width={96}
-                height={96}
-                className="rounded-full"
-              />
-              <div className="text-center sm:text-left">
-                <CardTitle className="text-2xl">{name}</CardTitle>
-                <CardDescription>Project Author</CardDescription>
-              </div>
-              <div className="ml-auto">
-                <UpdateLogModal />
-              </div>
-            </motion.div>
-          </CardHeader>
-          <CardContent className="p-6">
-            <Tabs
-              value={activeTab}
-              onValueChange={setActiveTab}
-              className="w-full"
-            >
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="about">关于</TabsTrigger>
-                <TabsTrigger value="projects">项目</TabsTrigger>
-                <TabsTrigger value="contact">联系</TabsTrigger>
-                <TabsTrigger value="license">许可证</TabsTrigger>
-                <TabsTrigger value="dependencies">依赖</TabsTrigger>
-              </TabsList>
-              <TabsContent value="about">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <motion.p
-                    className="text-sm text-muted-foreground mb-4"
-                    initial={{ height: "4.5em", overflow: "hidden" }}
-                    animate={{ height: isExpanded ? "auto" : "4.5em" }}
+    <div className={isDark ? "dark" : ""}>
+      <TooltipProvider>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={controls}
+          variants={{
+            visible: { opacity: 1, y: 0 },
+          }}
+          transition={{ duration: 0.5 }}
+          className="w-full mx-auto"
+        >
+          <Card className="overflow-hidden rounded-xl shadow-xl dark:bg-gray-800/50 border-none">
+            <CardHeader>
+              <motion.div
+                className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4"
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Image
+                  src={avatar}
+                  alt={name}
+                  width={96}
+                  height={96}
+                  className="rounded-full"
+                />
+                <div className="text-center sm:text-left">
+                  <CardTitle className="text-2xl">{name}</CardTitle>
+                  <CardDescription>Project Author</CardDescription>
+                </div>
+                <div className="ml-auto">
+                  <UpdateLogModal />
+                </div>
+              </motion.div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="w-full"
+              >
+                <TabsList className="grid w-full grid-cols-5">
+                  <TabsTrigger value="about">关于</TabsTrigger>
+                  <TabsTrigger value="projects">项目</TabsTrigger>
+                  <TabsTrigger value="contact">联系</TabsTrigger>
+                  <TabsTrigger value="license">许可证</TabsTrigger>
+                  <TabsTrigger value="dependencies">依赖</TabsTrigger>
+                </TabsList>
+                <TabsContent value="about">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                   >
-                    {bio}
-                  </motion.p>
-                  <Button
-                    variant="link"
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className="p-0 h-auto font-normal text-blue-500 flex items-center"
-                  >
-                    {isExpanded ? "收起" : "展开"}
-                    <motion.span
-                      animate={{ rotate: isExpanded ? 180 : 0 }}
-                      transition={{ duration: 0.3 }}
+                    <motion.p
+                      className="text-sm text-muted-foreground mb-4"
+                      initial={{ height: "4.5em", overflow: "hidden" }}
+                      animate={{ height: isExpanded ? "auto" : "4.5em" }}
                     >
-                      {isExpanded ? (
-                        <ChevronUp className="ml-1 h-4 w-4" />
-                      ) : (
-                        <ChevronDown className="ml-1 h-4 w-4" />
-                      )}
-                    </motion.span>
-                  </Button>
-                  <div className="mt-4">
-                    <h3 className="font-semibold mb-2">技能:</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {skills.map((skill, index) => (
-                        <motion.div
-                          key={skill}
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: index * 0.1 }}
-                        >
-                          <Badge variant="secondary">{skill}</Badge>
-                        </motion.div>
-                      ))}
+                      {bio}
+                    </motion.p>
+                    <Button
+                      variant="link"
+                      onClick={() => setIsExpanded(!isExpanded)}
+                      className="p-0 h-auto font-normal text-blue-500 flex items-center"
+                    >
+                      {isExpanded ? "收起" : "展开"}
+                      <motion.span
+                        animate={{ rotate: isExpanded ? 180 : 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        {isExpanded ? (
+                          <ChevronUp className="ml-1 h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="ml-1 h-4 w-4" />
+                        )}
+                      </motion.span>
+                    </Button>
+                    <div className="mt-4">
+                      <h3 className="font-semibold mb-2">技能:</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {skills.map((skill, index) => (
+                          <motion.div
+                            key={skill}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: index * 0.1 }}
+                          >
+                            <Badge variant="secondary">{skill}</Badge>
+                          </motion.div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              </TabsContent>
-              <TabsContent value="projects">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <ProjectList projects={projects} />
-                </motion.div>
-              </TabsContent>
-              <TabsContent value="contact">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <ContactForm />
-                </motion.div>
-              </TabsContent>
-              <TabsContent value="license">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <GPL3LicenseDisplay />
-                </motion.div>
-              </TabsContent>
-              <TabsContent value="dependencies">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  <DependencyList />
-                </motion.div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-          <CardFooter className="flex flex-wrap justify-center gap-3 p-6">
-            {github && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" asChild>
-                    <a href={github} target="_blank" rel="noopener noreferrer">
-                      <Github className="h-4 w-4" />
-                      <span className="sr-only">GitHub</span>
-                    </a>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>GitHub 主页</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-            {twitter && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" asChild>
-                    <a href={twitter} target="_blank" rel="noopener noreferrer">
-                      <Twitter className="h-4 w-4" />
-                      <span className="sr-only">Twitter</span>
-                    </a>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Twitter 主页</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-            {linkedin && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" asChild>
-                    <a
-                      href={linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Linkedin className="h-4 w-4" />
-                      <span className="sr-only">LinkedIn</span>
-                    </a>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>LinkedIn 主页</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-            {email && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" asChild>
-                    <a href={`mailto:${email}`}>
-                      <Mail className="h-4 w-4" />
-                      <span className="sr-only">Email</span>
-                    </a>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>发送邮件</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-            {website && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" asChild>
-                    <a href={website} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4" />
-                      <span className="sr-only">网站</span>
-                    </a>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>个人网站</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-            {instagram && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" asChild>
-                    <a
-                      href={instagram}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Instagram className="h-4 w-4" />
-                      <span className="sr-only">Instagram</span>
-                    </a>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Instagram 主页</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </CardFooter>
-        </Card>
-      </motion.div>
-    </TooltipProvider>
+                  </motion.div>
+                </TabsContent>
+                <TabsContent value="projects">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <ProjectList projects={projects} />
+                  </motion.div>
+                </TabsContent>
+                <TabsContent value="contact">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <ContactForm />
+                  </motion.div>
+                </TabsContent>
+                <TabsContent value="license">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <GPL3LicenseDisplay />
+                  </motion.div>
+                </TabsContent>
+                <TabsContent value="dependencies">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <DependencyList />
+                  </motion.div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+            <CardFooter className="flex flex-wrap justify-center gap-3 p-6">
+              {github && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" asChild>
+                      <a
+                        href={github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Github className="h-4 w-4" />
+                        <span className="sr-only">GitHub</span>
+                      </a>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>GitHub 主页</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {twitter && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" asChild>
+                      <a
+                        href={twitter}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Twitter className="h-4 w-4" />
+                        <span className="sr-only">Twitter</span>
+                      </a>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Twitter 主页</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {linkedin && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" asChild>
+                      <a
+                        href={linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Linkedin className="h-4 w-4" />
+                        <span className="sr-only">LinkedIn</span>
+                      </a>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>LinkedIn 主页</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {email && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" asChild>
+                      <a href={`mailto:${email}`}>
+                        <Mail className="h-4 w-4" />
+                        <span className="sr-only">Email</span>
+                      </a>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>发送邮件</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {website && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" asChild>
+                      <a
+                        href={website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        <span className="sr-only">网站</span>
+                      </a>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>个人网站</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {instagram && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" asChild>
+                      <a
+                        href={instagram}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Instagram className="h-4 w-4" />
+                        <span className="sr-only">Instagram</span>
+                      </a>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Instagram 主页</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </CardFooter>
+          </Card>
+        </motion.div>
+      </TooltipProvider>
+      <div className="fixed bottom-4 right-4">
+        <Select
+          value={colorTheme}
+          onValueChange={(value) => setColorTheme(value as typeof colorTheme)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="主题" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="light">浅色</SelectItem>
+            <SelectItem value="dark">深色</SelectItem>
+            <SelectItem value="system">系统</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
   );
 }

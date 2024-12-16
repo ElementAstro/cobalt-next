@@ -7,6 +7,10 @@ export interface AdvancedSettings {
   notifications: boolean;
   autoSave: boolean;
   language: string;
+  maxConnections: number;
+  bufferSize: number;
+  autoBackup: boolean;
+  backupInterval: number;
 }
 
 export interface DeviceData {

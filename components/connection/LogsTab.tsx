@@ -3,13 +3,47 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLogsStore } from "@/lib/store/connection";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Trash2, AlertCircle, Info, AlertTriangle } from "lucide-react";
+import {
+  Search,
+  Trash2,
+  AlertCircle,
+  Info,
+  AlertTriangle,
+  Download,
+  Filter,
+} from "lucide-react";
+import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
 
 export function LogsTab() {
   const { logs, filter, setFilter, clearLogs } = useLogsStore();
+  const [logTypes, setLogTypes] = useState({
+    info: true,
+    warning: true,
+    error: true,
+  });
 
-  const filteredLogs = logs.filter((log) =>
-    log.message.toLowerCase().includes(filter.toLowerCase())
+  const handleExportLogs = () => {
+    const logData = JSON.stringify(filteredLogs, null, 2);
+    const blob = new Blob([logData], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `logs-${new Date().toISOString()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const filteredLogs = logs.filter(
+    (log) =>
+      log.message.toLowerCase().includes(filter.toLowerCase()) &&
+      logTypes[log.type as keyof typeof logTypes]
   );
 
   const getIcon = (type: string) => {
@@ -39,6 +73,47 @@ export function LogsTab() {
               onChange={(e) => setFilter(e.target.value)}
               className="pl-10 bg-gray-800 border-gray-700 text-white"
             />
+          </div>
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <Filter className="w-4 h-4 mr-2" />
+                  过滤
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuCheckboxItem
+                  checked={logTypes.info}
+                  onCheckedChange={(checked) =>
+                    setLogTypes((prev) => ({ ...prev, info: checked }))
+                  }
+                >
+                  信息
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={logTypes.warning}
+                  onCheckedChange={(checked) =>
+                    setLogTypes((prev) => ({ ...prev, warning: checked }))
+                  }
+                >
+                  警告
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={logTypes.error}
+                  onCheckedChange={(checked) =>
+                    setLogTypes((prev) => ({ ...prev, error: checked }))
+                  }
+                >
+                  错误
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button variant="outline" onClick={handleExportLogs}>
+              <Download className="w-4 h-4 mr-2" />
+              导出日志
+            </Button>
           </div>
           <Button
             onClick={clearLogs}

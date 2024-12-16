@@ -16,6 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 
 type EditorTabsProps = {
   editState: any;
@@ -42,7 +43,9 @@ export default function EditorTabs({
       transition={{ delay: 0.5, duration: 0.5 }}
     >
       <Tabs defaultValue="transform" className="w-full">
-        <TabsList className={`grid ${isLandscape ? "grid-cols-1" : "grid-cols-4"}`}>
+        <TabsList
+          className={`grid ${isLandscape ? "grid-cols-1" : "grid-cols-4"}`}
+        >
           <TabsTrigger value="transform">变换</TabsTrigger>
           <TabsTrigger value="filters">滤镜</TabsTrigger>
           <TabsTrigger value="effects">效果</TabsTrigger>
@@ -108,6 +111,29 @@ export default function EditorTabs({
               onValueChange={([value]) => updateEditState({ hue: value })}
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="saturation-slider">饱和度</Label>
+            <Slider
+              id="saturation-slider"
+              min={0}
+              max={200}
+              step={1}
+              value={[editState.saturation]}
+              onValueChange={([value]) =>
+                updateEditState({ saturation: value })
+              }
+            />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="invert-toggle">反相效果</Label>
+            <Switch
+              id="invert-toggle"
+              checked={editState.invert}
+              onCheckedChange={(checked) =>
+                updateEditState({ invert: checked })
+              }
+            />
+          </div>
         </TabsContent>
         <TabsContent value="effects" className="space-y-4">
           <Popover>
@@ -171,6 +197,41 @@ export default function EditorTabs({
               </div>
             </PopoverContent>
           </Popover>
+          <div className="space-y-2">
+            <Label htmlFor="border-radius-slider">圆角</Label>
+            <Slider
+              id="border-radius-slider"
+              min={0}
+              max={50}
+              step={1}
+              value={[editState.borderRadius]}
+              onValueChange={([value]) =>
+                updateEditState({ borderRadius: value })
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="shadow">阴影</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Slider
+                id="shadow-blur"
+                min={0}
+                max={20}
+                step={1}
+                value={[editState.shadowBlur]}
+                onValueChange={([value]) =>
+                  updateEditState({ shadowBlur: value })
+                }
+              />
+              <Input
+                type="color"
+                value={editState.shadowColor}
+                onChange={(e) =>
+                  updateEditState({ shadowColor: e.target.value })
+                }
+              />
+            </div>
+          </div>
         </TabsContent>
         <TabsContent value="presets" className="space-y-4">
           <Select onValueChange={(value: string) => applyPreset(value)}>
@@ -183,8 +244,28 @@ export default function EditorTabs({
               <SelectItem value="cool">冷色</SelectItem>
               <SelectItem value="warm">暖色</SelectItem>
               <SelectItem value="sharp">锐化</SelectItem>
+              <SelectItem value="dramatic">戏剧化</SelectItem>
+              <SelectItem value="neon">霓虹</SelectItem>
+              <SelectItem value="monochrome">黑白</SelectItem>
             </SelectContent>
           </Select>
+          <div className="space-y-2">
+            <Label>导出尺寸</Label>
+            <Select
+              onValueChange={(value: string) => handleExport(Number(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="选择导出尺寸" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="16">16x16</SelectItem>
+                <SelectItem value="32">32x32</SelectItem>
+                <SelectItem value="64">64x64</SelectItem>
+                <SelectItem value="128">128x128</SelectItem>
+                <SelectItem value="256">256x256</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </TabsContent>
       </Tabs>
     </motion.div>

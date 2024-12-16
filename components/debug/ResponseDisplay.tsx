@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import "prismjs/themes/prism-tomorrow.css";
 import Prism from "prismjs";
@@ -14,6 +15,10 @@ interface ResponseDisplayProps {
     statusText: string;
     headers: Record<string, string>;
     data: any;
+    timing?: {
+      start: number;
+      end: number;
+    };
   } | null;
   loading: boolean;
 }
@@ -24,6 +29,7 @@ export default function ResponseDisplay({
 }: ResponseDisplayProps) {
   const [showHeaders, setShowHeaders] = useState(true);
   const [showBody, setShowBody] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
   if (loading) {
     return (
@@ -70,6 +76,12 @@ export default function ResponseDisplay({
     navigator.clipboard.writeText(text);
   };
 
+  const highlightSearchTerm = (content: string) => {
+    if (!searchTerm) return content;
+    const regex = new RegExp(`(${searchTerm})`, "gi");
+    return content.replace(regex, "<mark>$1</mark>");
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -93,6 +105,22 @@ export default function ResponseDisplay({
             transition={{ duration: 0.5, staggerChildren: 0.2 }}
             className="space-y-6"
           >
+            {response?.timing && (
+              <motion.div>
+                <h3 className="font-semibold text-lg">响应时间:</h3>
+                <p className="text-gray-300">
+                  {(response.timing.end - response.timing.start).toFixed(2)}ms
+                </p>
+              </motion.div>
+            )}
+
+            <Input
+              placeholder="搜索响应内容..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="mb-4"
+            />
+
             <motion.div
               variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
             >
@@ -175,8 +203,8 @@ export default function ResponseDisplay({
                   <motion.pre
                     className="language-json bg-gray-800 p-4 rounded mt-2 overflow-auto"
                     dangerouslySetInnerHTML={{
-                      __html: highlightCode(
-                        JSON.stringify(response.data, null, 2)
+                      __html: highlightSearchTerm(
+                        highlightCode(JSON.stringify(response.data, null, 2))
                       ),
                     }}
                     initial={{ height: 0, opacity: 0 }}

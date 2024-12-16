@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import { Settings, Search, Power } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "@/hooks/use-toast";
 
 interface DeviceSelectorProps {
   deviceType: string;
@@ -22,10 +23,31 @@ export function DeviceSelector({
   onDeviceChange,
 }: DeviceSelectorProps) {
   const [connected, setConnected] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [selectedDevice, setSelectedDevice] = useState("");
 
   const handleConnect = () => {
     setConnected(!connected);
     // In a real implementation, this would trigger a connection/disconnection to the device
+  };
+
+  const handleScan = async () => {
+    setIsScanning(true);
+    try {
+      // 模拟扫描设备
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      toast({
+        title: "扫描完成",
+        description: "已发现可用设备",
+      });
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const handleDeviceChange = (device: string) => {
+    setSelectedDevice(device);
+    onDeviceChange(device);
   };
 
   return (
@@ -35,7 +57,7 @@ export function DeviceSelector({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Select onValueChange={onDeviceChange}>
+      <Select onValueChange={handleDeviceChange}>
         <SelectTrigger className="w-full md:w-[200px] bg-gray-700 text-white">
           <SelectValue placeholder={`Select ${deviceType}`} />
         </SelectTrigger>
@@ -64,8 +86,10 @@ export function DeviceSelector({
           variant="outline"
           size="icon"
           className="bg-gray-700 text-white"
+          onClick={handleScan}
+          disabled={isScanning}
         >
-          <Search className="h-4 w-4" />
+          <Search className={`h-4 w-4 ${isScanning ? "animate-spin" : ""}`} />
         </Button>
         <Button
           variant="outline"
@@ -80,6 +104,15 @@ export function DeviceSelector({
           />
         </Button>
       </motion.div>
+      {selectedDevice && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="mt-2 text-sm text-gray-400"
+        >
+          当前设备: {selectedDevice}
+        </motion.div>
+      )}
     </motion.div>
   );
 }

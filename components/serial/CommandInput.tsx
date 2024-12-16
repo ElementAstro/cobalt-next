@@ -1,11 +1,12 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { FC, ChangeEvent, KeyboardEvent } from "react";
+import { FC, ChangeEvent, KeyboardEvent, useState } from "react";
 import { motion } from "framer-motion";
 
 interface CommandInputProps {
   inputCommand: string;
+  commandHistory: string[];
   onInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onSend: () => void;
   onAddCustom: () => void;
@@ -13,10 +14,37 @@ interface CommandInputProps {
 
 const CommandInput: FC<CommandInputProps> = ({
   inputCommand,
+  commandHistory,
   onInputChange,
   onSend,
   onAddCustom,
 }) => {
+  const [historyIndex, setHistoryIndex] = useState(-1);
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSend();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (historyIndex < commandHistory.length - 1) {
+        setHistoryIndex(prev => prev + 1);
+        // 设置输入框的值为历史命令
+        const command = commandHistory[historyIndex + 1];
+        e.currentTarget.value = command;
+        onInputChange(e as any);
+      }
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (historyIndex > -1) {
+        setHistoryIndex(prev => prev - 1);
+        const command = historyIndex - 1 >= 0 ? commandHistory[historyIndex - 1] : "";
+        e.currentTarget.value = command;
+        onInputChange(e as any);
+      }
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -27,15 +55,10 @@ const CommandInput: FC<CommandInputProps> = ({
       <Input
         className="flex-1 bg-gray-800 border-gray-700 text-gray-100
           focus:ring-blue-500 focus:border-blue-500"
-        placeholder="输入命令..."
+        placeholder="输入命令... (↑↓ 切换历史记录)"
         value={inputCommand}
         onChange={onInputChange}
-        onKeyPress={(e: KeyboardEvent<HTMLInputElement>) => {
-          if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            onSend();
-          }
-        }}
+        onKeyDown={handleKeyDown}
       />
       <motion.div className="flex gap-2">
         <Button

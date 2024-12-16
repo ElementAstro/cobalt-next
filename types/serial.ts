@@ -3,6 +3,7 @@ export interface SerialConfig {
   dataBits: number;
   stopBits: number;
   parity: "none" | "even" | "odd";
+  flowControl: boolean;
 }
 
 export interface SerialData {

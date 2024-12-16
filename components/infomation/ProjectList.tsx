@@ -9,6 +9,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Filter, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Project {
   name: string;
@@ -24,6 +31,9 @@ interface ProjectListProps {
 export function ProjectList({ projects }: ProjectListProps) {
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState<string>("");
+  const [sortField, setSortField] = useState<keyof Project>("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [view, setView] = useState<"grid" | "list">("grid");
 
   const filteredProjects = projects.filter(
     (project) =>
@@ -31,6 +41,11 @@ export function ProjectList({ projects }: ProjectListProps) {
       (project.name.toLowerCase().includes(search.toLowerCase()) ||
         project.description.toLowerCase().includes(search.toLowerCase()))
   );
+
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    const compareResult = a[sortField] > b[sortField] ? 1 : -1;
+    return sortOrder === "asc" ? compareResult : -compareResult;
+  });
 
   const categories = Array.from(new Set(projects.map((p) => p.category)));
 
@@ -68,14 +83,51 @@ export function ProjectList({ projects }: ProjectListProps) {
         </div>
       </motion.div>
 
-      {filteredProjects.length === 0 ? (
+      <motion.div className="flex justify-between items-center mb-4">
+        <div className="flex items-center space-x-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setView(view === "grid" ? "list" : "grid")}
+          >
+            {view === "grid" ? "列表视图" : "网格视图"}
+          </Button>
+          <Select
+            value={sortField}
+            onValueChange={(value) => setSortField(value as keyof Project)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="排序方式" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">名称</SelectItem>
+              <SelectItem value="category">类别</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+          >
+            {sortOrder === "asc" ? "升序" : "降序"}
+          </Button>
+        </div>
+      </motion.div>
+
+      {sortedProjects.length === 0 ? (
         <p className="text-center text-gray-500 dark:text-gray-300">
           未找到匹配的项目。
         </p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 landscape:grid-cols-2">
+        <div
+          className={`grid ${
+            view === "grid"
+              ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 landscape:grid-cols-2"
+              : "grid-cols-1 gap-4"
+          }`}
+        >
           <AnimatePresence>
-            {filteredProjects.map((project, index) => (
+            {sortedProjects.map((project, index) => (
               <motion.div
                 key={project.name}
                 initial={{ opacity: 0, y: 20 }}

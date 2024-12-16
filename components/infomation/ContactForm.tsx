@@ -26,10 +26,26 @@ export function ContactForm() {
   const [message, setMessage] = useState("");
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [submitStatus, setSubmitStatus] = useState<
+    "idle" | "sending" | "success" | "error"
+  >("idle");
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    if (name.length < 2) errors.name = "名字至少需要2个字符";
+    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
+      errors.email = "请输入有效的邮箱地址";
+    if (message.length < 10) errors.message = "消息至少需要10个字符";
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) return;
     setIsSubmitting(true);
+    setSubmitStatus("sending");
     // 模拟发送请求
     await new Promise((resolve) => setTimeout(resolve, 2000));
     console.log("Form submitted:", { name, email, message });
@@ -41,6 +57,7 @@ export function ContactForm() {
     setEmail("");
     setMessage("");
     setIsSubmitting(false);
+    setSubmitStatus("success");
   };
 
   return (
@@ -51,6 +68,15 @@ export function ContactForm() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 200, damping: 20 }}
     >
+      {submitStatus === "success" && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-green-100 dark:bg-green-900 p-4 rounded-lg mb-4"
+        >
+          消息发送成功！
+        </motion.div>
+      )}
       <motion.div
         initial={{ opacity: 0, x: -50 }}
         animate={{ opacity: 1, x: 0 }}
@@ -70,6 +96,11 @@ export function ContactForm() {
           className="mt-1 block w-full dark:bg-gray-700 dark:text-white"
           placeholder="请输入您的姓名"
         />
+        {formErrors.name && (
+          <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+            {formErrors.name}
+          </p>
+        )}
       </motion.div>
       <motion.div
         initial={{ opacity: 0, x: 50 }}
@@ -91,6 +122,11 @@ export function ContactForm() {
           className="mt-1 block w-full dark:bg-gray-700 dark:text-white"
           placeholder="请输入您的邮箱"
         />
+        {formErrors.email && (
+          <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+            {formErrors.email}
+          </p>
+        )}
       </motion.div>
       <motion.div
         initial={{ opacity: 0, y: -50 }}
@@ -112,6 +148,11 @@ export function ContactForm() {
           placeholder="请输入您的信息"
           rows={4}
         />
+        {formErrors.message && (
+          <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+            {formErrors.message}
+          </p>
+        )}
       </motion.div>
       <motion.div
         initial={{ opacity: 0 }}

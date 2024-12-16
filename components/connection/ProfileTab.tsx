@@ -28,7 +28,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Search, Save, Trash2, PlusCircle, Wifi, WifiOff } from "lucide-react";
+import {
+  Search,
+  Save,
+  Trash2,
+  PlusCircle,
+  Wifi,
+  WifiOff,
+  Download,
+  Upload,
+} from "lucide-react";
 
 interface ProfileTabProps {
   toast: (props: { title: string; description: string }) => void;
@@ -103,6 +112,46 @@ export function ProfileTab({ toast }: ProfileTabProps) {
     }
   };
 
+  const handleExportProfile = () => {
+    if (activeProfile) {
+      const profileData = JSON.stringify(activeProfile, null, 2);
+      const blob = new Blob([profileData], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${activeProfile.name}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({
+        title: "导出成功",
+        description: "配置文件已成功导出",
+      });
+    }
+  };
+
+  const handleImportProfile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const profile = JSON.parse(e.target?.result as string);
+          addProfile({ ...profile, id: Date.now().toString() });
+          toast({
+            title: "导入成功",
+            description: "配置文件已成功导入",
+          });
+        } catch (error) {
+          toast({
+            title: "导入失败",
+            description: "配置文件格式错误",
+          });
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
   if (!activeProfile) {
     return (
       <motion.div
@@ -141,6 +190,47 @@ export function ProfileTab({ toast }: ProfileTabProps) {
             <CardDescription>管理你的连接配置</CardDescription>
           </div>
           <div className="flex items-center space-x-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleExportProfile}
+                    className="h-8 w-8"
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>导出配置</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() =>
+                      document.getElementById("import-profile")?.click()
+                    }
+                  >
+                    <Upload className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>导入配置</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <input
+              type="file"
+              id="import-profile"
+              className="hidden"
+              accept=".json"
+              onChange={handleImportProfile}
+            />
             <Button
               variant="outline"
               size="icon"
@@ -265,6 +355,24 @@ export function ProfileTab({ toast }: ProfileTabProps) {
                   }
                 />
                 <Label htmlFor="indiWebManager">启用 INDI Web Manager</Label>
+              </div>
+
+              <div className="flex items-center space-x-2 mt-4">
+                {activeProfile.isConnected ? (
+                  <Wifi className="h-4 w-4 text-green-500" />
+                ) : (
+                  <WifiOff className="h-4 w-4 text-red-500" />
+                )}
+                <span
+                  className={cn(
+                    "text-sm",
+                    activeProfile.isConnected
+                      ? "text-green-500"
+                      : "text-red-500"
+                  )}
+                >
+                  {activeProfile.isConnected ? "已连接" : "未连接"}
+                </span>
               </div>
             </motion.div>
           </AnimatePresence>

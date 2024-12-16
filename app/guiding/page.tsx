@@ -2,11 +2,6 @@
 
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { GuideView } from "./components/guide-view";
-import { WaveformDisplay } from "./components/waveform-display";
-import { TargetDiagram } from "./components/target-diagram";
-import { HistoryGraph } from "./components/history-graph";
-import { GuideImage } from "./components/guide-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +10,12 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useGuideStore } from "@/lib/store/guiding/guiding";
 import { getColorScheme } from "@/utils/color-schemes";
+
+import { GuideView } from "./components/GuideView";
+import { WaveformDisplay } from "./components/WaveformDisplay";
+import { TargetDiagram } from "./components/TargetDiagram";
+import { HistoryGraph } from "./components/HistoryGraph";
+import { GuideImage } from "./components/GuideImage";
 
 export default function TelescopeGuiding() {
   const {

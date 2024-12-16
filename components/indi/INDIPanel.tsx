@@ -42,6 +42,13 @@ import {
 } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 export function INDIPanel({
   devices,
@@ -61,6 +68,12 @@ export function INDIPanel({
   });
   const [showAdvancedFilter, setShowAdvancedFilter] = React.useState(false);
   const [darkMode, setDarkMode] = React.useState(true);
+  const [selectedProperties, setSelectedProperties] = React.useState<
+    Set<string>
+  >(new Set());
+  const [autoRefreshInterval, setAutoRefreshInterval] =
+    React.useState<number>(0);
+  const [showDashboard, setShowDashboard] = React.useState(true);
 
   React.useEffect(() => {
     if (darkMode) {
@@ -69,6 +82,18 @@ export function INDIPanel({
       document.documentElement.classList.remove("dark");
     }
   }, [darkMode]);
+
+  React.useEffect(() => {
+    if (autoRefreshInterval > 0) {
+      const timer = setInterval(() => {
+        selectedProperties.forEach((prop) => {
+          const [deviceName, propertyName] = prop.split(".");
+          handleRefresh(deviceName, propertyName);
+        });
+      }, autoRefreshInterval * 1000);
+      return () => clearInterval(timer);
+    }
+  }, [autoRefreshInterval, selectedProperties]);
 
   const addLog = (message: string) => {
     setLogs((prev) => [
@@ -176,6 +201,49 @@ export function INDIPanel({
       });
     }
   };
+
+  const handlePropertyDoubleClick = (
+    deviceName: string,
+    propertyName: string
+  ) => {
+    const key = `${deviceName}.${propertyName}`;
+    const newSelected = new Set(selectedProperties);
+    if (newSelected.has(key)) {
+      newSelected.delete(key);
+    } else {
+      newSelected.add(key);
+    }
+    setSelectedProperties(newSelected);
+  };
+
+  const renderQuickControls = () => (
+    <motion.div
+      className="flex gap-2 mb-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      <Select
+        value={autoRefreshInterval.toString()}
+        onValueChange={(value) => setAutoRefreshInterval(Number(value))}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="自动刷新间隔" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="0">关闭自动刷新</SelectItem>
+          <SelectItem value="5">每5秒</SelectItem>
+          <SelectItem value="10">每10秒</SelectItem>
+          <SelectItem value="30">每30秒</SelectItem>
+        </SelectContent>
+      </Select>
+      <Button
+        variant="outline"
+        onClick={() => setShowDashboard(!showDashboard)}
+      >
+        {showDashboard ? "隐藏仪表盘" : "显示仪表盘"}
+      </Button>
+    </motion.div>
+  );
 
   const renderDeviceStateButton = (device: INDIDevice) => {
     switch (device.state) {
@@ -342,6 +410,9 @@ export function INDIPanel({
                   property={property}
                   onChange={handlePropertyChange}
                   onRefresh={handleRefresh}
+                  onDoubleClick={() =>
+                    handlePropertyDoubleClick(deviceName, property.name)
+                  }
                 />
               </motion.div>
             ))}
@@ -365,6 +436,8 @@ export function INDIPanel({
     <div className="min-h-screen dark:bg-gray-900 dark:text-white">
       <Card className="max-w-[1200px] mx-auto">
         <CardContent className="p-2">
+          {renderQuickControls()}
+          {showDashboard && <DeviceDashboard devices={devices} />}
           {showAdvancedFilter && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}

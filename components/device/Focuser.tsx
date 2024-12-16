@@ -58,6 +58,8 @@ export function FocuserPage() {
     setTemperatureCompensation,
     moveFocuser,
   } = useFocuserStore();
+  const [autoFocusing, setAutoFocusing] = useState(false);
+  const [tempCompCurve, setTempCompCurve] = useState<[number, number][]>([]);
 
   const handleMove = (steps: number) => {
     moveFocuser(steps);
@@ -85,6 +87,18 @@ export function FocuserPage() {
         enabled ? "enabled" : "disabled"
       }`,
     });
+  };
+
+  const startAutoFocus = () => {
+    setAutoFocusing(true);
+    // 实现自动对焦逻辑
+  };
+
+  const addTempCompPoint = () => {
+    setTempCompCurve([
+      ...tempCompCurve,
+      [focuserInfo.temperature, focuserInfo.position],
+    ]);
   };
 
   return (
@@ -199,6 +213,31 @@ export function FocuserPage() {
           </CardContent>
         </StyledCard>
       </motion.div>
+
+      <StyledCard>
+        <CardHeader>
+          <CardTitle>自动对焦</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <motion.div variants={itemVariants} className="space-y-4">
+            <Button onClick={startAutoFocus} disabled={autoFocusing}>
+              {autoFocusing ? "对焦中..." : "开始自动对焦"}
+            </Button>
+
+            <div className="space-y-2">
+              <Label>温度补偿曲线</Label>
+              <Button onClick={addTempCompPoint} variant="outline">
+                添加当前点
+              </Button>
+              {tempCompCurve.map((point, index) => (
+                <div key={index} className="text-sm">
+                  {point[0].toFixed(1)}°C @ {point[1]}步
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </CardContent>
+      </StyledCard>
     </Container>
   );
 }

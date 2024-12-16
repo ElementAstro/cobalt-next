@@ -26,6 +26,8 @@ interface PropertyControlProps {
     value: string | number | boolean
   ) => Promise<void>;
   onRefresh: (deviceName: string, propertyName: string) => Promise<void>;
+  onDoubleClick?: () => void;
+  onHistoryExport?: () => void;
 }
 
 export const PropertyControl: React.FC<PropertyControlProps> = ({
@@ -33,10 +35,16 @@ export const PropertyControl: React.FC<PropertyControlProps> = ({
   property,
   onChange,
   onRefresh,
+  onDoubleClick,
+  onHistoryExport,
 }) => {
   const [isChanging, setIsChanging] = useState(false);
   const [localValue, setLocalValue] = useState(property.value);
   const [showHistory, setShowHistory] = useState(false);
+  const [pressTimer, setPressTimer] = React.useState<NodeJS.Timeout | null>(
+    null
+  );
+  const [showTrendline, setShowTrendline] = useState(false);
 
   useEffect(() => {
     setLocalValue(property.value);
@@ -75,6 +83,20 @@ export const PropertyControl: React.FC<PropertyControlProps> = ({
         description: `刷新 ${property.label} 失败`,
         variant: "destructive",
       });
+    }
+  };
+
+  const handleMouseDown = () => {
+    const timer = setTimeout(() => {
+      setShowHistory(true);
+    }, 1000);
+    setPressTimer(timer);
+  };
+
+  const handleMouseUp = () => {
+    if (pressTimer) {
+      clearTimeout(pressTimer);
+      setPressTimer(null);
     }
   };
 
@@ -143,9 +165,46 @@ export const PropertyControl: React.FC<PropertyControlProps> = ({
     }
   };
 
+  const renderHistoryChart = () => (
+    <div className="py-2">
+      <div className="flex justify-between mb-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowTrendline(!showTrendline)}
+        >
+          {showTrendline ? "隐藏趋势线" : "显示趋势线"}
+        </Button>
+        <Button variant="outline" size="sm" onClick={onHistoryExport}>
+          导出数据
+        </Button>
+      </div>
+      <LineChart
+        data={
+          property.history?.map((h, index) => ({
+            x: index,
+            ra: h.value as number,
+            dec: 0,
+          })) || []
+        }
+        width="100%"
+        height={300}
+        darkMode={true}
+        customize={{
+          lineColors: { ra: "#00e676", dec: "transparent" },
+          trending: showTrendline,
+        }}
+      />
+    </div>
+  );
+
   return (
     <motion.div
       className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onDoubleClick={onDoubleClick}
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
@@ -180,24 +239,7 @@ export const PropertyControl: React.FC<PropertyControlProps> = ({
                     {property.label} 历史记录
                   </DialogTitle>
                 </DialogHeader>
-                <div className="py-2">
-                  <LineChart
-                    data={property.history.map((h, index) => ({
-                      x: index,
-                      ra: h.value as number,
-                      dec: 0,
-                    }))}
-                    width="100%"
-                    height={300}
-                    darkMode={true}
-                    customize={{
-                      lineColors: {
-                        ra: "#00e676",
-                        dec: "transparent",
-                      },
-                    }}
-                  />
-                </div>
+                {renderHistoryChart()}
               </DialogContent>
             </Dialog>
           )}

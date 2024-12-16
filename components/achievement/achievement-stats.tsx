@@ -4,10 +4,28 @@ import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
 
 export function AchievementStats() {
-  const { getTotalPoints, getOverallProgress } = useAchievementStore();
+  const { getTotalPoints, getOverallProgress, achievements } =
+    useAchievementStore();
 
   const totalPoints = getTotalPoints();
   const overallProgress = getOverallProgress();
+
+  // 添加新的统计数据
+  const stats = {
+    recentUnlocks: achievements.filter(
+      (a) =>
+        a.isUnlocked &&
+        new Date(a.unlockedAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000
+    ).length,
+    rarityScore: achievements.reduce(
+      (acc, a) =>
+        acc +
+        (a.isUnlocked
+          ? 1 / achievements.filter((b) => b.isUnlocked).length
+          : 0),
+      0
+    ),
+  };
 
   return (
     <motion.div
@@ -52,6 +70,30 @@ export function AchievementStats() {
             />
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {overallProgress.toFixed(2)}%
+            </p>
+          </motion.div>
+          <motion.div
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+          >
+            <p className="text-sm font-medium dark:text-gray-300">
+              Recent Unlocks (7 days)
+            </p>
+            <p className="text-xl font-bold dark:text-white">
+              {stats.recentUnlocks}
+            </p>
+          </motion.div>
+          <motion.div
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+          >
+            <p className="text-sm font-medium dark:text-gray-300">
+              Rarity Score
+            </p>
+            <p className="text-xl font-bold dark:text-white">
+              {stats.rarityScore.toFixed(3)}
             </p>
           </motion.div>
         </CardContent>

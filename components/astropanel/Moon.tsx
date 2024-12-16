@@ -2,7 +2,8 @@ import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { MoonData } from "@/types/astropanel";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
 
 interface MoonProps {
   data: MoonData;
@@ -24,7 +25,20 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-export default function Moon({ data }: MoonProps) {
+const Moon = ({ data }: MoonProps) => {
+  const [showDetails, setShowDetails] = useState(false);
+
+  const moonPhaseDetails = {
+    "New Moon": "新月是月球运行到太阳与地球之间时的状态",
+    "Waxing Crescent": "眉月是新月之后，月亮逐渐变亮的阶段",
+    "First Quarter": "上弦月是月亮运行到公转轨道的四分之一处",
+    "Waxing Gibbous": "盈凸月是上弦月之后，继续变圆的阶段",
+    "Full Moon": "满月是月球运行到地球背向太阳的一面时的状态",
+    "Waning Gibbous": "亏凸月是满月之后，开始变暗的阶段",
+    "Last Quarter": "下弦月是月亮运行到公转轨道的四分之三处",
+    "Waning Crescent": "残月是下弦月之后，继续变暗的阶段",
+  };
+
   return (
     <motion.div
       variants={containerVariants}
@@ -43,7 +57,11 @@ export default function Moon({ data }: MoonProps) {
             variants={containerVariants}
             className="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-6"
           >
-            <motion.div variants={itemVariants} className="w-48 h-48 relative">
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              onClick={() => setShowDetails(!showDetails)}
+              className="cursor-pointer w-48 h-48 relative"
+            >
               <Image
                 src={`/assets/img/moon_${data.phase.toLowerCase()}.png`}
                 alt="Moon"
@@ -52,6 +70,25 @@ export default function Moon({ data }: MoonProps) {
                 className="rounded-full shadow-lg"
               />
             </motion.div>
+            <AnimatePresence>
+              {showDetails && (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="mt-4 p-4 bg-gray-700 rounded-lg"
+                >
+                  <h3 className="text-lg font-semibold mb-2">月相详情</h3>
+                  <p className="text-sm text-gray-300">
+                    {
+                      moonPhaseDetails[
+                        data.phase as keyof typeof moonPhaseDetails
+                      ]
+                    }
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
             <motion.div variants={itemVariants} className="flex-1">
               <p className="mb-4 text-xl text-gray-700 dark:text-gray-300">
                 {data.phase} ({data.light}%)
@@ -121,4 +158,6 @@ export default function Moon({ data }: MoonProps) {
       </Card>
     </motion.div>
   );
-}
+};
+
+export default Moon;

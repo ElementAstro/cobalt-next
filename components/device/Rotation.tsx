@@ -97,6 +97,18 @@ export default function RotatorInterface() {
     stop,
   } = useRotatorStore();
 
+  const [presets, setPresets] = useState<number[]>([]);
+  const [autoGuideCompensation, setAutoGuideCompensation] = useState(false);
+
+  const savePreset = () => {
+    setPresets([...presets, mechanicalPosition]);
+  };
+
+  const moveToPreset = (position: number) => {
+    setTargetPosition(position);
+    move();
+  };
+
   return (
     <Container variants={containerVariants} initial="hidden" animate="visible">
       <StyledCard
@@ -188,6 +200,41 @@ export default function RotatorInterface() {
             <motion.div variants={itemVariants} className="space-y-2">
               <Label>速度</Label>
               <div className="text-sm">{speed}%</div>
+            </motion.div>
+          </Grid>
+        </CardContent>
+      </StyledCard>
+
+      <StyledCard>
+        <CardHeader>
+          <CardTitle>高级功能</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Grid>
+            <motion.div variants={itemVariants} className="space-y-2">
+              <Label>导星补偿</Label>
+              <Switch
+                checked={autoGuideCompensation}
+                onCheckedChange={setAutoGuideCompensation}
+              />
+            </motion.div>
+            <motion.div variants={itemVariants} className="space-y-2">
+              <Label>位置预设</Label>
+              <div className="flex gap-2 flex-wrap">
+                {presets.map((preset, index) => (
+                  <Button
+                    key={index}
+                    onClick={() => moveToPreset(preset)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {preset.toFixed(1)}°
+                  </Button>
+                ))}
+                <Button onClick={savePreset} variant="secondary" size="sm">
+                  保存当前位置
+                </Button>
+              </div>
             </motion.div>
           </Grid>
         </CardContent>

@@ -4,6 +4,13 @@ import { useRef, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { CustomColors } from "@/types/guiding/guiding";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface GuideImageProps {
   imageUrl: string | null;
@@ -31,6 +38,9 @@ export function GuideImage({
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [rotation, setRotation] = useState(0);
+  const [flip, setFlip] = useState({ horizontal: false, vertical: false });
+  const [filter, setFilter] = useState("none");
 
   const drawImage = (ctx: CanvasRenderingContext2D, img: HTMLImageElement) => {
     ctx.save();
@@ -39,14 +49,21 @@ export function GuideImage({
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
     // 应用变换
-    ctx.translate(offset.x, offset.y);
-    ctx.scale(scale, scale);
+    ctx.translate(
+      offset.x + ctx.canvas.width / 2,
+      offset.y + ctx.canvas.height / 2
+    );
+    ctx.scale(
+      scale * (flip.horizontal ? -1 : 1),
+      scale * (flip.vertical ? -1 : 1)
+    );
+    ctx.rotate((rotation * Math.PI) / 180);
 
     // 应用亮度和对比度
-    ctx.filter = `brightness(${brightness}%) contrast(${contrast}%)`;
+    ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) ${filter}`;
 
     // 绘制图像
-    ctx.drawImage(img, 0, 0);
+    ctx.drawImage(img, -img.width / 2, -img.height / 2);
     ctx.restore();
 
     // 绘制网格
@@ -120,6 +137,9 @@ export function GuideImage({
     contrast,
     crosshairSize,
     crosshairThickness,
+    rotation,
+    flip,
+    filter,
   ]);
 
   const handleWheel = (e: React.WheelEvent) => {
@@ -149,6 +169,19 @@ export function GuideImage({
   const resetView = () => {
     setScale(1);
     setOffset({ x: 0, y: 0 });
+    setRotation(0);
+    setFlip({ horizontal: false, vertical: false });
+    setFilter("none");
+  };
+
+  const saveImage = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const link = document.createElement("a");
+    link.href = canvas.toDataURL("image/png");
+    link.download = "guide-image.png";
+    link.click();
   };
 
   return (
@@ -170,13 +203,63 @@ export function GuideImage({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       />
-      <Button
-        onClick={resetView}
-        className="absolute bottom-4 right-4 px-4 py-2 bg-gray-800 text-white rounded"
-        style={{ backgroundColor: colors.primary }}
-      >
-        Reset View
-      </Button>
+      <div className="absolute bottom-4 right-4 space-x-2">
+        <Button
+          onClick={resetView}
+          className="px-4 py-2 bg-gray-800 text-white rounded"
+          style={{ backgroundColor: colors.primary }}
+        >
+          Reset View
+        </Button>
+        <Button
+          onClick={saveImage}
+          className="px-4 py-2 bg-gray-800 text-white rounded"
+          style={{ backgroundColor: colors.primary }}
+        >
+          Save Image
+        </Button>
+      </div>
+      <div className="absolute top-4 left-4 space-x-2">
+        <Button
+          onClick={() => setRotation((prev) => prev + 90)}
+          className="px-4 py-2 bg-gray-800 text-white rounded"
+          style={{ backgroundColor: colors.primary }}
+        >
+          Rotate 90°
+        </Button>
+        <Button
+          onClick={() =>
+            setFlip((prev) => ({ ...prev, horizontal: !prev.horizontal }))
+          }
+          className="px-4 py-2 bg-gray-800 text-white rounded"
+          style={{ backgroundColor: colors.primary }}
+        >
+          Flip Horizontal
+        </Button>
+        <Button
+          onClick={() =>
+            setFlip((prev) => ({ ...prev, vertical: !prev.vertical }))
+          }
+          className="px-4 py-2 bg-gray-800 text-white rounded"
+          style={{ backgroundColor: colors.primary }}
+        >
+          Flip Vertical
+        </Button>
+        <Select value={filter} onValueChange={(value) => setFilter(value)}>
+          <SelectTrigger
+            className="px-4 py-2 bg-gray-800 text-white rounded"
+            style={{ backgroundColor: colors.primary }}
+          >
+            <SelectValue placeholder="Select Filter" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">None</SelectItem>
+            <SelectItem value="grayscale(100%)">Grayscale</SelectItem>
+            <SelectItem value="sepia(100%)">Sepia</SelectItem>
+            <SelectItem value="invert(100%)">Invert</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
     </motion.div>
   );
 }

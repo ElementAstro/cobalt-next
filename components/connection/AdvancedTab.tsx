@@ -146,6 +146,66 @@ export function AdvancedTab() {
           </div>
         </Card>
       </motion.div>
+
+      <motion.div variants={item}>
+        <Card className="p-6 bg-gray-800/50 backdrop-blur">
+          <div className="space-y-4">
+            <Label>性能设置</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="maxConnections">最大连接数</Label>
+                <Input
+                  id="maxConnections"
+                  type="number"
+                  value={settings.maxConnections}
+                  onChange={(e) => handleChange("maxConnections", parseInt(e.target.value))}
+                  className="bg-gray-700"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="bufferSize">缓冲区大小 (KB)</Label>
+                <Input
+                  id="bufferSize"
+                  type="number"
+                  value={settings.bufferSize}
+                  onChange={(e) => handleChange("bufferSize", parseInt(e.target.value))}
+                  className="bg-gray-700"
+                />
+              </div>
+            </div>
+          </div>
+        </Card>
+      </motion.div>
+
+      <motion.div variants={item}>
+        <Card className="p-6 bg-gray-800/50 backdrop-blur">
+          <div className="space-y-4">
+            <Label>备份设置</Label>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="autoBackup">自动备份</Label>
+                <Switch
+                  id="autoBackup"
+                  checked={settings.autoBackup}
+                  onCheckedChange={(checked) => handleChange("autoBackup", checked)}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <Label htmlFor="backupInterval">备份间隔 (分钟)</Label>
+                <Input
+                  id="backupInterval"
+                  type="number"
+                  value={settings.backupInterval}
+                  onChange={(e) => handleChange("backupInterval", parseInt(e.target.value))}
+                  className="w-32 bg-gray-700"
+                />
+              </div>
+            </div>
+          </div>
+        </Card>
+      </motion.div>
     </motion.div>
   );
 }

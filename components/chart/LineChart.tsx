@@ -65,6 +65,7 @@ interface LineGraphProps {
       ra?: string;
       dec?: string;
     };
+    trending?: boolean;
   };
 }
 

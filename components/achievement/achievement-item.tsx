@@ -38,6 +38,34 @@ export function AchievementItem({
     }
   };
 
+  // 添加新的动画效果
+  const unlockAnimation = {
+    initial: { scale: 1 },
+    animate: {
+      scale: [1, 1.2, 1],
+      filter: ["brightness(100%)", "brightness(200%)", "brightness(100%)"],
+    },
+    transition: { duration: 0.8 },
+  };
+
+  // 在 Card 组件中添加手势支持
+  const [[rotateX, rotateY], setRotate] = useState([0, 0]);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    const rotateX = (y - centerY) / 20;
+    const rotateY = (centerX - x) / 20;
+
+    setRotate([rotateX, rotateY]);
+  };
+
   return (
     <motion.div
       whileHover={{ scale: 1.02, y: -5 }}
@@ -58,6 +86,12 @@ export function AchievementItem({
           ${showDetails ? "transform-gpu translate-y-[-10px]" : ""}
         `}
         onClick={() => setShowDetails(!showDetails)}
+        style={{
+          transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
+          transition: "transform 0.3s ease",
+        }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setRotate([0, 0])}
       >
         <CardHeader className="flex flex-row items-center space-x-4 pb-2">
           <motion.div

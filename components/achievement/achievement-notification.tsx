@@ -18,8 +18,16 @@ export function AchievementNotification({
 }: AchievementNotificationProps) {
   const [show, setShow] = useState(false);
 
+  // 添加声音效果
+  const playUnlockSound = () => {
+    const audio = new Audio("/sounds/achievement-unlock.mp3");
+    audio.volume = 0.5;
+    audio.play().catch(() => {});
+  };
+
   useEffect(() => {
     if (achievement) {
+      playUnlockSound();
       setShow(true);
       const timer = setTimeout(() => setShow(false), 5000);
       return () => clearTimeout(timer);
@@ -35,6 +43,15 @@ export function AchievementNotification({
           exit={{ opacity: 0, y: 50, scale: 0.3 }}
           transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
           className="fixed bottom-4 right-4 z-50"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          drag
+          dragConstraints={{
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+          }}
         >
           <Card className="bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 text-white overflow-hidden">
             <CardHeader className="pb-2">

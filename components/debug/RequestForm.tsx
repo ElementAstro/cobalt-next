@@ -47,6 +47,10 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
   const [editTemplateName, setEditTemplateName] = useState("");
   const [showHistory, setShowHistory] = useState(false);
   const [search, setSearch] = useState("");
+  const [showPreview, setShowPreview] = useState(false);
+  const [batchCount, setBatchCount] = useState(1);
+  const [batchDelay, setBatchDelay] = useState(1000);
+  const [batchInProgress, setBatchInProgress] = useState(false);
 
   useEffect(() => {
     if (selectedTemplate !== "none") {
@@ -144,6 +148,37 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
     setSelectedTemplate("none");
     setIsEditing(false);
     setEditTemplateName("");
+  };
+
+  const previewRequest = () => {
+    try {
+      const config = {
+        method,
+        url,
+        headers: headers ? JSON.parse(headers) : {},
+        data: body ? JSON.parse(body) : undefined,
+        timeout,
+        retries,
+        retryDelay,
+        rejectUnauthorized: validateSSL,
+      };
+      return JSON.stringify(config, null, 2);
+    } catch {
+      return "配置格式错误";
+    }
+  };
+
+  const handleBatchSubmit = async () => {
+    setBatchInProgress(true);
+    for (let i = 0; i < batchCount; i++) {
+      const form = document.createElement('form');
+      const event = new Event('submit', { bubbles: true, cancelable: true });
+      form.dispatchEvent(event);
+      if (i < batchCount - 1) {
+        await new Promise(resolve => setTimeout(resolve, batchDelay));
+      }
+    }
+    setBatchInProgress(false);
   };
 
   return (
@@ -341,6 +376,52 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
               <Label htmlFor="validate-ssl" className="dark:text-gray-300">
                 验证 SSL
               </Label>
+            </motion.div>
+
+            <motion.div>
+              <div className="flex items-center space-x-4 mb-4">
+                <Switch
+                  id="show-preview"
+                  checked={showPreview}
+                  onCheckedChange={setShowPreview}
+                />
+                <Label htmlFor="show-preview">显示请求预览</Label>
+              </div>
+              {showPreview && (
+                <pre className="bg-gray-100 p-4 rounded overflow-auto">
+                  <code>{previewRequest()}</code>
+                </pre>
+              )}
+            </motion.div>
+
+            <motion.div className="flex flex-col space-y-2">
+              <Label>批量请求设置</Label>
+              <div className="flex space-x-4">
+                <Input
+                  type="number"
+                  value={batchCount}
+                  onChange={(e) => setBatchCount(Number(e.target.value))}
+                  placeholder="请求次数"
+                  min={1}
+                  className="w-32"
+                />
+                <Input
+                  type="number"
+                  value={batchDelay}
+                  onChange={(e) => setBatchDelay(Number(e.target.value))}
+                  placeholder="请求间隔(ms)"
+                  min={0}
+                  className="w-32"
+                />
+                <Button
+                  type="button"
+                  onClick={handleBatchSubmit}
+                  disabled={batchInProgress}
+                  className="flex items-center"
+                >
+                  {batchInProgress ? "执行中..." : "执行批量请求"}
+                </Button>
+              </div>
             </motion.div>
 
             <motion.div

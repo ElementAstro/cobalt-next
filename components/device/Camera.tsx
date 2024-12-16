@@ -12,6 +12,8 @@ import { useMockBackend } from "@/utils/mock-device";
 import { DeviceSelector } from "./DeviceSelector";
 import { motion } from "framer-motion";
 import { useCameraStore, TempDataPoint } from "@/lib/store/device/camera";
+import { useState } from "react";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 const Container = styled(motion.div)`
   color: white;
@@ -103,6 +105,11 @@ export function CameraPage() {
     toggleCooler: mockToggleCooler,
   } = useMockBackend();
 
+  const [isLiveView, setIsLiveView] = useState(false);
+  const [histogram, setHistogram] = useState<number[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [fileFormat, setFileFormat] = useState("FITS");
+
   const handleStartExposure = () => {
     startExposure(exposure, gain, binning);
     toast({
@@ -142,6 +149,36 @@ export function CameraPage() {
 
   const handleZoomOut = () => {
     // 实现缩放逻辑
+  };
+
+  const handleStartLiveView = () => {
+    setIsLiveView(true);
+    toast({
+      title: "实时预览",
+      description: "已启动实时预览模式",
+    });
+  };
+
+  const handleStopLiveView = () => {
+    setIsLiveView(false);
+    toast({
+      title: "实时预览",
+      description: "已停止实时预览模式",
+    });
+  };
+
+  const handleSaveImage = async () => {
+    setIsSaving(true);
+    try {
+      // 模拟保存图像
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      toast({
+        title: "保存成功",
+        description: `图像已保存为 ${fileFormat} 格式`,
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -292,6 +329,51 @@ export function CameraPage() {
           <motion.div variants={itemVariants} className="mt-6">
             <LineChart data={temperatureHistory} />
           </motion.div>
+        </CardContent>
+      </StyledCard>
+
+      <StyledCard
+        as={motion.div}
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <CardHeader>
+          <CardTitle>图像控制</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Grid>
+            <motion.div variants={itemVariants} className="space-y-2">
+              <Label>文件格式</Label>
+              <Select value={fileFormat} onValueChange={setFileFormat}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="FITS">FITS</SelectItem>
+                  <SelectItem value="TIFF">TIFF</SelectItem>
+                  <SelectItem value="RAW">RAW</SelectItem>
+                </SelectContent>
+              </Select>
+            </motion.div>
+            <motion.div variants={itemVariants}>
+              <Button
+                onClick={isLiveView ? handleStopLiveView : handleStartLiveView}
+                variant={isLiveView ? "destructive" : "default"}
+              >
+                {isLiveView ? "停止实时预览" : "开始实时预览"}
+              </Button>
+            </motion.div>
+            <motion.div variants={itemVariants}>
+              <Button onClick={handleSaveImage} disabled={isSaving}>
+                {isSaving ? "保存中..." : "保存图像"}
+              </Button>
+            </motion.div>
+          </Grid>
+          <div className="mt-4">
+            <Label>直方图</Label>
+            {/* 这里添加直方图组件的实现 */}
+          </div>
         </CardContent>
       </StyledCard>
     </Container>

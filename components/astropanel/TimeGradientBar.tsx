@@ -11,12 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Sun,
-  Moon,
-  Sunrise,
-  Sunset,
-} from "lucide-react";
+import { Sun, Moon, Sunrise, Sunset } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface SunTimes {
@@ -54,6 +49,10 @@ const TimeGradientBar = () => {
   const [sunTimes, setSunTimes] = useState<SunTimes | null>(null);
   const [selectedCity, setSelectedCity] = useState<City>(cities[0]);
   const [darkMode, setDarkMode] = useState<boolean>(false);
+
+  // 添加新的状态
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [showTimeDetails, setShowTimeDetails] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -124,6 +123,41 @@ const TimeGradientBar = () => {
     };
   };
 
+  // 添加动画控制函数
+  const handleBarClick = () => {
+    setIsAnimating(true);
+    setTimeout(() => setIsAnimating(false), 1000);
+  };
+
+  // 添加时间详情切换函数
+  const toggleTimeDetails = () => {
+    setShowTimeDetails(!showTimeDetails);
+  };
+
+  // 在 return 语句前添加新的工具函数
+  const getTimeDetails = () => {
+    if (!sunTimes) return null;
+    return [
+      {
+        label: "黎明",
+        time: format(sunTimes.dawn, "HH:mm"),
+        icon: <Sunrise />,
+      },
+      { label: "日出", time: format(sunTimes.sunrise, "HH:mm"), icon: <Sun /> },
+      {
+        label: "正午",
+        time: format(sunTimes.solarNoon, "HH:mm"),
+        icon: <Sun />,
+      },
+      {
+        label: "日落",
+        time: format(sunTimes.sunset, "HH:mm"),
+        icon: <Sunset />,
+      },
+      { label: "天黑", time: format(sunTimes.night, "HH:mm"), icon: <Moon /> },
+    ];
+  };
+
   const SunriseIcon = () => (
     <motion.svg
       width="24"
@@ -160,14 +194,14 @@ const TimeGradientBar = () => {
       opacity: 1,
       transition: {
         duration: 0.5,
-        staggerChildren: 0.1
-      }
-    }
+        staggerChildren: 0.1,
+      },
+    },
   };
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1 }
+    visible: { y: 0, opacity: 1 },
   };
 
   return (
@@ -212,7 +246,34 @@ const TimeGradientBar = () => {
           <motion.div
             className="relative mb-8"
             variants={itemVariants}
+            animate={isAnimating ? "pulse" : "visible"}
+            onClick={handleBarClick}
           >
+            {/* 添加时间详情展示 */}
+            {showTimeDetails && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="absolute -top-20 left-0 right-0 bg-gray-800 rounded-lg p-4"
+              >
+                <div className="grid grid-cols-5 gap-4">
+                  {getTimeDetails()?.map((detail, index) => (
+                    <motion.div
+                      key={detail.label}
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="flex flex-col items-center"
+                    >
+                      {detail.icon}
+                      <span className="text-sm">{detail.label}</span>
+                      <span className="text-xs">{detail.time}</span>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
             <div
               className="h-16 rounded-full relative overflow-hidden cursor-pointer"
               style={getGradientStyle()}
@@ -249,7 +310,7 @@ const TimeGradientBar = () => {
               </>
             )}
           </motion.div>
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
             variants={itemVariants}
           >

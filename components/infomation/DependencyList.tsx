@@ -109,6 +109,7 @@ export function DependencyList() {
   } = useDependencyStore();
 
   const [darkMode, setDarkMode] = useState(false);
+  const [selectedDeps, setSelectedDeps] = useState<string[]>([]);
   const itemsPerPage = 5;
 
   useEffect(() => {
@@ -178,6 +179,18 @@ export function DependencyList() {
     }
   };
 
+  const exportDependencies = () => {
+    const data = dependencies.filter((d) => selectedDeps.includes(d.name));
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "dependencies.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (isLoading) {
     return (
       <motion.div
@@ -242,6 +255,22 @@ export function DependencyList() {
       animate={{ opacity: 1 }}
       className="space-y-4 p-4 rounded-lg dark:bg-gray-800/50 backdrop-blur-sm"
     >
+      <div className="flex justify-between mb-4">
+        <Button
+          variant="outline"
+          onClick={exportDependencies}
+          disabled={selectedDeps.length === 0}
+        >
+          导出选中 ({selectedDeps.length})
+        </Button>
+        <Button
+          variant="destructive"
+          onClick={() => setSelectedDeps([])}
+          disabled={selectedDeps.length === 0}
+        >
+          清除选择
+        </Button>
+      </div>
       <CustomPagination
         currentPage={currentPage}
         totalPages={Math.ceil(sortedDependencies.length / itemsPerPage)}

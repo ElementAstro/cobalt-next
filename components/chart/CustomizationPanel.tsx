@@ -1,6 +1,15 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Save, X as Reset, Palette, LineChartIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface CustomizationPanelProps {
   updateInterval: number;
@@ -21,6 +30,13 @@ interface CustomizationPanelProps {
     searchBar: boolean;
     statusBar: boolean;
   }) => void;
+  chartOptions: {
+    showGrid: boolean;
+    showLabels: boolean;
+    enableAnimation: boolean;
+    dataPointSize: number;
+  };
+  setChartOptions: (options: any) => void;
 }
 
 const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
@@ -36,6 +52,8 @@ const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
   setPrimaryColor,
   showComponents,
   setShowComponents,
+  chartOptions,
+  setChartOptions,
 }) => {
   const handleReset = () => {
     setUpdateInterval(1000);
@@ -51,103 +69,89 @@ const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className={`p-6 rounded-lg shadow-lg transition-colors duration-300 ${
+      className={`p-6 rounded-lg shadow-lg space-y-6 ${
         darkMode ? "bg-gray-800 text-white" : "bg-gray-100 text-black"
       }`}
     >
-      <h2 className="text-2xl font-bold mb-6 flex items-center">
-        <Palette className="mr-2" /> 自定义选项
-      </h2>
-      <div className="flex flex-col space-y-6">
-        {/* 更新间隔 */}
-        <div>
-          <label htmlFor="updateInterval" className="block mb-2 font-medium">
-            更新间隔 (毫秒):
-          </label>
-          <input
-            id="updateInterval"
-            type="number"
-            min="100"
-            max="10000"
-            step="100"
-            value={updateInterval}
-            onChange={(e) => setUpdateInterval(Number(e.target.value))}
-            className={`w-full p-3 rounded border ${
-              darkMode ? "bg-gray-700 text-white" : "bg-white text-black"
-            } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-          />
-        </div>
+      <div className="flex items-center gap-2 mb-6">
+        <Palette className="w-6 h-6" />
+        <h2 className="text-2xl font-bold">自定义选项</h2>
+      </div>
 
-        {/* 暗色模式 */}
-        <div>
-          <label htmlFor="darkMode" className="flex items-center space-x-2">
+      <div className="space-y-6">
+        {/* 基础设置 */}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="updateInterval">更新间隔 (毫秒)</Label>
+            <Input
+              id="updateInterval"
+              type="number"
+              min="100"
+              max="10000"
+              step="100"
+              value={updateInterval}
+              onChange={(e) => setUpdateInterval(Number(e.target.value))}
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="darkMode">暗色模式</Label>
             <input
               id="darkMode"
               type="checkbox"
               checked={darkMode}
               onChange={(e) => setDarkMode(e.target.checked)}
-              className="form-checkbox h-6 w-6 text-blue-600"
+              className="form-checkbox h-5 w-5"
             />
-            <span className="text-lg">暗色模式</span>
-          </label>
+          </div>
         </div>
 
-        {/* 字体大小 */}
-        <div>
-          <label htmlFor="fontSize" className="block mb-2 font-medium">
-            <LineChartIcon className="mr-2" /> 字体大小:
-          </label>
-          <select
-            id="fontSize"
-            value={fontSize}
-            onChange={(e) => setFontSize(e.target.value)}
-            className={`w-full p-3 rounded border ${
-              darkMode ? "bg-gray-700 text-white" : "bg-white text-black"
-            } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-          >
-            <option value="small">小</option>
-            <option value="medium">中</option>
-            <option value="large">大</option>
-          </select>
+        {/* 外观设置 */}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="fontSize">字体大小</Label>
+            <Select value={fontSize} onValueChange={setFontSize}>
+              <SelectTrigger>
+                <SelectValue placeholder="选择字体大小" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="small">小</SelectItem>
+                <SelectItem value="medium">中</SelectItem>
+                <SelectItem value="large">大</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="language">语言选择</Label>
+            <Select value={language} onValueChange={setLanguage}>
+              <SelectTrigger>
+                <SelectValue placeholder="选择语言" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="zh-cn">中文</SelectItem>
+                <SelectItem value="en-us">English</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="primaryColor">主要颜色</Label>
+            <Input
+              id="primaryColor"
+              type="color"
+              value={primaryColor}
+              onChange={(e) => setPrimaryColor(e.target.value)}
+              className="h-12 p-0 border-none"
+            />
+          </div>
         </div>
 
-        {/* 语言选择 */}
-        <div>
-          <label htmlFor="language" className="block mb-2 font-medium">
-            <i className="mr-2">🌐</i> 语言选择:
-          </label>
-          <select
-            id="language"
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            className={`w-full p-3 rounded border ${
-              darkMode ? "bg-gray-700 text-white" : "bg-white text-black"
-            } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-          >
-            <option value="zh-cn">中文</option>
-            <option value="en-us">English</option>
-          </select>
-        </div>
-
-        {/* 主要颜色选择 */}
-        <div>
-          <label htmlFor="primaryColor" className="block mb-2 font-medium">
-            <Palette className="mr-2" /> 主要颜色:
-          </label>
-          <input
-            id="primaryColor"
-            type="color"
-            value={primaryColor}
-            onChange={(e) => setPrimaryColor(e.target.value)}
-            className="w-full h-12 p-0 border-none bg-transparent cursor-pointer"
-          />
-        </div>
-
-        {/* 显示/隐藏组件 */}
-        <div>
-          <h3 className="mb-2 font-medium">显示/隐藏组件</h3>
-          <div className="flex items-center space-x-4">
-            <label className="flex items-center space-x-2">
+        {/* 组件显示设置 */}
+        <div className="space-y-2">
+          <Label>显示/隐藏组件</Label>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={showComponents.searchBar}
@@ -157,11 +161,11 @@ const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
                     searchBar: e.target.checked,
                   })
                 }
-                className="form-checkbox h-5 w-5 text-blue-600"
+                className="form-checkbox h-5 w-5"
               />
               <span>搜索栏</span>
             </label>
-            <label className="flex items-center space-x-2">
+            <label className="flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={showComponents.statusBar}
@@ -171,30 +175,68 @@ const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
                     statusBar: e.target.checked,
                   })
                 }
-                className="form-checkbox h-5 w-5 text-blue-600"
+                className="form-checkbox h-5 w-5"
               />
               <span>状态栏</span>
             </label>
           </div>
         </div>
 
+        {/* 图表选项 */}
+        <div className="space-y-4">
+          <Label>图表选项</Label>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={chartOptions.showGrid}
+                onChange={(e) =>
+                  setChartOptions({
+                    ...chartOptions,
+                    showGrid: e.target.checked,
+                  })
+                }
+                className="form-checkbox h-5 w-5"
+              />
+              <span>显示网格</span>
+            </label>
+
+            <div className="space-y-2">
+              <Label htmlFor="dataPointSize">数据点大小</Label>
+              <Input
+                id="dataPointSize"
+                type="range"
+                min="1"
+                max="10"
+                value={chartOptions.dataPointSize}
+                onChange={(e) =>
+                  setChartOptions({
+                    ...chartOptions,
+                    dataPointSize: Number(e.target.value),
+                  })
+                }
+              />
+            </div>
+          </div>
+        </div>
+
         {/* 操作按钮 */}
-        <div className="flex space-x-4 mt-4">
+        <div className="flex gap-4 pt-4">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleReset}
-            className="flex items-center justify-center w-full p-3 bg-red-500 text-white rounded hover:bg-red-600 transition-colors duration-300"
+            className="flex-1 flex items-center justify-center p-2 bg-red-500 text-white rounded-md hover:bg-red-600"
           >
-            <Reset className="mr-2" /> 重置默认
+            <Reset className="w-4 h-4 mr-2" /> 重置默认
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             type="submit"
-            className="flex items-center justify-center w-full p-3 bg-green-500 text-white rounded hover:bg-green-600 transition-colors duration-300"
+            className="flex-1 flex items-center justify-center p-2 bg-green-500 text-white rounded-md hover:bg-green-600"
           >
-            <Save className="mr-2" /> 保存设置
+            <Save className="w-4 h-4 mr-2" /> 保存设置
           </motion.button>
         </div>
       </div>

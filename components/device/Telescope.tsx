@@ -19,6 +19,7 @@ import { DeviceSelector } from "./DeviceSelector";
 import { motion } from "framer-motion";
 import { useMountStore } from "@/lib/store/device/telescope";
 import styled from "styled-components";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 const Container = styled(motion.div)`
   color: white;
@@ -61,6 +62,10 @@ export function TelescopePage() {
     homeTelescope,
   } = useMockBackend();
 
+  const [trackingRate, setTrackingRate] = useState("1.0");
+  const [pierSide, setPierSide] = useState<"East" | "West">("East");
+  const [guideRate, setGuideRate] = useState("0.5");
+
   const handleManualMove = (direction: string) => {
     moveTelescopeManual(direction);
     toast({
@@ -90,6 +95,21 @@ export function TelescopePage() {
     toast({
       title: "Homing Telescope",
       description: "Telescope is moving to home position",
+    });
+  };
+
+  const handleSetTrackingRate = () => {
+    toast({
+      title: "追踪速率已更新",
+      description: `速率设置为 ${trackingRate}x 恒星速率`,
+    });
+  };
+
+  const handleFlipMeridian = () => {
+    setPierSide((prev) => (prev === "East" ? "West" : "East"));
+    toast({
+      title: "子午线翻转",
+      description: `转换到子午线${pierSide === "East" ? "西" : "东"}侧`,
     });
   };
 
@@ -294,6 +314,47 @@ export function TelescopePage() {
                 </Button>
               </motion.div>
             </motion.div>
+          </CardContent>
+        </StyledCard>
+
+        <StyledCard>
+          <CardHeader>
+            <CardTitle>高级控制</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>追踪速率</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={trackingRate}
+                    onChange={(e) => setTrackingRate(e.target.value)}
+                    className="w-24"
+                  />
+                  <Button onClick={handleSetTrackingRate}>设置</Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>导星速率</Label>
+                <Select value={guideRate} onValueChange={setGuideRate}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0.25">0.25x</SelectItem>
+                    <SelectItem value="0.5">0.5x</SelectItem>
+                    <SelectItem value="1.0">1.0x</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>子午线侧</Label>
+                <div className="flex gap-2">
+                  <div>{pierSide}</div>
+                  <Button onClick={handleFlipMeridian}>翻转</Button>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </StyledCard>
       </motion.div>

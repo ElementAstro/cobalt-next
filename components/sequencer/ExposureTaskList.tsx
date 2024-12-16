@@ -115,6 +115,44 @@ export function ExposureTaskList({
     onTasksChange(tasks.filter((task) => !selectedIds.includes(task.id)));
   };
 
+  // 添加新的状态和功能
+  const [taskStatus, setTaskStatus] = useState<
+    Record<
+      string,
+      {
+        status: "pending" | "running" | "completed" | "failed";
+        startTime?: Date;
+        endTime?: Date;
+        error?: string;
+      }
+    >
+  >({});
+
+  const [bulkActions, setBulkActions] = useState({
+    selectedTasks: new Set<string>(),
+    isSelectAll: false,
+  });
+
+  const handleBulkAction = (action: "enable" | "disable" | "delete") => {
+    const selectedIds = Array.from(bulkActions.selectedTasks);
+    switch (action) {
+      case "enable":
+      case "disable":
+        onTasksChange(
+          tasks.map((task) =>
+            selectedIds.includes(task.id)
+              ? { ...task, enabled: action === "enable" }
+              : task
+          )
+        );
+        break;
+      case "delete":
+        onTasksChange(tasks.filter((task) => !selectedIds.includes(task.id)));
+        break;
+    }
+    setBulkActions({ selectedTasks: new Set(), isSelectAll: false });
+  };
+
   return (
     <div>
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-4 space-y-2 md:space-y-0">
@@ -144,6 +182,30 @@ export function ExposureTaskList({
           </Button>
           <Button onClick={addTask} className="bg-teal-500 text-white">
             添加任务
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex space-x-2">
+          <Button
+            onClick={() => handleBulkAction("enable")}
+            disabled={bulkActions.selectedTasks.size === 0}
+          >
+            批量启用
+          </Button>
+          <Button
+            onClick={() => handleBulkAction("disable")}
+            disabled={bulkActions.selectedTasks.size === 0}
+          >
+            批量禁用
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => handleBulkAction("delete")}
+            disabled={bulkActions.selectedTasks.size === 0}
+          >
+            批量删除
           </Button>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { usePluginStore } from "@/lib/store/plugin";
@@ -31,6 +31,13 @@ const itemVariants = {
 export function VerticalTabs({ tabs }: VerticalTabsProps) {
   const activeTab = usePluginStore((state) => state.activeTab);
   const setActiveTab = usePluginStore((state) => state.setActiveTab);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleTabChange = async (value: string) => {
+    setIsLoading(true);
+    await setActiveTab(value);
+    setIsLoading(false);
+  };
 
   return (
     <motion.div
@@ -47,10 +54,22 @@ export function VerticalTabs({ tabs }: VerticalTabsProps) {
           <Button
             key={tab.value}
             variant={activeTab === tab.value ? "default" : "ghost"}
-            className="w-full justify-start text-left mb-2 text-white dark:text-gray-200"
-            onClick={() => setActiveTab(tab.value)}
+            className={`w-full justify-start text-left mb-2 text-white dark:text-gray-200 ${
+              isLoading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+            onClick={() => handleTabChange(tab.value)}
+            disabled={isLoading}
           >
             {tab.label}
+            {isLoading && activeTab === tab.value && (
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity }}
+                className="ml-2"
+              >
+                ⭕
+              </motion.div>
+            )}
           </Button>
         ))}
       </motion.div>

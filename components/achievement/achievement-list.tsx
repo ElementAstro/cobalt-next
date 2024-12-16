@@ -61,6 +61,24 @@ export function AchievementList() {
     return "grid-cols-1 md:grid-cols-2 lg:grid-cols-3";
   }, [isLandscape]);
 
+  // 在 AchievementList 组件内添加新的排序功能
+  const sortOptions = {
+    newest: (a: Achievement, b: Achievement) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    points: (a: Achievement, b: Achievement) => b.points - a.points,
+    progress: (a: Achievement, b: Achievement) =>
+      b.progress / b.totalRequired - a.progress / a.totalRequired,
+  };
+
+  const [sortBy, setSortBy] = useState("newest");
+
+  // 在过滤后的成就列表上应用排序
+  const sortedAchievements = useMemo(() => {
+    return [...filteredAchievements].sort(
+      sortOptions[sortBy as keyof typeof sortOptions]
+    );
+  }, [filteredAchievements, sortBy]);
+
   return (
     <div
       className={`space-y-4 p-4 dark:bg-gray-900 ${
@@ -96,6 +114,16 @@ export function AchievementList() {
                     {category}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest</SelectItem>
+                <SelectItem value="points">Points</SelectItem>
+                <SelectItem value="progress">Progress</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -142,7 +170,7 @@ export function AchievementList() {
         }`}
       >
         <AnimatePresence mode="popLayout">
-          {filteredAchievements.map((achievement, index) => (
+          {sortedAchievements.map((achievement, index) => (
             <motion.div
               key={achievement.id}
               initial={getInitialAnimation(animationPreference)}
