@@ -1,8 +1,8 @@
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface ErrorDisplayProps {
-  message: string
+  message: string;
 }
 
 export function ErrorDisplay({ message }: ErrorDisplayProps) {
@@ -12,6 +12,5 @@ export function ErrorDisplay({ message }: ErrorDisplayProps) {
       <AlertTitle>错误</AlertTitle>
       <AlertDescription>{message}</AlertDescription>
     </Alert>
-  )
+  );
 }
-

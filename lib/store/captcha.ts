@@ -8,7 +8,13 @@ interface CaptchaStore {
   timeLeft: number;
   theme: "light" | "dark" | "system";
   animationSpeed: "slow" | "normal" | "fast";
+  soundEnabled: boolean;
+  autoRefresh: boolean;
+  difficulty: "easy" | "normal" | "hard";
+  language: "zh" | "en";
 
+  onError: () => void;
+  onSuccess: () => void;
   setDarkMode: (value: boolean) => void;
   setHighContrast: (value: boolean) => void;
   incrementError: () => void;
@@ -18,6 +24,10 @@ interface CaptchaStore {
   setIsDisabled: (value: boolean) => void;
   setTheme: (theme: "light" | "dark" | "system") => void;
   setAnimationSpeed: (speed: "slow" | "normal" | "fast") => void;
+  setSoundEnabled: (value: boolean) => void;
+  setAutoRefresh: (value: boolean) => void;
+  setDifficulty: (value: "easy" | "normal" | "hard") => void;
+  setLanguage: (value: "zh" | "en") => void;
 }
 
 export const useCaptchaStore = create<CaptchaStore>((set) => ({
@@ -28,7 +38,13 @@ export const useCaptchaStore = create<CaptchaStore>((set) => ({
   timeLeft: 0,
   theme: "system",
   animationSpeed: "normal",
+  soundEnabled: true,
+  autoRefresh: false,
+  difficulty: "normal",
+  language: "zh",
 
+  onError: () => set((state) => ({ errorCount: state.errorCount + 1 })),
+  onSuccess: () => {},
   setDarkMode: (value) => set({ isDarkMode: value }),
   setHighContrast: (value) => set({ isHighContrast: value }),
   incrementError: () => set((state) => ({ errorCount: state.errorCount + 1 })),
@@ -39,4 +55,8 @@ export const useCaptchaStore = create<CaptchaStore>((set) => ({
   setIsDisabled: (value) => set({ isDisabled: value }),
   setTheme: (theme) => set({ theme }),
   setAnimationSpeed: (speed) => set({ animationSpeed: speed }),
+  setSoundEnabled: (value) => set({ soundEnabled: value }),
+  setAutoRefresh: (value) => set({ autoRefresh: value }),
+  setDifficulty: (value) => set({ difficulty: value }),
+  setLanguage: (value) => set({ language: value }),
 }));

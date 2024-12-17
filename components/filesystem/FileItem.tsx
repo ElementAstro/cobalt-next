@@ -8,32 +8,42 @@ import {
   FileText,
   FileAudio,
   FileArchive,
+  MoreVertical,
 } from "lucide-react";
-import { File, FileType, CustomizationOptions, FileOperation } from "@/types/filesystem";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
+import {
+  File,
+  FileType,
+  CustomizationOptions,
+  FileOperation,
+} from "@/types/filesystem";
 import { useFileItemStore } from "@/lib/store/filesystem";
-
-// Zustand 状态管理
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { formatFileSize } from "@/lib/utils";
 
 interface FileItemProps {
-  file: File;
+  file: File & {
+    thumbnailUrl?: string;
+    url?: string;
+  };
   index: number;
   viewMode: "grid" | "list";
-  customOptions: CustomizationOptions;
-  onDelete: (id: string) => void;
-  onContextMenu: (e: React.MouseEvent, file: File) => void;
-  onFileOperation: (operation: FileOperation, file: File) => void;
+  customOptions?: CustomizationOptions;
+  onDelete?: (id: string) => void;
+  onContextMenu?: (e: React.MouseEvent, file: File) => void;
+  onFileOperation?: (operation: FileOperation, file: File) => void;
+  isSelectionMode?: boolean;
+  onShowMenu?: (e: React.MouseEvent, file: File) => void;
 }
 
 export const FileItem: React.FC<FileItemProps> = ({
   file,
   index,
   viewMode,
-  customOptions,
-  onDelete,
-  onContextMenu,
-  onFileOperation,
+  isSelectionMode = false,
+  onShowMenu,
 }) => {
   const { selectedFileId, setSelectedFileId } = useFileItemStore();
   const isSelected = selectedFileId === file.id;
@@ -61,67 +71,99 @@ export const FileItem: React.FC<FileItemProps> = ({
     setSelectedFileId(isSelected ? null : file.id);
   };
 
+  const handleCheckedChange = (checked: boolean) => {
+    setSelectedFileId(checked ? file.id : null);
+  };
+
+  const renderThumbnail = () => {
+    if (file.type === "image") {
+      return (
+        <div className="relative w-full pt-[100%]">
+          <img
+            src={file.thumbnailUrl || file.url}
+            alt={file.name}
+            className="absolute inset-0 w-full h-full object-cover rounded"
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div className="relative w-full pt-[100%] bg-gray-700 rounded">
+        {getIconForFileType(file.type)}
+      </div>
+    );
+  };
+
   return (
     <Draggable draggableId={file.id} index={index}>
       {(provided, snapshot) => (
-        <motion.div
+        <div
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           className={`
-            ${
-              viewMode === "grid"
-                ? "flex flex-col items-center space-y-2 p-4"
-                : "flex items-center space-x-4 p-2 hover:bg-gray-800 rounded"
-            }
-            ${
-              isSelected
-                ? customOptions.theme === "dark"
-                  ? "bg-blue-800"
-                  : "bg-blue-200"
-                : ""
-            }
-            ${snapshot.isDragging ? "opacity-50" : "opacity-100"}
-            cursor-pointer transition-all duration-200
-            ${viewMode === "grid" ? "w-40" : "w-full"}
+            group relative
+            ${viewMode === "grid" ? "flex flex-col" : "flex items-center"}
+            ${isSelected ? "ring-2 ring-blue-500" : ""}
+            ${snapshot.isDragging ? "opacity-50" : ""}
+            rounded-lg overflow-hidden
+            hover:bg-gray-700 transition-all duration-200
           `}
           onClick={handleSelect}
-          onContextMenu={(e) => onContextMenu(e, file)}
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.3 }}
         >
+          {isSelectionMode && (
+            <div className="absolute top-2 left-2 z-10">
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={handleCheckedChange}
+              />
+            </div>
+          )}
+
+          {viewMode === "grid" ? (
+            renderThumbnail()
+          ) : (
+            <div className="flex-shrink-0 w-10 h-10">
+              {getIconForFileType(file.type)}
+            </div>
+          )}
+
           <div
             className={`
-              ${viewMode === "grid" ? "w-32 h-24" : "w-12 h-12"} 
-              ${customOptions.theme === "dark" ? "bg-gray-700" : "bg-gray-300"} 
-              rounded flex items-center justify-center
-            `}
+            ${viewMode === "grid" ? "p-2" : "flex-1 ml-3"}
+          `}
           >
-            {getIconForFileType(file.type)}
-          </div>
-          <motion.div
-            className={`${
-              viewMode === "grid" ? "text-center w-full" : "flex-1"
-            }`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <span className="text-sm font-medium">{file.name}</span>
+            <div className="font-medium truncate">{file.name}</div>
             {viewMode === "list" && (
-              <div className="text-xs text-gray-400">
-                <div>{`大小: ${(file.size / 1024).toFixed(2)} KB`}</div>
-                <div>{`修改时间: ${format(
-                  file.lastModified,
-                  "yyyy-MM-dd HH:mm"
-                )}`}</div>
-                <div>{`所有者: ${file.owner}`}</div>
+              <div className="text-sm text-gray-400">
+                {formatFileSize(file.size)} •{" "}
+                {format(file.lastModified, "yyyy-MM-dd HH:mm")}
               </div>
             )}
-          </motion.div>
-        </motion.div>
+          </div>
+
+          <div
+            className={`
+            absolute right-2 top-2
+            opacity-0 group-hover:opacity-100
+            transition-opacity duration-200
+          `}
+          >
+            {onShowMenu && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  onShowMenu(e, file);
+                }}
+              >
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        </div>
       )}
     </Draggable>
   );

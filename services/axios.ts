@@ -5,6 +5,7 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { RateLimiter } from "limiter";
+import log from "@/lib/logger";
 
 interface ApiConfig extends AxiosRequestConfig {
   useQueue?: boolean;
@@ -59,31 +60,31 @@ class ApiWrapper {
       config.headers = config.headers || {};
       config.headers["Authorization"] = `Bearer ${token}`;
     }
-    console.log(`[Request] ${config.method?.toUpperCase()} ${config.url}`);
-    console.log("Headers:", config.headers);
-    console.log("Data:", config.data);
+    log.info(`[Request] ${config.method?.toUpperCase()} ${config.url}`);
+    log.debug("Headers:", config.headers);
+    log.debug("Data:", config.data);
     return config;
   };
 
   private responseInterceptor = (response: AxiosResponse) => {
-    console.log(`[Response] ${response.status} ${response.config.url}`);
-    console.log("Data:", response.data);
+    log.info(`[Response] ${response.status} ${response.config.url}`);
+    log.debug("Data:", response.data);
     return response;
   };
 
   private errorInterceptor = (error: any) => {
     if (axios.isCancel(error)) {
-      console.log("Request canceled:", error.message);
+      log.warn("Request canceled:", error.message);
     } else if (error.response) {
-      console.error(
+      log.error(
         `[Error] ${error.response.status} ${error.response.config.url}`
       );
-      console.error("Response:", error.response.data);
+      log.error("Response:", error.response.data);
     } else if (error.request) {
-      console.error("[Error] No response received");
-      console.error("Request:", error.request);
+      log.error("[Error] No response received");
+      log.error("Request:", error.request);
     } else {
-      console.error("[Error]", error.message);
+      log.error("[Error]", error.message);
     }
     return Promise.reject(error);
   };

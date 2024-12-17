@@ -1,22 +1,25 @@
-import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 
 interface FilterAdjusterProps {
   filters: {
-    blur: number
-    brightness: number
-    contrast: number
-    grayscale: number
-    hueRotate: number
-    saturate: number
-  }
-  onChange: (filters: FilterAdjusterProps['filters']) => void
+    blur: number;
+    brightness: number;
+    contrast: number;
+    grayscale: number;
+    hueRotate: number;
+    saturate: number;
+  };
+  onChange: (filters: FilterAdjusterProps["filters"]) => void;
 }
 
 export function FilterAdjuster({ filters, onChange }: FilterAdjusterProps) {
-  const handleChange = (key: keyof FilterAdjusterProps['filters'], value: number) => {
-    onChange({ ...filters, [key]: value })
-  }
+  const handleChange = (
+    key: keyof FilterAdjusterProps["filters"],
+    value: number
+  ) => {
+    onChange({ ...filters, [key]: value });
+  };
 
   return (
     <div className="space-y-4">
@@ -28,7 +31,7 @@ export function FilterAdjuster({ filters, onChange }: FilterAdjusterProps) {
           max={20}
           step={1}
           value={[filters.blur]}
-          onValueChange={(value) => handleChange('blur', value[0])}
+          onValueChange={(value) => handleChange("blur", value[0])}
         />
       </div>
       <div>
@@ -39,7 +42,7 @@ export function FilterAdjuster({ filters, onChange }: FilterAdjusterProps) {
           max={200}
           step={1}
           value={[filters.brightness]}
-          onValueChange={(value) => handleChange('brightness', value[0])}
+          onValueChange={(value) => handleChange("brightness", value[0])}
         />
       </div>
       <div>
@@ -50,7 +53,7 @@ export function FilterAdjuster({ filters, onChange }: FilterAdjusterProps) {
           max={200}
           step={1}
           value={[filters.contrast]}
-          onValueChange={(value) => handleChange('contrast', value[0])}
+          onValueChange={(value) => handleChange("contrast", value[0])}
         />
       </div>
       <div>
@@ -61,7 +64,7 @@ export function FilterAdjuster({ filters, onChange }: FilterAdjusterProps) {
           max={100}
           step={1}
           value={[filters.grayscale]}
-          onValueChange={(value) => handleChange('grayscale', value[0])}
+          onValueChange={(value) => handleChange("grayscale", value[0])}
         />
       </div>
       <div>
@@ -72,7 +75,7 @@ export function FilterAdjuster({ filters, onChange }: FilterAdjusterProps) {
           max={360}
           step={1}
           value={[filters.hueRotate]}
-          onValueChange={(value) => handleChange('hueRotate', value[0])}
+          onValueChange={(value) => handleChange("hueRotate", value[0])}
         />
       </div>
       <div>
@@ -83,10 +86,9 @@ export function FilterAdjuster({ filters, onChange }: FilterAdjusterProps) {
           max={200}
           step={1}
           value={[filters.saturate]}
-          onValueChange={(value) => handleChange('saturate', value[0])}
+          onValueChange={(value) => handleChange("saturate", value[0])}
         />
       </div>
     </div>
-  )
+  );
 }
-

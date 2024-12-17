@@ -23,7 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { useLocalStorageStore } from "@/lib/store/storage";
+import { useLocalStorageStore } from "@/lib/store/storage/localstorage";
 
 interface StorageItem {
   key: string;

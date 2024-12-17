@@ -29,7 +29,13 @@ const SiteList: React.FC<SiteListProps> = ({
           <motion.div
             {...provided.droppableProps}
             ref={provided.innerRef}
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 landscape:grid-cols-6 gap-4 "
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6 
+            landscape:md:grid-cols-2 landscape:lg:grid-cols-3 landscape:xl:grid-cols-4 
+            gap-4 p-4 transition-all duration-300"
+            style={{
+              perspective: "1000px",
+              transformStyle: "preserve-3d",
+            }}
             initial="hidden"
             animate={controls}
             variants={{

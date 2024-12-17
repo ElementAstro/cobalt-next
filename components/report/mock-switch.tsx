@@ -1,26 +1,26 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
+import { useState, useEffect } from "react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export function MockSwitch() {
-  const [isMockMode, setIsMockMode] = useState(false)
+  const [isMockMode, setIsMockMode] = useState(false);
 
   useEffect(() => {
     if (isMockMode) {
-      localStorage.setItem('mockMode', 'true')
+      localStorage.setItem("mockMode", "true");
     } else {
-      localStorage.removeItem('mockMode')
+      localStorage.removeItem("mockMode");
     }
-  }, [isMockMode])
+  }, [isMockMode]);
 
   useEffect(() => {
-    const storedMockMode = localStorage.getItem('mockMode')
+    const storedMockMode = localStorage.getItem("mockMode");
     if (storedMockMode) {
-      setIsMockMode(true)
+      setIsMockMode(true);
     }
-  }, [])
+  }, []);
 
   return (
     <div className="flex items-center space-x-2">
@@ -31,6 +31,5 @@ export function MockSwitch() {
       />
       <Label htmlFor="mock-mode">Mock 模式</Label>
     </div>
-  )
+  );
 }
-

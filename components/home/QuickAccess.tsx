@@ -12,7 +12,12 @@ const QuickAccess: React.FC<QuickAccessProps> = ({ quickAccessSites }) => {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="flex flex-wrap gap-4 justify-center my-6 px-4 landscape:flex-col landscape:fixed landscape:right-4 landscape:top-1/2 landscape:-translate-y-1/2"
+      className="flex flex-wrap gap-4 justify-center my-6 px-4 
+                landscape:flex-col landscape:fixed landscape:right-4 landscape:top-1/2 
+                landscape:-translate-y-1/2 landscape:z-50 
+                landscape:backdrop-blur-sm landscape:bg-indigo-900/30 
+                landscape:p-2 landscape:rounded-lg
+                landscape:shadow-lg landscape:border landscape:border-indigo-600/30"
     >
       {quickAccessSites.map((site: Site, index) => (
         <motion.div

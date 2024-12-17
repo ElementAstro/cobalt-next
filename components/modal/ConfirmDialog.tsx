@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -13,6 +14,9 @@ interface ConfirmDialogProps {
   confirmText?: string;
   cancelText?: string;
   danger?: boolean;
+  layout?: "horizontal" | "vertical";
+  size?: "sm" | "md" | "lg";
+  buttonVariant?: "default" | "outline" | "ghost";
 }
 
 export function ConfirmDialog({
@@ -24,13 +28,25 @@ export function ConfirmDialog({
   confirmText = "确认",
   cancelText = "取消",
   danger = false,
+  layout = "horizontal",
+  size = "md",
+  buttonVariant = "default",
 }: ConfirmDialogProps) {
+  const isMobile = useMediaQuery("(max-width: 640px)");
+  const effectiveLayout = isMobile ? "vertical" : layout;
+
+  const sizeClasses = {
+    sm: "max-w-sm",
+    md: "max-w-md",
+    lg: "max-w-lg",
+  };
+
   return (
     <BaseDialog
       isOpen={isOpen}
       onClose={onClose}
       title={title}
-      className="max-w-md"
+      className={cn(sizeClasses[size], "p-4 md:p-6")}
       animationPreset="scale"
       icon={
         <motion.div
@@ -49,15 +65,25 @@ export function ConfirmDialog({
         </motion.div>
       }
     >
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="space-y-4"
-      >
-        <p className="text-gray-600 dark:text-gray-300">{message}</p>
-        <div className="flex flex-col sm:flex-row justify-end gap-2">
-          <Button variant="outline" onClick={onClose} className="sm:order-1">
+      <motion.div className="space-y-4">
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-gray-600 dark:text-gray-300"
+        >
+          {message}
+        </motion.p>
+        <motion.div
+          className={cn(
+            "grid gap-2",
+            effectiveLayout === "horizontal" ? "grid-cols-2" : "grid-cols-1"
+          )}
+        >
+          <Button
+            variant={buttonVariant}
+            onClick={onClose}
+            className="transition-all hover:scale-105"
+          >
             {cancelText}
           </Button>
           <Button
@@ -72,7 +98,7 @@ export function ConfirmDialog({
           >
             {confirmText}
           </Button>
-        </div>
+        </motion.div>
       </motion.div>
     </BaseDialog>
   );

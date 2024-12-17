@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import CryptoJS from "crypto-js";
-import { useCookieStore } from "@/lib/store/storage";
+import { useCookieStore } from "@/lib/store/storage/cookie";
+import { useCookies } from "react-cookie";
 
 interface ConnectionFormData {
   ip: string;
@@ -47,7 +48,7 @@ interface ConnectionState {
 
 const SECRET_KEY = "cobalt";
 
-export const useConnectionStore = create<ConnectionState>((set, get) => ({
+const initialState = {
   formData: {
     ip: "",
     port: 5950,
@@ -58,6 +59,10 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   },
   isConnected: false,
   isLoading: false,
+};
+
+export const useConnectionStore = create<ConnectionState>((set, get) => ({
+  ...initialState,
   connectionStrength: 0,
   connectionHistory: [],
   isDarkMode: false,
@@ -70,22 +75,32 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   },
 
   loadFromCookies: () => {
-    const { loadCookies, decryptCookie } = useCookieStore.getState();
-    const encryptedData = loadCookies("connectionForm");
-    if (encryptedData) {
-      const decrypted = decryptCookie(encryptedData, SECRET_KEY);
-      if (decrypted) {
-        set({ formData: { ...JSON.parse(decrypted), password: "" } }); // 不自动填充密码
+    const [cookies] = useCookies(["connection_data"]);
+    if (cookies.connection_data) {
+      try {
+        const parsedData = JSON.parse(cookies.connection_data);
+        set((state) => ({
+          formData: { ...state.formData, ...parsedData },
+        }));
+      } catch (error) {
+        console.error("Failed to parse cookie data:", error);
       }
     }
   },
 
   saveToCookies: () => {
     const { formData } = get();
-    const { encryptCookie, addCookie } = useCookieStore.getState();
-    const dataToSave = { ...formData, password: "" }; // 不保存密码到 Cookie
-    const encrypted = encryptCookie(JSON.stringify(dataToSave), SECRET_KEY);
-    addCookie({ name: "connectionForm", value: encrypted });
+    const [, setCookie, removeCookie] = useCookies(["connection_data"]);
+
+    if (formData.rememberLogin) {
+      setCookie("connection_data", JSON.stringify(formData), {
+        maxAge: 30 * 24 * 60 * 60, // 30天
+        secure: true,
+        sameSite: "strict",
+      });
+    } else {
+      removeCookie("connection_data");
+    }
   },
 
   updateFormData: (data) =>
@@ -106,32 +121,50 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
 
   // 注册相关操作
   registerUser: (data) => {
-    const { encryptCookie, addCookie } = useCookieStore.getState();
-    const encrypted = encryptCookie(JSON.stringify(data), SECRET_KEY);
-    addCookie({ name: "registrationData", value: encrypted });
+    const [, setCookie] = useCookies(["registrationData"]);
+    const encrypted = CryptoJS.AES.encrypt(
+      JSON.stringify(data),
+      SECRET_KEY
+    ).toString();
+
+    setCookie("registrationData", encrypted, {
+      secure: true,
+      sameSite: "strict",
+    });
     set({ isRegistered: true, registrationData: data });
   },
 
   loadRegistration: () => {
-    const { loadCookies, decryptCookie } = useCookieStore.getState();
-    const encryptedData = loadCookies("registrationData");
-    if (encryptedData) {
-      const decrypted = decryptCookie(encryptedData, SECRET_KEY);
-      if (decrypted) {
-        const data: RegistrationData = JSON.parse(decrypted);
-        set({ isRegistered: true, registrationData: data });
+    const [cookies] = useCookies(["registrationData"]);
+    if (cookies.registrationData) {
+      try {
+        const decrypted = CryptoJS.AES.decrypt(
+          cookies.registrationData,
+          SECRET_KEY
+        ).toString(CryptoJS.enc.Utf8);
+
+        if (decrypted) {
+          const data: RegistrationData = JSON.parse(decrypted);
+          set({ isRegistered: true, registrationData: data });
+        }
+      } catch (error) {
+        console.error("Failed to decrypt registration data:", error);
       }
     }
   },
 
   saveRegistration: () => {
     const { registrationData } = get();
-    const { encryptCookie, addCookie } = useCookieStore.getState();
-    const encrypted = encryptCookie(
+    const [, setCookie] = useCookies(["registrationData"]);
+    const encrypted = CryptoJS.AES.encrypt(
       JSON.stringify(registrationData),
       SECRET_KEY
-    );
-    addCookie({ name: "registrationData", value: encrypted });
+    ).toString();
+
+    setCookie("registrationData", encrypted, {
+      secure: true,
+      sameSite: "strict",
+    });
   },
 }));
 

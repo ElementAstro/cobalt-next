@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMediaQuery } from "react-responsive";
+import { useCookies } from "react-cookie";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,8 @@ import {
   Moon,
   Sun,
   History,
+  Settings,
+  Download,
 } from "lucide-react";
 
 import { ConnectionAlert } from "./ConnectionAlert";
@@ -44,6 +47,9 @@ import { ConnectionDetails } from "./ConnectionDetails";
 import { LoginForm } from "./LoginForm";
 import { AdvancedSettings } from "./AdvancedSettings";
 import { ConnectionHistory } from "./ConnectionHistory";
+import { NetworkStatus } from "./NetworkStatus";
+import { ConfigurationManager } from "./ConfigurationManager";
+import useNetworkStatus from "@/hooks/useNetworkStatus";
 
 import { useConnectionStore } from "@/lib/store/server";
 import ServerPortScanModal from "./ServerPortScan";
@@ -64,6 +70,7 @@ export default function ConnectionForm({
 }: {
   onConnect: () => void;
 }) {
+  const [cookies, setCookie, removeCookie] = useCookies(["connection_data"]);
   const {
     formData,
     isConnected,
@@ -101,6 +108,15 @@ export default function ConnectionForm({
   }, [loadFromCookies, loadRegistration]);
 
   useEffect(() => {
+    // 从cookie加载数据
+    if (cookies.connection_data) {
+      const savedData = cookies.connection_data;
+      form.reset(savedData);
+      updateFormData(savedData);
+    }
+  }, []);
+
+  useEffect(() => {
     if (isConnected) {
       const interval = setInterval(() => {
         setConnectionStrength(Math.floor(Math.random() * 100) + 1);
@@ -119,6 +135,29 @@ export default function ConnectionForm({
     setLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 2000));
     if (values.ip && values.username && values.password) {
+      // 保存到cookie
+      if (formData.rememberLogin) {
+        setCookie(
+          "connection_data",
+          {
+            ip: values.ip,
+            port: values.port,
+            username: values.username,
+            password: values.password,
+            isSSL: formData.isSSL,
+            rememberLogin: formData.rememberLogin,
+          },
+          {
+            path: "/",
+            maxAge: 30 * 24 * 60 * 60, // 30天过期
+            secure: true,
+            sameSite: "strict",
+          }
+        );
+      } else {
+        removeCookie("connection_data");
+      }
+
       setConnected(true);
       onConnect();
       setAlertType("success");
@@ -157,7 +196,7 @@ export default function ConnectionForm({
       isSSL: false,
       rememberLogin: false,
     });
-    saveToCookies();
+    removeCookie("connection_data");
   };
 
   const toggleCollapse = () => {
@@ -184,6 +223,26 @@ export default function ConnectionForm({
 
   const togglePortScanModal = () => {
     setIsPortScanModalOpen(!isPortScanModalOpen);
+  };
+
+  const networkStatus = useNetworkStatus();
+  const [showConfigManager, setShowConfigManager] = useState(false);
+
+  const handleExportConfig = () => {
+    const config = {
+      ...form.getValues(),
+      isSSL: formData.isSSL,
+      rememberLogin: formData.rememberLogin,
+    };
+    const blob = new Blob([JSON.stringify(config, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "connection-config.json";
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -248,6 +307,7 @@ export default function ConnectionForm({
               </div>
             </CardHeader>
             <CardContent className="flex-1">
+              <NetworkStatus status={networkStatus} />
               <AnimatePresence>
                 {!isCollapsed && (
                   <motion.div
@@ -344,6 +404,34 @@ export default function ConnectionForm({
                   <Progress value={connectionStrength} className="w-full" />
                 </div>
               )}
+
+              <div className="mt-4 flex justify-between">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowConfigManager(true)}
+                  className="flex items-center"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  配置管理
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleExportConfig}
+                  className="flex items-center"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  导出配置
+                </Button>
+              </div>
+
+              <ConfigurationManager
+                isOpen={showConfigManager}
+                onClose={() => setShowConfigManager(false)}
+                onImport={(config) => {
+                  form.reset(config);
+                  updateFormData(config);
+                }}
+              />
             </CardContent>
           </Card>
         </div>
@@ -371,6 +459,7 @@ export default function ConnectionForm({
               </div>
             </CardHeader>
             <CardContent>
+              <NetworkStatus status={networkStatus} />
               <Form {...form}>
                 <form
                   onSubmit={form.handleSubmit(handleConnect)}
@@ -442,6 +531,33 @@ export default function ConnectionForm({
                   </div>
                 </form>
               </Form>
+              <div className="mt-4 flex justify-between">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowConfigManager(true)}
+                  className="flex items-center"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  配置管理
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleExportConfig}
+                  className="flex items-center"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  导出配置
+                </Button>
+              </div>
+
+              <ConfigurationManager
+                isOpen={showConfigManager}
+                onClose={() => setShowConfigManager(false)}
+                onImport={(config) => {
+                  form.reset(config);
+                  updateFormData(config);
+                }}
+              />
             </CardContent>
           </Card>
         </div>

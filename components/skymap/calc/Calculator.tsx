@@ -54,9 +54,35 @@ export function Calculator() {
     const inches = (mm / 25.4).toFixed(2);
     return inches;
   }
-  
+
+  function calculateFocalLength() {
+    const a = parseFloat(aperture);
+    const fr = parseFloat(focalRatio);
+    if (!isNaN(a) && !isNaN(fr)) {
+      const fl = (a * fr).toFixed(0);
+      setFocalLength(fl);
+      addToHistory("focal length", `${fl}mm`);
+    }
+  }  
+
+  // 新增实时计算功能
+  useEffect(() => {
+    if (activeTab === "focal") {
+      calculateFocalLength();
+    } else if (activeTab === "magnification") {
+      calculateMagnification();
+    }
+  }, [aperture, focalRatio, focalLength, eyepiece]);
+
+  // 新增动画配置
+  const springConfig = {
+    type: "spring",
+    stiffness: 300,
+    damping: 30
+  };
+
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-100 p-4 md:p-8">
       <motion.div
         initial="hidden"
         animate="visible"
@@ -66,7 +92,15 @@ export function Calculator() {
         <Tabs
           defaultValue="focal"
           className="w-full"
-          onValueChange={setActiveTab}
+          onValueChange={(value) => {
+            setActiveTab(value);
+            // 切换时重置表单
+            if (value === "focal") {
+              setAperture("");
+              setFocalRatio("");
+              setFocalLength("");
+            }
+          }}
         >
           <TabsList className="grid w-full grid-cols-3 bg-gray-800">
             <TabsTrigger
@@ -198,3 +232,4 @@ export function Calculator() {
     </div>
   );
 }
+

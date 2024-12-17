@@ -92,6 +92,40 @@ export function EquipmentSelector() {
     }
   };
 
+  // 新增功能：快速预设
+  const presets = [
+    {
+      name: "标准折射",
+      type: "telescope" as const,
+      focalLength: 900,
+      aperture: 90,
+    },
+    {
+      name: "标准反射",
+      type: "telescope" as const,
+      focalLength: 1200,
+      aperture: 200,
+    },
+    // ...more presets
+  ];
+
+  interface Preset {
+    name: string;
+    type: "telescope" | "camera" | "barlow" | "reducer";
+    focalLength: number;
+    aperture: number;
+  }
+
+  const applyPreset = (preset: Preset): void => {
+    setNewEquipment({
+      name: preset.name,
+      type: preset.type,
+      focalLength: preset.focalLength.toString(),
+      aperture: preset.aperture.toString(),
+    });
+    calculateValues();
+  };
+
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -110,14 +144,35 @@ export function EquipmentSelector() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-gray-100 p-4 md:p-8">
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
         className="max-w-7xl mx-auto space-y-6"
       >
-        <Card className="bg-gray-800 border-gray-700">
+        {/* 新增预设选择 */}
+        <motion.div
+          variants={itemVariants}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4"
+        >
+          {presets.map((preset) => (
+            <Button
+              key={preset.name}
+              variant="outline"
+              onClick={() => applyPreset(preset)}
+              className="h-auto py-4 flex flex-col items-center gap-2"
+            >
+              <span>{preset.name}</span>
+              <span className="text-xs text-muted-foreground">
+                {preset.focalLength}mm f/
+                {(preset.focalLength / preset.aperture).toFixed(1)}
+              </span>
+            </Button>
+          ))}
+        </motion.div>
+
+        <Card className="bg-gray-800/90 border-gray-700 backdrop-blur-sm">
           <CardHeader>
             <motion.div
               className="flex flex-col md:flex-row justify-between items-center gap-4"

@@ -90,7 +90,7 @@ export default function DiskInfo() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.5 }}
-      className="max-w-5xl mx-auto mt-8"
+      className="max-w-5xl mx-auto mt-8 px-4 md:px-0"
     >
       <Card className="bg-gray-800 shadow-lg rounded-lg">
         <CardHeader className="flex flex-col md:flex-row justify-between items-center">

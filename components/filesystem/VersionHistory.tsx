@@ -1,6 +1,6 @@
 // version-history.tsx
 import React from "react";
-import { X, Clock, RotateCcw, Sun, Moon } from "lucide-react";
+import { X, Clock, RotateCcw, Sun, Moon, ArrowDownToLine, GitCompare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
@@ -10,6 +10,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface VersionHistoryProps {
   isOpen: boolean;
@@ -21,10 +22,25 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
   onClose,
 }) => {
   const versions = [
-    { id: 1, date: "2023-06-01 14:30", user: "John Doe" },
+    {
+      id: 1,
+      date: "2023-06-01 14:30",
+      user: "John Doe",
+      changes: 15,
+      type: "修改",
+      size: "1.2MB"
+    },
     { id: 2, date: "2023-06-02 09:15", user: "Jane Smith" },
     { id: 3, date: "2023-06-03 16:45", user: "Alice Johnson" },
   ];
+
+  const handleCompare = (v1: typeof versions[0], v2: typeof versions[0]) => {
+    // 实现版本比较逻辑
+  };
+
+  const handleExport = (version: typeof versions[0]) => {
+    // 实现版本导出逻辑
+  };
 
   if (!isOpen) return null;
 
@@ -61,37 +77,32 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                       },
                     }}
                   >
-                    {versions.map((version) => (
-                      <motion.li
-                        key={version.id}
-                        variants={{
-                          hidden: { opacity: 0, x: -20 },
-                          visible: { opacity: 1, x: 0 },
-                        }}
-                        className={`flex items-center justify-between p-4 mb-2 rounded bg-gray-700`}
-                      >
-                        <div>
-                          <p className="font-medium">{version.date}</p>
-                          <p className="text-sm text-gray-400">{version.user}</p>
-                        </div>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            className={`flex items-center space-x-1 border-gray-500 text-gray-300 hover:bg-gray-600`}
-                          >
-                            <Clock className="w-4 h-4" />
-                            <span>查看</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            className={`flex items-center space-x-1 border-green-500 text-green-300 hover:bg-green-600`}
-                          >
-                            <RotateCcw className="w-4 h-4" />
-                            <span>还原</span>
-                          </Button>
-                        </div>
-                      </motion.li>
-                    ))}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {versions.map((version) => (
+                        <motion.div
+                          key={version.id}
+                          className="p-4 border rounded-lg bg-gray-700"
+                        >
+                          <div className="flex justify-between mb-2">
+                            <span className="font-medium">{version.type}</span>
+                            <Badge variant="outline">{version.size}</Badge>
+                          </div>
+                          <div className="space-y-2">
+                            <p>修改数量: {version.changes}</p>
+                            <div className="flex space-x-2">
+                              <Button onClick={() => handleCompare(version, versions[0])}>
+                                <GitCompare className="w-4 h-4 mr-2" />
+                                比较
+                              </Button>
+                              <Button onClick={() => handleExport(version)}>
+                                <ArrowDownToLine className="w-4 h-4 mr-2" />
+                                导出
+                              </Button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
                   </motion.ul>
                 </DialogDescription>
               </DialogContent>

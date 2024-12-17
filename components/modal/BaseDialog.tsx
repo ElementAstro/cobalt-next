@@ -45,8 +45,24 @@ const animations = {
   },
   rotate: {
     initial: { rotate: -10, opacity: 0 },
-    animate: { rotate: 0, opacity: 1 },
+    animate: { rotate: 0 },
     exit: { rotate: 10, opacity: 0 },
+  },
+  slideUp: {
+    initial: { y: 50, opacity: 0 },
+    animate: { y: 0, opacity: 1 },
+    exit: { y: -50, opacity: 0 },
+  },
+  slideDown: {
+    initial: { y: -50, opacity: 0 },
+    animate: { y: 0, opacity: 1 },
+    exit: { y: 50, opacity: 0 },
+  },
+  elastic: {
+    initial: { scale: 0.5, opacity: 0 },
+    animate: { scale: 1, opacity: 1 },
+    exit: { scale: 0.5, opacity: 0 },
+    transition: { type: "spring", damping: 10 },
   },
 };
 
@@ -85,6 +101,10 @@ export function BaseDialog({
           position === "left" && "justify-start",
           position === "right" && "justify-end",
           isMobile && "w-[95vw] max-h-[90vh] overflow-y-auto",
+          "scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700",
+          "transition-transform ease-in-out",
+          isMobile && "w-[95vw] max-h-[95vh] p-4",
+          isMobile && fullScreen && "w-screen h-screen p-0",
           className
         )}
       >

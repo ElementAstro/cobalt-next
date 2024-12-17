@@ -74,6 +74,7 @@ import { TrashBin } from "./TrashBin";
 import { FileEncryption } from "./FileEncryption";
 import { FileProperties } from "./FileProperties";
 import React from "react";
+import { useDropzone } from "react-dropzone";
 
 export default function FileBrowser() {
   const [time, setTime] = useState(new Date().toLocaleTimeString());
@@ -120,6 +121,27 @@ export default function FileBrowser() {
   );
   const [isPropertiesOpen, setIsPropertiesOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    console.log("Dropped files:", acceptedFiles);
+    // TODO: 处理文件上传
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    noClick: true,
+    noKeyboard: true,
+  });
+
+  // 添加批量选择状态
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+
+  // 添加排序功能
+  const [sortConfig, setSortConfig] = useState({
+    key: "name",
+    direction: "asc",
+  });
 
   useEffect(() => {
     const checkMobile = () => {
@@ -309,13 +331,7 @@ export default function FileBrowser() {
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div
-        className={`h-screen ${
-          customOptions.theme === "dark"
-            ? "bg-gray-900 text-white"
-            : "bg-gray-100 text-black"
-        } flex flex-col md:flex-row`}
-      >
+      <div {...getRootProps()} className="h-screen flex flex-col md:flex-row">
         <AnimatePresence>
           {(!isMobile || orientation === "landscape") && (
             <motion.div

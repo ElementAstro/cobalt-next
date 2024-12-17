@@ -43,7 +43,7 @@ const ALLOWED_FILE_TYPES = [
   "application/pdf",
 ];
 
-export function EnhancedFileUpload() {
+export function FileUpload() {
   const methods = useForm();
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -237,7 +237,7 @@ export function EnhancedFileUpload() {
                     ? "border-gray-600"
                     : "border-gray-300"
                 }`}
-                {...getRootProps()}
+                {...(getRootProps() as any)}
               >
                 <input {...getInputProps()} />
                 {isDragActive ? (

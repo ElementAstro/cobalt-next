@@ -1,10 +1,16 @@
-// search-modal.tsx
-import React, { useEffect } from "react";
-import { X, Search } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { X, Search, Calendar, FileType, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { useSearchStore } from "@/lib/store/filesystem";
 
 interface SearchModalProps {
@@ -18,6 +24,14 @@ export const SearchModal: React.FC<SearchModalProps> = ({
 }) => {
   const { searchTerm, searchResults, setSearchTerm, setSearchResults, reset } =
     useSearchStore();
+  const [advancedSearch, setAdvancedSearch] = useState(false);
+  const [searchFilters, setSearchFilters] = useState({
+    type: "all",
+    dateRange: "any",
+    size: "any",
+  });
+
+  const searchSuggestions = ["最近修改的文档", "大型视频文件", "共享的图片"];
 
   useEffect(() => {
     if (!isOpen) {
@@ -99,6 +113,70 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                     </Button>
                   </div>
                 </motion.form>
+                <div className="space-y-4">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setAdvancedSearch(!advancedSearch)}
+                    className="w-full justify-start"
+                  >
+                    <FileType className="w-4 h-4 mr-2" />
+                    高级搜索选项
+                  </Button>
+
+                  {advancedSearch && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Select
+                        value={searchFilters.type}
+                        onValueChange={(v) =>
+                          setSearchFilters({ ...searchFilters, type: v })
+                        }
+                      >
+                        <SelectTrigger>
+                          <span>文件类型</span>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">全部</SelectItem>
+                          <SelectItem value="document">文档</SelectItem>
+                          <SelectItem value="image">图片</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <Select
+                        value={searchFilters.dateRange}
+                        onValueChange={(v) =>
+                          setSearchFilters({ ...searchFilters, dateRange: v })
+                        }
+                      >
+                        <SelectTrigger>
+                          <Calendar className="w-4 h-4 mr-2" />
+                          <span>时间范围</span>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="any">不限</SelectItem>
+                          <SelectItem value="today">今天</SelectItem>
+                          <SelectItem value="week">本周</SelectItem>
+                          <SelectItem value="month">本月</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  <div className="mt-4">
+                    <h3 className="text-sm font-medium mb-2">搜索建议</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {searchSuggestions.map((suggestion, index) => (
+                        <Badge
+                          key={index}
+                          variant="outline"
+                          className="cursor-pointer"
+                          onClick={() => setSearchTerm(suggestion)}
+                        >
+                          {suggestion}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
                 <AnimatePresence>
                   {searchResults.length > 0 && (
                     <motion.div

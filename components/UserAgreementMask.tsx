@@ -47,6 +47,10 @@ interface UserAgreementMaskProps {
   requireReadConfirmation?: boolean;
   title?: string;
   allowPrint?: boolean;
+  animationDuration?: number;
+  mobileBreakpoint?: number;
+  maxHeight?: string;
+  backdropFilter?: boolean;
 }
 
 export function UserAgreementMask({
@@ -59,6 +63,10 @@ export function UserAgreementMask({
   requireReadConfirmation = false,
   title = "User Agreement & Privacy Policy",
   allowPrint = false,
+  animationDuration = 0.3,
+  mobileBreakpoint = 768,
+  maxHeight = "90vh",
+  backdropFilter = true,
 }: UserAgreementMaskProps) {
   const {
     isVisible,
@@ -71,7 +79,7 @@ export function UserAgreementMask({
     setHasReadPrivacy,
   } = useAgreementStore();
   const { theme } = useTheme();
-  const isMobile = useMediaQuery({ maxWidth: 768 });
+  const isMobile = useMediaQuery({ maxWidth: mobileBreakpoint });
 
   useEffect(() => {
     const storedVersion = localStorage.getItem("userAgreedVersion");
@@ -105,15 +113,17 @@ export function UserAgreementMask({
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50"
+          className={`fixed inset-0 ${
+            backdropFilter ? "backdrop-filter backdrop-blur-sm" : ""
+          } bg-black/60 flex items-center justify-center p-4 z-50`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          key="overlay"
+          transition={{ duration: animationDuration }}
         >
           <motion.div
             className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl overflow-hidden flex flex-col ${
-              isMobile ? "max-h-screen" : "max-h-[90vh]"
+              isMobile ? "max-h-screen" : `max-h-[${maxHeight}]`
             }`}
             initial={{ scale: 0.9, y: 50 }}
             animate={{ scale: 1, y: 0 }}

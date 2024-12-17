@@ -7,10 +7,18 @@ import {
   Eye,
   EyeOff,
   Loader2,
+  MoreVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { Progress } from "@/components/ui/progress";
 
 import { WiFiNetwork } from "@/types/wifi";
 
@@ -28,6 +36,8 @@ const NetworkItem: React.FC<NetworkItemProps> = React.memo(
     const [password, setPassword] = useState("");
     const [showDetails, setShowDetails] = useState(false);
     const [showPasswordInput, setShowPasswordInput] = useState(false);
+    const [showSpeedTest, setShowSpeedTest] = useState(false);
+    const [speedTestResults, setSpeedTestResults] = useState(null);
 
     const handleConnect = async () => {
       if (network.isSecure && !password) {
@@ -44,9 +54,18 @@ const NetworkItem: React.FC<NetworkItemProps> = React.memo(
       }
     };
 
+    const runSpeedTest = async () => {
+      setShowSpeedTest(true);
+      try {
+        // 实现速度测试逻辑
+      } finally {
+        setShowSpeedTest(false);
+      }
+    };
+
     return (
       <motion.div
-        className="p-4 rounded-lg bg-card dark:bg-card-dark shadow-md"
+        className="p-4 rounded-lg bg-card dark:bg-card-dark shadow-md group relative"
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         initial={{ opacity: 0, y: 20 }}
@@ -54,6 +73,29 @@ const NetworkItem: React.FC<NetworkItemProps> = React.memo(
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.3 }}
       >
+        <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={runSpeedTest}>
+                速度测试
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowDetails(!showDetails)}>
+                详细信息
+              </DropdownMenuItem>
+              {isConnected && (
+                <DropdownMenuItem onClick={onDisconnect}>
+                  断开连接
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center">
             <Wifi className="mr-2 text-primary" />
@@ -144,6 +186,19 @@ const NetworkItem: React.FC<NetworkItemProps> = React.memo(
                   上次连接: {new Date(network.lastConnected).toLocaleString()}
                 </p>
               )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {showSpeedTest && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-4"
+            >
+              <Progress value={speedTestResults} className="w-full" />
+              {/* 速度测试结果展示 */}
             </motion.div>
           )}
         </AnimatePresence>

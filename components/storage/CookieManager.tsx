@@ -22,7 +22,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { useCookieStore } from "@/lib/store/storage";
+import { useCookies } from "react-cookie";
+import { useCookieStore } from "@/lib/store/storage/cookie";
 
 export function CookieManager({ isLandscape }: { isLandscape: boolean }) {
   const {

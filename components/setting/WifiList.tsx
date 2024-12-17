@@ -26,6 +26,15 @@ interface WiFiState {
   askToJoinNetworks: boolean;
   preferredBand: string;
   recentNetworks: WiFiNetwork[];
+  wifiPower: "high" | "medium" | "low";
+  connectionHistory: WiFiNetwork[];
+  networkStats: {
+    [key: string]: {
+      successfulConnections: number;
+      lastConnectionSpeed: number;
+      averageSignalStrength: number;
+    };
+  };
   setWifiOn: (on: boolean) => void;
   setNetworks: (nets: WiFiNetwork[]) => void;
   connectToNetwork: (id: string) => void;
@@ -36,6 +45,9 @@ interface WiFiState {
   setNotifyAvailableNetworks: (notify: boolean) => void;
   setAskToJoinNetworks: (ask: boolean) => void;
   setPreferredBand: (band: string) => void;
+  setWifiPower: (power: "high" | "medium" | "low") => void;
+  addToHistory: (network: WiFiNetwork) => void;
+  updateNetworkStats: (networkId: string, stats: any) => void;
 }
 
 export const useWifiStore = create<WiFiState>((set) => ({
@@ -49,6 +61,9 @@ export const useWifiStore = create<WiFiState>((set) => ({
   askToJoinNetworks: true,
   preferredBand: "auto",
   recentNetworks: [],
+  wifiPower: "high",
+  connectionHistory: [],
+  networkStats: {},
   setWifiOn: (on) => set({ isWifiOn: on }),
   setNetworks: (nets) => set({ networks: nets }),
   connectToNetwork: (id) => set({ connectedNetwork: id }),
@@ -60,6 +75,21 @@ export const useWifiStore = create<WiFiState>((set) => ({
     set({ notifyAvailableNetworks: notify }),
   setAskToJoinNetworks: (ask) => set({ askToJoinNetworks: ask }),
   setPreferredBand: (band) => set({ preferredBand: band }),
+  setWifiPower: (power) => set({ wifiPower: power }),
+  addToHistory: (network) =>
+    set((state) => ({
+      connectionHistory: [...state.connectionHistory, network],
+    })),
+  updateNetworkStats: (networkId, stats) =>
+    set((state) => ({
+      networkStats: {
+        ...state.networkStats,
+        [networkId]: {
+          ...state.networkStats[networkId],
+          ...stats,
+        },
+      },
+    })),
 }));
 
 export default function WiFiList() {
@@ -84,6 +114,8 @@ export default function WiFiList() {
     setAskToJoinNetworks,
     setPreferredBand,
     recentNetworks,
+    wifiPower,
+    setWifiPower,
   } = useWifiStore();
 
   const { theme, setTheme } = useTheme();
@@ -93,6 +125,9 @@ export default function WiFiList() {
   const isNarrowLandscape = useMediaQuery({
     query: "(max-height: 500px) and (orientation: landscape)",
   });
+
+  const [networkStats, setNetworkStats] = useState<{ [key: string]: any }>({});
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     const checkOrientation = () => {
@@ -197,6 +232,42 @@ export default function WiFiList() {
       setLoading(false);
     }
   }, [isMockMode, disconnectFromNetwork, setLoading]);
+
+  const analyzeNetwork = useCallback(async (networkId: string) => {
+    setIsAnalyzing(true);
+    try {
+      // 模拟网络分析
+      const stats = await new Promise((resolve) =>
+        setTimeout(() => {
+          resolve({
+            latency: Math.round(Math.random() * 100),
+            bandwidth: Math.round(Math.random() * 100),
+            interference: Math.round(Math.random() * 100),
+          });
+        }, 1500)
+      );
+
+      setNetworkStats((prev) => ({
+        ...prev,
+        [networkId]: stats,
+      }));
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, []);
+
+  const NetworkStatistics = ({ network }: { network: WiFiNetwork }) => (
+    <motion.div
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: "auto", opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      className="mt-4 p-4 bg-secondary/10 rounded-lg"
+    >
+      <p>延迟: {networkStats[network.id]?.latency} ms</p>
+      <p>带宽: {networkStats[network.id]?.bandwidth} Mbps</p>
+      <p>干扰: {networkStats[network.id]?.interference} %</p>
+    </motion.div>
+  );
 
   const sortedNetworks = useMemo(() => {
     return [...networks]
@@ -338,6 +409,9 @@ export default function WiFiList() {
                       ).toLocaleString()
                     : "无"}
                 </p>
+                <NetworkStatistics
+                  network={networks.find((n) => n.id === connectedNetwork)!}
+                />
               </motion.div>
             ) : (
               <p>未连接到任何网络</p>
@@ -366,6 +440,14 @@ export default function WiFiList() {
               preferredBand={preferredBand}
               setPreferredBand={setPreferredBand}
               toggleMockMode={toggleMockMode}
+              wifiPower={wifiPower}
+              setWifiPower={setWifiPower}
+              saveNetworkHistory={false} // Add the appropriate value or state
+              setSaveNetworkHistory={() => {}} // Add the appropriate function or state
+              maxHistoryItems={0}
+              setMaxHistoryItems={function (value: number): void {
+                throw new Error("Function not implemented.");
+              }}
             />
             {connectedNetwork && (
               <div className="text-sm">

@@ -227,7 +227,7 @@ export const FileCompression: React.FC<FileCompressionProps> = ({
           <TabsContent value="compress">
             <div className="p-6 bg-white rounded-lg shadow-md">
               <motion.div
-                {...getRootProps()}
+                {...(getRootProps() as any)}
                 className={`p-10 border-2 border-dashed rounded-md text-center cursor-pointer 
                   ${isDragActive ? "border-primary" : "border-gray-300"}`}
                 whileHover={{ scale: 1.02 }}
@@ -425,7 +425,10 @@ export const FileCompression: React.FC<FileCompressionProps> = ({
           <TabsContent value="decompress">
             <div className="p-6 bg-white rounded-lg shadow-md">
               <motion.div
-                {...getRootProps()}
+                onClick={getRootProps().onClick}
+                onKeyDown={getRootProps().onKeyDown}
+                onFocus={getRootProps().onFocus}
+                onBlur={getRootProps().onBlur}
                 className={`p-10 border-2 border-dashed rounded-md text-center cursor-pointer 
                   ${isDragActive ? "border-primary" : "border-gray-300"}`}
                 whileHover={{ scale: 1.02 }}

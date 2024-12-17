@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { motion } from "framer-motion";
+import { Label } from "@/components/ui/label";
 
 export function PreviewWindow() {
   const [zoom, setZoom] = useState(100);
@@ -38,21 +39,26 @@ export function PreviewWindow() {
 
   return (
     <motion.div
-      className="grid grid-cols-1 md:grid-cols-4 gap-4"
+      className="grid grid-cols-1 lg:grid-cols-4 gap-4"
       initial="hidden"
       animate="visible"
       variants={containerVariants}
-      style={{ height: "100vh" }}
+      style={{ minHeight: "calc(100vh - 2rem)" }}
     >
-      <div className="col-span-1 md:col-span-3 h-full">
-        <Card className="w-full h-full bg-black relative overflow-hidden">
+      <div className="col-span-1 lg:col-span-3 min-h-[50vh] lg:min-h-full">
+        <Card className="w-full h-full bg-black/90 relative overflow-hidden backdrop-blur-sm">
           <motion.div
             className="absolute inset-0 flex items-center justify-center"
             style={{
               transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
             }}
             animate={{ scale: zoom / 100, rotate: rotation }}
-            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 25,
+              mass: 1,
+            }}
           >
             {showGrid && (
               <div
@@ -76,7 +82,13 @@ export function PreviewWindow() {
               className="max-w-full max-h-full"
             />
           </motion.div>
-          <div className="absolute bottom-4 left-4 right-4 space-y-2">
+          <motion.div
+            className="absolute bottom-4 left-4 right-4 space-y-2 bg-black/50 p-4 rounded-lg backdrop-blur-sm"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Label>缩放: {zoom}%</Label>
             <Slider
               min={50}
               max={200}
@@ -84,6 +96,7 @@ export function PreviewWindow() {
               value={[zoom]}
               onValueChange={(value) => setZoom(value[0])}
             />
+            <Label>旋转: {rotation}°</Label>
             <Slider
               min={0}
               max={360}
@@ -91,7 +104,7 @@ export function PreviewWindow() {
               value={[rotation]}
               onValueChange={(value) => setRotation(value[0])}
             />
-          </div>
+          </motion.div>
         </Card>
       </div>
       <div className="space-y-4">

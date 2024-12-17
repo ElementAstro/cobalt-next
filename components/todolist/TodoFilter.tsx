@@ -6,7 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,11 @@ interface TodoFilterProps {
     dueDateStart: string;
     dueDateEnd: string;
     celestialObject: string; // 新增过滤条件
+    createdDateStart: string;
+    createdDateEnd: string;
+    modifiedDateStart: string;
+    modifiedDateEnd: string;
+    searchText: string;
   };
   setFilter: React.Dispatch<
     React.SetStateAction<{
@@ -28,12 +33,18 @@ interface TodoFilterProps {
       dueDateStart: string;
       dueDateEnd: string;
       celestialObject: string; // 新增过滤条件
+      createdDateStart: string;
+      createdDateEnd: string;
+      modifiedDateStart: string;
+      modifiedDateEnd: string;
+      searchText: string;
     }>
   >;
 }
 
 export function TodoFilter({ filter, setFilter }: TodoFilterProps) {
   const [showDateRange, setShowDateRange] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   const handleReset = () => {
     setFilter({
@@ -43,8 +54,14 @@ export function TodoFilter({ filter, setFilter }: TodoFilterProps) {
       dueDateStart: "",
       dueDateEnd: "",
       celestialObject: "", // 新增过滤条件
+      createdDateStart: "",
+      createdDateEnd: "",
+      modifiedDateStart: "",
+      modifiedDateEnd: "",
+      searchText: "",
     });
     setShowDateRange(false);
+    setShowAdvancedFilters(false);
   };
 
   return (
@@ -54,6 +71,17 @@ export function TodoFilter({ filter, setFilter }: TodoFilterProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
+      {/* 搜索栏 */}
+      <div className="mb-4">
+        <Input
+          type="search"
+          placeholder="搜索待办事项..."
+          value={filter.searchText}
+          onChange={(e) => setFilter({ ...filter, searchText: e.target.value })}
+          className="w-full"
+        />
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Category Filter */}
         <motion.div
@@ -193,6 +221,77 @@ export function TodoFilter({ filter, setFilter }: TodoFilterProps) {
           </>
         )}
       </motion.div>
+
+      {/* 高级筛选开关 */}
+      <Button
+        variant="ghost"
+        onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+        className="mt-4 w-full md:w-auto"
+      >
+        {showAdvancedFilters ? "隐藏高级筛选" : "显示高级筛选"}
+      </Button>
+
+      {/* 高级筛选选项 */}
+      <AnimatePresence>
+        {showAdvancedFilters && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4"
+          >
+            {/* Created Date Range Filter */}
+            <div className="flex flex-col">
+              <Label className="mb-1 text-sm font-medium dark:text-gray-300">
+                创建日期范围
+              </Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  type="date"
+                  value={filter.createdDateStart}
+                  onChange={(e) =>
+                    setFilter({ ...filter, createdDateStart: e.target.value })
+                  }
+                  className="w-full dark:bg-gray-700 dark:text-gray-200"
+                />
+                <Input
+                  type="date"
+                  value={filter.createdDateEnd}
+                  onChange={(e) =>
+                    setFilter({ ...filter, createdDateEnd: e.target.value })
+                  }
+                  className="w-full dark:bg-gray-700 dark:text-gray-200"
+                />
+              </div>
+            </div>
+
+            {/* Modified Date Range Filter */}
+            <div className="flex flex-col">
+              <Label className="mb-1 text-sm font-medium dark:text-gray-300">
+                修改日期范围
+              </Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  type="date"
+                  value={filter.modifiedDateStart}
+                  onChange={(e) =>
+                    setFilter({ ...filter, modifiedDateStart: e.target.value })
+                  }
+                  className="w-full dark:bg-gray-700 dark:text-gray-200"
+                />
+                <Input
+                  type="date"
+                  value={filter.modifiedDateEnd}
+                  onChange={(e) =>
+                    setFilter({ ...filter, modifiedDateEnd: e.target.value })
+                  }
+                  className="w-full dark:bg-gray-700 dark:text-gray-200"
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Action Buttons */}
       <div className="mt-4 flex flex-col sm:flex-row sm:justify-between items-center space-y-2 sm:space-y-0">

@@ -13,11 +13,29 @@ export function TodoStats({ todos }: TodoStatsProps) {
   ).length; // 新增统计字段
 
   return (
-    <div className="flex flex-wrap justify-between text-sm text-muted-foreground mt-4">
-      <span>总计: {totalTodos}</span>
-      <span>进行中: {activeTodos}</span>
-      <span>已完成: {completedTodos}</span>
-      <span>包含天体: {celestialObjectTodos}</span> {/* 新增统计信息 */}
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+      <div className="stat-card">
+        <h3 className="text-lg font-semibold">总计</h3>
+        <div className="text-2xl font-bold">{totalTodos}</div>
+        <div className="text-xs text-muted-foreground">所有待办事项</div>
+      </div>
+      <div className="stat-card">
+        <h3 className="text-lg font-semibold">进行中</h3>
+        <div className="text-2xl font-bold text-yellow-500">{activeTodos}</div>
+        <div className="text-xs text-muted-foreground">未完成的任务</div>
+      </div>
+      <div className="stat-card">
+        <h3 className="text-lg font-semibold">已完成</h3>
+        <div className="text-2xl font-bold text-green-500">{completedTodos}</div>
+        <div className="text-xs text-muted-foreground">
+          完成率: {((completedTodos / totalTodos) * 100 || 0).toFixed(1)}%
+        </div>
+      </div>
+      <div className="stat-card">
+        <h3 className="text-lg font-semibold">天文观测</h3>
+        <div className="text-2xl font-bold text-blue-500">{celestialObjectTodos}</div>
+        <div className="text-xs text-muted-foreground">天体相关任务</div>
+      </div>
     </div>
   );
 }

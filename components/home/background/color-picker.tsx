@@ -1,9 +1,9 @@
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface ColorPickerProps {
-  color: string
-  onChange: (color: string) => void
+  color: string;
+  onChange: (color: string) => void;
 }
 
 export function ColorPicker({ color, onChange }: ColorPickerProps) {
@@ -24,6 +24,5 @@ export function ColorPicker({ color, onChange }: ColorPickerProps) {
         className="w-24"
       />
     </div>
-  )
+  );
 }
-

@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { X, Settings } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface ColorScheme {
   primary: string;
@@ -136,6 +137,14 @@ export function ThemeCustomizer() {
   const [customTheme, setCustomTheme] = useState<ThemeSettings>(
     presetThemes.light
   );
+  const [themePreview, setThemePreview] = useState<string>("light");
+  const [animationSpeed, setAnimationSpeed] = useState<number>(1);
+  const [containerWidth, setContainerWidth] = useState<string>("max-w-lg");
+
+  const previewVariants = {
+    hidden: { opacity: 0, scale: 0.9 },
+    visible: { opacity: 1, scale: 1 },
+  };
 
   const applyTheme = (theme: ThemeSettings) => {
     const {
@@ -227,7 +236,9 @@ export function ThemeCustomizer() {
       </Button>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-auto">
+          <Card
+            className={`w-full ${containerWidth} max-h-[90vh] overflow-auto`}
+          >
             <CardContent className="p-4">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold">主题定制器</h2>
@@ -260,10 +271,11 @@ export function ThemeCustomizer() {
                 </Select>
               </div>
               <Tabs defaultValue="colors" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="colors">颜色</TabsTrigger>
                   <TabsTrigger value="typography">排版</TabsTrigger>
                   <TabsTrigger value="layout">布局</TabsTrigger>
+                  <TabsTrigger value="preview">预览</TabsTrigger>
                 </TabsList>
                 <TabsContent value="colors" className="space-y-2">
                   {Object.entries(customTheme.colorScheme).map(
@@ -369,6 +381,30 @@ export function ThemeCustomizer() {
                         }))
                       }
                     />
+                  </div>
+                </TabsContent>
+                <TabsContent value="preview" className="space-y-4">
+                  <motion.div
+                    variants={previewVariants}
+                    initial="hidden"
+                    animate="visible"
+                    className={`preview-container ${themePreview}`}
+                  >
+                    {/* 主题预览内容 */}
+                  </motion.div>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label>动画速度</Label>
+                      <Slider
+                        value={[animationSpeed]}
+                        onValueChange={(value) => setAnimationSpeed(value[0])}
+                        min={0.5}
+                        max={2}
+                        step={0.1}
+                        className="w-[60%]"
+                      />
+                    </div>
+                    {/* 其他新增的自定义选项 */}
                   </div>
                 </TabsContent>
               </Tabs>

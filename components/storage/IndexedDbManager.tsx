@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { useIndexedDBStore } from "@/lib/store/storage";
+import { useIndexedDBStore } from "@/lib/store/storage/indexdb";
 
 export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
   const { isDBOpen, openDB, addImage, deleteImage, clearDB, getAllImages } =

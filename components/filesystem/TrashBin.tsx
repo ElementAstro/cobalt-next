@@ -1,6 +1,6 @@
 // trash-bin.tsx
-import React from "react";
-import { X, Trash2, RefreshCw, Sun, Moon } from "lucide-react";
+import React, { useState } from "react";
+import { X, Trash2, RefreshCw, Sun, Moon, Filter, CheckSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
@@ -10,6 +10,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Select, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select";
 import { useTrashBinStore } from "@/lib/store/filesystem";
 
 export const TrashBin: React.FC<{
@@ -18,6 +19,18 @@ export const TrashBin: React.FC<{
 }> = ({ isOpen, setIsOpen }) => {
   const { deletedFiles, theme, restoreFile, emptyTrash, toggleTheme } =
     useTrashBinStore();
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  const [filterType, setFilterType] = useState<string>("all");
+
+  const filteredFiles = deletedFiles.filter(file => {
+    if (filterType === "all") return true;
+    return file.type === filterType;
+  });
+
+  const handleBatchRestore = () => {
+    selectedFiles.forEach(id => restoreFile(id));
+    setSelectedFiles([]);
+  };
 
   const handleClose = () => setIsOpen(false);
   const handleOpen = () => setIsOpen(true);
@@ -61,11 +74,31 @@ export const TrashBin: React.FC<{
                       <X className="w-6 h-6" />
                     </Button>
                   </div>
+                  <div className="mb-4 flex justify-between items-center">
+                    <Select value={filterType} onValueChange={setFilterType}>
+                      <SelectTrigger className="w-[200px]">
+                        <Filter className="w-4 h-4 mr-2" />
+                        <span>筛选类型</span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">全部</SelectItem>
+                        <SelectItem value="document">文档</SelectItem>
+                        <SelectItem value="image">图片</SelectItem>
+                        <SelectItem value="video">视频</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {selectedFiles.length > 0 && (
+                      <Button onClick={handleBatchRestore}>
+                        <CheckSquare className="w-4 h-4 mr-2" />
+                        恢复选中项({selectedFiles.length})
+                      </Button>
+                    )}
+                  </div>
                   <DialogDescription>
-                    {deletedFiles.length > 0 ? (
+                    {filteredFiles.length > 0 ? (
                       <>
                         <ul className="mb-4 space-y-2">
-                          {deletedFiles.map((file) => (
+                          {filteredFiles.map((file) => (
                             <motion.li
                               key={file.id}
                               initial={{ opacity: 0, x: -20 }}

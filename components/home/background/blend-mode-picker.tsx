@@ -1,15 +1,36 @@
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface BlendModePickerProps {
-  blendMode: string
-  onChange: (blendMode: string) => void
+  blendMode: string;
+  onChange: (blendMode: string) => void;
 }
 
 export function BlendModePicker({ blendMode, onChange }: BlendModePickerProps) {
   const blendModes = [
-    'normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten', 'color-dodge', 'color-burn', 'hard-light', 'soft-light', 'difference', 'exclusion', 'hue', 'saturation', 'color', 'luminosity'
-  ]
+    "normal",
+    "multiply",
+    "screen",
+    "overlay",
+    "darken",
+    "lighten",
+    "color-dodge",
+    "color-burn",
+    "hard-light",
+    "soft-light",
+    "difference",
+    "exclusion",
+    "hue",
+    "saturation",
+    "color",
+    "luminosity",
+  ];
 
   return (
     <div>
@@ -27,6 +48,5 @@ export function BlendModePicker({ blendMode, onChange }: BlendModePickerProps) {
         </SelectContent>
       </Select>
     </div>
-  )
+  );
 }
-

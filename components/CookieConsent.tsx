@@ -13,13 +13,24 @@ import {
   CookieOption,
 } from "@/lib/store/cookie";
 
+interface EnhancedCookieConsentProps extends CookieConsentProps {
+  customAnimation?: boolean;
+  rememberExpiry?: number; // 记住选择的天数
+  showRememberChoice?: boolean;
+  compactMode?: boolean;
+}
+
 export default function CookieConsent({
   privacyPolicyUrl = "/privacy-policy",
   cookieOptions = defaultCookieOptions,
   onAccept,
   onDecline,
   position = "bottom",
-}: CookieConsentProps) {
+  customAnimation = true,
+  rememberExpiry = 365,
+  showRememberChoice = true,
+  compactMode = false,
+}: EnhancedCookieConsentProps) {
   const isMobile = useMediaQuery({ maxWidth: 767 });
   const {
     isVisible,
@@ -30,6 +41,7 @@ export default function CookieConsent({
     toggleOption,
     setShowDetails,
   } = useCookieStore();
+  const [rememberChoice, setRememberChoice] = useState(false);
 
   useEffect(() => {
     const consent = localStorage.getItem("cookieConsent");
@@ -83,6 +95,14 @@ export default function CookieConsent({
     },
   };
 
+  const enhancedContainerVariants: Variants = {
+    ...containerVariants,
+    hover: {
+      scale: 1.01,
+      transition: { duration: 0.2 },
+    },
+  };
+
   const childVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
@@ -113,10 +133,11 @@ export default function CookieConsent({
   return (
     <AnimatePresence>
       <motion.div
-        variants={containerVariants}
+        variants={enhancedContainerVariants}
         initial="hidden"
         animate="visible"
         exit="exit"
+        whileHover="hover"
         className={`fixed ${position}-0 left-0 right-0 bg-gray-900 dark:bg-gray-800 text-white p-4 shadow-lg z-50 ${
           isMobile ? "px-2" : "px-4"
         }`}
@@ -192,6 +213,18 @@ export default function CookieConsent({
               </motion.div>
             )}
           </AnimatePresence>
+          {showRememberChoice && (
+            <div className="mt-2 flex items-center">
+              <Switch
+                id="remember-choice"
+                checked={rememberChoice}
+                onCheckedChange={setRememberChoice}
+              />
+              <label htmlFor="remember-choice" className="ml-2 text-sm">
+                记住我的选择 {rememberExpiry} 天
+              </label>
+            </div>
+          )}
           <motion.div variants={childVariants} className="mt-4 text-sm">
             <a
               href={privacyPolicyUrl}

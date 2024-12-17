@@ -1,6 +1,6 @@
 import React from "react";
 import { Site } from "@/types/home";
-import { motion } from "framer-motion";
+import { motion, PanInfo, useMotionValue, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { CustomIframe } from "@/components/custom/Iframe";
 import { Loader2 } from "lucide-react";
@@ -18,12 +18,25 @@ export default function PreviewModal({
 }: PreviewModalProps) {
   if (!isOpen || !site) return null;
 
+  const y = useMotionValue(0);
+  const opacity = useTransform(y, [-100, 0, 100], [0.3, 1, 0.3]);
+
+  const handleDragEnd = (event: any, info: PanInfo) => {
+    if (Math.abs(info.offset.y) > 100) {
+      onClose();
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+      drag="y"
+      dragConstraints={{ top: 0, bottom: 0 }}
+      onDragEnd={handleDragEnd}
+      style={{ y, opacity }}
     >
       <motion.div
         initial={{ scale: 0.9, opacity: 0, y: 20 }}

@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useDragControls } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Trash2, Edit, Zap, Eye } from "lucide-react";
@@ -35,13 +35,14 @@ const SiteCard: React.FC<SiteCardProps> = ({
       ref={provided.innerRef}
       {...provided.draggableProps}
       {...provided.dragHandleProps}
-      className="relative group"
+      className="relative group touch-manipulation"
       variants={{
-        hidden: { scale: 0.8, y: 20, opacity: 0 },
+        hidden: { scale: 0.8, y: 20, opacity: 0, rotateX: -20 },
         visible: {
           scale: 1,
           y: 0,
           opacity: 1,
+          rotateX: 0,
           transition: {
             type: "spring",
             stiffness: 200,
@@ -49,7 +50,7 @@ const SiteCard: React.FC<SiteCardProps> = ({
           },
         },
       }}
-      whileHover={{ scale: 1.02 }}
+      whileHover={{ scale: 1.02, rotateX: 5 }}
       whileTap={{ scale: 0.98 }}
     >
       <motion.div
