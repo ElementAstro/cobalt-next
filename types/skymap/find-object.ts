@@ -18,6 +18,7 @@ export interface IDSOFramingObjectInfo {
   // depreciated
   bmag?: number;
   vmag?: number;
+  type?: string;
 }
 
 export interface IDSOObjectDetailedInfo {

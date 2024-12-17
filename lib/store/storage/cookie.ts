@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import CryptoJS from "crypto-js";
-import { useCookies } from "react-cookie";
+import Cookies from "js-cookie";
 
 interface CookieData {
   name: string;
@@ -21,71 +21,73 @@ interface CookieState {
   decryptCookie: (data: string, key: string) => string | null;
 }
 
-export const useCookieStore = create<CookieState>((set, get) => {
-  const [cookies, setCookie, removeCookie] = useCookies(["*"]);
+export const useCookieStore = create<CookieState>((set, get) => ({
+  cookies: [],
 
-  return {
-    cookies: [],
+  loadCookies: () => {
+    const cookieList = Object.entries(Cookies.get()).map(([name, value]) => ({
+      name,
+      value: String(value),
+      selected: false,
+    }));
+    set({ cookies: cookieList });
+  },
 
-    loadCookies: () => {
-      const cookieList = Object.entries(cookies).map(([name, value]) => ({
-        name,
-        value: String(value),
-        selected: false,
-      }));
-      set({ cookies: cookieList });
-    },
+  addCookie: (cookie) => {
+    Cookies.set(cookie.name, cookie.value, {
+      path: "/",
+      sameSite: "strict",
+    });
+    get().loadCookies();
+  },
 
-    addCookie: (cookie) => {
-      setCookie(cookie.name, cookie.value, { path: "/", sameSite: "strict" });
-      get().loadCookies();
-    },
+  updateCookie: (cookie) => {
+    Cookies.set(cookie.name, cookie.value, {
+      path: "/",
+      sameSite: "strict",
+    });
+    get().loadCookies();
+  },
 
-    updateCookie: (cookie) => {
-      setCookie(cookie.name, cookie.value, { path: "/", sameSite: "strict" });
-      get().loadCookies();
-    },
+  deleteCookie: (name) => {
+    Cookies.remove(name, { path: "/" });
+    get().loadCookies();
+  },
 
-    deleteCookie: (name) => {
-      removeCookie(name, { path: "/" });
-      get().loadCookies();
-    },
+  selectAll: (selected) => {
+    set({
+      cookies: get().cookies.map((cookie) => ({ ...cookie, selected })),
+    });
+  },
 
-    selectAll: (selected) => {
-      set({
-        cookies: get().cookies.map((cookie) => ({ ...cookie, selected })),
+  toggleSelect: (name, selected) => {
+    set({
+      cookies: get().cookies.map((cookie) =>
+        cookie.name === name ? { ...cookie, selected } : cookie
+      ),
+    });
+  },
+
+  deleteSelected: () => {
+    get()
+      .cookies.filter((cookie) => cookie.selected)
+      .forEach((cookie) => {
+        Cookies.remove(cookie.name, { path: "/" });
       });
-    },
+    get().loadCookies();
+  },
 
-    toggleSelect: (name, selected) => {
-      set({
-        cookies: get().cookies.map((cookie) =>
-          cookie.name === name ? { ...cookie, selected } : cookie
-        ),
-      });
-    },
+  encryptCookie: (data, key) => {
+    return CryptoJS.AES.encrypt(data, key).toString();
+  },
 
-    deleteSelected: () => {
-      get()
-        .cookies.filter((cookie) => cookie.selected)
-        .forEach((cookie) => {
-          removeCookie(cookie.name, { path: "/" });
-        });
-      get().loadCookies();
-    },
-
-    encryptCookie: (data, key) => {
-      return CryptoJS.AES.encrypt(data, key).toString();
-    },
-
-    decryptCookie: (data, key) => {
-      try {
-        const bytes = CryptoJS.AES.decrypt(data, key);
-        return bytes.toString(CryptoJS.enc.Utf8);
-      } catch (error) {
-        console.error("解密 Cookie 时出错:", error);
-        return null;
-      }
-    },
-  };
-});
+  decryptCookie: (data, key) => {
+    try {
+      const bytes = CryptoJS.AES.decrypt(data, key);
+      return bytes.toString(CryptoJS.enc.Utf8);
+    } catch (error) {
+      console.error("解密 Cookie 时出错:", error);
+      return null;
+    }
+  },
+}));

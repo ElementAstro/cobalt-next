@@ -155,7 +155,7 @@ const TargetSmallCard: React.FC<TargetSmallCardProps> = (props) => {
   // 全局状态
   const targets = useGlobalStore((state) => state.targets);
   const add_target_to_store = useGlobalStore((state) => state.addTarget);
-  const save_all_targets = useGlobalStore((state) => state.save_all_targets);
+  const save_all_targets = useGlobalStore((state) => state.saveAllTargets);
   const set_focus_target_to_store = useGlobalStore(
     (state) => state.setFocusTarget
   );

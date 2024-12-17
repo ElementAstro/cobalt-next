@@ -2,7 +2,7 @@
 
 import { FC, useState } from "react";
 import * as AXIOSOF from "@/services/skymap/find-object";
-import TargetSmallCard from "../../components/skymap/target_small";
+import TargetSmallCard from "../../../components/skymap/target_small";
 import { motion } from "framer-motion";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,13 @@ import {
 } from "@/components/ui/tooltip";
 import { FilterIcon } from "lucide-react";
 import { IDSOObjectDetailedInfo } from "@/types/skymap/find-object";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ObjectSearchProps {
   on_choice_maken: (() => void) | null;
@@ -42,6 +49,10 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
   >([]);
   const [filterSettings, updateFilterSettings] = useState({
     angular_size: 1, // in arc degree
+    magnitude_limit: 20,
+    type: "all",
+    sort_by: "magnitude",
+    sort_order: "asc",
   });
 
   const handleFilterToggle = () => {
@@ -78,18 +89,18 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="flex flex-col md:flex-row w-full p-4 bg-gradient-to-b from-gray-900 to-gray-800 min-h-[80vh] rounded-lg"
+      className="flex flex-col sm:flex-row w-full p-2 sm:p-4 bg-gradient-to-b from-gray-900 to-gray-800 min-h-[70vh] sm:min-h-[80vh] rounded-lg overflow-hidden"
     >
-      <motion.div 
+      <motion.div
         initial={{ x: -20 }}
         animate={{ x: 0 }}
-        className="w-full md:w-1/4 p-4"
+        className="w-full sm:w-1/3 md:w-1/4 p-2 sm:p-4 overflow-y-auto"
       >
-        <div className="sticky top-4 space-y-4">
+        <div className="sticky top-2 space-y-2 sm:space-y-4">
           <Input
             placeholder="输入搜索关键词"
             value={toSearchText}
@@ -140,27 +151,83 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
                   className="mt-1 block w-full p-2 bg-gray-800 border border-gray-700 rounded-md text-white"
                 />
               </Label>
-              {/* 其他过滤条件可以在此添加 */}
+              <Label className="block text-sm text-gray-300">
+                星等限制:
+                <Input
+                  type="number"
+                  value={filterSettings.magnitude_limit}
+                  onChange={(e) =>
+                    updateFilterSettings((prev) => ({
+                      ...prev,
+                      magnitude_limit: Number(e.target.value),
+                    }))
+                  }
+                  className="mt-1 block w-full p-2 bg-gray-800 border border-gray-700 rounded-md text-white"
+                />
+              </Label>
+              <Label className="block text-sm text-gray-300">
+                天体类型:
+                <Select
+                  value={filterSettings.type}
+                  onValueChange={(value) =>
+                    updateFilterSettings((prev) => ({
+                      ...prev,
+                      type: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全部</SelectItem>
+                    <SelectItem value="galaxy">星系</SelectItem>
+                    <SelectItem value="nebula">星云</SelectItem>
+                    <SelectItem value="cluster">星团</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Label>
+              <Label className="block text-sm text-gray-300">
+                排序方式:
+                <Select
+                  value={filterSettings.sort_by}
+                  onValueChange={(value) =>
+                    updateFilterSettings((prev) => ({
+                      ...prev,
+                      sort_by: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="magnitude">按星等</SelectItem>
+                    <SelectItem value="size">按大小</SelectItem>
+                    <SelectItem value="name">按名称</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Label>
             </CollapsibleContent>
           </Collapsible>
         </div>
       </motion.div>
 
-      <motion.div 
+      <motion.div
         initial={{ x: 20 }}
         animate={{ x: 0 }}
-        className="w-full md:w-3/4 p-4"
+        className="w-full sm:w-2/3 md:w-3/4 p-2 sm:p-4 overflow-y-auto"
       >
-        <div className="h-full overflow-auto">
+        <div className="h-full">
           {foundTargetResult.length === 0 ? (
-            <Alert 
+            <Alert
               variant={alertVariant}
               className="bg-black/50 backdrop-blur-md border-white/10"
             >
               {alertText}
             </Alert>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
               {foundTargetResult.map((target, index) => (
                 <motion.div
                   key={target.id || index}

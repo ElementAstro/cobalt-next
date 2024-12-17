@@ -12,7 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import * as AXIOSOF from "@/services/skymap/find-object";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { Star, Info } from "lucide-react";
 
 interface TargetSuperSimpleCardProps {
   target_name: string;
@@ -21,6 +22,10 @@ interface TargetSuperSimpleCardProps {
   target_type: string;
   on_target_selected: (index: number) => void;
   index: number;
+  onDelete?: (index: number) => void;
+  onFavorite?: (index: number) => void;
+  isFavorite?: boolean;
+  availabilityScore?: number;
 }
 
 export const TranslateTargetType = (target_type: string): string => {
@@ -65,6 +70,8 @@ const TargetSuperSimpleCard: React.FC<TargetSuperSimpleCardProps> = (props) => {
   const [availableTime, setAvailableTime] = React.useState<number>(0);
   const [isEditing, setIsEditing] = React.useState<boolean>(false);
   const [editedName, setEditedName] = React.useState<string>(props.target_name);
+  const [showDetails, setShowDetails] = React.useState(false);
+  const [isHovered, setIsHovered] = React.useState(false);
 
   const updateSimpleData = async () => {
     try {
@@ -109,22 +116,24 @@ const TargetSuperSimpleCard: React.FC<TargetSuperSimpleCardProps> = (props) => {
     setIsEditing(false);
   };
 
+  // 添加新的动画变体
+  const cardVariants = {
+    hover: { scale: 1.02, boxShadow: "0px 5px 15px rgba(0,0,0,0.2)" },
+    tap: { scale: 0.98 },
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      whileHover={{ scale: 1.02 }}
-      transition={{ 
-        duration: 0.3,
-        type: "spring",
-        stiffness: 300,
-        damping: 20
-      }}
-      className="w-full sm:w-72 hover:shadow-xl transition-all duration-300 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg"
+      variants={cardVariants}
+      whileHover="hover"
+      whileTap="tap"
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      className="relative"
     >
       <Card className="flex flex-col h-full border-none bg-transparent">
         <CardHeader className="flex flex-row items-center space-y-0 gap-4 p-4">
-          <motion.div 
+          <motion.div
             className="relative overflow-hidden rounded-md"
             whileHover={{ scale: 1.1 }}
           >
@@ -161,12 +170,20 @@ const TargetSuperSimpleCard: React.FC<TargetSuperSimpleCardProps> = (props) => {
               </CardTitle>
             )}
           </div>
+          {props.availabilityScore && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute top-2 right-2 p-2 bg-green-500/20 backdrop-blur-sm rounded-full"
+            >
+              <span className="text-xs font-medium">
+                {props.availabilityScore}分
+              </span>
+            </motion.div>
+          )}
         </CardHeader>
         <CardContent className="flex-1 p-4">
-          <motion.div 
-            className="flex space-x-2 sm:space-x-4"
-            layout
-          >
+          <motion.div className="flex space-x-2 sm:space-x-4" layout>
             {isEditing ? (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -192,10 +209,7 @@ const TargetSuperSimpleCard: React.FC<TargetSuperSimpleCardProps> = (props) => {
                 </Button>
               </motion.div>
             ) : (
-              <motion.div 
-                className="flex gap-2 w-full"
-                layout
-              >
+              <motion.div className="flex gap-2 w-full" layout>
                 <Button
                   variant="outline"
                   size="sm"
@@ -238,10 +252,74 @@ const TargetSuperSimpleCard: React.FC<TargetSuperSimpleCardProps> = (props) => {
           ) : (
             <Skeleton className="h-4 w-full" />
           )}
+          <motion.div
+            initial={false}
+            animate={{
+              backgroundColor: updated ? "rgb(34 197 94 / 0.2)" : "transparent",
+            }}
+            className="p-2 rounded-full"
+          >
+            {updated ? "✓ 已更新" : "更新中..."}
+          </motion.div>
         </CardFooter>
+        <AnimatePresence>
+          {isHovered && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="absolute -right-2 top-1/2 transform -translate-y-1/2 flex flex-col gap-2"
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => props.onFavorite?.(props.index)}
+                className="rounded-full bg-white/10 backdrop-blur-sm"
+              >
+                <Star className={props.isFavorite ? "fill-yellow-400" : ""} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowDetails(!showDetails)}
+                className="rounded-full bg-white/10 backdrop-blur-sm"
+              >
+                <Info />
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {showDetails && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="p-4 space-y-2 bg-gray-100 dark:bg-gray-800/50">
+                <p>
+                  位置：RA {props.ra.toFixed(2)}° / DEC {props.dec.toFixed(2)}°
+                </p>
+                <p>类型：{displayType}</p>
+                <div className="flex justify-between text-sm">
+                  <span>当前高度：{currentAlt.toFixed(1)}°</span>
+                  <span>最佳观测时间：{availableTime.toFixed(1)}h</span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </Card>
     </motion.div>
   );
 };
 
-export default TargetSuperSimpleCard;
+// 添加新的性能优化
+export default React.memo(TargetSuperSimpleCard, (prevProps, nextProps) => {
+  return (
+    prevProps.target_name === nextProps.target_name &&
+    prevProps.ra === nextProps.ra &&
+    prevProps.dec === nextProps.dec
+  );
+});

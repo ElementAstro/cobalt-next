@@ -1,13 +1,15 @@
+"use client"
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Alert } from "@/components/ui/alert";
 import { Search, Settings as Gear } from "lucide-react";
-import AladinLiteView from "../../components/skymap/aladin";
+import AladinLiteView from "@/components/skymap/aladin";
 import * as AXIOSOF from "@/services/skymap/find-object";
-import FOVSettingDialog from "../../components/skymap/fov_dialog";
-import ObjectManagementDialog from "./object_manager_dialog";
-import ObjectSearchDialog from "./object_search_dialog";
+import FOVSettingDialog from "@/components/skymap/fov_dialog";
+import ObjectManagementDialog from "./components/object_manager_dialog";
+import ObjectSearchDialog from "./components/object_search_dialog";
 import { useGlobalStore } from "@/lib/store/skymap/target";
 import {
   IDSOFramingObjectInfo,

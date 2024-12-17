@@ -32,7 +32,7 @@ const ObjectSearchDialog: React.FC<ObjectSearchDialogProps> = (props) => {
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-3xl" ref={dialogRef}>
+        <DialogContent className="sm:max-w-[90vw] md:max-w-3xl max-h-[90vh] overflow-y-auto p-2 sm:p-4" ref={dialogRef}>
           <DialogHeader>
             <DialogTitle>目标搜索</DialogTitle>
           </DialogHeader>
@@ -48,12 +48,13 @@ const ObjectSearchDialog: React.FC<ObjectSearchDialogProps> = (props) => {
       {open && (
         <ArrowUpCircle
           color="primary"
-          size={40}
+          size={32}
           style={{
             position: "fixed",
-            bottom: "20px",
-            left: "20px",
+            bottom: "16px",
+            left: "16px",
             zIndex: 1400,
+            cursor: "pointer"
           }}
           onClick={() => {
             if (dialogRef.current) dialogRef.current.scrollTop = 0;

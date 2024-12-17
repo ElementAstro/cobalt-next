@@ -1,35 +1,45 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 export default function useNetworkStatus() {
   const [status, setStatus] = useState({
-    online: navigator.onLine,
+    online: typeof navigator !== "undefined" ? navigator.onLine : true, // Fallback to `true` during SSR
     downlink: undefined,
     rtt: undefined,
   });
 
   useEffect(() => {
-    const updateNetworkStatus = () => {
+    // Check if `navigator` exists before adding listeners
+    if (typeof navigator !== "undefined") {
+      const updateNetworkStatus = () => {
+        const connection = (navigator as any).connection;
+        setStatus({
+          online: navigator.onLine,
+          downlink: connection?.downlink,
+          rtt: connection?.rtt,
+        });
+      };
+
+      // Add event listeners for network status
+      window.addEventListener("online", updateNetworkStatus);
+      window.addEventListener("offline", updateNetworkStatus);
+
       const connection = (navigator as any).connection;
-      setStatus({
-        online: navigator.onLine,
-        downlink: connection?.downlink,
-        rtt: connection?.rtt,
-      });
-    };
-
-    window.addEventListener('online', updateNetworkStatus);
-    window.addEventListener('offline', updateNetworkStatus);
-    if ((navigator as any).connection) {
-      (navigator as any).connection.addEventListener('change', updateNetworkStatus);
-    }
-
-    return () => {
-      window.removeEventListener('online', updateNetworkStatus);
-      window.removeEventListener('offline', updateNetworkStatus);
-      if ((navigator as any).connection) {
-        (navigator as any).connection.removeEventListener('change', updateNetworkStatus);
+      if (connection) {
+        connection.addEventListener("change", updateNetworkStatus);
       }
-    };
+
+      // Initial status update
+      updateNetworkStatus();
+
+      // Cleanup listeners
+      return () => {
+        window.removeEventListener("online", updateNetworkStatus);
+        window.removeEventListener("offline", updateNetworkStatus);
+        if (connection) {
+          connection.removeEventListener("change", updateNetworkStatus);
+        }
+      };
+    }
   }, []);
 
   return status;
