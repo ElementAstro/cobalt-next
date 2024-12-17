@@ -177,34 +177,35 @@ const ImageFraming: React.FC = () => {
         />
       </div>
       
-      {/* 左侧控制面板 - 使用 Framer Motion 添加动画 */}
+      {/* 左侧控制面板 - 横屏优化 */}
       <motion.div 
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="fixed left-2 top-1/2 transform -translate-y-1/2 w-64 lg:w-72 z-40"
+        className="fixed left-2 top-2 lg:top-1/2 lg:transform lg:-translate-y-1/2 w-48 lg:w-72 z-40"
       >
         <Card className="bg-black/50 backdrop-blur-md border border-white/10">
-          <CardContent>
-            <CardTitle className="text-white text-shadow-lg">
+          <CardContent className="p-3 lg:p-6">
+            <CardTitle className="text-sm lg:text-base text-white text-shadow-lg">
               当前目标: {target_store.find((t) => t.checked)?.name || "无"}
             </CardTitle>
-            <div className="space-y-2 mt-4">
+            <div className="space-y-1 mt-2 text-xs lg:text-sm">
               <div className="text-white/90 text-shadow flex justify-between">
                 <span>Ra:</span>
-                <span>{target_ra.toFixed(7)}</span>
+                <span>{target_ra.toFixed(5)}</span>
               </div>
               <div className="text-white/90 text-shadow flex justify-between">
                 <span>Dec:</span>
-                <span>{target_dec.toFixed(7)}</span>
+                <span>{target_dec.toFixed(5)}</span>
               </div>
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="p-2">
             <Button
               variant="outline"
+              size="sm"
               onClick={() => set_open_fov_dialog(open_fov_dialog + 1)}
-              className="w-full backdrop-blur-sm hover:bg-white/20 transition-all"
+              className="w-full text-xs lg:text-sm backdrop-blur-sm hover:bg-white/20"
             >
               修改视场参数
             </Button>
@@ -212,76 +213,86 @@ const ImageFraming: React.FC = () => {
         </Card>
       </motion.div>
 
-      {/* 右侧工具栏 - 使用 Framer Motion 添加动画 */}
+      {/* 右侧工具栏 - 横屏优化 */}
       <motion.div 
         initial={{ x: 100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="fixed right-2 top-1/2 transform -translate-y-1/2 z-40"
+        className="fixed right-2 top-2 lg:top-1/2 lg:transform lg:-translate-y-1/2 z-40"
       >
-        <div className="flex flex-col gap-2 m-4">
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => set_open_search_dialog(open_search_dialog + 1)}
-            className="flex items-center bg-black/50 backdrop-blur-md hover:bg-white/20 transition-all"
-          >
-            <Search className="mr-2" /> 深空目标搜索
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => set_open_manage_dialog(open_manage_dialog + 1)}
-            className="flex items-center"
-          >
-            <Gear className="mr-2" /> 待拍目标选择
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={on_click_reset_with_current_center}
-          >
-            更新视场中心
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={target_store.find((t) => t.checked) == null}
-            onClick={update_target_center_points}
-          >
-            更新目标坐标
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={add_current_as_new_target}
-          >
-            新建目标
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={start_goto_and_focus_target}
-          >
-            移动赤道仪并居中
-          </Button>
+        <div className="flex flex-col gap-1 lg:gap-2">
+          <div className="grid grid-cols-2 gap-1 lg:gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => set_open_search_dialog(open_search_dialog + 1)}
+              className="text-xs lg:text-sm bg-black/50 backdrop-blur-md"
+            >
+              <Search className="w-3 h-3 lg:w-4 lg:h-4 mr-1" /> 搜索
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => set_open_manage_dialog(open_manage_dialog + 1)}
+              className="text-xs lg:text-sm"
+            >
+              <Gear className="w-3 h-3 lg:w-4 lg:h-4 mr-1" /> 目标
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 gap-1 lg:gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="text-xs lg:text-sm"
+              onClick={on_click_reset_with_current_center}
+            >
+              更新中心
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="text-xs lg:text-sm"
+              onClick={update_target_center_points}
+              disabled={target_store.find((t) => t.checked) == null}
+            >
+              更新坐标
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 gap-1 lg:gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="text-xs lg:text-sm"
+              onClick={add_current_as_new_target}
+            >
+              新建目标
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="text-xs lg:text-sm"
+              onClick={start_goto_and_focus_target}
+            >
+              移动居中
+            </Button>
+          </div>
         </div>
       </motion.div>
 
-      {/* 底部状态栏 - 使用 Framer Motion 添加动画 */}
+      {/* 底部状态栏 - 横屏优化 */}
       <motion.div
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="fixed bottom-4 left-1/2 transform -translate-x-1/2 w-[90%] max-w-3xl z-40"
+        className="fixed bottom-2 left-1/2 transform -translate-x-1/2 w-[80%] max-w-2xl z-40"
       >
         <Alert
           variant="default"
-          className="bg-black/50 backdrop-blur-md border border-white/10 text-white"
+          className="bg-black/50 backdrop-blur-md border border-white/10 text-white p-2"
         >
-          <div className="flex justify-between items-center">
-            <span>视场中心点坐标:</span>
-            <span>Ra: {screen_ra.toFixed(7)}; Dec: {screen_dec.toFixed(7)}</span>
+          <div className="flex justify-between items-center text-xs lg:text-sm">
+            <span>中心坐标:</span>
+            <span>Ra: {screen_ra.toFixed(5)}; Dec: {screen_dec.toFixed(5)}</span>
           </div>
         </Alert>
       </motion.div>

@@ -93,12 +93,12 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="flex flex-col sm:flex-row w-full p-2 sm:p-4 bg-gradient-to-b from-gray-900 to-gray-800 min-h-[70vh] sm:min-h-[80vh] rounded-lg overflow-hidden"
+      className="flex flex-col sm:flex-row w-full p-1 sm:p-2 bg-gradient-to-b from-gray-900 to-gray-800 min-h-[70vh] sm:min-h-[60vh] rounded-lg overflow-hidden"
     >
       <motion.div
         initial={{ x: -20 }}
         animate={{ x: 0 }}
-        className="w-full sm:w-1/3 md:w-1/4 p-2 sm:p-4 overflow-y-auto"
+        className="w-full sm:w-1/4 p-1 sm:p-2 overflow-y-auto"
       >
         <div className="sticky top-2 space-y-2 sm:space-y-4">
           <Input
@@ -216,7 +216,7 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
       <motion.div
         initial={{ x: 20 }}
         animate={{ x: 0 }}
-        className="w-full sm:w-2/3 md:w-3/4 p-2 sm:p-4 overflow-y-auto"
+        className="w-full sm:w-3/4 p-1 sm:p-2 overflow-y-auto"
       >
         <div className="h-full">
           {foundTargetResult.length === 0 ? (
@@ -227,7 +227,7 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
               {alertText}
             </Alert>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 sm:gap-2">
               {foundTargetResult.map((target, index) => (
                 <motion.div
                   key={target.id || index}

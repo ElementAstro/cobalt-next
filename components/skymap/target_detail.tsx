@@ -152,15 +152,15 @@ const TargetDetailCard: React.FC<TargetSmallCardProps> = (props) => {
 
   return (
     <motion.div
-      className="h-full w-full p-4 bg-gray-800 dark:bg-gray-900 rounded-lg shadow-lg"
+      className="h-full w-full p-4 bg-gray-800 dark:bg-gray-900 rounded-lg shadow-lg landscape:flex landscape:gap-4"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
       <AnimatePresence>
-        <Tabs defaultValue="observationData" className="w-full">
-          <motion.div variants={itemVariants}>
-            <TabsList className="flex space-x-1 bg-gray-700 dark:bg-gray-800 p-1 rounded">
+        <Tabs defaultValue="observationData" className="w-full landscape:flex landscape:gap-4">
+          <motion.div variants={itemVariants} className="landscape:w-48">
+            <TabsList className="flex landscape:flex-col space-x-1 landscape:space-x-0 landscape:space-y-1 bg-gray-700 dark:bg-gray-800 p-1 rounded">
               <TabsTrigger
                 value="observationData"
                 className="px-4 py-2 text-white"
@@ -175,179 +175,181 @@ const TargetDetailCard: React.FC<TargetSmallCardProps> = (props) => {
               </TabsTrigger>
             </TabsList>
           </motion.div>
-          <TabsContent value="observationData" className="mt-4">
-            <motion.div
-              className="flex flex-col h-full space-y-4"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-            >
+          <div className="landscape:flex-1">
+            <TabsContent value="observationData" className="mt-4">
               <motion.div
-                className="flex flex-col md:flex-row h-1/2 space-y-4 md:space-y-0 md:space-x-4"
+                className="flex flex-col h-full space-y-4 landscape:space-y-2"
                 variants={containerVariants}
+                initial="hidden"
+                animate="visible"
               >
                 <motion.div
-                  className="w-full md:w-1/2 h-full"
-                  variants={itemVariants}
+                  className="flex flex-col md:flex-row h-1/2 space-y-4 md:space-y-0 md:space-x-4 landscape:h-auto"
+                  variants={containerVariants}
                 >
-                  <Card className="h-full bg-gray-700 dark:bg-gray-800">
-                    <Image
-                      src={target_icon_link}
-                      alt="目标图片"
-                      className="object-cover h-40 w-full rounded-t-lg"
-                      width={400}
-                      height={160}
-                    />
-                    <div className="p-4">
-                      <h2 className="text-lg font-semibold text-white">
-                        {props.target_info.name}
-                      </h2>
-                    </div>
-                  </Card>
+                  <motion.div
+                    className="w-full md:w-1/2 h-full"
+                    variants={itemVariants}
+                  >
+                    <Card className="h-full bg-gray-700 dark:bg-gray-800">
+                      <Image
+                        src={target_icon_link}
+                        alt="目标图片"
+                        className="object-cover h-40 w-full rounded-t-lg"
+                        width={400}
+                        height={160}
+                      />
+                      <div className="p-4">
+                        <h2 className="text-lg font-semibold text-white">
+                          {props.target_info.name}
+                        </h2>
+                      </div>
+                    </Card>
+                  </motion.div>
+                  <motion.div
+                    className="w-full md:w-1/2 h-full"
+                    variants={itemVariants}
+                  >
+                    {props.in_updating ? (
+                      <Spinner />
+                    ) : (
+                      <RadarChart
+                        cx="50%"
+                        cy="50%"
+                        outerRadius="80%"
+                        width={300}
+                        height={300}
+                        data={polar_data}
+                      >
+                        <PolarGrid />
+                        <PolarAngleAxis dataKey="angle" stroke="#ffffff" />
+                        <PolarRadiusAxis stroke="#ffffff" />
+                        <Radar
+                          name={props.target_info.name}
+                          dataKey="radius"
+                          stroke="#8884d8"
+                          fill="#8884d8"
+                          fillOpacity={0.6}
+                        />
+                      </RadarChart>
+                    )}
+                  </motion.div>
                 </motion.div>
-                <motion.div
-                  className="w-full md:w-1/2 h-full"
-                  variants={itemVariants}
-                >
+                <motion.div className="h-1/2" variants={itemVariants}>
                   {props.in_updating ? (
                     <Spinner />
                   ) : (
-                    <RadarChart
-                      cx="50%"
-                      cy="50%"
-                      outerRadius="80%"
-                      width={300}
-                      height={300}
-                      data={polar_data}
-                    >
-                      <PolarGrid />
-                      <PolarAngleAxis dataKey="angle" stroke="#ffffff" />
-                      <PolarRadiusAxis stroke="#ffffff" />
-                      <Radar
-                        name={props.target_info.name}
-                        dataKey="radius"
-                        stroke="#8884d8"
-                        fill="#8884d8"
-                        fillOpacity={0.6}
+                    <LineChart width={600} height={300} data={alt_data}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff" />
+                      <XAxis dataKey="date" stroke="#ffffff" />
+                      <YAxis stroke="#ffffff" />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: "#333", color: "#fff" }}
                       />
-                    </RadarChart>
+                      <Line
+                        type="monotone"
+                        dataKey="value"
+                        stroke="#8884d8"
+                        activeDot={{ r: 8 }}
+                      />
+                    </LineChart>
                   )}
                 </motion.div>
               </motion.div>
-              <motion.div className="h-1/2" variants={itemVariants}>
-                {props.in_updating ? (
-                  <Spinner />
-                ) : (
-                  <LineChart width={600} height={300} data={alt_data}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff" />
-                    <XAxis dataKey="date" stroke="#ffffff" />
-                    <YAxis stroke="#ffffff" />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: "#333", color: "#fff" }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      stroke="#8884d8"
-                      activeDot={{ r: 8 }}
-                    />
-                  </LineChart>
-                )}
-              </motion.div>
-            </motion.div>
-          </TabsContent>
-          <TabsContent value="basicInfo" className="mt-4">
-            <motion.div
-              className="flex flex-col h-full space-y-4"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-            >
+            </TabsContent>
+            <TabsContent value="basicInfo" className="mt-4">
               <motion.div
-                className="flex flex-col md:flex-row h-2/5 space-y-4 md:space-y-0 md:space-x-4"
+                className="flex flex-col h-full space-y-4"
                 variants={containerVariants}
+                initial="hidden"
+                animate="visible"
               >
                 <motion.div
-                  className="w-full md:w-1/2 h-full"
-                  variants={itemVariants}
+                  className="flex flex-col md:flex-row h-2/5 space-y-4 md:space-y-0 md:space-x-4"
+                  variants={containerVariants}
                 >
-                  <Card className="h-full flex bg-gray-700 dark:bg-gray-800">
-                    <Image
-                      src={target_icon_link}
-                      alt="目标图片"
-                      className="object-cover h-full w-40 rounded-l-lg"
-                      width={160}
-                      height={160}
-                    />
-                    <div className="p-4 flex flex-col justify-between">
-                      <h2 className="text-lg font-semibold text-white">
-                        {props.target_info.name}
-                      </h2>
-                      <div className="space-y-2">
-                        <p className="text-white">
-                          Ra: {props.target_info.ra.toFixed(7)} °
-                        </p>
-                        <p className="text-white">
-                          Dec: {props.target_info.dec.toFixed(7)} °
-                        </p>
-                        <p className="text-secondary">
-                          目标类型:{" "}
-                          {TranslateTargetType(props.target_info.target_type)}
-                        </p>
-                        <p className="text-secondary">
-                          目标视角大小: {props.target_info.size} ′
-                        </p>
+                  <motion.div
+                    className="w-full md:w-1/2 h-full"
+                    variants={itemVariants}
+                  >
+                    <Card className="h-full flex bg-gray-700 dark:bg-gray-800">
+                      <Image
+                        src={target_icon_link}
+                        alt="目标图片"
+                        className="object-cover h-full w-40 rounded-l-lg"
+                        width={160}
+                        height={160}
+                      />
+                      <div className="p-4 flex flex-col justify-between">
+                        <h2 className="text-lg font-semibold text-white">
+                          {props.target_info.name}
+                        </h2>
+                        <div className="space-y-2">
+                          <p className="text-white">
+                            Ra: {props.target_info.ra.toFixed(7)} °
+                          </p>
+                          <p className="text-white">
+                            Dec: {props.target_info.dec.toFixed(7)} °
+                          </p>
+                          <p className="text-secondary">
+                            目标类型:{" "}
+                            {TranslateTargetType(props.target_info.target_type)}
+                          </p>
+                          <p className="text-secondary">
+                            目标视角大小: {props.target_info.size} ′
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </Card>
+                    </Card>
+                  </motion.div>
+                  <motion.div
+                    className="w-full md:w-1/2 h-full"
+                    variants={itemVariants}
+                  >
+                    <Card className="h-full p-4 bg-gray-700 dark:bg-gray-800">
+                      <div className="grid grid-cols-2 gap-4">
+                        <p className="text-white">
+                          当前高度: {current_alt.toFixed(0)}°
+                        </p>
+                        <p className="text-white">
+                          最高高度: {highest_alt.toFixed(0)}°
+                        </p>
+                        <p className="text-white">
+                          估计可拍摄时间: {available_time.toFixed(1)}h
+                        </p>
+                        <p className="text-white">状态: 活跃</p>
+                      </div>
+                    </Card>
+                  </motion.div>
                 </motion.div>
-                <motion.div
-                  className="w-full md:w-1/2 h-full"
-                  variants={itemVariants}
-                >
-                  <Card className="h-full p-4 bg-gray-700 dark:bg-gray-800">
-                    <div className="grid grid-cols-2 gap-4">
-                      <p className="text-white">
-                        当前高度: {current_alt.toFixed(0)}°
-                      </p>
-                      <p className="text-white">
-                        最高高度: {highest_alt.toFixed(0)}°
-                      </p>
-                      <p className="text-white">
-                        估计可拍摄时间: {available_time.toFixed(1)}h
-                      </p>
-                      <p className="text-white">状态: 活跃</p>
-                    </div>
+                <motion.div className="h-3/5" variants={itemVariants}>
+                  <Card className="h-full p-4 overflow-auto bg-gray-700 dark:bg-gray-800">
+                    {/* 目标维基小百科内容 */}
+                    <h3 className="text-xl font-semibold text-white mb-2">
+                      {props.target_info.name} 简介
+                    </h3>
+                    <p className="text-white">
+                      这里是关于目标的详细信息和背景介绍。您可以在这里添加更多关于目标的描述、历史和相关数据。
+                    </p>
                   </Card>
                 </motion.div>
               </motion.div>
-              <motion.div className="h-3/5" variants={itemVariants}>
-                <Card className="h-full p-4 overflow-auto bg-gray-700 dark:bg-gray-800">
-                  {/* 目标维基小百科内容 */}
-                  <h3 className="text-xl font-semibold text-white mb-2">
-                    {props.target_info.name} 简介
-                  </h3>
-                  <p className="text-white">
-                    这里是关于目标的详细信息和背景介绍。您可以在这里添加更多关于目标的描述、历史和相关数据。
-                  </p>
-                </Card>
+            </TabsContent>
+            <TabsContent value="wiki" className="mt-4">
+              <motion.div
+                className="w-full h-full overflow-auto bg-gray-700 dark:bg-gray-800 p-4 rounded"
+                variants={itemVariants}
+              >
+                {/* 目标维基小百科内容 */}
+                <h3 className="text-xl font-semibold text-white mb-2">
+                  {props.target_info.name} 维基百科
+                </h3>
+                <p className="text-white">
+                  这里可以显示来自维基百科或其他资料来源的关于目标的详细信息。
+                </p>
               </motion.div>
-            </motion.div>
-          </TabsContent>
-          <TabsContent value="wiki" className="mt-4">
-            <motion.div
-              className="w-full h-full overflow-auto bg-gray-700 dark:bg-gray-800 p-4 rounded"
-              variants={itemVariants}
-            >
-              {/* 目标维基小百科内容 */}
-              <h3 className="text-xl font-semibold text-white mb-2">
-                {props.target_info.name} 维基百科
-              </h3>
-              <p className="text-white">
-                这里可以显示来自维基百科或其他资料来源的关于目标的详细信息。
-              </p>
-            </motion.div>
-          </TabsContent>
+            </TabsContent>
+          </div>
         </Tabs>
 
         <motion.div

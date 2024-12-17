@@ -131,8 +131,8 @@ const TargetSuperSimpleCard: React.FC<TargetSuperSimpleCardProps> = (props) => {
       onHoverEnd={() => setIsHovered(false)}
       className="relative"
     >
-      <Card className="flex flex-col h-full border-none bg-transparent">
-        <CardHeader className="flex flex-row items-center space-y-0 gap-4 p-4">
+      <Card className="flex flex-col h-full border-none bg-transparent landscape:flex-row landscape:h-24">
+        <CardHeader className="flex flex-row items-center space-y-0 gap-4 p-4 landscape:w-1/3">
           <motion.div
             className="relative overflow-hidden rounded-md"
             whileHover={{ scale: 1.1 }}
@@ -182,7 +182,7 @@ const TargetSuperSimpleCard: React.FC<TargetSuperSimpleCardProps> = (props) => {
             </motion.div>
           )}
         </CardHeader>
-        <CardContent className="flex-1 p-4">
+        <CardContent className="flex-1 p-4 landscape:w-1/3 landscape:py-2">
           <motion.div className="flex space-x-2 sm:space-x-4" layout>
             {isEditing ? (
               <motion.div
@@ -240,7 +240,7 @@ const TargetSuperSimpleCard: React.FC<TargetSuperSimpleCardProps> = (props) => {
             )}
           </motion.div>
         </CardContent>
-        <CardFooter className="bg-muted/50 backdrop-blur-sm p-4 rounded-b-lg">
+        <CardFooter className="bg-muted/50 backdrop-blur-sm p-4 rounded-b-lg landscape:w-1/3 landscape:rounded-r-lg landscape:rounded-bl-none">
           {updated ? (
             <div className="flex flex-col sm:flex-row justify-between text-sm text-muted-foreground dark:text-gray-300">
               <span>当前: {currentAlt.toFixed(0)}°</span>

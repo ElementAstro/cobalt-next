@@ -128,23 +128,23 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = (props) => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-4xl landscape:max-h-[90vh] landscape:overflow-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
+          className="space-y-6 landscape:space-y-3"
         >
-          <DialogHeader>
+          <DialogHeader className="landscape:py-2">
             <DialogTitle className="flex items-center gap-2">
               <Calculator className="w-5 h-5" />
               视场计算器
             </DialogTitle>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 landscape:gap-3">
             {/* 左侧：输入区域 */}
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="flex gap-2 flex-wrap">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 landscape:space-y-2">
+              <div className="flex gap-2 flex-wrap landscape:gap-1">
                 {commonPresets.map((preset) => (
                   <Button
                     key={preset.name}
@@ -157,7 +157,7 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = (props) => {
                 ))}
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-4 landscape:space-y-2">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4">
                   <Label className="block text-sm sm:w-1/3">
                     相机x方向的像素数量
@@ -288,13 +288,13 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = (props) => {
 
             {/* 右侧：预览区域 */}
             <motion.div
-              className="bg-muted rounded-lg p-4"
+              className="bg-muted rounded-lg p-4 landscape:p-2"
               whileHover={{ scale: 1.02 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
               <h3 className="font-semibold mb-4">预览</h3>
 
-              <div className="space-y-4">
+              <div className="space-y-4 landscape:space-y-2">
                 <div className="aspect-video relative border rounded-lg overflow-hidden">
                   <motion.div
                     className="absolute inset-2 border-2 border-primary"

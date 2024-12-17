@@ -112,13 +112,13 @@ export const RaInput: React.FC<IInputProps> = (props) => {
 
   return (
     <motion.div
-      className="flex flex-col gap-6 p-6 bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg dark:bg-gray-900/90 border border-gray-700"
+      className="flex flex-col gap-6 p-6 bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg dark:bg-gray-900/90 border border-gray-700 landscape:p-3 landscape:gap-3"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-6" layout>
-        <div className="flex flex-col space-y-4">
+      <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-6 landscape:gap-3" layout>
+        <div className="flex flex-col space-y-4 landscape:space-y-2">
           <div className="flex justify-between items-center">
             <Label className="text-white text-lg">RA</Label>
             <Button
@@ -204,7 +204,7 @@ export const RaInput: React.FC<IInputProps> = (props) => {
           </div>
         </div>
         <motion.div
-          className="relative h-40 hidden md:block"
+          className="relative h-40 hidden md:block landscape:h-28"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
@@ -323,13 +323,13 @@ export const DecInput: React.FC<IInputProps> = (props) => {
 
   return (
     <motion.div
-      className="flex flex-col gap-6 p-6 bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg dark:bg-gray-900/90 border border-gray-700"
+      className="flex flex-col gap-6 p-6 bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg dark:bg-gray-900/90 border border-gray-700 landscape:p-3 landscape:gap-3"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-6" layout>
-        <div className="flex flex-col space-y-4">
+      <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-6 landscape:gap-3" layout>
+        <div className="flex flex-col space-y-4 landscape:space-y-2">
           <div className="flex justify-between items-center">
             <Label className="text-white text-lg">DEC</Label>
             <Button
@@ -415,7 +415,7 @@ export const DecInput: React.FC<IInputProps> = (props) => {
           </div>
         </div>
         <motion.div
-          className="relative h-40 hidden md:block"
+          className="relative h-40 hidden md:block landscape:h-28"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}

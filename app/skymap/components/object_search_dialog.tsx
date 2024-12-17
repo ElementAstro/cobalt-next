@@ -32,12 +32,12 @@ const ObjectSearchDialog: React.FC<ObjectSearchDialogProps> = (props) => {
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[90vw] md:max-w-3xl max-h-[90vh] overflow-y-auto p-2 sm:p-4" ref={dialogRef}>
+        <DialogContent className="sm:max-w-[95vw] md:max-w-5xl max-h-[95vh] overflow-y-auto p-1 sm:p-2" ref={dialogRef}>
           <DialogHeader>
             <DialogTitle>目标搜索</DialogTitle>
           </DialogHeader>
           <ObjectSearch on_choice_maken={handleClose} />
-          <DialogFooter>
+          <DialogFooter className="mt-1 sm:mt-2">
             <Button variant="destructive" onClick={handleClose}>
               <XCircle className="mr-2" size={20} />
               关闭

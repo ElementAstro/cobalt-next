@@ -190,15 +190,15 @@ const ObjectManagement: FC<ObjectManagementProps> = (props) => {
 
   return (
     <>
-      <div className="container mx-auto p-2 sm:p-4 dark:bg-gray-900 overflow-hidden">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-4">
-          <div className="md:col-span-2 overflow-y-auto">
+      <div className="container mx-auto p-1 sm:p-2 dark:bg-gray-900 overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-1 sm:gap-2">
+          <div className="md:col-span-3 overflow-y-auto max-h-[calc(100vh-6rem)]">
             {filteredTargets.length === 0 ? (
               <Alert variant="default" className="dark:bg-gray-800 dark:text-gray-200">拍摄列表中还没有目标</Alert>
             ) : (
-              <div className="flex flex-wrap justify-center md:justify-start gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 sm:gap-2">
                 {filteredTargets.map((one_target_info, index) => (
-                  <div key={index} className="w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.33%-0.5rem)] lg:w-[calc(25%-0.5rem)]">
+                  <div key={index} className="w-full">
                     <TargetSmallCard
                       target_info={one_target_info}
                       on_card_clicked={on_card_checked}
@@ -211,7 +211,7 @@ const ObjectManagement: FC<ObjectManagementProps> = (props) => {
               </div>
             )}
           </div>
-          <div className="space-y-2 sm:space-y-4 overflow-y-auto">
+          <div className="space-y-1 sm:space-y-2 overflow-y-auto max-h-[calc(100vh-6rem)]">
             <Card className="dark:bg-gray-800 dark:text-gray-200">
               <CardHeader className="p-3 sm:p-6">
                 <CardTitle>操作选中的目标</CardTitle>
