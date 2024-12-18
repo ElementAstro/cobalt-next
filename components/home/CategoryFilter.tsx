@@ -14,7 +14,8 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
 }) => {
   return (
     <motion.div
-      className="overflow-x-auto scrollbar-hide sticky top-0 z-10 bg-indigo-900/80 backdrop-blur-sm py-4"
+      className="overflow-x-auto scrollbar-hide sticky top-0 z-10 py-4"
+      style={{ backgroundColor: "rgba(255, 255, 255, 0)" }} // 设置透明背景色
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}

@@ -18,6 +18,11 @@ import {
   PolarRadiusAxis,
   Radar,
   RadarChart,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import { DateTime } from "luxon";
 import { motion, AnimatePresence } from "framer-motion";
@@ -48,6 +53,8 @@ const TargetDetailCard: React.FC<TargetSmallCardProps> = (props) => {
   // chart data
   const [alt_data, set_alt_data] = React.useState<any[]>([]);
   const [polar_data, set_polar_data] = React.useState<any[]>([]);
+  const [bar_data, set_bar_data] = React.useState<any[]>([]);
+  const [pie_data, set_pie_data] = React.useState<any[]>([]);
 
   // store data
   const targets = useGlobalStore((state) => state.targets);
@@ -57,15 +64,13 @@ const TargetDetailCard: React.FC<TargetSmallCardProps> = (props) => {
   );
 
   const handleClose = () => {
-    // 根据需求实现关闭逻辑
+    // 实现关闭逻辑，例如调用父组件的回调
   };
 
   // on mount
-  React.useEffect(() => {}, []);
-
   React.useEffect(() => {
     if (props.open_dialog > 0) {
-      // 根据需求实现打开逻辑
+      // 打开逻辑
     }
   }, [props.open_dialog]);
 
@@ -77,7 +82,7 @@ const TargetDetailCard: React.FC<TargetSmallCardProps> = (props) => {
 
   // functions
   const init_fig_data = () => {
-    // process target info to display data
+    // 处理目标信息以显示数据
     const new_data = props.target_info.altitude.map((item) => ({
       date: DateTime.fromFormat(item[0], "yyyy-MM-dd HH:mm:ss").toJSDate(),
       value: Number(item[2].toFixed(2)),
@@ -89,6 +94,24 @@ const TargetDetailCard: React.FC<TargetSmallCardProps> = (props) => {
       radius: Number(item[2].toFixed(2)),
     }));
     set_polar_data(polarData);
+
+    // 示例条形图数据
+    const barData = [
+      { name: "观测1", uv: 4000, pv: 2400, amt: 2400 },
+      { name: "观测2", uv: 3000, pv: 1398, amt: 2210 },
+      { name: "观测3", uv: 2000, pv: 9800, amt: 2290 },
+      { name: "观测4", uv: 2780, pv: 3908, amt: 2000 },
+    ];
+    set_bar_data(barData);
+
+    // 示例饼图数据
+    const pieData = [
+      { name: "类别A", value: 400 },
+      { name: "类别B", value: 300 },
+      { name: "类别C", value: 300 },
+      { name: "类别D", value: 200 },
+    ];
+    set_pie_data(pieData);
   };
 
   const handleAddTarget = () => {
@@ -117,7 +140,13 @@ const TargetDetailCard: React.FC<TargetSmallCardProps> = (props) => {
 
   const TranslateTargetType = (type: string) => {
     // 假设有一个翻译函数
-    return type;
+    const translations: { [key: string]: string } = {
+      star: "恒星",
+      planet: "行星",
+      galaxy: "星系",
+      // 更多类型...
+    };
+    return translations[type] || type;
   };
 
   const on_add_target_to_list_clicked = () => {
@@ -158,7 +187,10 @@ const TargetDetailCard: React.FC<TargetSmallCardProps> = (props) => {
       animate="visible"
     >
       <AnimatePresence>
-        <Tabs defaultValue="observationData" className="w-full landscape:flex landscape:gap-4">
+        <Tabs
+          defaultValue="observationData"
+          className="w-full landscape:flex landscape:gap-4"
+        >
           <motion.div variants={itemVariants} className="landscape:w-48">
             <TabsList className="flex landscape:flex-col space-x-1 landscape:space-x-0 landscape:space-y-1 bg-gray-700 dark:bg-gray-800 p-1 rounded">
               <TabsTrigger
@@ -239,20 +271,64 @@ const TargetDetailCard: React.FC<TargetSmallCardProps> = (props) => {
                   {props.in_updating ? (
                     <Spinner />
                   ) : (
-                    <LineChart width={600} height={300} data={alt_data}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#ffffff" />
-                      <XAxis dataKey="date" stroke="#ffffff" />
-                      <YAxis stroke="#ffffff" />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: "#333", color: "#fff" }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="value"
-                        stroke="#8884d8"
-                        activeDot={{ r: 8 }}
-                      />
-                    </LineChart>
+                    <>
+                      <LineChart width={600} height={300} data={alt_data}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff" />
+                        <XAxis dataKey="date" stroke="#ffffff" />
+                        <YAxis stroke="#ffffff" />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#333",
+                            color: "#fff",
+                          }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="value"
+                          stroke="#8884d8"
+                          activeDot={{ r: 8 }}
+                        />
+                      </LineChart>
+                      <BarChart width={600} height={300} data={bar_data}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff" />
+                        <XAxis dataKey="name" stroke="#ffffff" />
+                        <YAxis stroke="#ffffff" />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#333",
+                            color: "#fff",
+                          }}
+                        />
+                        <Bar dataKey="uv" fill="#8884d8" />
+                        <Bar dataKey="pv" fill="#82ca9d" />
+                      </BarChart>
+                      <PieChart width={400} height={400}>
+                        <Pie
+                          data={pie_data}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) =>
+                            `${name} ${(percent * 100).toFixed(0)}%`
+                          }
+                          outerRadius={100}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {pie_data.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={
+                                ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"][
+                                  index % 4
+                                ]
+                              }
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </>
                   )}
                 </motion.div>
               </motion.div>

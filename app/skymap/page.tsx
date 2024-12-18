@@ -1,10 +1,20 @@
-"use client"
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Alert } from "@/components/ui/alert";
-import { Search, Settings as Gear } from "lucide-react";
+import {
+  Search,
+  Settings as Gear,
+  RotateCcw,
+  ZoomIn,
+  ZoomOut,
+  Compass,
+  Grid,
+  Sun,
+  Moon,
+} from "lucide-react";
 import AladinLiteView from "@/components/skymap/aladin";
 import * as AXIOSOF from "@/services/skymap/find-object";
 import FOVSettingDialog from "@/components/skymap/fov_dialog";
@@ -16,6 +26,8 @@ import {
   IOFRequestFOVpoints,
 } from "@/types/skymap/find-object";
 import { motion } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
+import { Slider } from "@/components/ui/slider";
 
 const ImageFraming: React.FC = () => {
   // 状态定义
@@ -164,8 +176,32 @@ const ImageFraming: React.FC = () => {
     // 处理需要聚焦的目标
   }, [target_store]);
 
+  const [showGrid, setShowGrid] = useState(false);
+  const [showConstellations, setShowConstellations] = useState(false);
+  const [nightMode, setNightMode] = useState(true);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const { toast } = useToast();
+
+  const toggleNightMode = () => {
+    setNightMode(!nightMode);
+    document.documentElement.classList.toggle("night-mode");
+  };
+
+  const handleZoom = (direction: "in" | "out") => {
+    const newZoom =
+      direction === "in"
+        ? Math.min(zoomLevel * 1.2, 5)
+        : Math.max(zoomLevel / 1.2, 0.2);
+    setZoomLevel(newZoom);
+    set_aladin_show_fov(aladin_show_fov / newZoom);
+  };
+
   return (
-    <div className="framing-root relative h-screen w-screen overflow-hidden">
+    <div
+      className={`framing-root relative h-screen w-screen overflow-hidden ${
+        nightMode ? "night-mode" : ""
+      }`}
+    >
       <div className="absolute inset-0">
         <AladinLiteView
           ra={target_ra}
@@ -176,9 +212,9 @@ const ImageFraming: React.FC = () => {
           fov_size={aladin_show_fov}
         />
       </div>
-      
+
       {/* 左侧控制面板 - 横屏优化 */}
-      <motion.div 
+      <motion.div
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
@@ -214,7 +250,7 @@ const ImageFraming: React.FC = () => {
       </motion.div>
 
       {/* 右侧工具栏 - 横屏优化 */}
-      <motion.div 
+      <motion.div
         initial={{ x: 100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
@@ -292,7 +328,9 @@ const ImageFraming: React.FC = () => {
         >
           <div className="flex justify-between items-center text-xs lg:text-sm">
             <span>中心坐标:</span>
-            <span>Ra: {screen_ra.toFixed(5)}; Dec: {screen_dec.toFixed(5)}</span>
+            <span>
+              Ra: {screen_ra.toFixed(5)}; Dec: {screen_dec.toFixed(5)}
+            </span>
           </div>
         </Alert>
       </motion.div>
@@ -319,6 +357,75 @@ const ImageFraming: React.FC = () => {
       />
       <ObjectSearchDialog open_dialog={open_search_dialog} />
       <ObjectManagementDialog open_dialog={open_manage_dialog} />
+
+      {/* 中央工具栏 */}
+      <motion.div
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="fixed top-2 left-1/2 transform -translate-x-1/2 z-40 flex gap-2"
+      >
+        <div className="bg-black/50 backdrop-blur-md rounded-lg p-1 flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleZoom("in")}
+            className="text-white/80 hover:text-white"
+          >
+            <ZoomIn className="w-4 h-4" />
+          </Button>
+          <Slider
+            value={[zoomLevel]}
+            min={0.2}
+            max={5}
+            step={0.1}
+            className="w-24"
+            onValueChange={([value]) => setZoomLevel(value)}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleZoom("out")}
+            className="text-white/80 hover:text-white"
+          >
+            <ZoomOut className="w-4 h-4" />
+          </Button>
+        </div>
+
+        <div className="bg-black/50 backdrop-blur-md rounded-lg p-1 flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowGrid(!showGrid)}
+            className={`text-white/80 hover:text-white ${
+              showGrid ? "bg-white/20" : ""
+            }`}
+          >
+            <Grid className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowConstellations(!showConstellations)}
+            className={`text-white/80 hover:text-white ${
+              showConstellations ? "bg-white/20" : ""
+            }`}
+          >
+            <Compass className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleNightMode}
+            className="text-white/80 hover:text-white"
+          >
+            {nightMode ? (
+              <Sun className="w-4 h-4" />
+            ) : (
+              <Moon className="w-4 h-4" />
+            )}
+          </Button>
+        </div>
+      </motion.div>
     </div>
   );
 };

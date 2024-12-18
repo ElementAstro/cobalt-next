@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X, ChevronDown, Sun, Moon } from "lucide-react";
+import { Search, X, Sun, Moon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -29,17 +29,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [suggestions, setSuggestions] = useState(initialSuggestions);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [darkMode, setDarkMode] = useState(true); // 默认使用暗色
   const inputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [darkMode]);
 
   useEffect(() => {
     if (searchTerm) {
@@ -84,19 +75,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     };
   }, []);
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
-
   return (
     <motion.form
       ref={formRef}
       onSubmit={handleSubmit}
       className={cn(
-        "relative w-full max-w-sm mx-auto p-4",
+        "relative w-full max-w-sm mx-auto p-2",
         variant === "minimal" && "max-w-[300px]",
         className,
-        darkMode ? "bg-gray-800" : "bg-white",
         "rounded-lg shadow-lg"
       )}
       initial={{ opacity: 0, y: -20 }}
@@ -115,6 +101,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           aria-label="搜索"
+          disabled={disabled}
         />
         <Button
           type="button"
@@ -126,18 +113,19 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           <Search className="h-4 w-4" />
           <span className="sr-only">聚焦搜索</span>
         </Button>
+        {searchTerm && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+            onClick={handleClear}
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">清除搜索</span>
+          </Button>
+        )}
       </div>
-      {variant !== "minimal" && (
-        <Button
-          type="submit"
-          variant="default"
-          size="icon"
-          className="absolute right-0 top-0 rounded-full bg-blue-500 hover:bg-blue-600"
-        >
-          <Search className="h-4 w-4 text-white" />
-          <span className="sr-only">搜索</span>
-        </Button>
-      )}
       <AnimatePresence>
         {showSuggestions && suggestions.length > 0 && (
           <motion.ul
@@ -162,22 +150,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           </motion.ul>
         )}
       </AnimatePresence>
-      {variant === "minimal" && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-          onClick={toggleDarkMode}
-        >
-          {darkMode ? (
-            <Sun className="h-4 w-4" />
-          ) : (
-            <Moon className="h-4 w-4" />
-          )}
-          <span className="sr-only">切换主题</span>
-        </Button>
-      )}
     </motion.form>
   );
 };

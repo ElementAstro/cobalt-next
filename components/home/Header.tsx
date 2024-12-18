@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Download, Upload, Plus, Search, Sun, Moon } from "lucide-react";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
@@ -22,19 +23,16 @@ const Header: React.FC<HeaderProps> = ({
   isDark,
 }) => {
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-4">
-      <div className="flex items-center gap-4">
-        <h1 className="text-4xl sm:text-5xl font-bold text-indigo-300 dark:text-indigo-400">
+    <motion.div
+      className="flex flex-col sm:flex-row justify-between items-center gap-2 p-2"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="flex items-center gap-2">
+        <h1 className="text-3xl sm:text-4xl font-bold text-indigo-300 dark:text-indigo-400">
           Cobalt Hub
         </h1>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleTheme}
-          className="text-indigo-300"
-        >
-          {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-        </Button>
       </div>
       <div className="flex items-center gap-2 w-full sm:w-auto">
         <div className="relative flex-1 sm:flex-initial sm:w-64">
@@ -84,7 +82,7 @@ const Header: React.FC<HeaderProps> = ({
           </DialogTrigger>
         </Dialog>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

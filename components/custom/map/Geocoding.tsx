@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { geocode, reverseGeocode } from "../utils/amapApi";
 import {
   Card,
   CardHeader,
@@ -52,6 +51,32 @@ export default function GeocodingComponent() {
   const [copiedCoordinates, setCopiedCoordinates] = useState<string | null>(
     null
   );
+
+  const API_KEY = process.env.NEXT_PUBLIC_AMAP_KEY;
+  const BASE_URL = "https://restapi.amap.com/v3/geocode";
+
+  async function geocode(address: string) {
+    const url = `${BASE_URL}/geo?key=${API_KEY}&address=${encodeURIComponent(
+      address
+    )}`;
+    const response = await fetch(url);
+    return response.json();
+  }
+
+  async function reverseGeocode(location: string) {
+    const url = `${BASE_URL}/regeo?key=${API_KEY}&location=${location}&extensions=all`;
+    const response = await fetch(url);
+    return response.json();
+  }
+
+  function getStaticMapUrl(
+    location: string,
+    zoom: number = 14,
+    width: number = 400,
+    height: number = 200
+  ) {
+    return `https://restapi.amap.com/v3/staticmap?location=${location}&zoom=${zoom}&size=${width}*${height}&markers=mid,,A:${location}&key=${API_KEY}`;
+  }
 
   useEffect(() => {
     const savedSearches = localStorage.getItem("recentSearches");

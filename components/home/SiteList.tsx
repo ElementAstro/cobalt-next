@@ -31,7 +31,7 @@ const SiteList: React.FC<SiteListProps> = ({
             ref={provided.innerRef}
             className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6 
             landscape:md:grid-cols-2 landscape:lg:grid-cols-3 landscape:xl:grid-cols-4 
-            gap-4 p-4 transition-all duration-300"
+            gap-2 sm:gap-4 transition-all duration-300"
             style={{
               perspective: "1000px",
               transformStyle: "preserve-3d",

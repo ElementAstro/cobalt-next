@@ -22,6 +22,9 @@ export interface IDSOFramingObjectInfo {
 }
 
 export interface IDSOObjectDetailedInfo {
+  angular_size: any;
+  magnitude: any;
+  type: any;
   id: string;
   name: string;
   alias: string;

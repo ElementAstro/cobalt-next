@@ -2,14 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Header from "@/components/home/Header";
-import SearchBar from "@/components/custom/SearchBar";
 import QuickAccess from "@/components/home/QuickAccess";
 import CategoryFilter from "@/components/home/CategoryFilter";
 import SiteList from "@/components/home/SiteList";
 import PreviewModal from "@/components/home/PreviewModal";
 import { Site } from "@/types/home";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "@/hooks/use-toast";
 import { motion, useAnimation } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
@@ -122,7 +120,10 @@ export default function Home() {
     linkElement.setAttribute("href", dataUri);
     linkElement.setAttribute("download", exportFileDefaultName);
     linkElement.click();
-    toast.success("Data exported successfully!");
+    toast({
+      title: "Success",
+      description: "Data exported successfully!",
+    });
   };
 
   const importData = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,10 +136,17 @@ export default function Home() {
           try {
             const importedSites = JSON.parse(content);
             setSites(importedSites);
-            toast.success("Data imported successfully!");
+            toast({
+              title: "Success",
+              description: "Data imported successfully!",
+            });
           } catch (error) {
             console.error("Error parsing imported data:", error);
-            toast.error("Error importing data. Please check the file format.");
+            toast({
+              title: "Error",
+              description:
+                "Error importing data. Please check the file format.",
+            });
           }
         }
       };
@@ -161,7 +169,7 @@ export default function Home() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gradient-to-br from-indigo-900 to-purple-900 dark:from-gray-900 dark:to-black p-2 sm:p-8 transition-colors duration-300"
+      className="min-h-screen bg-gradient-to-br from-indigo-900 to-purple-900 dark:from-gray-900 dark:to-black p-2 sm:p-4 transition-colors duration-300"
       ref={ref}
     >
       <div className="max-w-6xl mx-auto space-y-4">
@@ -169,12 +177,9 @@ export default function Home() {
           exportData={exportData}
           importData={importData}
           onAddNewSite={handleAddNewSite}
-        />
-        <SearchBar
-          initialSuggestions={sites.map((site) => site.name)}
-          placeholder="搜索站点..."
           onSearch={setSearchTerm}
-          variant="minimal"
+          toggleTheme={() => {}}
+          isDark={false}
         />
         <QuickAccess quickAccessSites={quickAccessSites} />
         <CategoryFilter
@@ -208,10 +213,6 @@ export default function Home() {
           </DialogContent>
         </Dialog>
       </div>
-      <ToastContainer
-        position="bottom-right"
-        toastClassName="bg-indigo-800 text-white"
-      />
     </motion.main>
   );
 }

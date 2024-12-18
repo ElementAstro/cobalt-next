@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { constructMapUrl } from "./StaticMapUtils";
-import { Loader2 } from "lucide-react";
+import { Loader2, Maximize2, Minimize2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface StaticMapProps {
   location: string;
@@ -17,6 +18,11 @@ interface StaticMapProps {
   traffic?: number;
   theme?: "normal" | "dark" | "light";
   features?: ("bg" | "road" | "building" | "point")[];
+  opacity?: number;
+  showControls?: boolean;
+  showZoomButtons?: boolean;
+  allowFullscreen?: boolean;
+  showScale?: boolean;
 }
 
 export default function StaticMap({
@@ -30,10 +36,20 @@ export default function StaticMap({
   traffic,
   theme = "normal",
   features = ["bg", "road", "building", "point"],
+  opacity = 1,
+  showControls = true,
+  showZoomButtons = true,
+  allowFullscreen = true,
+  showScale = true,
 }: StaticMapProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isLandscape, setIsLandscape] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [currentZoom, setCurrentZoom] = useState(zoom);
+
+  const handleZoomIn = () => setCurrentZoom(Math.min(currentZoom + 1, 18));
+  const handleZoomOut = () => setCurrentZoom(Math.max(currentZoom - 1, 3));
 
   useEffect(() => {
     const checkOrientation = () => {
@@ -48,7 +64,7 @@ export default function StaticMap({
   const mapUrl = constructMapUrl({
     key: process.env.NEXT_PUBLIC_AMAP_KEY!,
     location,
-    zoom,
+    zoom: currentZoom,
     size: isLandscape ? "600*300" : size,
     scale,
     markers,
@@ -64,11 +80,31 @@ export default function StaticMap({
 
   return (
     <motion.div
-      className="relative rounded-lg overflow-hidden bg-gray-100"
+      className={`relative ${fullscreen ? 'fixed inset-0 z-50 bg-black' : ''}`}
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}
+      style={{ opacity }}
     >
+      {showControls && (
+        <div className="absolute top-2 right-2 flex flex-col gap-2 z-10">
+          {showZoomButtons && (
+            <div className="flex flex-col gap-1">
+              <Button size="sm" variant="secondary" onClick={handleZoomIn}>+</Button>
+              <Button size="sm" variant="secondary" onClick={handleZoomOut}>-</Button>
+            </div>
+          )}
+          {allowFullscreen && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setFullscreen(!fullscreen)}
+            >
+              {fullscreen ? <Minimize2 /> : <Maximize2 />}
+            </Button>
+          )}
+        </div>
+      )}
       <AnimatePresence>
         {isLoading && (
           <motion.div
@@ -102,6 +138,11 @@ export default function StaticMap({
         >
           Failed to load map
         </motion.div>
+      )}
+      {showScale && (
+        <div className="absolute bottom-2 left-2 bg-black/50 text-white px-2 py-1 text-xs rounded">
+          {Math.round(width * scale! / 100)}m
+        </div>
       )}
     </motion.div>
   );

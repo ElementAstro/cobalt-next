@@ -1,4 +1,4 @@
-import { motion, useDragControls } from "framer-motion";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Trash2, Edit, Zap, Eye } from "lucide-react";
@@ -23,8 +23,6 @@ const SiteCard: React.FC<SiteCardProps> = ({
 }) => {
   const getFullUrl = (url: string) => {
     if (typeof window !== "undefined" && url.startsWith("/")) {
-      console.log(window.location.origin);
-      console.log(`${window.location.origin}${url}`);
       return `${window.location.origin}${url}`;
     }
     return url;
@@ -50,6 +48,8 @@ const SiteCard: React.FC<SiteCardProps> = ({
           },
         },
       }}
+      initial="hidden"
+      animate="visible"
       whileHover={{ scale: 1.02, rotateX: 5 }}
       whileTap={{ scale: 0.98 }}
     >
@@ -94,7 +94,7 @@ const SiteCard: React.FC<SiteCardProps> = ({
             variant="secondary"
             size="icon"
             className="bg-indigo-600 hover:bg-indigo-500"
-            onClick={() => setEditingSite(site)} // 修改此行
+            onClick={() => setEditingSite(site)}
           >
             <Edit className="h-4 w-4" />
             <span className="sr-only">编辑站点</span>

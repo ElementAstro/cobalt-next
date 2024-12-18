@@ -1,6 +1,6 @@
 "use client";
 
-import { FC, useState } from "react";
+import { FC, useState, useMemo, useCallback } from "react";
 import * as AXIOSOF from "@/services/skymap/find-object";
 import TargetSmallCard from "../../../components/skymap/target_small";
 import { motion } from "framer-motion";
@@ -19,7 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { FilterIcon } from "lucide-react";
+import { FilterIcon, Download } from "lucide-react";
 import { IDSOObjectDetailedInfo } from "@/types/skymap/find-object";
 import {
   Select,
@@ -28,10 +28,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip as ReTooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Legend,
+} from "recharts";
 
 interface ObjectSearchProps {
   on_choice_maken: (() => void) | null;
 }
+
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 const ObjectSearch: FC<ObjectSearchProps> = (props) => {
   // UI 控制
@@ -41,9 +57,11 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
   );
   const [alertText, setAlertText] =
     useState("请在左侧输入框输入需要搜索的信息");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   // 数据
-  const [toSearchText, setToSearchText] = useState("-");
+  const [toSearchText, setToSearchText] = useState("");
   const [foundTargetResult, setFoundTargetResult] = useState<
     Array<IDSOObjectDetailedInfo>
   >([]);
@@ -60,7 +78,9 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
   };
 
   const handleSearch = async () => {
-    if (toSearchText === "-") {
+    if (toSearchText.trim() === "") {
+      setAlertVariant("destructive");
+      setAlertText("搜索关键词不能为空！");
       return;
     }
     setFoundTargetResult([]);
@@ -68,7 +88,6 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
     setAlertText("查询中...");
     try {
       const found_targets = await AXIOSOF.findTargetByName(toSearchText);
-      console.log(found_targets);
       if (found_targets.success) {
         if (found_targets.data.length > 0) {
           setFoundTargetResult(found_targets.data);
@@ -88,19 +107,84 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
     }
   };
 
+  const paginatedResults = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return foundTargetResult.slice(start, start + itemsPerPage);
+  }, [foundTargetResult, currentPage]);
+
+  const totalPages = useMemo(() => {
+    return Math.ceil(foundTargetResult.length / itemsPerPage);
+  }, [foundTargetResult.length]);
+
+  const chartData = useMemo(() => {
+    const typeCount: { [key: string]: number } = {};
+    const magnitudeData: Array<{ magnitude: number; count: number }> = [];
+
+    foundTargetResult.forEach((target) => {
+      typeCount[target.type] = (typeCount[target.type] || 0) + 1;
+      const mag = Math.floor(target.magnitude);
+      if (!magnitudeData[mag]) {
+        magnitudeData[mag] = { magnitude: mag, count: 1 };
+      } else {
+        magnitudeData[mag].count += 1;
+      }
+    });
+
+    const typeData = Object.keys(typeCount).map((key) => ({
+      name: key,
+      value: typeCount[key],
+    }));
+
+    const magData = magnitudeData.filter(Boolean);
+
+    return { typeData, magData };
+  }, [foundTargetResult]);
+
+  const exportResults = () => {
+    if (foundTargetResult.length === 0) {
+      toast({
+        title: "无数据可导出",
+        description: "请先进行搜索并获取结果。",
+      });
+      return;
+    }
+    const data = foundTargetResult.map((target) => ({
+      Name: target.name,
+      Type: target.type,
+      Magnitude: target.magnitude,
+      AngularSize: target.angular_size,
+      // 添加更多字段如果需要
+    }));
+    const csvContent = `data:text/csv;charset=utf-8,${[
+      "Name",
+      "Type",
+      "Magnitude",
+      "AngularSize",
+    ].join(",")}\n${data
+      .map((t) => `${t.Name},${t.Type},${t.Magnitude},${t.AngularSize}`)
+      .join("\n")}`;
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "search_results.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="flex flex-col sm:flex-row w-full p-1 sm:p-2 bg-gradient-to-b from-gray-900 to-gray-800 min-h-[70vh] sm:min-h-[60vh] rounded-lg overflow-hidden"
+      className="flex flex-col sm:flex-row w-full p-2 bg-gradient-to-b from-gray-900 to-gray-800 min-h-[70vh] sm:min-h-[60vh] rounded-lg overflow-hidden"
     >
       <motion.div
         initial={{ x: -20 }}
         animate={{ x: 0 }}
-        className="w-full sm:w-1/4 p-1 sm:p-2 overflow-y-auto"
+        className="w-full sm:w-1/4 p-2 overflow-y-auto"
       >
-        <div className="sticky top-2 space-y-2 sm:space-y-4">
+        <div className="sticky top-2 space-y-4">
           <Input
             placeholder="输入搜索关键词"
             value={toSearchText}
@@ -132,11 +216,11 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
           </TooltipProvider>
           <Collapsible open={expandFilter} onOpenChange={setExpandFilter}>
             <CollapsibleTrigger asChild>
-              <Button variant="outline" className="w-full mt-2">
+              <Button variant="outline" className="w-full">
                 {expandFilter ? "隐藏过滤条件" : "显示过滤条件"}
               </Button>
             </CollapsibleTrigger>
-            <CollapsibleContent className="mt-2 space-y-2">
+            <CollapsibleContent className="mt-2 space-y-4">
               <Label className="block text-sm text-gray-300">
                 角大小 (度):
                 <Input
@@ -176,8 +260,8 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
                     }))
                   }
                 >
-                  <SelectTrigger>
-                    <SelectValue />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="选择类型" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">全部</SelectItem>
@@ -198,8 +282,8 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
                     }))
                   }
                 >
-                  <SelectTrigger>
-                    <SelectValue />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="选择排序方式" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="magnitude">按星等</SelectItem>
@@ -208,15 +292,43 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
                   </SelectContent>
                 </Select>
               </Label>
+              <Label className="block text-sm text-gray-300">
+                排序顺序:
+                <Select
+                  value={filterSettings.sort_order}
+                  onValueChange={(value) =>
+                    updateFilterSettings((prev) => ({
+                      ...prev,
+                      sort_order: value,
+                    }))
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="选择排序顺序" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="asc">升序</SelectItem>
+                    <SelectItem value="desc">降序</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Label>
             </CollapsibleContent>
           </Collapsible>
+          <Button
+            variant="outline"
+            onClick={exportResults}
+            className="w-full flex items-center justify-center"
+          >
+            <Download className="mr-2" />
+            导出结果
+          </Button>
         </div>
       </motion.div>
 
       <motion.div
         initial={{ x: 20 }}
         animate={{ x: 0 }}
-        className="w-full sm:w-3/4 p-1 sm:p-2 overflow-y-auto"
+        className="w-full sm:w-3/4 p-2 overflow-y-auto"
       >
         <div className="h-full">
           {foundTargetResult.length === 0 ? (
@@ -227,23 +339,81 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
               {alertText}
             </Alert>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 sm:gap-2">
-              {foundTargetResult.map((target, index) => (
-                <motion.div
-                  key={target.id || index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <TargetSmallCard
-                    target_info={target}
-                    card_index={index}
-                    on_card_clicked={null}
-                    on_choice_maken={props.on_choice_maken}
-                  />
-                </motion.div>
-              ))}
-            </div>
+            <>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={chartData.typeData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    fill="#8884d8"
+                    label
+                  >
+                    {chartData.typeData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <ReTooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={chartData.magData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="magnitude" />
+                  <YAxis />
+                  <ReTooltip />
+                  <Legend />
+                  <Bar dataKey="count" fill="#82ca9d" />
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                {paginatedResults.map((target, index) => (
+                  <motion.div
+                    key={target.id || index}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <TargetSmallCard
+                      target_info={target}
+                      card_index={index}
+                      on_card_clicked={null}
+                      on_choice_maken={props.on_choice_maken}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+              {/* 分页控制 */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center space-x-2 mt-4">
+                  <Button
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                    }
+                    disabled={currentPage === 1}
+                  >
+                    上一页
+                  </Button>
+                  <span className="text-gray-300">
+                    第 {currentPage} 页，共 {totalPages} 页
+                  </span>
+                  <Button
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                    }
+                    disabled={currentPage === totalPages}
+                  >
+                    下一页
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </motion.div>
