@@ -7,30 +7,16 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Clipboard, Expand, KeyRound, Layers } from "lucide-react";
 import { motion } from "framer-motion";
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from "recharts";
+import ConnectionSettings from "./components/ConnectionSettings";
+import ControlPanel from "./components/ControlPanel";
+import CustomOptions from "./components/CustomOptions";
+import PerformanceChart from "./components/PerformanceChart";
+import ConnectionLogs from "./components/ConnectionLogs";
+import { Layers } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 
 interface ConnectionLog {
   timestamp: Date;
@@ -49,6 +35,8 @@ const NoVNCClient: React.FC = () => {
   const [viewOnly, setViewOnly] = useState(false);
   const [colorDepth, setColorDepth] = useState<24 | 16 | 8>(24);
   const [connectionLogs, setConnectionLogs] = useState<ConnectionLog[]>([]);
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [keyboardShortcuts, setKeyboardShortcuts] = useState<boolean>(true);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rfbRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -97,7 +85,7 @@ const NoVNCClient: React.FC = () => {
         rfb.qualityLevel = 6;
         rfb.compressionLevel = 2;
         rfb.showDotCursor = true;
-        rfb.background = "#000000";
+        rfb.background = theme === "dark" ? "#000000" : "#ffffff";
 
         rfb.addEventListener("connect", () => {
           setIsConnected(true);
@@ -133,7 +121,7 @@ const NoVNCClient: React.FC = () => {
         logEvent("连接 VNC 服务器时发生错误");
       }
     }
-  }, [host, port, password, viewOnly, clipboardSync, logEvent]);
+  }, [host, port, password, viewOnly, clipboardSync, theme, logEvent]);
 
   const disconnectFromVNC = useCallback(() => {
     if (rfbRef.current) {
@@ -144,15 +132,18 @@ const NoVNCClient: React.FC = () => {
     setIsConnected(false);
   }, [logEvent]);
 
-  const handleScaleChange = useCallback((value: number[]) => {
-    setScale(value[0]);
-    if (rfbRef.current && canvasRef.current) {
-      rfbRef.current.scaleViewport = true;
-      canvasRef.current.style.transform = `scale(${value[0] / 100})`;
-      canvasRef.current.style.transformOrigin = "top left";
-      logEvent(`缩放比例调整为 ${value[0]}%`);
-    }
-  }, []);
+  const handleScaleChange = useCallback(
+    (value: number[]) => {
+      setScale(value[0]);
+      if (rfbRef.current && canvasRef.current) {
+        rfbRef.current.scaleViewport = true;
+        canvasRef.current.style.transform = `scale(${value[0] / 100})`;
+        canvasRef.current.style.transformOrigin = "top left";
+        logEvent(`缩放比例调整为 ${value[0]}%`);
+      }
+    },
+    [logEvent]
+  );
 
   const toggleFullscreen = useCallback(() => {
     if (!isFullscreen) {
@@ -163,7 +154,7 @@ const NoVNCClient: React.FC = () => {
       logEvent("退出全屏模式");
     }
     setIsFullscreen(!isFullscreen);
-  }, [isFullscreen]);
+  }, [isFullscreen, logEvent]);
 
   const handleClipboardSync = useCallback(
     (checked: boolean) => {
@@ -219,6 +210,25 @@ const NoVNCClient: React.FC = () => {
     [logEvent]
   );
 
+  const toggleTheme = useCallback(() => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    logEvent(`主题切换为 ${newTheme} 模式`);
+  }, [theme, logEvent]);
+
+  const handleKeyboardShortcuts = useCallback(
+    (checked: boolean) => {
+      setKeyboardShortcuts(checked);
+      if (rfbRef.current) {
+        rfbRef.current.keyboardHandlers = checked
+          ? rfbRef.current.defaultKeyboardHandlers
+          : [];
+        logEvent(`键盘快捷键 ${checked ? "启用" : "禁用"}`);
+      }
+    },
+    [logEvent]
+  );
+
   // 全屏变化监听
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -248,161 +258,97 @@ const NoVNCClient: React.FC = () => {
   }, [connectionLogs]);
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle>高级 noVNC 客户端</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="space-y-4"
-        >
-          {/* 连接设置 */}
-          <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
-            <Input
-              type="text"
-              placeholder="VNC 主机"
-              value={host}
-              onChange={(e) => setHost(e.target.value)}
-              disabled={isConnected}
-              className="flex-1"
-            />
-            <Input
-              type="text"
-              placeholder="VNC 端口"
-              value={port}
-              onChange={(e) => setPort(e.target.value)}
-              disabled={isConnected}
-              className="flex-1"
-            />
-            <Input
-              type="password"
-              placeholder="密码 (可选)"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isConnected}
-              className="flex-1"
-            />
-          </div>
+    <div className={`${theme === "dark" ? "dark" : "light"} h-screen flex`}>
+      {/* 左侧边栏 */}
+      <div className="w-64 bg-gray-800 text-white flex flex-col p-4 space-y-4 overflow-auto">
+        {/* 连接设置 */}
+        <ConnectionSettings
+          host={host}
+          port={port}
+          password={password}
+          isConnected={isConnected}
+          setHost={setHost}
+          setPort={setPort}
+          setPassword={setPassword}
+        />
 
-          {/* 控制面板 */}
-          <div className="flex flex-col sm:flex-row sm:justify-between items-center space-y-4 sm:space-y-0">
-            <div className="flex space-x-4">
-              {!isConnected ? (
-                <Button onClick={connectToVNC}>连接</Button>
-              ) : (
-                <Button onClick={disconnectFromVNC} variant="destructive">
-                  断开连接
-                </Button>
-              )}
-              <Button onClick={toggleFullscreen}>
-                <Expand className="h-4 w-4 mr-2" />
-                {isFullscreen ? "退出全屏" : "全屏"}
-              </Button>
-            </div>
-            <div className="flex flex-wrap items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Clipboard className="h-4 w-4" />
-                <Switch
-                  checked={clipboardSync}
-                  onCheckedChange={handleClipboardSync}
-                />
-                <span>剪贴板同步</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <KeyRound className="h-4 w-4" />
-                <Switch
-                  checked={viewOnly}
-                  onCheckedChange={handleViewOnlyChange}
-                />
-                <span>只读模式</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span>颜色深度:</span>
-                <Select
-                  onValueChange={handleColorDepthChange}
-                  value={colorDepth.toString()}
+        {/* 控制面板 */}
+        <ControlPanel
+          isConnected={isConnected}
+          toggleFullscreen={toggleFullscreen}
+          connectToVNC={connectToVNC}
+          disconnectFromVNC={disconnectFromVNC}
+          clipboardSync={clipboardSync}
+          handleClipboardSync={handleClipboardSync}
+          viewOnly={viewOnly}
+          handleViewOnlyChange={handleViewOnlyChange}
+          colorDepth={colorDepth.toString()}
+          handleColorDepthChange={handleColorDepthChange}
+        />
+
+        {/* 额外自定义选项 */}
+        <CustomOptions
+          keyboardShortcuts={keyboardShortcuts}
+          handleKeyboardShortcuts={handleKeyboardShortcuts}
+          theme={theme}
+          setTheme={setTheme}
+        />
+
+        {/* 缩放控制 */}
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <Layers className="h-4 w-4" />
+            <span>缩放: {scale}%</span>
+          </div>
+          <Slider
+            value={[scale]}
+            onValueChange={handleScaleChange}
+            min={25}
+            max={200}
+            step={25}
+          />
+        </div>
+
+        {/* 连接日志 */}
+        <ConnectionLogs logs={connectionLogs} />
+      </div>
+
+      {/* 主内容区域 */}
+      <div className="flex-1 flex flex-col">
+        <Card className="flex-1 flex flex-col">
+          <CardHeader className="flex justify-between items-center">
+            <CardTitle>noVNC 客户端</CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col space-y-4 overflow-hidden">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex-1 flex flex-col space-y-4"
+            >
+              {/* 错误信息 */}
+              {error && <div className="text-red-500">{error}</div>}
+
+              {/* 画布与图表 */}
+              <div className="flex-1 flex flex-row space-x-4 overflow-hidden">
+                {/* 画布容器 */}
+                <div
+                  ref={containerRef}
+                  className="flex-1 border rounded overflow-hidden relative"
                 >
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue placeholder="选择颜色深度" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="24">24-bit</SelectItem>
-                    <SelectItem value="16">16-bit</SelectItem>
-                    <SelectItem value="8">8-bit</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <canvas ref={canvasRef} className="w-full h-full" />
+                  {/* 连接状态图表 */}
+                  {isConnected && (
+                    <div className="absolute top-2 right-2 bg-gray-700 bg-opacity-75 p-2 rounded">
+                      <PerformanceChart data={performanceData} />
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
-
-          {/* 错误信息 */}
-          {error && <div className="text-red-500">{error}</div>}
-
-          {/* 缩放控制 */}
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <Layers className="h-4 w-4" />
-              <span>缩放: {scale}%</span>
-            </div>
-            <Slider
-              value={[scale]}
-              onValueChange={handleScaleChange}
-              min={25}
-              max={200}
-              step={25}
-            />
-          </div>
-
-          {/* 画布容器 */}
-          <div
-            ref={containerRef}
-            className="border rounded overflow-hidden relative"
-          >
-            <canvas ref={canvasRef} className="w-full h-[600px]" />
-            {/* 连接状态图表 */}
-            {isConnected && (
-              <div className="absolute top-2 right-2 bg-gray-700 bg-opacity-75 p-2 rounded">
-                <ResponsiveContainer width={300} height={200}>
-                  <LineChart data={performanceData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="frameRate"
-                      stroke="#82ca9d"
-                    />
-                    <Line type="monotone" dataKey="latency" stroke="#8884d8" />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
-
-          {/* 连接日志 */}
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle>连接日志</CardTitle>
-            </CardHeader>
-            <CardContent className="h-40 overflow-y-auto bg-gray-800 text-gray-200 p-2 rounded">
-              {connectionLogs.length === 0 ? (
-                <div className="text-center text-gray-400">暂无日志</div>
-              ) : (
-                connectionLogs.map((log, index) => (
-                  <div key={index} className="text-sm">
-                    [{log.timestamp.toLocaleTimeString()}] {log.message}
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-      </CardContent>
-    </Card>
+            </motion.div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
 

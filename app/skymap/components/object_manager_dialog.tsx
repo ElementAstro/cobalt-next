@@ -36,16 +36,28 @@ const ObjectManagementDialog: React.FC<ObjectManagementDialogProps> = (
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
+      <DialogOverlay className="bg-black/80 backdrop-blur-sm" />
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.2 }}
       >
-        <DialogTitle>目标管理</DialogTitle>
-        <DialogClose asChild />
-        <DialogContent className="fixed top-1/2 left-1/2 w-[98%] h-[95vh] sm:h-[90vh] max-w-7xl -translate-x-1/2 -translate-y-1/2 bg-gray-800 dark:bg-gray-900 text-gray-200 rounded-lg shadow-lg p-2 overflow-y-auto">
-          <div className="overflow-y-hidden">
-            <ObjectManagement on_choice_maken={handleClose} />
+        <DialogContent className="fixed top-[2.5vh] left-[2.5vw] w-[95vw] h-[95vh] max-w-7xl -translate-x-0 -translate-y-0 bg-gray-800/95 dark:bg-gray-900/95 backdrop-blur-md text-gray-200 rounded-lg shadow-lg p-2 overflow-hidden">
+          <div className="flex flex-col h-full">
+            <DialogHeader className="flex-shrink-0">
+              <div className="flex justify-between items-center">
+                <DialogTitle>目标管理</DialogTitle>
+                <DialogClose asChild>
+                  <Button variant="ghost" size="sm">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </DialogClose>
+              </div>
+            </DialogHeader>
+            <div className="flex-grow overflow-y-auto">
+              <ObjectManagement on_choice_maken={handleClose} />
+            </div>
           </div>
         </DialogContent>
       </motion.div>

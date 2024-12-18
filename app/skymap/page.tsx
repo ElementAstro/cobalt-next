@@ -14,6 +14,9 @@ import {
   Grid,
   Sun,
   Moon,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
 } from "lucide-react";
 import AladinLiteView from "@/components/skymap/aladin";
 import * as AXIOSOF from "@/services/skymap/find-object";
@@ -182,6 +185,10 @@ const ImageFraming: React.FC = () => {
   const [zoomLevel, setZoomLevel] = useState(1);
   const { toast } = useToast();
 
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
+  const [showTopTools, setShowTopTools] = useState(true);
+
   const toggleNightMode = () => {
     setNightMode(!nightMode);
     document.documentElement.classList.toggle("night-mode");
@@ -194,6 +201,14 @@ const ImageFraming: React.FC = () => {
         : Math.max(zoomLevel / 1.2, 0.2);
     setZoomLevel(newZoom);
     set_aladin_show_fov(aladin_show_fov / newZoom);
+  };
+
+  const panelVariants = {
+    expanded: { opacity: 1, x: 0 },
+    collapsed: (isLeft: boolean) => ({
+      opacity: 0,
+      x: isLeft ? -100 : 100,
+    }),
   };
 
   return (
@@ -215,10 +230,11 @@ const ImageFraming: React.FC = () => {
 
       {/* 左侧控制面板 - 横屏优化 */}
       <motion.div
-        initial={{ x: -100, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="fixed left-2 top-2 lg:top-1/2 lg:transform lg:-translate-y-1/2 w-48 lg:w-72 z-40"
+        initial="expanded"
+        animate={leftPanelCollapsed ? "collapsed" : "expanded"}
+        variants={panelVariants}
+        custom={true}
+        className="fixed left-2 top-2 lg:top-1/2 lg:transform lg:-translate-y-1/2 z-40 flex"
       >
         <Card className="bg-black/50 backdrop-blur-md border border-white/10">
           <CardContent className="p-3 lg:p-6">
@@ -247,15 +263,32 @@ const ImageFraming: React.FC = () => {
             </Button>
           </CardFooter>
         </Card>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
+          className="h-full ml-1 bg-black/30 backdrop-blur-sm"
+        >
+          {leftPanelCollapsed ? <ChevronRight /> : <ChevronLeft />}
+        </Button>
       </motion.div>
 
       {/* 右侧工具栏 - 横屏优化 */}
       <motion.div
-        initial={{ x: 100, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="fixed right-2 top-2 lg:top-1/2 lg:transform lg:-translate-y-1/2 z-40"
+        initial="expanded"
+        animate={rightPanelCollapsed ? "collapsed" : "expanded"}
+        variants={panelVariants}
+        custom={false}
+        className="fixed right-2 top-2 lg:top-1/2 lg:transform lg:-translate-y-1/2 z-40 flex"
       >
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setRightPanelCollapsed(!rightPanelCollapsed)}
+          className="h-full mr-1 bg-black/30 backdrop-blur-sm"
+        >
+          {rightPanelCollapsed ? <ChevronLeft /> : <ChevronRight />}
+        </Button>
         <div className="flex flex-col gap-1 lg:gap-2">
           <div className="grid grid-cols-2 gap-1 lg:gap-2">
             <Button
@@ -425,6 +458,23 @@ const ImageFraming: React.FC = () => {
             )}
           </Button>
         </div>
+      </motion.div>
+
+      {/* 顶部工具栏 - 可隐藏 */}
+      <motion.div
+        initial={{ y: -100 }}
+        animate={{ y: showTopTools ? 0 : -100 }}
+        className="fixed top-2 left-1/2 -translate-x-1/2 z-40"
+      >
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowTopTools(!showTopTools)}
+          className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/30 backdrop-blur-sm"
+        >
+          <MoreHorizontal />
+        </Button>
+        {/* ...existing top toolbar content... */}
       </motion.div>
     </div>
   );

@@ -9,6 +9,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isLandscape, setIsLandscape] = useState(true);
+  const [isLocking, setIsLocking] = useState(false);
 
   useEffect(() => {
     const checkOrientation = () => {
@@ -20,24 +21,22 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     window.addEventListener("resize", checkOrientation);
     window.addEventListener("orientationchange", checkOrientation);
 
+    // 添加触摸事件处理
+    const preventZoom = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener("touchstart", preventZoom, { passive: false });
+    document.addEventListener("touchmove", preventZoom, { passive: false });
+
     return () => {
       window.removeEventListener("resize", checkOrientation);
       window.removeEventListener("orientationchange", checkOrientation);
+      document.removeEventListener("touchstart", preventZoom);
+      document.removeEventListener("touchmove", preventZoom);
     };
-  }, []);
-
-  useEffect(() => {
-    // 锁定横屏
-    if (screen.orientation && (screen.orientation as any).lock) {
-      (screen.orientation as any).lock("landscape").catch((err: Error) => {
-        console.log("横屏锁定失败:", err);
-      });
-    }
-
-    // 禁用双指缩放
-    document.addEventListener("gesturestart", function (e) {
-      e.preventDefault();
-    });
   }, []);
 
   return (
