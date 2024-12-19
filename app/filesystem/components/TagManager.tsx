@@ -1,6 +1,5 @@
-// tag-manager.tsx
 import React, { useState } from "react";
-import { X, Plus, TagIcon, Search, Trash2 } from "lucide-react";
+import { X, Plus, TagIcon, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
@@ -65,22 +64,15 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
               transition={{ duration: 0.3 }}
               className="bg-gray-800/95 text-white rounded-xl shadow-lg max-w-md w-[95%] mx-4"
             >
-              <DialogContent className="p-6">
-                <div className="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
-                  <DialogTitle className="text-xl font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              <DialogContent className="p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <DialogTitle className="text-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                     标签管理
                   </DialogTitle>
-                  <Button
-                    variant="ghost"
-                    onClick={onClose}
-                    className="rounded-full hover:bg-gray-700"
-                  >
-                    <X className="w-5 h-5" />
-                  </Button>
                 </div>
 
-                <DialogDescription className="space-y-6">
-                  <div className="space-y-4">
+                <DialogDescription className="space-y-4">
+                  <div className="space-y-2">
                     <Label>新建标签</Label>
                     <div className="flex gap-2">
                       <Input
@@ -99,7 +91,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
                         value={selectedColor}
                         onValueChange={setSelectedColor}
                       >
-                        <SelectTrigger className="w-24 bg-gray-700/50">
+                        <SelectTrigger className="w-20 bg-gray-700/50">
                           <div
                             className="w-4 h-4 rounded-full"
                             style={{ backgroundColor: selectedColor }}
@@ -128,7 +120,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
                     </div>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-2">
                     <Label>搜索标签</Label>
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -142,9 +134,9 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
                     </div>
                   </div>
 
-                  <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                  <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
                     {filteredTags.length === 0 ? (
-                      <div className="text-center text-gray-400 py-4">
+                      <div className="text-center text-gray-400 py-2">
                         没有找到标签
                       </div>
                     ) : (

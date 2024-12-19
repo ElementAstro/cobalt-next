@@ -61,19 +61,6 @@ export const TrashBin: React.FC<{
 
   return (
     <>
-      <div className="flex items-center space-x-4">
-        <Button onClick={handleOpen} className="flex items-center space-x-2">
-          <Trash2 className="w-5 h-5" />
-          <span>垃圾箱</span>
-        </Button>
-        <Button onClick={toggleTheme} className="ml-auto">
-          {theme === "dark" ? (
-            <Sun className="w-5 h-5" />
-          ) : (
-            <Moon className="w-5 h-5" />
-          )}
-        </Button>
-      </div>
       <AnimatePresence>
         {isOpen && (
           <Dialog open={isOpen} onOpenChange={handleClose}>

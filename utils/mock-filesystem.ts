@@ -1,7 +1,8 @@
-export const mockFileSystem = {
+import { File, Folder } from "@/types/filesystem";
+
+export const mockFileSystem: Folder = {
   id: "1",
   name: "root",
-  type: "folder",
   files: [
     {
       id: "2",

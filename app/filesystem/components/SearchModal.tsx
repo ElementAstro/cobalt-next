@@ -3,7 +3,6 @@ import { X, Search, Calendar, FileType, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -11,6 +10,15 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogOverlay,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { useSearchStore } from "@/lib/store/filesystem";
 
 interface SearchModalProps {
@@ -60,64 +68,48 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 p-4 sm:items-center overflow-y-auto"
-        >
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="w-full max-w-lg bg-gray-900/95 backdrop-blur text-white p-6 rounded-lg shadow-xl border border-gray-800 mt-16 sm:mt-0"
-          >
-            <Card className="bg-transparent border-none shadow-none">
-              <CardHeader className="flex flex-col space-y-4 pb-2">
-                <div className="flex justify-between items-center">
-                  <motion.h2
-                    variants={itemVariants}
-                    className="text-2xl font-bold"
-                  >
+        <Dialog open={isOpen} onOpenChange={onClose}>
+          <DialogOverlay className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="w-full max-w-lg bg-gray-900/95 backdrop-blur text-white p-4 rounded-lg shadow-xl border border-gray-800"
+            >
+              <DialogContent className="bg-transparent border-none shadow-none">
+                <DialogHeader className="flex justify-between pb-2">
+                  <motion.h2 variants={itemVariants}>
                     高级搜索
                   </motion.h2>
-                  <motion.button
-                    onClick={onClose}
-                    variants={itemVariants}
-                    className="p-2 rounded-full hover:bg-gray-800 transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </motion.button>
-                </div>
-                <motion.form
-                  onSubmit={handleSearch}
-                  variants={itemVariants}
-                  className="relative group"
-                >
-                  <Input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="搜索文件、标签或内容..."
-                    className="w-full py-3 px-4 pr-12 rounded-lg bg-gray-800/50 border-gray-700 focus:border-blue-500 transition-colors text-lg"
-                  />
-                  <Button
-                    type="submit"
-                    variant="ghost"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 hover:bg-gray-700 rounded-full transition-colors"
-                  >
-                    <Search className="w-5 h-5 text-gray-400 group-hover:text-white" />
-                  </Button>
-                </motion.form>
-              </CardHeader>
+                  <DialogClose />
+                </DialogHeader>
 
-              <CardContent>
-                <div className="space-y-6">
+                <DialogDescription className="space-y-4">
+                  <motion.form
+                    onSubmit={handleSearch}
+                    variants={itemVariants}
+                    className="relative"
+                  >
+                    <Input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="搜索文件、标签或内容..."
+                      className="w-full py-2 px-3 pr-10 rounded bg-gray-800/50 border-gray-700 focus:border-blue-500 transition-colors text-sm"
+                    />
+                    <Button
+                      type="submit"
+                      variant="ghost"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-700 rounded-full transition-colors"
+                    >
+                      <Search className="w-4 h-4 text-gray-400 hover:text-white" />
+                    </Button>
+                  </motion.form>
+
                   <motion.div variants={itemVariants}>
-                    <h3 className="font-medium text-gray-400 mb-3">常用筛选</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <h3 className="font-medium text-gray-400 mb-2">常用筛选</h3>
+                    <div className="grid grid-cols-3 gap-2">
                       {[
                         {
                           icon: <FileType className="w-4 h-4" />,
@@ -132,7 +124,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                         <Button
                           key={index}
                           variant="outline"
-                          className="flex items-center justify-start space-x-2 hover:bg-gray-800"
+                          className="flex items-center justify-start space-x-1 hover:bg-gray-800 text-xs"
                         >
                           {item.icon}
                           <span>{item.label}</span>
@@ -141,15 +133,14 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                     </div>
                   </motion.div>
 
-                  {/* 新增: 搜索建议 */}
                   <motion.div variants={itemVariants}>
-                    <h3 className="font-medium text-gray-400 mb-3">搜索建议</h3>
+                    <h3 className="font-medium text-gray-400 mb-2">搜索建议</h3>
                     <div className="flex flex-wrap gap-2">
                       {searchSuggestions.map((suggestion, index) => (
                         <Badge
                           key={index}
                           variant="secondary"
-                          className="cursor-pointer hover:bg-gray-700 transition-colors py-1.5"
+                          className="cursor-pointer hover:bg-gray-700 transition-colors py-1 px-2 text-xs"
                           onClick={() => setSearchTerm(suggestion)}
                         >
                           {suggestion}
@@ -158,23 +149,22 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                     </div>
                   </motion.div>
 
-                  {/* 搜索结果展示优化 */}
                   <AnimatePresence>
                     {searchResults.length > 0 && (
                       <motion.div
                         variants={containerVariants}
-                        className="space-y-2 mt-4"
+                        className="space-y-2 mt-2"
                       >
                         <h3 className="font-medium text-gray-400">搜索结果</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {searchResults.map((result, index) => (
                             <motion.div
                               key={index}
                               variants={itemVariants}
-                              className="p-3 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 cursor-pointer transition-colors"
+                              className="p-2 bg-gray-800/50 rounded hover:bg-gray-700/50 cursor-pointer transition-colors text-sm"
                             >
-                              <div className="flex items-center space-x-3">
-                                <FileType className="w-5 h-5 text-blue-400" />
+                              <div className="flex items-center space-x-2">
+                                <FileType className="w-4 h-4 text-blue-400" />
                                 <span>{result}</span>
                               </div>
                             </motion.div>
@@ -183,11 +173,11 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </motion.div>
+                </DialogDescription>
+              </DialogContent>
+            </motion.div>
+          </DialogOverlay>
+        </Dialog>
       )}
     </AnimatePresence>
   );
