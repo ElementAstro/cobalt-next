@@ -9,6 +9,9 @@ import {
   Play,
   XCircle,
   Settings,
+  Download,
+  Upload,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,10 +40,19 @@ import { Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import AdvancedOptions from "./AdvancedOptions";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function DarkFieldLibrary() {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [isExtraAdvancedOpen, setIsExtraAdvancedOpen] = useState(false);
+  const [showProgressDetails, setShowProgressDetails] = useState(false);
+  const [configDialogOpen, setConfigDialogOpen] = useState(false);
 
   const {
     minExposure,
@@ -92,6 +104,55 @@ export default function DarkFieldLibrary() {
     startCreation();
   };
 
+  const exportConfig = () => {
+    const config = {
+      minExposure,
+      maxExposure,
+      framesPerExposure,
+      libraryType,
+      isoValue,
+      binningMode,
+      coolingEnabled,
+      targetTemperature,
+      gainValue,
+      offsetValue,
+    };
+    const blob = new Blob([JSON.stringify(config, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "dark-field-config.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importConfig = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const config = JSON.parse(e.target?.result as string);
+          setMinExposure(config.minExposure);
+          setMaxExposure(config.maxExposure);
+          setFramesPerExposure(config.framesPerExposure);
+          setLibraryType(config.libraryType);
+          setIsoValue(config.isoValue);
+          setBinningMode(config.binningMode);
+          setCoolingEnabled(config.coolingEnabled);
+          setTargetTemperature(config.targetTemperature);
+          setGainValue(config.gainValue);
+          setOffsetValue(config.offsetValue);
+        } catch (error) {
+          console.error("Invalid config file");
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
   const cardVariants = {
     hidden: { opacity: 0, y: 20, scale: 0.95 },
     visible: {
@@ -129,20 +190,22 @@ export default function DarkFieldLibrary() {
       <div
         className={`min-h-screen bg-gradient-to-r from-gray-100 to-gray-300 
         dark:from-gray-800 dark:to-gray-900 transition-colors duration-500
-        ${isLandscape ? "flex items-center justify-center" : ""}`}
+        ${isLandscape ? "flex items-center justify-center" : "py-4"}`}
       >
         <motion.div
           initial="hidden"
           animate="visible"
           exit="exit"
           variants={cardVariants}
-          className={
-            isLandscape ? "w-full h-full max-h-screen overflow-hidden" : ""
-          }
+          className={`${
+            isLandscape
+              ? "w-full max-w-7xl px-4"
+              : "w-full max-w-2xl mx-auto px-4"
+          }`}
         >
           <Card
-            className={`w-full max-w-2xl mx-auto shadow-lg rounded-lg
-            ${isLandscape ? "h-full grid grid-cols-2 gap-4" : "p-4"}`}
+            className={`shadow-lg rounded-lg overflow-hidden
+            ${isLandscape ? "grid grid-cols-2 gap-4" : ""}`}
           >
             {/* 将内容分为左右两栏在横屏模式下 */}
             <div className={isLandscape ? "p-4 overflow-auto" : ""}>
@@ -314,7 +377,58 @@ export default function DarkFieldLibrary() {
                   )}
                 </AnimatePresence>
 
-                <div className="pt-4 space-x-4 flex justify-center">
+                <div className="pt-4 space-x-4 flex justify-center flex-wrap gap-2">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        onClick={exportConfig}
+                        disabled={isLoading}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        导出配置
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>导出当前配置到文件</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" disabled={isLoading}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        导入配置
+                        <input
+                          type="file"
+                          hidden
+                          onChange={importConfig}
+                          accept=".json"
+                        />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>从文件导入配置</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {isLoading && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowProgressDetails(true)}
+                        >
+                          <Info className="h-4 w-4 mr-2" />
+                          查看详情
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>查看创建进度详情</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -370,6 +484,34 @@ export default function DarkFieldLibrary() {
           </Card>
         </motion.div>
       </div>
+
+      {/* 添加进度详情对话框 */}
+      <Dialog open={showProgressDetails} onOpenChange={setShowProgressDetails}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>创建进度详情</DialogTitle>
+            <DialogDescription>
+              <div className="space-y-2 mt-4">
+                <p>
+                  已完成帧数: {Math.floor((progress * darkFrameCount) / 100)}/
+                  {darkFrameCount}
+                </p>
+                <p>当前曝光时间: {minExposure}s</p>
+                <p>
+                  预计剩余时间:{" "}
+                  {Math.ceil(
+                    ((100 - progress) *
+                      darkFrameCount *
+                      parseFloat(minExposure)) /
+                      100
+                  )}
+                  s
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </TooltipProvider>
   );
 }

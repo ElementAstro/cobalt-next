@@ -70,6 +70,19 @@ const commonPresets: FOVPreset[] = [
   // 更多预设...
 ];
 
+// 增加更多相机预设
+const additionalPresets: FOVPreset[] = [
+  {
+    name: "ZWO ASI2600MM Pro",
+    x_pixels: 6248,
+    y_pixels: 4176,
+    x_pixel_size: 3.76,
+    y_pixel_size: 3.76,
+    focal_length: 1000,
+  },
+  // ...更多预设
+];
+
 const schema = yup.object().shape({
   x_pixels: yup
     .number()
@@ -120,6 +133,8 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = (props) => {
   };
 
   const [open, setOpen] = useState(false);
+  const [aperture, setAperture] = useState<number>(0);
+  const [fRatio, setFRatio] = useState<number>(0);
 
   useEffect(() => {
     if (props.open_dialog > 0) {
@@ -165,6 +180,11 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = (props) => {
     document.body.removeChild(link);
   };
 
+  // 新增镜头预设计算
+  const calculateFocalLength = (aperture: number, fRatio: number) => {
+    return aperture * fRatio;
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <motion.div
@@ -193,6 +213,16 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = (props) => {
               >
                 <div className="flex flex-wrap gap-2 landscape:gap-1">
                   {commonPresets.map((preset) => (
+                    <Button
+                      key={preset.name}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => applyPreset(preset)}
+                    >
+                      {preset.name}
+                    </Button>
+                  ))}
+                  {additionalPresets.map((preset) => (
                     <Button
                       key={preset.name}
                       variant="outline"
@@ -429,6 +459,31 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = (props) => {
                   </div>
                 </div>
               </motion.div>
+            </div>
+
+            {/* 新增镜头计算器 */}
+            <div className="mt-4 p-4 bg-muted rounded-lg">
+              <h3 className="text-lg font-semibold mb-2">焦距计算器</h3>
+              <div className="flex gap-4">
+                <Input
+                  type="number"
+                  placeholder="口径(mm)"
+                  onChange={(e) => setAperture(Number(e.target.value))}
+                />
+                <Input
+                  type="number"
+                  placeholder="焦比"
+                  onChange={(e) => setFRatio(Number(e.target.value))}
+                />
+                <Button
+                  onClick={() => {
+                    const fl = calculateFocalLength(aperture, fRatio);
+                    reset({ ...getValues(), focal_length: fl });
+                  }}
+                >
+                  计算
+                </Button>
+              </div>
             </div>
           </motion.div>
         </DialogContent>

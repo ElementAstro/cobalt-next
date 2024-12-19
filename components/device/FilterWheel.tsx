@@ -27,8 +27,13 @@ const Container = styled(motion.div)`
 const StyledCard = styled(Card)`
   background-color: #374151;
   border-color: #4b5563;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
 `;
 
 const containerVariants = {
@@ -46,6 +51,19 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
+const InfoGrid = styled(motion.div)`
+  display: grid;
+  gap: 2rem;
+  
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+`;
+
 export function FilterWheelPage() {
   const { toast } = useToast();
   const { filterWheelInfo, selectedFilter, setSelectedFilter, changeFilter } =
@@ -61,27 +79,24 @@ export function FilterWheelPage() {
 
   return (
     <Container variants={containerVariants} initial="hidden" animate="visible">
-      <DeviceSelector
-        deviceType="Filter Wheel"
-        devices={["ZWO EFW", "Starlight Xpress 5-position", "Atik EFW2"]}
-        onDeviceChange={(device) =>
-          console.log(`Selected filter wheel: ${device}`)
-        }
-      />
-      <motion.div
-        variants={itemVariants}
-        className="mt-6 grid gap-4 lg:grid-cols-2"
-      >
+      <div className="max-w-7xl mx-auto space-y-8">
+        <DeviceSelector
+          deviceType="Filter Wheel"
+          devices={["ZWO EFW", "Starlight Xpress 5-position", "Atik EFW2"]}
+          onDeviceChange={(device) =>
+            console.log(`Selected filter wheel: ${device}`)
+          }
+        />
+
         <StyledCard>
           <CardHeader>
             <CardTitle>滤镜轮信息</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-6">
-            <motion.div
+          <CardContent>
+            <InfoGrid
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
             >
               <motion.div variants={itemVariants} className="space-y-2">
                 <Label>名称</Label>
@@ -95,60 +110,50 @@ export function FilterWheelPage() {
                 <Label>驱动版本</Label>
                 <div className="text-sm">{filterWheelInfo.driverVersion}</div>
               </motion.div>
-            </motion.div>
-
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="space-y-4"
-            >
               <motion.div variants={itemVariants} className="space-y-2">
                 <Label>当前滤镜</Label>
                 <div className="text-sm">{filterWheelInfo.currentFilter}</div>
               </motion.div>
               <motion.div variants={itemVariants} className="space-y-2">
-                <Label htmlFor="filter-select">选择滤镜</Label>
-                <Select
-                  value={selectedFilter}
-                  onValueChange={setSelectedFilter}
-                >
-                  <SelectTrigger
-                    id="filter-select"
-                    className="w-full sm:w-[200px]"
-                  >
-                    <SelectValue placeholder="请选择滤镜" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filterWheelInfo.filters.map((filter, index) => (
-                      <SelectItem key={index} value={(index + 1).toString()}>
-                        {filter}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>描述</Label>
+                <div className="text-sm">{filterWheelInfo.description}</div>
               </motion.div>
+            </InfoGrid>
 
-              <motion.div
-                variants={itemVariants}
-                className="flex flex-col sm:flex-row gap-2"
-              >
+            <motion.div variants={itemVariants} className="mt-8 space-y-6">
+              <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-6 items-start">
+                <div className="w-full sm:w-64">
+                  <Label htmlFor="filter-select">选择滤镜</Label>
+                  <Select
+                    value={selectedFilter}
+                    onValueChange={setSelectedFilter}
+                  >
+                    <SelectTrigger
+                      id="filter-select"
+                      className="w-full sm:w-[200px]"
+                    >
+                      <SelectValue placeholder="请选择滤镜" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filterWheelInfo.filters.map((filter, index) => (
+                        <SelectItem key={index} value={(index + 1).toString()}>
+                          {filter}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button
                   onClick={handleFilterChange}
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-auto mt-4 sm:mt-6"
                 >
                   更换滤镜
                 </Button>
-              </motion.div>
-            </motion.div>
-
-            <motion.div variants={itemVariants} className="space-y-2">
-              <Label>描述</Label>
-              <div className="text-sm">{filterWheelInfo.description}</div>
+              </div>
             </motion.div>
           </CardContent>
         </StyledCard>
-      </motion.div>
+      </div>
     </Container>
   );
 }

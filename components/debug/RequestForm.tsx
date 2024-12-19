@@ -186,13 +186,13 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="max-w-3xl mx-auto p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md"
+      className="w-full max-w-4xl mx-auto p-4 lg:p-6"
     >
-      <Card>
-        <CardHeader>
-          <CardTitle>HTTP 请求</CardTitle>
+      <Card className="backdrop-blur-md bg-white/90 dark:bg-gray-800/90 shadow-xl">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold">HTTP 请求测试</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <motion.div
               initial={{ opacity: 0, x: -50 }}
@@ -331,14 +331,14 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
               initial={{ opacity: 0, x: -50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-4"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
             >
               <Input
                 type="number"
                 value={timeout}
                 onChange={(e) => setTimeoutValue(Number(e.target.value))}
                 placeholder="超时时间 (毫秒)"
-                className="dark:bg-gray-700 dark:text-gray-200"
+                className="dark:bg-gray-700/50 dark:text-gray-200"
                 required
                 min={0}
               />
@@ -428,20 +428,20 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
-              className="flex flex-col sm:flex-row sm:space-x-2"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
             >
               <Button
                 type="submit"
-                className="flex-grow flex items-center justify-center dark:bg-blue-600 dark:text-white"
+                className="w-full flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
               >
-                <Eye className="h-4 w-4 mr-1" />
+                <Eye className="h-4 w-4 mr-2" />
                 发送请求
               </Button>
               <Button
                 type="button"
                 onClick={saveAsTemplate}
                 variant="outline"
-                className="flex-grow flex items-center justify-center dark:border-gray-600 dark:text-gray-200"
+                className="w-full flex items-center justify-center dark:border-gray-600 dark:text-gray-200"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 保存为模板
@@ -450,7 +450,7 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
                 type="button"
                 onClick={clearForm}
                 variant="secondary"
-                className="flex-grow flex items-center justify-center dark:bg-gray-600 dark:text-white"
+                className="w-full flex items-center justify-center dark:bg-gray-600 dark:text-white"
               >
                 <Trash className="h-4 w-4 mr-1" />
                 清空表单

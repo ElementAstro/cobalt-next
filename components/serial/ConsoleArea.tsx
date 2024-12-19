@@ -30,16 +30,31 @@ const ConsoleArea: FC<ConsoleAreaProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className={`flex-1 bg-gray-900 border border-gray-700 relative mb-4 
-        rounded-lg shadow-lg overflow-hidden`}
+      className={`
+        flex-1 relative mb-4
+        bg-gradient-to-b from-gray-900 to-gray-800
+        border border-gray-700/50
+        rounded-lg shadow-xl
+        overflow-hidden
+        backdrop-blur-sm
+      `}
     >
       <Textarea
         ref={textareaRef}
-        className={`${
-          isLandscape ? "h-[calc(100vh-10rem)]" : "h-[60vh] md:h-[70vh]"
-        } resize-none bg-transparent border-none focus-visible:ring-0 
-        text-green-400 p-4 overflow-auto font-mono text-sm
-        scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900`}
+        className={`
+          ${isLandscape ? "h-[calc(100vh-10rem)]" : "h-[60vh] md:h-[70vh]"}
+          resize-none bg-transparent 
+          border-none focus-visible:ring-0
+          font-mono text-sm leading-relaxed
+          text-green-400
+          p-4 md:p-6
+          overflow-auto
+          scrollbar scrollbar-w-2
+          scrollbar-track-gray-800
+          scrollbar-thumb-gray-600
+          hover:scrollbar-thumb-gray-500
+          selection:bg-green-500/30
+        `}
         readOnly
         value={data
           .map(
@@ -55,31 +70,34 @@ const ConsoleArea: FC<ConsoleAreaProps> = ({
           .join("\n")}
       />
 
-      <AnimatePresence>
-        <motion.div
-          className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col gap-1"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 20 }}
+      <div className="absolute right-4 bottom-4 flex flex-col gap-2">
+        <motion.button
+          whileHover={{ scale: 1.2 }}
+          whileTap={{ scale: 0.9 }}
+          className="h-10 w-10 bg-gray-800/80 
+            hover:bg-gray-700 
+            rounded-full shadow-lg
+            flex items-center justify-center
+            backdrop-blur-sm
+            transition-colors"
+          onClick={scrollUp}
         >
-          <motion.button
-            whileHover={{ scale: 1.2 }}
-            whileTap={{ scale: 0.9 }}
-            className="h-8 w-8 bg-gray-700 rounded-full flex items-center justify-center"
-            onClick={scrollUp}
-          >
-            <ChevronUp className="h-4 w-4 text-white" />
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.2 }}
-            whileTap={{ scale: 0.9 }}
-            className="h-8 w-8 bg-gray-700 rounded-full flex items-center justify-center"
-            onClick={scrollDown}
-          >
-            <ChevronDown className="h-4 w-4 text-white" />
-          </motion.button>
-        </motion.div>
-      </AnimatePresence>
+          <ChevronUp className="h-4 w-4 text-white" />
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.2 }}
+          whileTap={{ scale: 0.9 }}
+          className="h-10 w-10 bg-gray-800/80 
+            hover:bg-gray-700 
+            rounded-full shadow-lg
+            flex items-center justify-center
+            backdrop-blur-sm
+            transition-colors"
+          onClick={scrollDown}
+        >
+          <ChevronDown className="h-4 w-4 text-white" />
+        </motion.button>
+      </div>
     </motion.div>
   );
 };

@@ -16,6 +16,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Log {
   timestamp: Date;
@@ -25,6 +32,8 @@ interface Log {
 
 interface ConnectionLogsProps {
   logs: Log[];
+  isCollapsible?: boolean;
+  defaultHeight?: string;
 }
 
 const LogIcon = ({ type }: { type?: string }) => {
@@ -38,13 +47,22 @@ const LogIcon = ({ type }: { type?: string }) => {
   }
 };
 
-const ConnectionLogs: React.FC<ConnectionLogsProps> = ({ logs }) => {
+const ConnectionLogs: React.FC<ConnectionLogsProps> = ({
+  logs,
+  isCollapsible = true,
+  defaultHeight = "h-32",
+}) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
   const [autoScroll, setAutoScroll] = useState(true);
+  const [logType, setLogType] = useState<"all" | "info" | "warning" | "error">(
+    "all"
+  );
 
-  const filteredLogs = logs.filter((log) =>
-    log.message.toLowerCase().includes(search.toLowerCase())
+  const filteredLogs = logs.filter(
+    (log) =>
+      log.message.toLowerCase().includes(search.toLowerCase()) &&
+      (logType === "all" || log.type === logType)
   );
 
   useEffect(() => {
@@ -67,18 +85,34 @@ const ConnectionLogs: React.FC<ConnectionLogsProps> = ({ logs }) => {
 
   return (
     <Card className="mt-2">
-      <CardHeader className="py-2 flex flex-row items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-1">
-            <span className="text-sm">自动滚动</span>
-            <Switch checked={autoScroll} onCheckedChange={setAutoScroll} />
+      <CardHeader className="py-2">
+        <div className="flex flex-wrap gap-2 items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1">
+              <span className="text-sm">自动滚动</span>
+              <Switch checked={autoScroll} onCheckedChange={setAutoScroll} />
+            </div>
+            <Button variant="ghost" size="icon" onClick={copyLogs}>
+              <Copy className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={clearLogs}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
-          <Button variant="ghost" size="icon" onClick={copyLogs}>
-            <Copy className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={clearLogs}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <Select
+            value={logType}
+            onValueChange={(value: any) => setLogType(value)}
+          >
+            <SelectTrigger className="w-[100px]">
+              <SelectValue placeholder="日志类型" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部</SelectItem>
+              <SelectItem value="info">信息</SelectItem>
+              <SelectItem value="warning">警告</SelectItem>
+              <SelectItem value="error">错误</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </CardHeader>
       <CardContent>
@@ -93,7 +127,7 @@ const ConnectionLogs: React.FC<ConnectionLogsProps> = ({ logs }) => {
         </div>
         <div
           ref={scrollRef}
-          className="h-32 overflow-y-auto bg-secondary/10 text-secondary-foreground p-2 rounded text-sm"
+          className={`overflow-y-auto bg-secondary/10 text-secondary-foreground p-2 rounded text-sm ${defaultHeight}`}
         >
           {filteredLogs.length === 0 ? (
             <div className="text-center text-muted-foreground">暂无日志</div>

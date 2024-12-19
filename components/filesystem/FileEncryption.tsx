@@ -39,7 +39,13 @@ export const FileEncryption: React.FC<FileEncryptionProps> = ({
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      setSelectedFile(event.target.files[0]);
+      const file = event.target.files[0];
+      const customFile = {
+        ...file,
+        id: crypto.randomUUID(),
+        deletedAt: null,
+      };
+      setSelectedFile(customFile as any);
     }
   };
 

@@ -1,69 +1,32 @@
 "use client";
 
-import styled from "styled-components";
+import React from "react";
+import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
-import { LineChart } from "@/components/chart/TemperatureLineChart";
-import { useMockBackend } from "@/utils/mock-device";
-import { DeviceSelector } from "./DeviceSelector";
-import { motion } from "framer-motion";
-import { useCameraStore, TempDataPoint } from "@/lib/store/device/camera";
-import { useState } from "react";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-
-const Container = styled(motion.div)`
-  color: white;
-  background-color: #1f2937;
-  min-height: 100vh;
-  padding: 1rem;
-`;
-
-const StyledCard = styled(Card)`
-  background-color: #374151;
-  border-color: #4b5563;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
-`;
-
-const Grid = styled(motion.div)`
-  display: grid;
-  gap: 1.5rem;
-
-  @media (min-width: 640px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @media (min-width: 1024px) {
-    grid-template-columns: repeat(4, 1fr);
-  }
-`;
-
-const FlexRow = styled(motion.div)`
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  margin-top: 1.5rem;
-
-  @media (min-width: 640px) {
-    flex-direction: row;
-  }
-`;
-
-const FlexRowCentered = styled(motion.div)`
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  align-items: flex-start;
-
-  @media (min-width: 640px) {
-    flex-direction: row;
-    align-items: center;
-  }
-`;
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import {
+  Camera as CameraIcon,
+  Settings,
+  ZoomIn,
+  ZoomOut,
+  RefreshCw,
+  Save,
+  Thermometer,
+  Timer,
+  Signal,
+} from "lucide-react";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -80,166 +43,79 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-export function CameraPage() {
-  const {
-    exposure,
-    gain,
-    binning,
-    coolerOn,
-    targetTemperature,
-    temperatureHistory,
-    setExposure,
-    setGain,
-    setBinning,
-    toggleCooler,
-    setTargetTemperature,
-    addTemperatureHistory,
-  } = useCameraStore();
-
-  const { toast } = useToast();
-  const {
-    cameraInfo,
-    startExposure,
-    abortExposure,
-    setTemperature,
-    toggleCooler: mockToggleCooler,
-  } = useMockBackend();
-
-  const [isLiveView, setIsLiveView] = useState(false);
-  const [histogram, setHistogram] = useState<number[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [fileFormat, setFileFormat] = useState("FITS");
-
-  const handleStartExposure = () => {
-    startExposure(exposure, gain, binning);
-    toast({
-      title: "开始曝光",
-      description: `曝光时间: ${exposure}s, 增益: ${gain}, 像素合并: ${binning}x${binning}`,
-    });
-  };
-
-  const handleAbortExposure = () => {
-    abortExposure();
-    toast({
-      title: "中止曝光",
-      description: "当前曝光已被中止。",
-    });
-  };
-
-  const handleSetTemperature = () => {
-    setTemperature(targetTemperature);
-    toast({
-      title: "设置温度",
-      description: `目标温度已设置为 ${targetTemperature}°C`,
-    });
-  };
-
-  const handleToggleCooler = () => {
-    toggleCooler();
-    mockToggleCooler();
-    toast({
-      title: "切换制冷器",
-      description: `制冷器已${coolerOn ? "启用" : "禁用"}`,
-    });
-  };
-
-  const handleZoomIn = () => {
-    // 实现缩放逻辑
-  };
-
-  const handleZoomOut = () => {
-    // 实现缩放逻辑
-  };
-
-  const handleStartLiveView = () => {
-    setIsLiveView(true);
-    toast({
-      title: "实时预览",
-      description: "已启动实时预览模式",
-    });
-  };
-
-  const handleStopLiveView = () => {
-    setIsLiveView(false);
-    toast({
-      title: "实时预览",
-      description: "已停止实时预览模式",
-    });
-  };
-
-  const handleSaveImage = async () => {
-    setIsSaving(true);
-    try {
-      // 模拟保存图像
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast({
-        title: "保存成功",
-        description: `图像已保存为 ${fileFormat} 格式`,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
+export default function CameraComponent() {
   return (
-    <Container variants={containerVariants} initial="hidden" animate="visible">
-      <DeviceSelector
-        deviceType="Camera"
-        devices={["ZWO ASI294MC Pro", "QHY600M", "Atik 16200"]}
-        onDeviceChange={(device) => console.log(`选择的相机: ${device}`)}
-      />
-      <StyledCard
-        as={motion.div}
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
+    <motion.div
+      className="text-white bg-gray-800 min-h-screen p-4"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {/* Device Selector */}
+      <Card className="bg-gray-700 border-gray-600 shadow-lg rounded-lg mb-4">
         <CardHeader>
-          <CardTitle>相机设置</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <CameraIcon className="w-5 h-5" />
+            相机选择
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <Grid>
+          <Select defaultValue="Canon EOS Ra">
+            <SelectTrigger className="w-full bg-gray-600 text-white">
+              <SelectValue placeholder="选择相机型号" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Canon EOS Ra">Canon EOS Ra</SelectItem>
+              <SelectItem value="Nikon D850">Nikon D850</SelectItem>
+              <SelectItem value="Sony A7R IV">Sony A7R IV</SelectItem>
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      {/* Camera Information */}
+      <Card className="bg-gray-700 border-gray-600 shadow-lg rounded-lg mb-4">
+        <CardHeader>
+          <CardTitle>相机信息</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <motion.div variants={itemVariants} className="space-y-2">
               <Label>传感器类型</Label>
-              <div className="text-sm">{cameraInfo.sensorType}</div>
+              <div className="text-sm">背照式CMOS</div>
             </motion.div>
             <motion.div variants={itemVariants} className="space-y-2">
               <Label>传感器尺寸</Label>
-              <div className="text-sm">{cameraInfo.sensorSize}</div>
+              <div className="text-sm">35.9mm x 24mm</div>
             </motion.div>
             <motion.div variants={itemVariants} className="space-y-2">
               <Label>像素尺寸</Label>
-              <div className="text-sm">{cameraInfo.pixelSize}</div>
+              <div className="text-sm">3.76μm</div>
             </motion.div>
             <motion.div variants={itemVariants} className="space-y-2">
-              <Label>温度</Label>
-              <div className="text-sm">{cameraInfo.temperature}°C</div>
+              <Label>当前温度</Label>
+              <div className="text-sm">-15°C</div>
             </motion.div>
-          </Grid>
+          </div>
         </CardContent>
-      </StyledCard>
+      </Card>
 
-      <StyledCard
-        as={motion.div}
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
+      {/* Exposure Control */}
+      <Card className="bg-gray-700 border-gray-600 shadow-lg rounded-lg mb-4">
         <CardHeader>
           <CardTitle>曝光控制</CardTitle>
         </CardHeader>
         <CardContent>
-          <Grid>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <motion.div variants={itemVariants} className="space-y-2">
               <Label htmlFor="exposure">曝光时间 (秒)</Label>
               <Input
                 id="exposure"
                 type="number"
-                value={exposure}
-                onChange={(e) => setExposure(parseFloat(e.target.value))}
+                defaultValue={60}
                 min="0.001"
                 step="0.001"
-                className="bg-gray-700 text-white"
+                className="bg-gray-600 text-white"
               />
             </motion.div>
             <motion.div variants={itemVariants} className="space-y-2">
@@ -247,106 +123,96 @@ export function CameraPage() {
               <Input
                 id="gain"
                 type="number"
-                value={gain}
-                onChange={(e) => setGain(parseInt(e.target.value))}
+                defaultValue={20}
                 min="0"
-                className="bg-gray-700 text-white"
+                className="bg-gray-600 text-white"
               />
             </motion.div>
             <motion.div variants={itemVariants} className="space-y-2">
               <Label htmlFor="binning">像素合并</Label>
-              <Input
-                id="binning"
-                type="number"
-                value={binning}
-                onChange={(e) => setBinning(parseInt(e.target.value))}
-                min="1"
-                max="4"
-                className="bg-gray-700 text-white"
-              />
+              <Select defaultValue="1">
+                <SelectTrigger className="bg-gray-600 text-white">
+                  <SelectValue placeholder="选择合并模式" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1x1</SelectItem>
+                  <SelectItem value="2">2x2</SelectItem>
+                  <SelectItem value="4">4x4</SelectItem>
+                </SelectContent>
+              </Select>
             </motion.div>
-          </Grid>
-          <FlexRow>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-4 mt-4">
             <motion.div variants={itemVariants}>
-              <Button onClick={handleStartExposure} className="sm:w-auto">
+              <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700">
+                <ZoomIn className="w-4 h-4 mr-2" />
                 开始曝光
               </Button>
             </motion.div>
             <motion.div variants={itemVariants}>
               <Button
                 variant="destructive"
-                onClick={handleAbortExposure}
-                className="sm:w-auto"
+                className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
               >
+                <ZoomOut className="w-4 h-4 mr-2" />
                 中止曝光
               </Button>
             </motion.div>
-          </FlexRow>
+          </div>
         </CardContent>
-      </StyledCard>
+      </Card>
 
-      <StyledCard
-        as={motion.div}
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
+      {/* Temperature Control */}
+      <Card className="bg-gray-700 border-gray-600 shadow-lg rounded-lg mb-4">
         <CardHeader>
-          <FlexRowCentered>
+          <div className="flex justify-between items-center">
             <CardTitle>温度控制</CardTitle>
             <motion.div
               variants={itemVariants}
               className="flex items-center space-x-2"
             >
               <Label htmlFor="cooler">制冷器</Label>
-              <Switch
-                id="cooler"
-                checked={coolerOn}
-                onCheckedChange={handleToggleCooler}
-              />
+              <Switch id="cooler" />
             </motion.div>
-          </FlexRowCentered>
+          </div>
         </CardHeader>
         <CardContent>
-          <FlexRowCentered>
-            <Label htmlFor="target-temp">目标温度 (°C)</Label>
-            <Input
-              id="target-temp"
-              type="number"
-              value={targetTemperature}
-              onChange={(e) => setTargetTemperature(parseFloat(e.target.value))}
-              className="w-full sm:w-24 bg-gray-700 text-white"
-            />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <motion.div variants={itemVariants} className="flex flex-col">
+              <Label htmlFor="target-temp">目标温度 (°C)</Label>
+              <Input
+                id="target-temp"
+                type="number"
+                defaultValue={-10}
+                className="w-full sm:w-24 bg-gray-600 text-white"
+              />
+            </motion.div>
             <motion.div variants={itemVariants}>
-              <Button
-                onClick={handleSetTemperature}
-                className="w-full sm:w-auto"
-              >
+              <Button className="bg-green-600 hover:bg-green-700">
+                <Thermometer className="w-4 h-4 mr-2" />
                 设置
               </Button>
             </motion.div>
-          </FlexRowCentered>
+          </div>
           <motion.div variants={itemVariants} className="mt-6">
-            <LineChart data={temperatureHistory} />
+            <div className="h-32 bg-gray-600 rounded flex items-center justify-center">
+              <span className="text-white">温度曲线图</span>
+            </div>
           </motion.div>
         </CardContent>
-      </StyledCard>
+      </Card>
 
-      <StyledCard
-        as={motion.div}
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
+      {/* Image Control */}
+      <Card className="bg-gray-700 border-gray-600 shadow-lg rounded-lg mb-4">
         <CardHeader>
           <CardTitle>图像控制</CardTitle>
         </CardHeader>
         <CardContent>
-          <Grid>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <motion.div variants={itemVariants} className="space-y-2">
               <Label>文件格式</Label>
-              <Select value={fileFormat} onValueChange={setFileFormat}>
-                <SelectTrigger>
+              <Select defaultValue="FITS">
+                <SelectTrigger className="bg-gray-600 text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -357,25 +223,60 @@ export function CameraPage() {
               </Select>
             </motion.div>
             <motion.div variants={itemVariants}>
-              <Button
-                onClick={isLiveView ? handleStopLiveView : handleStartLiveView}
-                variant={isLiveView ? "destructive" : "default"}
-              >
-                {isLiveView ? "停止实时预览" : "开始实时预览"}
+              <Button className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                实时预览
               </Button>
             </motion.div>
             <motion.div variants={itemVariants}>
-              <Button onClick={handleSaveImage} disabled={isSaving}>
-                {isSaving ? "保存中..." : "保存图像"}
+              <Button className="w-full sm:w-auto bg-yellow-600 hover:bg-yellow-700">
+                <Save className="w-4 h-4 mr-2" />
+                保存图像
               </Button>
             </motion.div>
-          </Grid>
+          </div>
           <div className="mt-4">
             <Label>直方图</Label>
-            {/* 这里添加直方图组件的实现 */}
+            <div className="h-32 bg-gray-600 rounded flex items-center justify-center">
+              <span className="text-white">直方图</span>
+            </div>
           </div>
         </CardContent>
-      </StyledCard>
-    </Container>
+      </Card>
+
+      {/* Additional Information */}
+      <Card className="bg-gray-700 border-gray-600 shadow-lg rounded-lg">
+        <CardHeader>
+          <CardTitle>附加信息</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <motion.div variants={itemVariants} className="space-y-2">
+              <Label>连接状态</Label>
+              <Badge variant="default">已连接</Badge>
+            </motion.div>
+            <motion.div variants={itemVariants} className="space-y-2">
+              <Label>缓冲率</Label>
+              <Progress value={85} />
+              <span className="text-sm text-gray-400">85%</span>
+            </motion.div>
+            <motion.div variants={itemVariants} className="space-y-2">
+              <Label>温度</Label>
+              <div className="flex items-center">
+                <Thermometer className="w-4 h-4 mr-2" />
+                <span>38°C</span>
+              </div>
+            </motion.div>
+            <motion.div variants={itemVariants} className="space-y-2">
+              <Label>曝光</Label>
+              <div className="flex items-center">
+                <Timer className="w-4 h-4 mr-2" />
+                <span>1/100s</span>
+              </div>
+            </motion.div>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }

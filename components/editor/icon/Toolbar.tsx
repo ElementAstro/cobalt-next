@@ -43,14 +43,17 @@ export default function Toolbar({
 }: ToolbarProps) {
   return (
     <motion.div
-      className={`flex flex-wrap gap-2 mb-4 ${
-        isLandscape ? "justify-start" : "justify-center"
+      className={`mb-4 rounded-lg bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 p-4 ${
+        isLandscape ? "flex flex-wrap gap-2" : "grid grid-cols-2 sm:grid-cols-4 gap-2"
       }`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ delay: 0.3, duration: 0.5 }}
+      transition={{ delay: 0.2, duration: 0.3 }}
     >
-      <Button onClick={onUpload}>
+      <Button
+        onClick={onUpload}
+        className="w-full flex items-center justify-center hover:bg-primary/90 transition-colors"
+      >
         <Upload className="w-4 h-4 mr-2" />
         上传图标
       </Button>
@@ -66,7 +69,11 @@ export default function Toolbar({
         <ZoomOut className="w-4 h-4 mr-2" />
         缩小
       </Button>
-      <Button onClick={onDelete} variant="destructive">
+      <Button
+        onClick={onDelete}
+        variant="destructive"
+        className="w-full flex items-center justify-center hover:bg-destructive/90 transition-colors"
+      >
         <Trash2 className="w-4 h-4 mr-2" />
         删除
       </Button>

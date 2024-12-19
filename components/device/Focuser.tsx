@@ -28,8 +28,24 @@ const Container = styled(motion.div)`
 const StyledCard = styled(Card)`
   background-color: #374151;
   border-color: #4b5563;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+`;
+
+const ControlButton = styled(Button)`
+  min-width: 48px;
+  height: 48px;
+  
+  @media (min-width: 640px) {
+    min-width: 64px;
+    height: 64px;
+  }
 `;
 
 const containerVariants = {
@@ -103,116 +119,115 @@ export function FocuserPage() {
 
   return (
     <Container variants={containerVariants} initial="hidden" animate="visible">
-      <DeviceSelector
-        deviceType="Focuser"
-        devices={["ZWO EAF", "Moonlite CSL", "Pegasus FocusCube2"]}
-        onDeviceChange={(device) => console.log(`Selected focuser: ${device}`)}
-      />
-      <motion.div
-        variants={itemVariants}
-        className="mt-6 grid gap-4 lg:grid-cols-2"
-      >
-        <StyledCard>
-          <CardHeader>
-            <CardTitle>Focuser Information</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-            >
-              <motion.div variants={itemVariants} className="space-y-2">
-                <Label>Position</Label>
-                <div className="text-sm">{focuserInfo.position}</div>
-              </motion.div>
-              <motion.div variants={itemVariants} className="space-y-2">
-                <Label>Temperature</Label>
-                <div className="text-sm">{focuserInfo.temperature}°C</div>
-              </motion.div>
+      <div className="max-w-7xl mx-auto space-y-6">
+        <DeviceSelector
+          deviceType="Focuser"
+          devices={["ZWO EAF", "Moonlite CSL", "Pegasus FocusCube2"]}
+          onDeviceChange={(device) => console.log(`Selected focuser: ${device}`)}
+        />
+        
+        <div className="grid gap-6 md:grid-cols-2">
+          <StyledCard>
+            <CardHeader>
+              <CardTitle>Focuser Information</CardTitle>
+            </CardHeader>
+            <CardContent>
               <motion.div
-                variants={itemVariants}
-                className="flex items-center space-x-2"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="grid grid-cols-1 sm:grid-cols-2 gap-4"
               >
-                <Label htmlFor="temp-comp">Temperature Compensation</Label>
-                <Switch
-                  id="temp-comp"
-                  checked={temperatureCompensation}
-                  onCheckedChange={handleTemperatureCompensation}
-                />
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label>Position</Label>
+                  <div className="text-sm">{focuserInfo.position}</div>
+                </motion.div>
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label>Temperature</Label>
+                  <div className="text-sm">{focuserInfo.temperature}°C</div>
+                </motion.div>
+                <motion.div
+                  variants={itemVariants}
+                  className="flex items-center space-x-2"
+                >
+                  <Label htmlFor="temp-comp">Temperature Compensation</Label>
+                  <Switch
+                    id="temp-comp"
+                    checked={temperatureCompensation}
+                    onCheckedChange={handleTemperatureCompensation}
+                  />
+                </motion.div>
               </motion.div>
-            </motion.div>
-          </CardContent>
-        </StyledCard>
+            </CardContent>
+          </StyledCard>
 
-        <StyledCard>
-          <CardHeader>
-            <CardTitle>Focuser Control</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="space-y-6"
-            >
+          <StyledCard>
+            <CardHeader>
+              <CardTitle>Focuser Control</CardTitle>
+            </CardHeader>
+            <CardContent>
               <motion.div
-                variants={itemVariants}
-                className="flex flex-col sm:flex-row items-center gap-4"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="space-y-8"
               >
-                <Label htmlFor="target-position">Target Position</Label>
-                <Input
-                  id="target-position"
-                  type="number"
-                  value={inputPosition}
-                  onChange={(e) => setInputPosition(e.target.value)}
-                  className="max-w-[200px] text-black"
-                />
-                <Button onClick={handleMoveToPosition}>Move</Button>
-              </motion.div>
+                <motion.div
+                  variants={itemVariants}
+                  className="flex flex-col space-y-4"
+                >
+                  <Label htmlFor="target-position">Target Position</Label>
+                  <div className="flex space-x-4">
+                    <Input
+                      id="target-position"
+                      type="number"
+                      value={inputPosition}
+                      onChange={(e) => setInputPosition(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button onClick={handleMoveToPosition} className="whitespace-nowrap">
+                      Move To
+                    </Button>
+                  </div>
+                </motion.div>
 
-              <motion.div
-                variants={itemVariants}
-                className="flex justify-center gap-2"
-              >
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="text-white"
-                  onClick={() => handleMove(-1000)}
+                <motion.div
+                  variants={itemVariants}
+                  className="flex justify-center gap-4"
                 >
-                  <ChevronFirst className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="text-white"
-                  onClick={() => handleMove(-100)}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="text-white"
-                  onClick={() => handleMove(100)}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="text-white"
-                  onClick={() => handleMove(1000)}
-                >
-                  <ChevronLast className="h-4 w-4" />
-                </Button>
+                  <ControlButton variant="secondary" onClick={() => handleMove(-1000)}>
+                    <ChevronFirst className="h-6 w-6" />
+                  </ControlButton>
+                  <ControlButton
+                    variant="secondary"
+                    size="icon"
+                    className="text-white"
+                    onClick={() => handleMove(-100)}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </ControlButton>
+                  <ControlButton
+                    variant="secondary"
+                    size="icon"
+                    className="text-white"
+                    onClick={() => handleMove(100)}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </ControlButton>
+                  <ControlButton
+                    variant="secondary"
+                    size="icon"
+                    className="text-white"
+                    onClick={() => handleMove(1000)}
+                  >
+                    <ChevronLast className="h-4 w-4" />
+                  </ControlButton>
+                </motion.div>
               </motion.div>
-            </motion.div>
-          </CardContent>
-        </StyledCard>
-      </motion.div>
+            </CardContent>
+          </StyledCard>
+        </div>
+      </div>
 
       <StyledCard>
         <CardHeader>

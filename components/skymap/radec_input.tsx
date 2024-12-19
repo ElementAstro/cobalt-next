@@ -22,6 +22,16 @@ function dmsToDeg(degrees: number, minutes: number, seconds: number) {
   return degrees + minutes / 60 + seconds / 3600;
 }
 
+const parseCoordsFromText = (text: string) => {
+  const matches = text.match(/(-?\d{1,3})[° ](\d{1,2})[′ ](\d{1,2})[″ ]/);
+  if (!matches) return null;
+  return {
+    degrees: parseInt(matches[1], 10),
+    minutes: parseInt(matches[2], 10),
+    seconds: parseFloat(matches[3]),
+  };
+};
+
 export const RaInput: React.FC<IInputProps> = (props) => {
   const [degree, setDegree] = React.useState("0");
   const [minute, setMinute] = React.useState("0");
@@ -110,6 +120,26 @@ export const RaInput: React.FC<IInputProps> = (props) => {
     }
   };
 
+  // 新增剪贴板功能
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const text = await navigator.clipboard.readText();
+    const coords = parseCoordsFromText(text);
+    if (coords) {
+      setDegree(coords.degrees.toString());
+      setMinute(coords.minutes.toString());
+      setSecond(coords.seconds.toString());
+      setDmsUpdate(true);
+    }
+  };
+
+  // 新增快速预设值
+  const commonValues = [
+    { label: "天球赤道", value: 0 },
+    { label: "北天极", value: 90 },
+    { label: "南天极", value: -90 },
+  ];
+
   return (
     <motion.div
       className="flex flex-col gap-6 p-6 bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg dark:bg-gray-900/90 border border-gray-700 landscape:p-3 landscape:gap-3"
@@ -117,7 +147,10 @@ export const RaInput: React.FC<IInputProps> = (props) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-6 landscape:gap-3" layout>
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-2 gap-6 landscape:gap-3"
+        layout
+      >
         <div className="flex flex-col space-y-4 landscape:space-y-2">
           <div className="flex justify-between items-center">
             <Label className="text-white text-lg">RA</Label>
@@ -229,6 +262,22 @@ export const RaInput: React.FC<IInputProps> = (props) => {
       >
         {showPreview ? "隐藏预览" : "显示预览"}
       </Button>
+      {/* 新增快速选择按钮 */}
+      <div className="flex gap-2 mt-4">
+        {commonValues.map(({ label, value }) => (
+          <Button
+            key={label}
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setDegreeValue(value.toString());
+              setDegreeUpdate(true);
+            }}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
     </motion.div>
   );
 };
@@ -321,6 +370,26 @@ export const DecInput: React.FC<IInputProps> = (props) => {
     }
   };
 
+  // 新增剪贴板功能
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const text = await navigator.clipboard.readText();
+    const coords = parseCoordsFromText(text);
+    if (coords) {
+      setDegree(coords.degrees.toString());
+      setMinute(coords.minutes.toString());
+      setSecond(coords.seconds.toString());
+      setDmsUpdate(true);
+    }
+  };
+
+  // 新增快速预设值
+  const commonValues = [
+    { label: "天球赤道", value: 0 },
+    { label: "北天极", value: 90 },
+    { label: "南天极", value: -90 },
+  ];
+
   return (
     <motion.div
       className="flex flex-col gap-6 p-6 bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg dark:bg-gray-900/90 border border-gray-700 landscape:p-3 landscape:gap-3"
@@ -328,7 +397,10 @@ export const DecInput: React.FC<IInputProps> = (props) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-6 landscape:gap-3" layout>
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-2 gap-6 landscape:gap-3"
+        layout
+      >
         <div className="flex flex-col space-y-4 landscape:space-y-2">
           <div className="flex justify-between items-center">
             <Label className="text-white text-lg">DEC</Label>
@@ -440,6 +512,22 @@ export const DecInput: React.FC<IInputProps> = (props) => {
       >
         {showPreview ? "隐藏预览" : "显示预览"}
       </Button>
+      {/* 新增快速选择按钮 */}
+      <div className="flex gap-2 mt-4">
+        {commonValues.map(({ label, value }) => (
+          <Button
+            key={label}
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setDegreeValue(value.toString());
+              setDegreeUpdate(true);
+            }}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
     </motion.div>
   );
 };

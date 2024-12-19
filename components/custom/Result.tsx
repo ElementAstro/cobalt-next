@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ResultProps {
   status:
@@ -28,6 +29,9 @@ interface ResultProps {
   style?: React.CSSProperties;
   header?: React.ReactNode;
   footerPosition?: "top" | "bottom";
+  mobileView?: "compact" | "full";
+  alignment?: "left" | "center" | "right";
+  mobileLayout?: "card" | "list";
 }
 
 const defaultIcons: Record<ResultProps["status"], string> = {
@@ -73,8 +77,6 @@ const animationPresets: Record<string, Variants> = {
     exit: { scale: 0 },
     transition: {
       type: "spring",
-      stiffness: 260,
-      damping: 20,
     },
   },
 };
@@ -96,6 +98,9 @@ export function Result({
   style = {},
   header,
   footerPosition = "bottom",
+  mobileView = "full",
+  alignment = "center",
+  mobileLayout = "card",
 }: ResultProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -111,14 +116,30 @@ export function Result({
   const colorClass = color || defaultColors[status];
   const animation = customAnimation || animationPresets[animationPreset];
 
+  const containerClasses = cn(
+    "relative flex flex-col p-6 rounded-lg shadow-lg",
+    "transition-all duration-300",
+    {
+      "items-start text-left": alignment === "left",
+      "items-center text-center": alignment === "center",
+      "items-end text-right": alignment === "right",
+      "p-4": mobileView === "compact",
+      [colorClass]: true,
+      "cursor-pointer": interactive,
+      "dark:shadow-gray-800": true,
+      [className]: true,
+      "md:p-6": true,
+      "flex-row items-center gap-4":
+        mobileLayout === "list" && window.innerWidth < 768,
+    }
+  );
+
   return (
     <AnimatePresence>
       {isVisible && (
         <motion.div
           {...animation}
-          className={`relative flex flex-col items-center justify-center p-6 text-center rounded-lg shadow-lg ${colorClass} ${
-            interactive ? "cursor-pointer" : ""
-          } dark:shadow-gray-800 transition-all duration-300 ${className}`}
+          className={containerClasses}
           style={style}
           onClick={() => interactive && setIsExpanded(!isExpanded)}
           onMouseEnter={() => interactive && setIsHovered(true)}
@@ -456,5 +477,92 @@ export function NotFoundContent() {
       animationPreset="slide"
       className="max-w-md mx-auto"
     />
+  );
+}
+
+export function ResponsiveContent() {
+  return (
+    <div className="space-y-4">
+      <Result
+        status="info"
+        title="响应式布局"
+        description="自动适应不同屏幕尺寸"
+        mobileLayout="list"
+        alignment="left"
+        footer={
+          <div className="flex gap-2">
+            <Button size="sm">确认</Button>
+            <Button size="sm" variant="outline">
+              取消
+            </Button>
+          </div>
+        }
+      />
+
+      <Result
+        status="success"
+        title="紧凑视图"
+        description="适合移动端显示"
+        mobileView="compact"
+        footer={<Button size="sm">了解更多</Button>}
+      />
+    </div>
+  );
+}
+
+export function AnimatedContent() {
+  return (
+    <Result
+      status="info"
+      title="动画效果"
+      description="丰富的动画交互"
+      animationPreset="custom"
+      customAnimation={{
+        initial: { scale: 0, rotate: -180 },
+        animate: {
+          scale: 1,
+          rotate: 0,
+          transition: {
+            type: "spring",
+            stiffness: 260,
+            damping: 20,
+          },
+        },
+        exit: {
+          scale: 0,
+          rotate: 180,
+        },
+      }}
+      footer={
+        <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+          <Button>点击交互</Button>
+        </motion.div>
+      }
+    />
+  );
+}
+
+export function GroupContent() {
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <Result
+        status="success"
+        title="成功"
+        description="操作成功完成"
+        mobileLayout="list"
+      />
+      <Result
+        status="warning"
+        title="警告"
+        description="请注意潜在问题"
+        mobileLayout="list"
+      />
+      <Result
+        status="error"
+        title="错误"
+        description="操作失败"
+        mobileLayout="list"
+      />
+    </div>
   );
 }

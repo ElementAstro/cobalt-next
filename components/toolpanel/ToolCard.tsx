@@ -28,8 +28,9 @@ export function ToolCard({
   usageCount,
   category,
   onSelect,
-  CustomComponent, // 新增自定义组件属性
-}: ToolCardProps) {
+  CustomComponent,
+  viewMode = "grid",
+}: ToolCardProps & { viewMode?: "grid" | "list" }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: id,
   });
@@ -37,6 +38,11 @@ export function ToolCard({
   const style = {
     transform: CSS.Translate.toString(transform),
   };
+
+  const cardClassName = {
+    grid: "w-full",
+    list: "w-full flex flex-row items-center",
+  }[viewMode];
 
   return (
     <TooltipProvider>
@@ -49,42 +55,55 @@ export function ToolCard({
             whileTap={{ scale: 0.98 }}
             transition={{ duration: 0.2 }}
           >
-            <Card className="w-full sm:w-[300px] dark:bg-gray-800 hover:shadow-xl transition-all">
-              <CardHeader className="relative">
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="flex items-center space-x-3"
-                >
+            <Card
+              className={`${cardClassName} dark:bg-gray-800/90 hover:shadow-xl transition-all`}
+            >
+              <div
+                className={
+                  viewMode === "list"
+                    ? "flex-1 flex items-center p-4 gap-4"
+                    : ""
+                }
+              >
+                <div className="relative">
                   <Icon className="h-6 w-6 text-primary" />
-                  <div>
-                    <CardTitle className="text-lg">{name}</CardTitle>
-                    <CardDescription className="line-clamp-2">
-                      {description}
-                    </CardDescription>
-                  </div>
-                </motion.div>
-                <div className="absolute top-2 right-2">
-                  <Badge variant="secondary" className="text-xs">
-                    使用次数: {usageCount}
-                  </Badge>
+                  {usageCount > 10 && (
+                    <Badge
+                      variant="secondary"
+                      className="absolute -top-2 -right-2 text-xs"
+                    >
+                      常用
+                    </Badge>
+                  )}
                 </div>
-              </CardHeader>
 
-              <CardFooter className="flex justify-between gap-2 pt-4">
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelect(id);
-                  }}
-                  className="flex-1"
-                >
-                  使用工具
-                </Button>
-                <Button variant="outline" className="w-24">
-                  详情
-                </Button>
-              </CardFooter>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold">{name}</h3>
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {description}
+                  </p>
+                </div>
+
+                {viewMode === "list" ? (
+                  <div className="flex gap-2">
+                    <Button onClick={() => onSelect(id)} size="sm">
+                      使用
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      详情
+                    </Button>
+                  </div>
+                ) : (
+                  <CardFooter className="flex justify-between gap-2 pt-4">
+                    <Button onClick={() => onSelect(id)} className="flex-1">
+                      使用工具
+                    </Button>
+                    <Button variant="outline" className="w-24">
+                      详情
+                    </Button>
+                  </CardFooter>
+                )}
+              </div>
             </Card>
           </motion.div>
         </TooltipTrigger>

@@ -18,25 +18,40 @@ const Container = styled(motion.div)`
   background-color: #1f2937;
   min-height: 100vh;
   padding: 1rem;
+  
+  @media (min-width: 640px) {
+    padding: 2rem;
+  }
 `;
 
 const StyledCard = styled(Card)`
   background-color: #374151;
   border-color: #4b5563;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  margin-bottom: 1.5rem;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 640px) {
+    margin-bottom: 1rem;
+  }
 `;
 
 const Grid = styled(motion.div)`
   display: grid;
-  gap: 1.5rem;
-
+  gap: 2rem;
+  
   @media (min-width: 640px) {
     grid-template-columns: repeat(2, 1fr);
   }
 
   @media (min-width: 1024px) {
     grid-template-columns: repeat(4, 1fr);
+    gap: 2.5rem;
   }
 `;
 
@@ -111,134 +126,136 @@ export default function RotatorInterface() {
 
   return (
     <Container variants={containerVariants} initial="hidden" animate="visible">
-      <StyledCard
-        as={motion.div}
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <CardHeader>
-          <CardTitle>旋转器设置</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Grid>
-            <motion.div variants={itemVariants} className="space-y-2">
-              <Label>机械位置</Label>
-              <div className="text-sm">{mechanicalPosition.toFixed(1)}°</div>
-            </motion.div>
-            <motion.div variants={itemVariants} className="space-y-2">
-              <Label>目标机械位置</Label>
-              <Input
-                type="number"
-                value={targetPosition}
-                onChange={(e) => setTargetPosition(Number(e.target.value))}
-                min={minPosition}
-                max={maxPosition}
-                className="bg-gray-700 text-white"
-              />
-            </motion.div>
-            <motion.div variants={itemVariants} className="space-y-2">
-              <Label>速度</Label>
-              <Slider
-                value={[speed]}
-                onValueChange={(value) => setSpeed(value[0])}
-                max={100}
-                step={1}
-              />
-              <span className="text-sm text-gray-500">{speed}%</span>
-            </motion.div>
-            <motion.div variants={itemVariants} className="space-y-2">
-              <Label>反转</Label>
-              <Switch checked={reverse} onCheckedChange={setReverse} />
-              <span>{reverse ? "ON" : "OFF"}</span>
-            </motion.div>
-          </Grid>
-          <FlexRow>
-            <motion.div variants={itemVariants}>
-              <Button onClick={move} disabled={isMoving} className="sm:w-auto">
-                移动
-              </Button>
-            </motion.div>
-            <motion.div variants={itemVariants}>
-              <Button
-                variant="destructive"
-                onClick={stop}
-                disabled={!isMoving}
-                className="sm:w-auto"
-              >
-                <StopCircle className="h-4 w-4 mr-2" />
-                停止
-              </Button>
-            </motion.div>
-          </FlexRow>
-        </CardContent>
-      </StyledCard>
-
-      <StyledCard
-        as={motion.div}
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <CardHeader>
-          <CardTitle>状态</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Grid>
-            <motion.div variants={itemVariants} className="space-y-2">
-              <Label>是否移动</Label>
-              <div className="text-sm">{isMoving ? "是" : "否"}</div>
-            </motion.div>
-            <motion.div variants={itemVariants} className="space-y-2">
-              <Label>当前机械位置</Label>
-              <div className="text-sm">{mechanicalPosition.toFixed(1)}°</div>
-            </motion.div>
-            <motion.div variants={itemVariants} className="space-y-2">
-              <Label>目标机械位置</Label>
-              <div className="text-sm">{targetPosition.toFixed(1)}°</div>
-            </motion.div>
-            <motion.div variants={itemVariants} className="space-y-2">
-              <Label>速度</Label>
-              <div className="text-sm">{speed}%</div>
-            </motion.div>
-          </Grid>
-        </CardContent>
-      </StyledCard>
-
-      <StyledCard>
-        <CardHeader>
-          <CardTitle>高级功能</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Grid>
-            <motion.div variants={itemVariants} className="space-y-2">
-              <Label>导星补偿</Label>
-              <Switch
-                checked={autoGuideCompensation}
-                onCheckedChange={setAutoGuideCompensation}
-              />
-            </motion.div>
-            <motion.div variants={itemVariants} className="space-y-2">
-              <Label>位置预设</Label>
-              <div className="flex gap-2 flex-wrap">
-                {presets.map((preset, index) => (
-                  <Button
-                    key={index}
-                    onClick={() => moveToPreset(preset)}
-                    variant="outline"
-                    size="sm"
-                  >
-                    {preset.toFixed(1)}°
-                  </Button>
-                ))}
-                <Button onClick={savePreset} variant="secondary" size="sm">
-                  保存当前位置
+      <div className="max-w-7xl mx-auto space-y-6">
+        <StyledCard
+          as={motion.div}
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <CardHeader>
+            <CardTitle>旋转器设置</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Grid>
+              <motion.div variants={itemVariants} className="space-y-2">
+                <Label>机械位置</Label>
+                <div className="text-sm">{mechanicalPosition.toFixed(1)}°</div>
+              </motion.div>
+              <motion.div variants={itemVariants} className="space-y-2">
+                <Label>目标机械位置</Label>
+                <Input
+                  type="number"
+                  value={targetPosition}
+                  onChange={(e) => setTargetPosition(Number(e.target.value))}
+                  min={minPosition}
+                  max={maxPosition}
+                  className="bg-gray-700 text-white"
+                />
+              </motion.div>
+              <motion.div variants={itemVariants} className="space-y-2">
+                <Label>速度</Label>
+                <Slider
+                  value={[speed]}
+                  onValueChange={(value) => setSpeed(value[0])}
+                  max={100}
+                  step={1}
+                />
+                <span className="text-sm text-gray-500">{speed}%</span>
+              </motion.div>
+              <motion.div variants={itemVariants} className="space-y-2">
+                <Label>反转</Label>
+                <Switch checked={reverse} onCheckedChange={setReverse} />
+                <span>{reverse ? "ON" : "OFF"}</span>
+              </motion.div>
+            </Grid>
+            <FlexRow>
+              <motion.div variants={itemVariants}>
+                <Button onClick={move} disabled={isMoving} className="sm:w-auto">
+                  移动
                 </Button>
-              </div>
-            </motion.div>
-          </Grid>
-        </CardContent>
-      </StyledCard>
+              </motion.div>
+              <motion.div variants={itemVariants}>
+                <Button
+                  variant="destructive"
+                  onClick={stop}
+                  disabled={!isMoving}
+                  className="sm:w-auto"
+                >
+                  <StopCircle className="h-4 w-4 mr-2" />
+                  停止
+                </Button>
+              </motion.div>
+            </FlexRow>
+          </CardContent>
+        </StyledCard>
+
+        <StyledCard
+          as={motion.div}
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <CardHeader>
+            <CardTitle>状态</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Grid>
+              <motion.div variants={itemVariants} className="space-y-2">
+                <Label>是否移动</Label>
+                <div className="text-sm">{isMoving ? "是" : "否"}</div>
+              </motion.div>
+              <motion.div variants={itemVariants} className="space-y-2">
+                <Label>当前机械位置</Label>
+                <div className="text-sm">{mechanicalPosition.toFixed(1)}°</div>
+              </motion.div>
+              <motion.div variants={itemVariants} className="space-y-2">
+                <Label>目标机械位置</Label>
+                <div className="text-sm">{targetPosition.toFixed(1)}°</div>
+              </motion.div>
+              <motion.div variants={itemVariants} className="space-y-2">
+                <Label>速度</Label>
+                <div className="text-sm">{speed}%</div>
+              </motion.div>
+            </Grid>
+          </CardContent>
+        </StyledCard>
+
+        <StyledCard>
+          <CardHeader>
+            <CardTitle>高级功能</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Grid>
+              <motion.div variants={itemVariants} className="space-y-2">
+                <Label>导星补偿</Label>
+                <Switch
+                  checked={autoGuideCompensation}
+                  onCheckedChange={setAutoGuideCompensation}
+                />
+              </motion.div>
+              <motion.div variants={itemVariants} className="space-y-2">
+                <Label>位置预设</Label>
+                <div className="flex gap-2 flex-wrap">
+                  {presets.map((preset, index) => (
+                    <Button
+                      key={index}
+                      onClick={() => moveToPreset(preset)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      {preset.toFixed(1)}°
+                    </Button>
+                  ))}
+                  <Button onClick={savePreset} variant="secondary" size="sm">
+                    保存当前位置
+                  </Button>
+                </div>
+              </motion.div>
+            </Grid>
+          </CardContent>
+        </StyledCard>
+      </div>
     </Container>
   );
 }

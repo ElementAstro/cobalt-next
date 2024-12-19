@@ -150,35 +150,56 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="dark bg-gray-900 min-h-screen p-6"
+      className={`dark bg-gray-900 min-h-screen ${isLandscape ? "p-2" : "p-6"}`}
     >
-      <Card className="p-6 space-y-6">
-        <motion.h2
-          initial={{ y: -20 }}
-          animate={{ y: 0 }}
-          className="text-3xl font-bold text-white"
-        >
-          LocalStorage 管理器
-        </motion.h2>
+      <Card className={`${isLandscape ? "p-3" : "p-6"} space-y-4`}>
+        <motion.div className="flex justify-between items-center">
+          <motion.h2
+            initial={{ y: -20 }}
+            animate={{ y: 0 }}
+            className={`${
+              isLandscape ? "text-xl" : "text-3xl"
+            } font-bold text-white`}
+          >
+            LocalStorage 管理器
+          </motion.h2>
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={() => loadItems()}>
+              刷新
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => window.localStorage.clear()}
+            >
+              清空全部
+            </Button>
+          </div>
+        </motion.div>
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex space-x-4"
+          className={`grid ${
+            isLandscape ? "grid-cols-1 gap-2" : "grid-cols-3 gap-4"
+          }`}
         >
           <Input
             placeholder="项键名"
             value={newItem.key}
             onChange={(e) => setNewItem({ ...newItem, key: e.target.value })}
-            aria-label="Item Key"
+            className="w-full"
           />
           <Input
             placeholder="项值"
             value={newItem.value}
             onChange={(e) => setNewItem({ ...newItem, value: e.target.value })}
-            aria-label="Item Value"
+            className="w-full"
           />
-          <Button onClick={handleAddItem}>添加项</Button>
+          <Button onClick={handleAddItem} className="w-full">
+            添加项
+          </Button>
         </motion.div>
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

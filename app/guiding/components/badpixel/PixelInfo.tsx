@@ -11,18 +11,38 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import BadPixelVisualization from "./BadPixelVisualization";
 
 interface PixelInfoProps {
   data: any;
+  visualMode: "table" | "graph";
+  isLandscape: boolean;
+  expanded: boolean;
+  onToggleExpand: () => void;
 }
 
-export default function PixelInfo({ data }: PixelInfoProps) {
+export default function PixelInfo({ 
+  data, 
+  visualMode,
+  isLandscape,
+  expanded,
+  onToggleExpand 
+}: PixelInfoProps) {
+  if (visualMode === "graph" && !isLandscape) {
+    return <BadPixelVisualization data={data} />;
+  }
+
+  const contentClass = expanded || isLandscape
+    ? "space-y-4"
+    : "space-y-4 max-h-[300px] overflow-hidden";
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="space-y-4"
+      className="relative"
     >
       <h3 className="text-lg font-medium text-gray-700 dark:text-gray-200">
         概括信息
@@ -161,6 +181,21 @@ export default function PixelInfo({ data }: PixelInfoProps) {
           </div>
         </div>
       </div>
+
+      {!isLandscape && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onToggleExpand}
+          className="w-full mt-2"
+        >
+          {expanded ? (
+            <ChevronUp className="h-4 w-4" />
+          ) : (
+            <ChevronDown className="h-4 w-4" />
+          )}
+        </Button>
+      )}
     </motion.div>
   );
 }

@@ -27,10 +27,17 @@ const Container = styled(motion.div)`
 `;
 
 const StyledCard = styled(Card)`
-  background-color: #374151;
-  border-color: #4b5563;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
+  background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+  border-color: rgba(75, 85, 99, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  }
 `;
 
 const containerVariants = {
@@ -119,7 +126,7 @@ export function GuiderPage() {
       />
       <motion.div
         variants={itemVariants}
-        className="mt-6 grid gap-4 lg:grid-cols-2"
+        className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3"
       >
         <StyledCard>
           <CardHeader>

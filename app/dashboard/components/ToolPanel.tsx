@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { DndContext, DragEndEvent } from "@dnd-kit/core";
 import { CategorySection } from "@/components/toolpanel/CategorySection";
 import { ToolDetail } from "@/components/toolpanel/ToolDetail";
@@ -15,6 +15,14 @@ import SearchBar from "@/components/custom/SearchBar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
+import { useHotkeys } from "react-hotkeys-hook";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import ClientInfo from "./ClientInfo";
 import AllINDIPanel from "./INDIPanel";
@@ -26,6 +34,7 @@ import SoftwareManagement from "./Software";
 import WeatherInfo from "./WeatherInfo";
 import TerminalPage from "./Terminal";
 import TodoList from "./TodoList";
+import { Button } from "@/components/ui/button";
 
 function arrayMove<T>(array: T[], from: number, to: number): T[] {
   const newArray = array.slice();
@@ -144,6 +153,54 @@ export default function ToolPanel() {
   const [tools, setTools] = useState(initialTools);
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const { toast } = useToast();
+  const [isLandscape, setIsLandscape] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(CATEGORY_ORDER[0]);
+
+  useEffect(() => {
+    const checkOrientation = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight);
+    };
+
+    checkOrientation();
+    window.addEventListener("resize", checkOrientation);
+    return () => window.removeEventListener("resize", checkOrientation);
+  }, []);
+
+  // Add hotkeys for quick navigation
+  useHotkeys("ctrl+f", (e) => {
+    e.preventDefault();
+    (
+      document.querySelector('input[type="search"]') as HTMLInputElement
+    )?.focus();
+  });
+
+  useHotkeys("esc", () => {
+    if (selectedTool) setSelectedTool(null);
+  });
+
+  CATEGORY_ORDER.forEach((category, index) => {
+    useHotkeys(`ctrl+${index + 1}`, () => {
+      const tabTrigger = document.querySelector(`[value="${category}"]`);
+      if (tabTrigger instanceof HTMLElement) {
+        tabTrigger.click();
+        toast({
+          title: `切换到${category}分类`,
+          duration: 1500,
+        });
+      }
+    });
+  });
+
+  // 添加键盘快捷键
+  useHotkeys("mod+p", (e) => {
+    e.preventDefault();
+    // 实现命令面板
+  });
+
+  useHotkeys("mod+b", () => {
+    // 切换侧边栏
+  });
 
   const handleSelectTool = (id: string) => {
     setSelectedTool(id);
@@ -201,53 +258,97 @@ export default function ToolPanel() {
   }
 
   return (
-    <Tabs defaultValue={CATEGORY_ORDER[0]} className="flex flex-col h-full">
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 p-4 bg-gray-900">
-        <TabsList className="w-full md:w-auto">
-          {CATEGORY_ORDER.map((category) => (
-            <TabsTrigger key={category} value={category}>
-              {category}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        <SearchBar
-          initialSuggestions={tools.map((tool) => tool.name)}
-          onSearch={(term) => setSearchTerm(term)}
-          disabled={false}
-          placeholder="搜索工具..."
-          variant="minimal"
-          className="w-full md:w-1/3"
-        />
-      </div>
+    <div className={`h-full flex ${isLandscape ? "flex-row" : "flex-col"}`}>
+      {isLandscape && (
+        <nav className="w-64 bg-gray-900 p-4 hidden lg:block">
+          <div className="space-y-4">
+            {CATEGORY_ORDER.map((category, index) => (
+              <Button
+                key={category}
+                variant={selectedCategory === category ? "default" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => setSelectedCategory(category)}
+              >
+                <span className="mr-2">{category}</span>
+                <kbd className="ml-auto text-xs opacity-50">⌘{index + 1}</kbd>
+              </Button>
+            ))}
+          </div>
+        </nav>
+      )}
 
-      <div className="flex-1 overflow-hidden">
-        {CATEGORY_ORDER.map((category) => (
-          <TabsContent
-            key={category}
-            value={category}
-            className="transition-opacity duration-500 ease-in-out p-4 h-full"
-          >
-            <ScrollArea className="overflow-y-auto h-full">
-              <DndContext onDragEnd={handleDragEnd}>
-                <motion.div
-                  className="p-4 bg-gray-800 flex flex-col md:flex-row flex-wrap"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <CategorySection
-                    category={category}
-                    tools={filteredTools.filter(
-                      (tool) => tool.category === category
-                    )}
-                    onSelectTool={handleSelectTool}
-                  />
-                </motion.div>
-              </DndContext>
-            </ScrollArea>
-          </TabsContent>
-        ))}
-      </div>
-    </Tabs>
+      <main className="flex-1 overflow-hidden">
+        <Tabs
+          value={selectedCategory}
+          onValueChange={setSelectedCategory}
+          className="flex flex-col h-full"
+        >
+          <div className="sticky top-0 z-50 bg-gray-900 p-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              {!isLandscape && (
+                <TabsList className="flex-wrap justify-start">
+                  {CATEGORY_ORDER.map((category, index) => (
+                    <TooltipProvider key={category}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <TabsTrigger value={category}>
+                            {category}
+                            <span className="ml-2 opacity-50 text-xs hidden sm:inline">
+                              ⌘{index + 1}
+                            </span>
+                          </TabsTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{`${category}工具 (⌘${index + 1})`}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
+                </TabsList>
+              )}
+              <SearchBar
+                initialSuggestions={tools.map((tool) => tool.name)}
+                onSearch={setSearchTerm}
+                disabled={false}
+                placeholder="搜索工具... (⌘F)"
+                variant="minimal"
+                className={isLandscape ? "w-full" : "w-full sm:w-72"}
+              />
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-hidden">
+            {CATEGORY_ORDER.map((category) => (
+              <TabsContent
+                key={category}
+                value={category}
+                className="transition-all duration-300 h-full"
+              >
+                <ScrollArea className="h-full">
+                  <DndContext onDragEnd={handleDragEnd}>
+                    <motion.div
+                      className={`p-4 bg-gray-800 ${
+                        isLandscape ? "flex-row" : "flex-col"
+                      }`}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <CategorySection
+                        category={category}
+                        tools={filteredTools.filter(
+                          (tool) => tool.category === category
+                        )}
+                        onSelectTool={handleSelectTool}
+                      />
+                    </motion.div>
+                  </DndContext>
+                </ScrollArea>
+              </TabsContent>
+            ))}
+          </div>
+        </Tabs>
+      </main>
+    </div>
   );
 }

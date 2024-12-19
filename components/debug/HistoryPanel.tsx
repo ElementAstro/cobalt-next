@@ -42,32 +42,30 @@ export default function HistoryPanel({ onSelect }: HistoryPanelProps) {
   };
 
   return (
-    <Card className="bg-white dark:bg-gray-800 shadow-lg rounded-lg">
-      <CardHeader className="flex justify-between items-center">
-        <CardTitle className="text-gray-900 dark:text-gray-100">
-          请求历史记录
-        </CardTitle>
-        {history.length > 0 && (
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={clearHistory}
-            className="flex items-center"
-          >
-            <Trash2 className="w-4 h-4 mr-1" />
-            清空
-          </Button>
-        )}
-      </CardHeader>
-      <CardContent>
-        <div className="mb-4">
+    <Card className="backdrop-blur-md bg-white/90 dark:bg-gray-800/90 shadow-xl w-full max-w-4xl mx-auto mt-6">
+      <CardHeader className="border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <CardTitle className="text-xl font-semibold">请求历史记录</CardTitle>
+        <div className="flex gap-2">
           <Input
-            placeholder="搜索历史记录..."
+            placeholder="搜索历史..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            className="w-full sm:w-64 bg-gray-50 dark:bg-gray-700/50"
           />
+          {history.length > 0 && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={clearHistory}
+              className="whitespace-nowrap"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              清空
+            </Button>
+          )}
         </div>
+      </CardHeader>
+      <CardContent>
         <ul className="space-y-2">
           <AnimatePresence>
             {filteredHistory.map((item) => (

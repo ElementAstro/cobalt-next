@@ -46,28 +46,28 @@ const Moon = ({ data }: MoonProps) => {
       animate="visible"
       className="dark:bg-gray-800 bg-white rounded-lg shadow-lg p-4"
     >
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-white dark:text-gray-200">
+      <Card className="w-full">
+        <CardHeader className="space-y-2">
+          <CardTitle className="text-2xl font-bold text-white dark:text-gray-200">
             月亮信息
           </CardTitle>
         </CardHeader>
         <CardContent>
           <motion.div
             variants={containerVariants}
-            className="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-6"
+            className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start"
           >
             <motion.div
-              whileHover={{ scale: 1.1 }}
-              onClick={() => setShowDetails(!showDetails)}
-              className="cursor-pointer w-48 h-48 relative"
+              whileHover={{ scale: 1.05 }}
+              className="relative w-full aspect-square max-w-[300px] mx-auto"
             >
               <Image
                 src={`/assets/img/moon_${data.phase.toLowerCase()}.png`}
                 alt="Moon"
                 layout="fill"
                 objectFit="contain"
-                className="rounded-full shadow-lg"
+                className="rounded-full shadow-lg cursor-pointer"
+                onClick={() => setShowDetails(!showDetails)}
               />
             </motion.div>
             <AnimatePresence>

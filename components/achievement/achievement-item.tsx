@@ -76,60 +76,77 @@ export function AchievementItem({
     >
       <Card
         className={`
-          relative w-full transition-all duration-300 ease-in-out
+          relative overflow-hidden
+          backdrop-blur-sm border-0
           ${
             achievement.isUnlocked
-              ? "dark:bg-gradient-to-r dark:from-green-900 dark:to-blue-900"
-              : "dark:bg-gray-800"
+              ? "bg-gradient-to-br from-green-900/50 to-blue-900/50"
+              : "bg-gray-800/50"
           }
-          hover:shadow-xl dark:shadow-gray-900
-          ${showDetails ? "transform-gpu translate-y-[-10px]" : ""}
+          hover:shadow-lg hover:shadow-purple-500/20
+          transform-gpu transition-all duration-300
+          ${showDetails ? "scale-105 z-10" : ""}
         `}
         onClick={() => setShowDetails(!showDetails)}
         style={{
           transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
-          transition: "transform 0.3s ease",
         }}
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setRotate([0, 0])}
       >
-        <CardHeader className="flex flex-row items-center space-x-4 pb-2">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-blue-500/10 pointer-events-none" />
+
+        <CardHeader className="flex flex-row items-center gap-4 pb-2">
           <motion.div
             className={`
-              w-16 h-16 flex items-center justify-center text-4xl rounded-full
+              w-14 h-14 sm:w-16 sm:h-16
+              flex items-center justify-center
+              text-3xl sm:text-4xl rounded-full
+              bg-gradient-to-br
               ${
                 achievement.isUnlocked
-                  ? "bg-gradient-to-r from-green-400 to-blue-400"
-                  : "bg-gray-200 dark:bg-gray-700"
+                  ? "from-green-400 to-blue-400"
+                  : "from-gray-600 to-gray-700"
               }
+              shadow-lg
             `}
             animate={{
               rotate: isHovered ? 360 : 0,
               scale: isHovered ? 1.1 : 1,
             }}
-            transition={{ duration: 0.5 }}
           >
             {achievement.icon}
           </motion.div>
-          <div>
-            <CardTitle className="dark:text-white">
+
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-lg sm:text-xl text-white truncate">
               {achievement.title}
             </CardTitle>
-            <CardDescription className="dark:text-gray-300">
+            <CardDescription className="text-sm text-gray-300 truncate">
               {achievement.description}
             </CardDescription>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-semibold">
-              {achievement.category}
-            </span>
-            <span className="text-sm font-semibold">
-              {achievement.points} points
-            </span>
+
+        <CardContent className="space-y-4">
+          {/* Progress Section */}
+          <div className="space-y-2">
+            <Progress
+              value={progressPercentage}
+              className={`h-2 bg-gray-700 [&>div]:${
+                achievement.isUnlocked
+                  ? "bg-gradient-to-r from-green-400 to-blue-400"
+                  : "bg-purple-500"
+              }`}
+            />
+            <div className="flex justify-between text-sm text-gray-400">
+              <span>
+                {achievement.progress} / {achievement.totalRequired}
+              </span>
+              <span>{progressPercentage.toFixed(0)}%</span>
+            </div>
           </div>
-          <Progress value={progressPercentage} className="w-full" />
+
           <div className="flex justify-between items-center mt-2">
             <p className="text-sm text-gray-500">
               Progress: {achievement.progress} / {achievement.totalRequired}

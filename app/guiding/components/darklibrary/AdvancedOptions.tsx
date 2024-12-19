@@ -208,6 +208,7 @@ export default function AdvancedOptions({
             variants={optionVariants}
             className="space-y-4"
           >
+            {/* 添加更多处理选项 */}
             <div className="space-y-2">
               <Label>暗场校正方法:</Label>
               <Select defaultValue="average">
@@ -218,6 +219,50 @@ export default function AdvancedOptions({
                   <SelectItem value="average">平均值</SelectItem>
                   <SelectItem value="median">中值</SelectItem>
                   <SelectItem value="kappa-sigma">Kappa-Sigma</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>噪声降低强度:</Label>
+              <Slider
+                min={0}
+                max={100}
+                step={1}
+                defaultValue={[50]}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>热像素检测阈值:</Label>
+              <Slider
+                min={0}
+                max={100}
+                step={1}
+                defaultValue={[30]}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="autoOptimize"
+                defaultChecked={true}
+                disabled={isLoading}
+              />
+              <Label htmlFor="autoOptimize">自动优化处理参数</Label>
+            </div>
+
+            <div className="space-y-2">
+              <Label>帧对齐方法:</Label>
+              <Select defaultValue="star">
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="star">星点对齐</SelectItem>
+                  <SelectItem value="pixel">像素对齐</SelectItem>
+                  <SelectItem value="none">不对齐</SelectItem>
                 </SelectContent>
               </Select>
             </div>

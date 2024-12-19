@@ -18,5 +18,7 @@ export interface Achievement {
   difficulty: 'easy' | 'medium' | 'hard';
   dateUnlocked?: Date;
   rarity: number; // percentage of users who have unlocked this
+  createdAt: Date;
+  unlockedAt?: Date;
 }
 

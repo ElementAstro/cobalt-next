@@ -200,3 +200,44 @@
   background-color: rgba(255, 0, 0, 0.5);
 }
 
+.landscape {
+  border-width: 2px;
+}
+
+.landscape .dragHandle {
+  height: 15px;
+  font-size: 10px;
+}
+
+.landscape .directionBtn {
+  transform: scale(0.9);
+}
+
+.landscape .btnStop {
+  transform: scale(0.9);
+}
+
+.landscapeControls {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+@media (max-height: 500px) {
+  .mountControlPanel {
+    transform-origin: top right;
+  }
+  
+  .directionBtn {
+    transform: scale(0.8);
+  }
+  
+  .btnStop {
+    transform: scale(0.8);
+  }
+}
+

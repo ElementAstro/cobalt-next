@@ -16,6 +16,7 @@ import { useAchievementStore } from "@/lib/store/achievement";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useOrientation } from "@/hooks/use-orientation";
+import { Achievement } from "@/types/achievement";
 
 export function AchievementList() {
   const {
@@ -80,113 +81,99 @@ export function AchievementList() {
   }, [filteredAchievements, sortBy]);
 
   return (
-    <div
-      className={`space-y-4 p-4 dark:bg-gray-900 ${
-        isLandscape ? "h-[100vh] overflow-hidden" : ""
-      }`}
-    >
-      <motion.div
-        className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="w-full lg:w-auto">
-          <h2 className="text-2xl font-bold dark:text-white">Achievements</h2>
-          <div className="flex flex-col sm:flex-row gap-2 mt-2">
-            <Input
-              type="text"
-              placeholder="Search achievements..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-grow dark:bg-gray-800 dark:text-white"
-            />
-            <Select
-              value={selectedCategory}
-              onValueChange={setSelectedCategory}
-            >
-              <SelectTrigger className="w-full sm:w-[180px] dark:bg-gray-800 dark:text-white">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent className="dark:bg-gray-800">
-                {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="newest">Newest</SelectItem>
-                <SelectItem value="points">Points</SelectItem>
-                <SelectItem value="progress">Progress</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-4 items-center">
-          <div className="dark:text-white">
-            <span className="font-bold">Total Points:</span> {totalPoints}
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="mock-mode"
-              checked={isMockMode}
-              onCheckedChange={toggleMockMode}
-              className="dark:bg-gray-700"
-            />
-            <Label htmlFor="mock-mode" className="dark:text-white">
-              Mock Mode
-            </Label>
-          </div>
-        </div>
-      </motion.div>
-
-      <div className="flex items-center space-x-4 mb-4">
-        <Select
-          value={animationPreference}
-          onValueChange={setAnimationPreference}
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header Section */}
+        <motion.div
+          className="grid gap-4 md:gap-6 bg-gray-800/50 backdrop-blur-sm rounded-lg p-4 sm:p-6"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
         >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Animation Style" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="default">Default</SelectItem>
-            <SelectItem value="bounce">Bounce</SelectItem>
-            <SelectItem value="fade">Fade</SelectItem>
-            <SelectItem value="slide">Slide</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                Achievements
+              </h2>
+              <Input
+                type="text"
+                placeholder="Search achievements..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-gray-700/50 border-gray-600"
+              />
+            </div>
 
-      <div
-        className={`grid ${gridColumns} gap-4 ${
-          isLandscape ? "h-[calc(100vh-200px)] overflow-y-auto" : ""
-        }`}
-      >
-        <AnimatePresence mode="popLayout">
-          {sortedAchievements.map((achievement, index) => (
-            <motion.div
-              key={achievement.id}
-              initial={getInitialAnimation(animationPreference)}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              layout
-            >
-              <Link href={`/achievement/${achievement.id}`} className="block">
-                <AchievementItem
-                  achievement={achievement}
-                  onUnlock={() => unlockAchievement(achievement.id)}
-                  isMockMode={isMockMode}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Select
+                value={selectedCategory}
+                onValueChange={setSelectedCategory}
+              >
+                <SelectTrigger className="w-full bg-gray-700/50 border-gray-600">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-full bg-gray-700/50 border-gray-600">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectItem value="newest">Newest</SelectItem>
+                  <SelectItem value="points">Points</SelectItem>
+                  <SelectItem value="progress">Progress</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-end gap-4">
+              <div className="text-xl font-semibold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+                {totalPoints} Points
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="mock-mode"
+                  checked={isMockMode}
+                  onCheckedChange={toggleMockMode}
                 />
-              </Link>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+                <Label htmlFor="mock-mode" className="text-gray-300">
+                  Mock Mode
+                </Label>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Achievement Grid */}
+        <div
+          className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 
+            ${isLandscape ? "h-[calc(100vh-16rem)] overflow-y-auto" : ""}`}
+        >
+          <AnimatePresence mode="popLayout">
+            {sortedAchievements.map((achievement, index) => (
+              <motion.div
+                key={achievement.id}
+                initial={getInitialAnimation(animationPreference)}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                layout
+              >
+                <Link href={`/achievement/${achievement.id}`} className="block">
+                  <AchievementItem
+                    achievement={achievement}
+                    onUnlock={() => unlockAchievement(achievement.id)}
+                    isMockMode={isMockMode}
+                  />
+                </Link>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
       </div>
 
       <AchievementNotification achievement={lastUnlockedAchievement} />

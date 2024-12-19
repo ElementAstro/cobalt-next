@@ -211,10 +211,10 @@ const TimeGradientBar = () => {
       initial="hidden"
       animate="visible"
     >
-      <Card className="w-full max-w-3xl mx-auto bg-gray-900 dark:bg-gray-800 text-white">
-        <CardHeader>
-          <CardTitle className="flex flex-col sm:flex-row justify-between items-center">
-            <div className="flex items-center space-x-4 mt-2 sm:mt-0">
+      <Card className="w-full max-w-4xl mx-auto bg-gray-900 dark:bg-gray-800 text-white p-4 sm:p-6">
+        <CardHeader className="space-y-4">
+          <CardTitle className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
               <Select
                 onValueChange={(value) =>
                   setSelectedCity(
@@ -222,7 +222,7 @@ const TimeGradientBar = () => {
                   )
                 }
               >
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-full sm:w-40">
                   <SelectValue placeholder="选择城市" />
                 </SelectTrigger>
                 <SelectContent>
@@ -235,7 +235,7 @@ const TimeGradientBar = () => {
               </Select>
               <button
                 onClick={toggleDarkMode}
-                className="flex items-center px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded"
+                className="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md transition-colors"
               >
                 {darkMode ? "亮色模式" : "暗色模式"}
               </button>

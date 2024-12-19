@@ -63,73 +63,75 @@ export function DevicesTab() {
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="space-y-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md"
+      className="container max-w-4xl mx-auto p-4"
     >
-      <motion.div
-        initial={{ opacity: 0, x: -50 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        <Input
-          placeholder="搜索设备..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="mb-4 dark:bg-gray-700 dark:text-gray-200"
-        />
-      </motion.div>
-      <motion.div
-        initial={{ opacity: 0, x: -50 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.2 }}
-        className="grid md:grid-cols-3 gap-4"
-      >
-        {filteredDevices.map((device) => (
-          <motion.div
-            key={device.name}
-            className="space-y-2 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg shadow"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Label htmlFor={device.name.toLowerCase().replace(" ", "-")}>
-              {device.name}
-            </Label>
-            <Select value={device.type}>
-              <SelectTrigger className="w-full dark:bg-gray-600 dark:text-gray-200">
-                <SelectValue placeholder="Select device" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={device.type}>{device.type}</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              variant={device.connected ? "destructive" : "default"}
-              size="sm"
-              onClick={() =>
-                device.connected
-                  ? handleDisconnect(device.name)
-                  : handleConnect(device.name)
-              }
-              className="w-full"
+      <div className="space-y-6 bg-gray-800/90 backdrop-blur p-6 rounded-xl shadow-lg">
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Input
+            placeholder="搜索设备..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="mb-4 dark:bg-gray-700/50 dark:text-gray-200 border-0"
+          />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+          className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
+          {filteredDevices.map((device) => (
+            <motion.div
+              key={device.name}
+              className="space-y-3 p-4 bg-gray-700/50 backdrop-blur rounded-lg shadow-md hover:shadow-lg transition-shadow"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
             >
-              {device.connected ? "Disconnect" : "Connect"}
-            </Button>
-          </motion.div>
-        ))}
-      </motion.div>
-      <motion.div
-        initial={{ opacity: 0, x: -50 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.4 }}
-      >
-        <Label htmlFor="remote">Remote Drivers</Label>
-        <Input
-          id="remote"
-          value={remoteDrivers}
-          onChange={(e) => setRemoteDrivers(e.target.value)}
-          className="font-mono text-sm mt-1 dark:bg-gray-700 dark:text-gray-200"
-        />
-      </motion.div>
+              <Label htmlFor={device.name.toLowerCase().replace(" ", "-")}>
+                {device.name}
+              </Label>
+              <Select value={device.type}>
+                <SelectTrigger className="w-full dark:bg-gray-600 dark:text-gray-200">
+                  <SelectValue placeholder="Select device" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={device.type}>{device.type}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant={device.connected ? "destructive" : "default"}
+                size="sm"
+                onClick={() =>
+                  device.connected
+                    ? handleDisconnect(device.name)
+                    : handleConnect(device.name)
+                }
+                className="w-full"
+              >
+                {device.connected ? "Disconnect" : "Connect"}
+              </Button>
+            </motion.div>
+          ))}
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Label htmlFor="remote">Remote Drivers</Label>
+          <Input
+            id="remote"
+            value={remoteDrivers}
+            onChange={(e) => setRemoteDrivers(e.target.value)}
+            className="font-mono text-sm mt-1 dark:bg-gray-700 dark:text-gray-200"
+          />
+        </motion.div>
+      </div>
     </motion.div>
   );
 }

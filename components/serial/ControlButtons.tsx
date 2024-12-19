@@ -50,36 +50,49 @@ const ControlButtons: FC<ControlButtonsProps> = ({
   return (
     <motion.div
       variants={containerVariants}
-      initial="hidden"
+      initial="hidden" 
       animate="visible"
-      className="flex flex-wrap items-center gap-2 mb-4 p-4 bg-gray-800 rounded-lg shadow-lg dark:bg-gray-900"
+      className="grid grid-cols-2 md:flex md:flex-wrap 
+        items-center gap-3 mb-4 p-4
+        bg-gradient-to-r from-gray-800 to-gray-900
+        rounded-lg shadow-lg 
+        border border-gray-700/50
+        backdrop-blur-sm"
     >
-      <motion.div variants={buttonVariants}>
-        <Button
-          variant={isConnected ? "destructive" : "default"}
-          onClick={onConnect}
-          disabled={!isConnected && isConnected !== false}
-          className={`${
-            isConnected
-              ? "bg-red-500 hover:bg-red-600"
-              : "bg-blue-500 hover:bg-blue-600"
-          } text-white`}
-        >
-          {isConnected ? "断开" : "连接"}
-        </Button>
-      </motion.div>
+      {/* Optimize button layout for mobile */}
+      <div className="col-span-2 md:col-auto 
+        flex items-center gap-2 w-full md:w-auto">
+        {/* Connect Button */}
+        <motion.div variants={buttonVariants} className="flex-1 md:flex-none">
+          <Button
+            variant={isConnected ? "destructive" : "default"}
+            onClick={onConnect}
+            className={`w-full md:w-auto h-12 px-8
+              ${isConnected 
+                ? "bg-red-500 hover:bg-red-600" 
+                : "bg-blue-500 hover:bg-blue-600"
+              } text-white font-medium`}
+          >
+            {isConnected ? "断开" : "连接"}
+          </Button>
+        </motion.div>
+        
+        {/* Clear Button */}
+        <motion.div variants={buttonVariants} className="flex-1 md:flex-none">
+          <Button
+            variant="secondary"
+            onClick={onClear}
+            className="w-full md:w-auto h-12 px-8
+              bg-gray-700 hover:bg-gray-600 
+              text-white font-medium"
+          >
+            清屏
+          </Button>
+        </motion.div>
+      </div>
 
-      <motion.div variants={buttonVariants}>
-        <Button
-          variant="secondary"
-          onClick={onClear}
-          className="bg-gray-700 hover:bg-gray-600 text-white"
-        >
-          清屏
-        </Button>
-      </motion.div>
-
-      <motion.div variants={buttonVariants}>
+      {/* Timestamp Button */}
+      <motion.div variants={buttonVariants} className="flex-1 md:flex-none">
         <Button
           variant="ghost"
           size="icon"
@@ -92,7 +105,8 @@ const ControlButtons: FC<ControlButtonsProps> = ({
         </Button>
       </motion.div>
 
-      <motion.div variants={buttonVariants}>
+      {/* Save Log Button */}
+      <motion.div variants={buttonVariants} className="flex-1 md:flex-none">
         <Button
           variant="ghost"
           size="icon"
@@ -103,7 +117,8 @@ const ControlButtons: FC<ControlButtonsProps> = ({
         </Button>
       </motion.div>
 
-      <motion.div variants={buttonVariants}>
+      {/* Auto Scroll Button */}
+      <motion.div variants={buttonVariants} className="flex-1 md:flex-none">
         <Button
           variant={isAutoScroll ? "default" : "secondary"}
           onClick={toggleAutoScroll}
@@ -117,7 +132,8 @@ const ControlButtons: FC<ControlButtonsProps> = ({
         </Button>
       </motion.div>
 
-      <motion.div variants={buttonVariants}>
+      {/* Hex View Button */}
+      <motion.div variants={buttonVariants} className="flex-1 md:flex-none">
         <Button
           variant={isHexView ? "default" : "secondary"}
           onClick={toggleHexView}

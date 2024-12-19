@@ -83,28 +83,63 @@ const JsonNode = memo(function JsonNode({
   const nodeContent = (
     <motion.div
       variants={nodeVariants}
-      className="flex items-center space-x-2 p-2 rounded-md hover:bg-accent/50"
+      className="flex items-center space-x-2 p-2 rounded-lg transition-colors hover:bg-accent/10 group"
     >
       {typeof data === "object" && data !== null && (
-        <Button variant="ghost" size="sm" onClick={handleToggle}>
-          {isExpanded ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleToggle}
+          className="h-8 w-8 p-0 hover:bg-transparent"
+        >
+          <motion.div
+            animate={{ rotate: isExpanded ? 90 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
             <ChevronRight className="h-4 w-4" />
-          )}
+          </motion.div>
         </Button>
       )}
-      <span className="font-medium">{path[path.length - 1] || "root"}:</span>
-      {typeof data !== "object" && renderValue(data)}
-      <Badge variant="outline">{typeof data}</Badge>
-      <Button variant="ghost" size="sm" onClick={() => ondelete(path)}>
-        <Trash2 className="h-4 w-4" />
-      </Button>
-      {typeof data === "object" && data !== null && (
-        <Button variant="ghost" size="sm" onClick={() => onAddChild(path)}>
-          <Plus className="h-4 w-4" />
-        </Button>
+      
+      <span className="font-medium text-sm">
+        {path[path.length - 1] || "root"}:
+      </span>
+      
+      {typeof data !== "object" && (
+        <div className="flex-1 max-w-md">
+          <Input
+            value={data}
+            onChange={(e) => onchange(path, e.target.value)}
+            className="h-8 text-sm focus:ring-1 focus:ring-primary"
+          />
+        </div>
       )}
+      
+      <Badge variant="secondary" className="h-6 px-2 text-xs">
+        {typeof data}
+      </Badge>
+      
+      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => ondelete(path)}
+          className="h-8 w-8 p-0 text-destructive hover:text-destructive/80"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+        
+        {typeof data === "object" && data !== null && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onAddChild(path)}
+            className="h-8 w-8 p-0 text-primary hover:text-primary/80"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
     </motion.div>
   );
 

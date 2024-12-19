@@ -33,6 +33,12 @@ interface GuidingState {
   showGrid: boolean;
   calibrationData: CalibrationData;
   settingsData: SettingsData;
+  autoRotate: boolean;
+  rotationSpeed: number;
+  zoomLevel: number;
+  setAutoRotate: (value: boolean) => void;
+  setRotationSpeed: (value: number) => void;
+  setZoomLevel: (value: number) => void;
   setIsLandscape: (isLandscape: boolean) => void;
   setShowAnimation: (showAnimation: boolean) => void;
   setLineLength: (lineLength: number) => void;
@@ -47,6 +53,7 @@ export const useGuidingStore = create<GuidingState>((set) => ({
   showAnimation: false,
   lineLength: 100,
   showGrid: true,
+
   calibrationData: {
     raStars: 7,
     decStars: 6,
@@ -71,6 +78,12 @@ export const useGuidingStore = create<GuidingState>((set) => ({
     decValue: "21.4 (est)",
     rotationAngle: "无",
   },
+  autoRotate: false,
+  rotationSpeed: 0,
+  zoomLevel: 1,
+  setAutoRotate: (value) => set({ autoRotate: value }),
+  setRotationSpeed: (value) => set({ rotationSpeed: value }),
+  setZoomLevel: (value) => set({ zoomLevel: value }),
   setIsLandscape: (isLandscape) => set({ isLandscape }),
   setShowAnimation: (showAnimation) => set({ showAnimation }),
   setLineLength: (lineLength) => set({ lineLength }),

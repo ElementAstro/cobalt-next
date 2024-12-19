@@ -65,150 +65,125 @@ export const SearchModal: React.FC<SearchModalProps> = ({
           initial="hidden"
           animate="visible"
           exit="exit"
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-50 p-4 sm:items-center overflow-y-auto"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
-            className={`w-full max-w-md bg-white dark:bg-gray-800 text-black dark:text-white p-6 rounded-lg`}
+            className="w-full max-w-lg bg-gray-900/95 backdrop-blur text-white p-6 rounded-lg shadow-xl border border-gray-800 mt-16 sm:mt-0"
           >
-            <Card className="w-full">
-              <CardHeader className="flex justify-between items-center">
-                <motion.h2
-                  variants={itemVariants}
-                  className="text-2xl font-bold"
-                >
-                  Search Files
-                </motion.h2>
-                <motion.button
-                  onClick={onClose}
-                  variants={itemVariants}
-                  className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-                >
-                  <X className="w-6 h-6" />
-                </motion.button>
-              </CardHeader>
-              <CardContent>
+            <Card className="bg-transparent border-none shadow-none">
+              <CardHeader className="flex flex-col space-y-4 pb-2">
+                <div className="flex justify-between items-center">
+                  <motion.h2
+                    variants={itemVariants}
+                    className="text-2xl font-bold"
+                  >
+                    高级搜索
+                  </motion.h2>
+                  <motion.button
+                    onClick={onClose}
+                    variants={itemVariants}
+                    className="p-2 rounded-full hover:bg-gray-800 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </motion.button>
+                </div>
                 <motion.form
                   onSubmit={handleSearch}
                   variants={itemVariants}
-                  className="mb-4"
+                  className="relative group"
                 >
-                  <div className="relative">
-                    <Input
-                      type="text"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Search files..."
-                      className={`w-full py-2 px-4 pr-10 rounded-lg bg-gray-700 text-white`}
-                    />
-                    <Button
-                      type="submit"
-                      variant="ghost"
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1"
-                    >
-                      <Search className="w-5 h-5" />
-                    </Button>
-                  </div>
-                </motion.form>
-                <div className="space-y-4">
+                  <Input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="搜索文件、标签或内容..."
+                    className="w-full py-3 px-4 pr-12 rounded-lg bg-gray-800/50 border-gray-700 focus:border-blue-500 transition-colors text-lg"
+                  />
                   <Button
+                    type="submit"
                     variant="ghost"
-                    onClick={() => setAdvancedSearch(!advancedSearch)}
-                    className="w-full justify-start"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 hover:bg-gray-700 rounded-full transition-colors"
                   >
-                    <FileType className="w-4 h-4 mr-2" />
-                    高级搜索选项
+                    <Search className="w-5 h-5 text-gray-400 group-hover:text-white" />
                   </Button>
+                </motion.form>
+              </CardHeader>
 
-                  {advancedSearch && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Select
-                        value={searchFilters.type}
-                        onValueChange={(v) =>
-                          setSearchFilters({ ...searchFilters, type: v })
-                        }
-                      >
-                        <SelectTrigger>
-                          <span>文件类型</span>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">全部</SelectItem>
-                          <SelectItem value="document">文档</SelectItem>
-                          <SelectItem value="image">图片</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      <Select
-                        value={searchFilters.dateRange}
-                        onValueChange={(v) =>
-                          setSearchFilters({ ...searchFilters, dateRange: v })
-                        }
-                      >
-                        <SelectTrigger>
-                          <Calendar className="w-4 h-4 mr-2" />
-                          <span>时间范围</span>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="any">不限</SelectItem>
-                          <SelectItem value="today">今天</SelectItem>
-                          <SelectItem value="week">本周</SelectItem>
-                          <SelectItem value="month">本月</SelectItem>
-                        </SelectContent>
-                      </Select>
+              <CardContent>
+                <div className="space-y-6">
+                  <motion.div variants={itemVariants}>
+                    <h3 className="font-medium text-gray-400 mb-3">常用筛选</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {[
+                        {
+                          icon: <FileType className="w-4 h-4" />,
+                          label: "文档",
+                        },
+                        {
+                          icon: <Calendar className="w-4 h-4" />,
+                          label: "图片",
+                        },
+                        { icon: <Clock className="w-4 h-4" />, label: "视频" },
+                      ].map((item, index) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          className="flex items-center justify-start space-x-2 hover:bg-gray-800"
+                        >
+                          {item.icon}
+                          <span>{item.label}</span>
+                        </Button>
+                      ))}
                     </div>
-                  )}
+                  </motion.div>
 
-                  <div className="mt-4">
-                    <h3 className="text-sm font-medium mb-2">搜索建议</h3>
+                  {/* 新增: 搜索建议 */}
+                  <motion.div variants={itemVariants}>
+                    <h3 className="font-medium text-gray-400 mb-3">搜索建议</h3>
                     <div className="flex flex-wrap gap-2">
                       {searchSuggestions.map((suggestion, index) => (
                         <Badge
                           key={index}
-                          variant="outline"
-                          className="cursor-pointer"
+                          variant="secondary"
+                          className="cursor-pointer hover:bg-gray-700 transition-colors py-1.5"
                           onClick={() => setSearchTerm(suggestion)}
                         >
                           {suggestion}
                         </Badge>
                       ))}
                     </div>
-                  </div>
-                </div>
-                <AnimatePresence>
-                  {searchResults.length > 0 && (
-                    <motion.div
-                      variants={containerVariants}
-                      initial="hidden"
-                      animate="visible"
-                      exit="exit"
-                      className="mt-4"
-                    >
-                      <motion.h3
-                        variants={itemVariants}
-                        className="font-semibold mb-2"
-                      >
-                        Search Results:
-                      </motion.h3>
-                      <motion.ul
+                  </motion.div>
+
+                  {/* 搜索结果展示优化 */}
+                  <AnimatePresence>
+                    {searchResults.length > 0 && (
+                      <motion.div
                         variants={containerVariants}
-                        className="space-y-2"
+                        className="space-y-2 mt-4"
                       >
-                        {searchResults.map((result, index) => (
-                          <motion.li
-                            key={index}
-                            variants={itemVariants}
-                            className={`p-2 rounded-lghover:bg-gray-700 cursor-pointer transition duration-200`}
-                          >
-                            {result}
-                          </motion.li>
-                        ))}
-                      </motion.ul>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                        <h3 className="font-medium text-gray-400">搜索结果</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {searchResults.map((result, index) => (
+                            <motion.div
+                              key={index}
+                              variants={itemVariants}
+                              className="p-3 bg-gray-800/50 rounded-lg hover:bg-gray-700/50 cursor-pointer transition-colors"
+                            >
+                              <div className="flex items-center space-x-3">
+                                <FileType className="w-5 h-5 text-blue-400" />
+                                <span>{result}</span>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </CardContent>
             </Card>
           </motion.div>

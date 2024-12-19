@@ -13,6 +13,8 @@ export function PreviewWindow() {
   const [rotation, setRotation] = useState(0);
   const [showGrid, setShowGrid] = useState(true);
   const [gridColor, setGridColor] = useState("#666666");
+  const [showMeasurements, setShowMeasurements] = useState(false);
+  const [showStars, setShowStars] = useState(false);
   const { equipment, selectedEquipment, deselectEquipment } =
     useAstronomyStore();
 
@@ -39,13 +41,13 @@ export function PreviewWindow() {
 
   return (
     <motion.div
-      className="grid grid-cols-1 lg:grid-cols-4 gap-4"
+      className="grid grid-cols-1 lg:grid-cols-4 gap-4 landscape:md:grid-cols-[1fr_300px]"
       initial="hidden"
       animate="visible"
       variants={containerVariants}
       style={{ minHeight: "calc(100vh - 2rem)" }}
     >
-      <div className="col-span-1 lg:col-span-3 min-h-[50vh] lg:min-h-full">
+      <div className="col-span-1 lg:col-span-3 min-h-[50vh] lg:min-h-full landscape:md:col-span-1">
         <Card className="w-full h-full bg-black/90 relative overflow-hidden backdrop-blur-sm">
           <motion.div
             className="absolute inset-0 flex items-center justify-center"
@@ -105,6 +107,32 @@ export function PreviewWindow() {
               onValueChange={(value) => setRotation(value[0])}
             />
           </motion.div>
+          <div className="absolute top-4 right-4 space-y-2 bg-black/50 p-2 rounded-lg backdrop-blur-sm">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowMeasurements(!showMeasurements)}
+            >
+              测量标尺
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowStars(!showStars)}
+            >
+              参考星等
+            </Button>
+          </div>
+          {showMeasurements && (
+            <div className="absolute inset-0 pointer-events-none">
+              {/* Add measurement overlay */}
+            </div>
+          )}
+          {showStars && (
+            <div className="absolute inset-0 pointer-events-none">
+              {/* Add reference stars */}
+            </div>
+          )}
         </Card>
       </div>
       <div className="space-y-4">

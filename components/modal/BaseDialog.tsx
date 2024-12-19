@@ -25,6 +25,10 @@ interface BaseDialogProps {
   closeOnClickOutside?: boolean;
   icon?: React.ReactNode;
   animationPreset?: "fade" | "slide" | "scale" | "rotate";
+  blur?: "none" | "sm" | "md" | "lg";
+  glassmorphism?: boolean;
+  scrollBehavior?: "inside" | "outside";
+  size?: "xs" | "sm" | "md" | "lg" | "xl" | "full";
 }
 
 const animations = {
@@ -66,6 +70,15 @@ const animations = {
   },
 };
 
+const sizeMap = {
+  xs: "max-w-xs",
+  sm: "max-w-sm",
+  md: "max-w-md",
+  lg: "max-w-lg",
+  xl: "max-w-xl",
+  full: "max-w-full",
+};
+
 export function BaseDialog({
   isOpen,
   onClose,
@@ -79,9 +92,31 @@ export function BaseDialog({
   closeOnClickOutside = true,
   icon,
   animationPreset = "fade",
+  blur = "sm",
+  glassmorphism = false,
+  scrollBehavior = "inside",
+  size = "md",
 }: BaseDialogProps) {
   const { theme } = useTheme();
   const isMobile = useMediaQuery("(max-width: 768px)");
+
+  const positionAnimation = {
+    center: animations[animationPreset],
+    top: animations.slideDown,
+    bottom: animations.slideUp,
+    left: {
+      ...animations[animationPreset],
+      initial: { x: -50, opacity: 0 },
+      animate: { x: 0, opacity: 1 },
+      exit: { x: -50, opacity: 0 },
+    },
+    right: {
+      ...animations[animationPreset],
+      initial: { x: 50, opacity: 0 },
+      animate: { x: 0, opacity: 1 },
+      exit: { x: 50, opacity: 0 },
+    },
+  };
 
   return (
     <Dialog
@@ -105,14 +140,24 @@ export function BaseDialog({
           "transition-transform ease-in-out",
           isMobile && "w-[95vw] max-h-[95vh] p-4",
           isMobile && fullScreen && "w-screen h-screen p-0",
-          className
+          className,
+          sizeMap[size],
+          glassmorphism && "bg-opacity-30 backdrop-blur-xl border-opacity-20",
+          `backdrop-blur-${blur}`,
+          scrollBehavior === "inside" ? "overflow-y-auto" : "overflow-visible",
+          "transform-gpu", // 使用GPU加速
+          "will-change-transform" // 优化动画性能
         )}
       >
         <motion.div
-          initial={animations[animationPreset].initial}
-          animate={animations[animationPreset].animate}
-          exit={animations[animationPreset].exit}
-          transition={{ duration: 0.2 }}
+          initial={positionAnimation[position].initial}
+          animate={positionAnimation[position].animate}
+          exit={positionAnimation[position].exit}
+          transition={{
+            type: "spring",
+            damping: 20,
+            stiffness: 300,
+          }}
         >
           {showCloseButton && (
             <button

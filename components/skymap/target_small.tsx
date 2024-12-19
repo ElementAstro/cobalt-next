@@ -149,6 +149,9 @@ const TargetSmallCard: React.FC<TargetSmallCardProps> = (props) => {
       flag: "",
       tag: "",
       checked: false,
+      angular_size: 0,
+      magnitude: 0,
+      type: "",
     });
   const [in_updating, set_in_updating] = React.useState(true);
 
@@ -221,6 +224,30 @@ const TargetSmallCard: React.FC<TargetSmallCardProps> = (props) => {
     set_in_updating(false);
   };
 
+  // 新增响应式图表配置
+  const [chartDimensions, setChartDimensions] = React.useState({
+    width: 500,
+    height: 300,
+  });
+
+  // 监听容器尺寸变化
+  React.useEffect(() => {
+    const resizeObserver = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect;
+      setChartDimensions({
+        width: Math.max(300, width - 40),
+        height: Math.min(300, height * 0.6),
+      });
+    });
+
+    const container = document.getElementById("chart-container");
+    if (container) {
+      resizeObserver.observe(container);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
   // 构建框架信息到卡片信息
   const construct_framing_info2card_info = async () => {
     try {
@@ -242,6 +269,9 @@ const TargetSmallCard: React.FC<TargetSmallCardProps> = (props) => {
           flag: "",
           tag: "",
           checked: false,
+          angular_size: 0,
+          magnitude: 0,
+          type: "",
         });
         initial_fig_data();
       }
@@ -304,126 +334,132 @@ const TargetSmallCard: React.FC<TargetSmallCardProps> = (props) => {
       transition={{ duration: 0.5 }}
       className="mb-3 hover:shadow-lg transition-all duration-300 dark:bg-gray-800 rounded-lg"
     >
-      <Card className="p-4">
-        <CardContent className="flex flex-col md:flex-row">
-          <div className="relative w-full md:w-32 group">
-            <Image
-              src={target_icon_link}
-              alt={props.target_info.name}
-              width={130}
-              height={130}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded">
-              <div className="absolute bottom-2 left-2 text-white text-sm">
-                <p>视角: {real_target_info.size.toFixed(1)}′</p>
-                <p>类型: {TranslateTargetType(real_target_info.target_type)}</p>
+      <Card className="p-4 landscape:flex landscape:gap-4">
+        <div className="landscape:w-1/3">
+          <CardContent className="flex flex-col md:flex-row">
+            <div className="relative w-full md:w-32 group">
+              <Image
+                src={target_icon_link}
+                alt={props.target_info.name}
+                width={130}
+                height={130}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded"
+                priority
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded">
+                <div className="absolute bottom-2 left-2 text-white text-sm">
+                  <p>视角: {real_target_info.size.toFixed(1)}′</p>
+                  <p>
+                    类型: {TranslateTargetType(real_target_info.target_type)}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="default"
+                size="sm"
+                className="absolute right-0 bottom-1/2 transform translate-y-1/2 rounded-full z-10"
+                onClick={() => set_show_detail(!show_detail)}
+              >
+                {/* 添加图标，例如 <MoreHoriz /> */}
+              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="absolute left-0 bottom-1/2 transform translate-y-1/2 rounded-full z-10"
+                      onClick={on_add_target_to_list_clicked}
+                    >
+                      {added_flag ? <CheckCircle /> : <FilePlus />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {add_tooltip_open && (
+                      <span>
+                        已添加到待拍摄列表，如需要删除目标，请到目标管理界面删除
+                      </span>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              {props.on_card_clicked && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute left-0 top-0 bg-transparent z-10"
+                  onClick={() => {
+                    set_this_checked(!this_checked);
+                    props.on_card_clicked?.(props.card_index, !this_checked);
+                  }}
+                >
+                  {this_checked ? <CheckCircle /> : <XCircle />}
+                </Button>
+              )}
+            </div>
+            <div
+              className="flex-grow pl-0 md:pl-3 cursor-pointer mt-4 md:mt-0"
+              onClick={on_add_target_to_framing_clicked}
+            >
+              <CardTitle className="text-lg font-semibold text-green-600 dark:text-green-400">
+                {real_target_info.name}
+              </CardTitle>
+              <div className="text-sm dark:text-gray-300">
+                Ra: {real_target_info.ra.toFixed(5)} °
+              </div>
+              <div className="text-sm dark:text-gray-300">
+                Dec: {real_target_info.dec.toFixed(5)} °
               </div>
             </div>
-            <Button
-              variant="default"
-              size="sm"
-              className="absolute right-0 bottom-1/2 transform translate-y-1/2 rounded-full z-10"
-              onClick={() => set_show_detail(!show_detail)}
-            >
-              {/* 添加图标，例如 <MoreHoriz /> */}
-            </Button>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="absolute left-0 bottom-1/2 transform translate-y-1/2 rounded-full z-10"
-                    onClick={on_add_target_to_list_clicked}
-                  >
-                    {added_flag ? <CheckCircle /> : <FilePlus />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {add_tooltip_open && (
-                    <span>
-                      已添加到待拍摄列表，如需要删除目标，请到目标管理界面删除
-                    </span>
-                  )}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            {props.on_card_clicked && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute left-0 top-0 bg-transparent z-10"
-                onClick={() => {
-                  set_this_checked(!this_checked);
-                  props.on_card_clicked?.(props.card_index, !this_checked);
-                }}
+          </CardContent>
+        </div>
+        <div id="chart-container" className="landscape:w-2/3">
+          <div className="relative h-32 mt-4">
+            {in_updating ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-700 bg-opacity-50 backdrop-blur-sm rounded">
+                <Spinner className="w-8 h-8" />
+              </div>
+            ) : (
+              <LineChart
+                width={chartDimensions.width}
+                height={chartDimensions.height}
+                data={real_target_info.altitude.map(([time, _, alt]) => ({
+                  time: DateTime.fromFormat(
+                    time,
+                    "yyyy-MM-dd HH:mm:ss"
+                  ).toJSDate(),
+                  altitude: Number(alt.toFixed(2)),
+                }))}
+                margin={{ top: 10, right: 5, left: 10, bottom: 20 }}
+                className="transition-all duration-300 hover:opacity-90"
               >
-                {this_checked ? <CheckCircle /> : <XCircle />}
-              </Button>
+                <XAxis
+                  dataKey="time"
+                  tickFormatter={(time) =>
+                    DateTime.fromJSDate(time).toFormat("HH")
+                  }
+                  stroke="#fff"
+                />
+                <YAxis domain={[0, 90]} stroke="#fff" />
+                <RechartsTooltip />
+                <Line
+                  type="monotone"
+                  dataKey="altitude"
+                  stroke="#8884d8"
+                  dot={false}
+                  strokeWidth={2}
+                />
+                {fig_line_data_template.map((line, index) => (
+                  <ReferenceLine
+                    key={index}
+                    x={line.xAxis.getTime()}
+                    stroke={line.lineStyle.color}
+                    label={line.name}
+                  />
+                ))}
+              </LineChart>
             )}
           </div>
-          <div
-            className="flex-grow pl-0 md:pl-3 cursor-pointer mt-4 md:mt-0"
-            onClick={on_add_target_to_framing_clicked}
-          >
-            <CardTitle className="text-lg font-semibold text-green-600 dark:text-green-400">
-              {real_target_info.name}
-            </CardTitle>
-            <div className="text-sm dark:text-gray-300">
-              Ra: {real_target_info.ra.toFixed(5)} °
-            </div>
-            <div className="text-sm dark:text-gray-300">
-              Dec: {real_target_info.dec.toFixed(5)} °
-            </div>
-          </div>
-        </CardContent>
-        <div className="relative h-32 mt-4">
-          {in_updating ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-700 bg-opacity-50 backdrop-blur-sm rounded">
-              <Spinner className="w-8 h-8" />
-            </div>
-          ) : (
-            <LineChart
-              width={500}
-              height={125}
-              data={real_target_info.altitude.map(([time, _, alt]) => ({
-                time: DateTime.fromFormat(
-                  time,
-                  "yyyy-MM-dd HH:mm:ss"
-                ).toJSDate(),
-                altitude: Number(alt.toFixed(2)),
-              }))}
-              margin={{ top: 10, right: 5, left: 10, bottom: 20 }}
-              className="transition-all duration-300 hover:opacity-90"
-            >
-              <XAxis
-                dataKey="time"
-                tickFormatter={(time) =>
-                  DateTime.fromJSDate(time).toFormat("HH")
-                }
-                stroke="#fff"
-              />
-              <YAxis domain={[0, 90]} stroke="#fff" />
-              <RechartsTooltip />
-              <Line
-                type="monotone"
-                dataKey="altitude"
-                stroke="#8884d8"
-                dot={false}
-                strokeWidth={2}
-              />
-              {fig_line_data_template.map((line, index) => (
-                <ReferenceLine
-                  key={index}
-                  x={line.xAxis.getTime()}
-                  stroke={line.lineStyle.color}
-                  label={line.name}
-                />
-              ))}
-            </LineChart>
-          )}
         </div>
         <TargetDetailCard
           open_dialog={show_detail ? 1 : 0}

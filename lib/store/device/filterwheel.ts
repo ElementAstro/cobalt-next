@@ -7,25 +7,25 @@ interface FilterWheelInfo {
   currentFilter: string;
   filters: string[];
   description: string;
-  position: number; // 新增：滤镜轮位置
-  maxPosition: number; // 新增：最大位置
-  minPosition: number; // 新增：最小位置
-  isMoving: boolean; // 新增：是否正在移动
+  position: number; // 滤镜轮位置
+  maxPosition: number; // 最大位置
+  minPosition: number; // 最小位置
+  isMoving: boolean; // 是否正在移动
 }
 
 interface FilterWheelState {
   filterWheelInfo: FilterWheelInfo;
   selectedFilter: string;
   isConnected: boolean;
-  moveHistory: number[]; // 新增：移动历史记录
+  moveHistory: number[]; // 移动历史记录
   setSelectedFilter: (filter: string) => void;
   changeFilter: (filterIndex: number) => void;
   setConnected: (connected: boolean) => void;
-  addMoveHistory: (position: number) => void; // 新增：添加移动历史记录
-  setPosition: (position: number) => void; // 新增：设置滤镜轮位置
-  setMaxPosition: (position: number) => void; // 新增：设置最大位置
-  setMinPosition: (position: number) => void; // 新增：设置最小位置
-  setIsMoving: (isMoving: boolean) => void; // 新增：设置是否正在移动
+  addMoveHistory: (position: number) => void;
+  setPosition: (position: number) => void;
+  setMaxPosition: (position: number) => void;
+  setMinPosition: (position: number) => void;
+  setIsMoving: (isMoving: boolean) => void;
 }
 
 export const useFilterWheelStore = create<FilterWheelState>((set) => ({
@@ -60,7 +60,7 @@ export const useFilterWheelStore = create<FilterWheelState>((set) => ({
     })),
   setPosition: (position) =>
     set((state) => ({
-      filterWheelInfo: { ...state.filterWheelInfo, position: position },
+      filterWheelInfo: { ...state.filterWheelInfo, position },
     })),
   setMaxPosition: (position) =>
     set((state) => ({
@@ -72,6 +72,6 @@ export const useFilterWheelStore = create<FilterWheelState>((set) => ({
     })),
   setIsMoving: (isMoving) =>
     set((state) => ({
-      filterWheelInfo: { ...state.filterWheelInfo, isMoving: isMoving },
+      filterWheelInfo: { ...state.filterWheelInfo, isMoving },
     })),
 }));

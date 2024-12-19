@@ -15,6 +15,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { CustomColors } from "@/types/guiding/guiding";
+import { Button } from "@/components/ui/button";
 
 interface WaveformDisplayProps {
   data: number[];
@@ -30,6 +31,8 @@ interface WaveformDisplayProps {
   showStats?: boolean;
   showAxisLabels?: boolean;
   enableZoom?: boolean;
+  showExportButton?: boolean;
+  enableDataAnnotation?: boolean;
 }
 
 export function WaveformDisplay({
@@ -46,6 +49,8 @@ export function WaveformDisplay({
   showStats = true,
   showAxisLabels = true,
   enableZoom = true,
+  showExportButton = true,
+  enableDataAnnotation = true,
 }: WaveformDisplayProps) {
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
 
@@ -80,6 +85,18 @@ export function WaveformDisplay({
       getWaveform(Date.now() * 0.001 * animationSpeed, index),
   }));
 
+  const exportData = () => {
+    const csvContent = "data:text/csv;charset=utf-8," + 
+      waveformData.map(point => `${point.x},${point.y}`).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "waveform_data.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -87,6 +104,18 @@ export function WaveformDisplay({
       transition={{ duration: 0.5 }}
       className="w-full relative"
     >
+      <div className="absolute top-2 right-2 z-10 flex gap-2">
+        {showExportButton && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={exportData}
+            className="text-xs"
+          >
+            导出数据
+          </Button>
+        )}
+      </div>
       <ResponsiveContainer width="100%" height={canvasSize.height}>
         <LineChart
           data={waveformData}

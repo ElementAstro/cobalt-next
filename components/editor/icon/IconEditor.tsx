@@ -214,27 +214,27 @@ export default function IconEditor() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
       <Header />
       <div
-        className={`w-full max-w-7xl mx-auto p-4 ${
+        className={`container mx-auto px-4 py-6 ${
           isLandscape
-            ? "flex flex-row space-x-4 h-[calc(100vh-5rem)] overflow-hidden"
-            : "space-y-4"
+            ? "flex flex-row gap-8 h-[calc(100vh-4rem)] overflow-hidden"
+            : "flex flex-col gap-6"
         }`}
       >
-        <AnimatePresence>
-          <motion.div
-            className={`flex justify-center items-center bg-gray-800 rounded-lg overflow-hidden ${
-              isLandscape
-                ? "w-1/2 h-full"
-                : "h-64 lg:h-[calc(100vh-16rem)]"
-            }`}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.5 }}
-          >
+        <motion.div
+          className={`relative flex justify-center items-center bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 overflow-hidden shadow-xl ${
+            isLandscape
+              ? "w-3/5 h-full"
+              : "aspect-square w-full max-w-2xl mx-auto"
+          }`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <AnimatePresence>
             {iconSrc ? (
               isCropping ? (
                 <ReactCrop
@@ -266,8 +266,8 @@ export default function IconEditor() {
                 <span className="sr-only">Upload icon</span>
               </Label>
             )}
-          </motion.div>
-        </AnimatePresence>
+          </AnimatePresence>
+        </motion.div>
         <Input
           id="icon-upload"
           type="file"
@@ -279,8 +279,8 @@ export default function IconEditor() {
         <div
           className={`${
             isLandscape
-              ? "w-1/2 h-full overflow-y-auto"
-              : "w-full"
+              ? "w-2/5 h-full overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent"
+              : "w-full max-w-2xl mx-auto"
           }`}
         >
           <Toolbar

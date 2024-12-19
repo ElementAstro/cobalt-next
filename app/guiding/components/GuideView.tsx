@@ -15,6 +15,9 @@ interface GuideViewProps {
   pulseEffect?: boolean;
   size?: number;
   thickness?: number;
+  showCrosshair?: boolean; // 新增
+  showGrid?: boolean; // 新增
+  enableZoom?: boolean; // 新增
 }
 
 export function GuideView({
@@ -28,10 +31,64 @@ export function GuideView({
   pulseEffect = true,
   size = 20,
   thickness = 2,
+  showCrosshair = false,
+  showGrid = false,
+  enableZoom = true,
 }: GuideViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [scale, setScale] = useState(1);
+
+  // 绘制中心十字准线
+  const drawCrosshair = useCallback(
+    (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+      const centerX = width / 2;
+      const centerY = height / 2;
+
+      ctx.strokeStyle = `${colors.accent}80`; // 半透明
+      ctx.lineWidth = 1;
+
+      // 绘制水平线
+      ctx.beginPath();
+      ctx.moveTo(0, centerY);
+      ctx.lineTo(width, centerY);
+      ctx.stroke();
+
+      // 绘制垂直线
+      ctx.beginPath();
+      ctx.moveTo(centerX, 0);
+      ctx.lineTo(centerX, height);
+      ctx.stroke();
+    },
+    [colors.accent]
+  );
+
+  // 绘制网格
+  const drawGrid = useCallback(
+    (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+      const gridSize = 50; // 网格大小
+
+      ctx.strokeStyle = `${colors.accent}20`; // 更透明
+      ctx.lineWidth = 0.5;
+
+      // 绘制垂直线
+      for (let x = 0; x <= width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+
+      // 绘制水平线
+      for (let y = 0; y <= height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+    },
+    [colors.accent]
+  );
 
   const drawReticle = useCallback(
     (
@@ -87,6 +144,16 @@ export function GuideView({
       // Clear canvas
       ctx.fillStyle = colors.background;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 绘制网格
+      if (showGrid) {
+        drawGrid(ctx, canvas.width, canvas.height);
+      }
+
+      // 绘制中心十字准线
+      if (showCrosshair) {
+        drawCrosshair(ctx, canvas.width, canvas.height);
+      }
 
       // 绘制辅助线
       if (showGuidelines) {
@@ -147,9 +214,15 @@ export function GuideView({
     pulseEffect,
     size,
     drawReticle,
+    showCrosshair,
+    showGrid,
+    drawCrosshair,
+    drawGrid,
   ]);
 
   const handleWheel = (e: React.WheelEvent) => {
+    if (!enableZoom) return;
+
     e.preventDefault();
     setScale((prev) => Math.max(0.5, Math.min(2, prev + e.deltaY * -0.001)));
   };

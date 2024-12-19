@@ -181,10 +181,10 @@ export function ProfileTab({ toast }: ProfileTabProps) {
       animate="animate"
       exit="exit"
       variants={fadeInUp}
-      className="mx-auto space-y-4"
+      className="container max-w-4xl mx-auto px-4 py-6"
     >
-      <Card className="dark:bg-gray-800">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <Card className="dark:bg-gray-800/90 backdrop-blur border-0 shadow-lg">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0 pb-6">
           <div className="space-y-1">
             <CardTitle>配置管理</CardTitle>
             <CardDescription>管理你的连接配置</CardDescription>
@@ -249,23 +249,25 @@ export function ProfileTab({ toast }: ProfileTabProps) {
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 pt-2">
           <AnimatePresence mode="wait">
-            <motion.div {...fadeInUp} className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="name">配置名称</Label>
+            <motion.div {...fadeInUp} className="grid gap-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-3">
+                  <Label htmlFor="name" className="text-sm font-medium">
+                    配置名称
+                  </Label>
                   <Input
                     id="name"
                     value={activeProfile.name}
                     onChange={(e) => handleChange("name", e.target.value)}
-                    className="dark:bg-gray-700"
+                    className="dark:bg-gray-700/50 border-0"
                   />
                   {errors.name && (
                     <span className="text-sm text-red-500">{errors.name}</span>
                   )}
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3 h-[40px] mt-8">
                   <Switch
                     id="autoConnect"
                     checked={activeProfile.autoConnect}
@@ -277,7 +279,7 @@ export function ProfileTab({ toast }: ProfileTabProps) {
                 </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>连接模式</Label>
                   <RadioGroup
@@ -314,7 +316,7 @@ export function ProfileTab({ toast }: ProfileTabProps) {
               </div>
 
               {activeProfile.mode === "remote" && (
-                <motion.div {...fadeInUp} className="grid gap-4 md:grid-cols-2">
+                <motion.div {...fadeInUp} className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="host">主机地址</Label>
                     <Input
@@ -346,7 +348,7 @@ export function ProfileTab({ toast }: ProfileTabProps) {
                 </motion.div>
               )}
 
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
                 <Checkbox
                   id="indiWebManager"
                   checked={activeProfile.indiWebManager}

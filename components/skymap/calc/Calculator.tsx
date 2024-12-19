@@ -20,6 +20,10 @@ export function Calculator() {
   const [history, setHistory] = useState<
     Array<{ type: string; result: string }>
   >([]);
+  const [dawesLimit, setDawesLimit] = useState("");
+  const [airy, setAiry] = useState("");
+  const [resolution, setResolution] = useState("");
+  const [exitPupil, setExitPupil] = useState("");
 
   // 现有的计算函数保持不变
   // ...
@@ -63,7 +67,7 @@ export function Calculator() {
       setFocalLength(fl);
       addToHistory("focal length", `${fl}mm`);
     }
-  }  
+  }
 
   // 新增实时计算功能
   useEffect(() => {
@@ -78,8 +82,39 @@ export function Calculator() {
   const springConfig = {
     type: "spring",
     stiffness: 300,
-    damping: 30
+    damping: 30,
   };
+
+  // 新增计算函数
+  const calculateDawes = () => {
+    const a = parseFloat(aperture);
+    if (!isNaN(a)) {
+      setDawesLimit((115.8 / a).toFixed(2));
+    }
+  };
+
+  const calculateAiry = () => {
+    const a = parseFloat(aperture);
+    if (!isNaN(a)) {
+      setAiry((138.4 / a).toFixed(2));
+    }
+  };
+
+  const calculateExitPupil = () => {
+    const a = parseFloat(aperture);
+    const mag = parseFloat(magnification);
+    if (!isNaN(a) && !isNaN(mag)) {
+      setExitPupil((a / mag).toFixed(2));
+    }
+  };
+
+  useEffect(() => {
+    if (aperture) {
+      calculateDawes();
+      calculateAiry();
+      calculateExitPupil();
+    }
+  }, [aperture, magnification]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-100 p-4 md:p-8">
@@ -102,7 +137,7 @@ export function Calculator() {
             }
           }}
         >
-          <TabsList className="grid w-full grid-cols-3 bg-gray-800">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 bg-gray-800">
             <TabsTrigger
               value="focal"
               className="data-[state=active]:bg-gray-700"
@@ -123,6 +158,12 @@ export function Calculator() {
             >
               <History className="mr-2 h-4 w-4" />
               History
+            </TabsTrigger>
+            <TabsTrigger
+              value="advanced"
+              className="data-[state=active]:bg-gray-700"
+            >
+              Advanced
             </TabsTrigger>
           </TabsList>
 
@@ -226,10 +267,54 @@ export function Calculator() {
                 </Card>
               </motion.div>
             </TabsContent>
+
+            <TabsContent value="advanced">
+              <motion.div
+                variants={containerVariants}
+                className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+              >
+                <Card className="bg-gray-800 border-gray-700">
+                  <CardHeader>
+                    <CardTitle>分辨率指标</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>道威极限</Label>
+                        <Input
+                          value={dawesLimit}
+                          readOnly
+                          className="bg-gray-700"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>艾里斑</Label>
+                        <Input value={airy} readOnly className="bg-gray-700" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gray-800 border-gray-700">
+                  <CardHeader>
+                    <CardTitle>出射光瞳</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <Label>Exit Pupil</Label>
+                      <Input
+                        value={exitPupil}
+                        readOnly
+                        className="bg-gray-700"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </TabsContent>
           </AnimatePresence>
         </Tabs>
       </motion.div>
     </div>
   );
 }
-

@@ -2,26 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { ArrowUp } from "lucide-react";
-import styled from "styled-components";
-
-const ScrollButton = styled.button`
-  position: fixed;
-  bottom: 16px;
-  right: 16px;
-  background-color: #2563eb;
-  color: white;
-  padding: 8px;
-  border-radius: 9999px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.3s, opacity 0.3s;
-  z-index: 50;
-
-  &:hover {
-    background-color: #1d4ed8;
-  }
-
-  animation: fadeIn 0.5s ease-in;
-`;
+import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function ScrollToTop() {
   const [isVisible, setIsVisible] = useState(false);
@@ -48,12 +30,25 @@ export default function ScrollToTop() {
   };
 
   return (
-    <>
+    <AnimatePresence>
       {isVisible && (
-        <ScrollButton onClick={scrollToTop} aria-label="Scroll to top">
-          <ArrowUp size={24} />
-        </ScrollButton>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          className="fixed bottom-4 right-4 z-50 md:bottom-8 md:right-8"
+        >
+          <Button
+            variant="secondary"
+            size="icon"
+            onClick={scrollToTop}
+            aria-label="Scroll to top"
+            className="h-10 w-10 rounded-full bg-primary hover:bg-primary/90 shadow-lg transition-all duration-300 hover:shadow-xl dark:bg-primary/20 dark:hover:bg-primary/30"
+          >
+            <ArrowUp className="h-5 w-5" />
+          </Button>
+        </motion.div>
       )}
-    </>
+    </AnimatePresence>
   );
 }

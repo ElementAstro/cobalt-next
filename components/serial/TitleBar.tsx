@@ -32,8 +32,15 @@ const TitleBar: FC<TitleBarProps> = ({
     <motion.div
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className={`flex items-center justify-between bg-gray-900 p-3 rounded-t-lg shadow-lg
-        md:px-4 backdrop-blur-sm border-b border-gray-700`}
+      className={`
+        flex items-center justify-between
+        bg-gradient-to-r from-gray-900 to-gray-800
+        backdrop-blur-md backdrop-saturate-150
+        border-b border-gray-700/50
+        p-3 md:px-6 
+        rounded-t-lg shadow-lg
+        sticky top-0 z-50
+      `}
     >
       <motion.div
         className="flex items-center gap-2"

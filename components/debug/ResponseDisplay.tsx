@@ -88,13 +88,20 @@ export default function ResponseDisplay({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="w-full max-w-lg"
+      className="w-full max-w-4xl mx-auto mt-6"
     >
-      <Card>
-        <CardHeader>
-          <CardTitle>Response</CardTitle>
+      <Card className="backdrop-blur-md bg-white/90 dark:bg-gray-800/90 shadow-xl overflow-hidden">
+        <CardHeader className="border-b border-gray-200 dark:border-gray-700">
+          <CardTitle className="text-xl font-semibold flex items-center">
+            <div className="flex-1">响应结果</div>
+            {response?.timing && (
+              <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                响应时间: {(response.timing.end - response.timing.start).toFixed(2)}ms
+              </span>
+            )}
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <motion.div
             initial="hidden"
             animate="visible"
@@ -105,15 +112,6 @@ export default function ResponseDisplay({
             transition={{ duration: 0.5, staggerChildren: 0.2 }}
             className="space-y-6"
           >
-            {response?.timing && (
-              <motion.div>
-                <h3 className="font-semibold text-lg">响应时间:</h3>
-                <p className="text-gray-300">
-                  {(response.timing.end - response.timing.start).toFixed(2)}ms
-                </p>
-              </motion.div>
-            )}
-
             <Input
               placeholder="搜索响应内容..."
               value={searchTerm}
@@ -162,18 +160,25 @@ export default function ResponseDisplay({
               </div>
               <AnimatePresence>
                 {showHeaders && (
-                  <motion.pre
-                    className="language-json bg-gray-800 p-4 rounded mt-2 overflow-auto"
-                    dangerouslySetInnerHTML={{
-                      __html: highlightCode(
-                        JSON.stringify(response.headers, null, 2)
-                      ),
-                    }}
+                  <motion.div
+                    className="p-4 bg-gray-50 dark:bg-gray-900/50"
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                  />
+                  >
+                    <motion.pre
+                      className="language-json bg-gray-800 p-4 rounded mt-2 overflow-auto"
+                      dangerouslySetInnerHTML={{
+                        __html: highlightCode(
+                          JSON.stringify(response.headers, null, 2)
+                        ),
+                      }}
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </motion.div>
                 )}
               </AnimatePresence>
             </motion.div>

@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import * as AXIOSOF from "@/services/skymap/find-object";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, Info } from "lucide-react";
+import { Star, Info, Check } from "lucide-react";
 
 interface TargetSuperSimpleCardProps {
   target_name: string;
@@ -26,6 +26,8 @@ interface TargetSuperSimpleCardProps {
   onFavorite?: (index: number) => void;
   isFavorite?: boolean;
   availabilityScore?: number;
+  enableDrag?: boolean;
+  enableBatchOperation?: boolean;
 }
 
 export const TranslateTargetType = (target_type: string): string => {
@@ -72,6 +74,8 @@ const TargetSuperSimpleCard: React.FC<TargetSuperSimpleCardProps> = (props) => {
   const [editedName, setEditedName] = React.useState<string>(props.target_name);
   const [showDetails, setShowDetails] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
+  const [isSelected, setIsSelected] = React.useState(false);
+  const [isDragging, setIsDragging] = React.useState(false);
 
   const updateSimpleData = async () => {
     try {
@@ -116,6 +120,9 @@ const TargetSuperSimpleCard: React.FC<TargetSuperSimpleCardProps> = (props) => {
     setIsEditing(false);
   };
 
+  const handleDragStart = () => setIsDragging(true);
+  const handleDragEnd = () => setIsDragging(false);
+
   // 添加新的动画变体
   const cardVariants = {
     hover: { scale: 1.02, boxShadow: "0px 5px 15px rgba(0,0,0,0.2)" },
@@ -124,14 +131,20 @@ const TargetSuperSimpleCard: React.FC<TargetSuperSimpleCardProps> = (props) => {
 
   return (
     <motion.div
+      drag={props.enableDrag}
+      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       variants={cardVariants}
       whileHover="hover"
       whileTap="tap"
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      className="relative"
+      className={`relative ${isDragging ? "z-50" : "z-0"} ${
+        isSelected ? "ring-2 ring-primary" : ""
+      }`}
     >
-      <Card className="flex flex-col h-full border-none bg-transparent landscape:flex-row landscape:h-24">
+      <Card className="flex flex-col h-full border-none bg-transparent landscape:flex-row landscape:h-24 landscape:gap-2">
         <CardHeader className="flex flex-row items-center space-y-0 gap-4 p-4 landscape:w-1/3">
           <motion.div
             className="relative overflow-hidden rounded-md"
@@ -262,6 +275,25 @@ const TargetSuperSimpleCard: React.FC<TargetSuperSimpleCardProps> = (props) => {
             {updated ? "✓ 已更新" : "更新中..."}
           </motion.div>
         </CardFooter>
+        <AnimatePresence>
+          {props.enableBatchOperation && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="absolute -right-2 top-1/2 transform -translate-y-1/2"
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsSelected(!isSelected)}
+                className="rounded-full bg-white/10 backdrop-blur-sm"
+              >
+                <Check className={isSelected ? "text-primary" : ""} />
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <AnimatePresence>
           {isHovered && (
             <motion.div

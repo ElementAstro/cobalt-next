@@ -166,6 +166,30 @@ export function GuideImage({
     setIsDragging(false);
   };
 
+  // 添加触摸支持
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.touches[0].clientX - offset.x,
+        y: e.touches[0].clientY - offset.y
+      });
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (isDragging && e.touches.length === 1) {
+      setOffset({
+        x: e.touches[0].clientX - dragStart.x,
+        y: e.touches[0].clientY - dragStart.y
+      });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
   const resetView = () => {
     setScale(1);
     setOffset({ x: 0, y: 0 });
@@ -202,6 +226,9 @@ export function GuideImage({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       />
       <div className="absolute bottom-4 right-4 space-x-2">
         <Button
@@ -259,6 +286,15 @@ export function GuideImage({
             <SelectItem value="invert(100%)">Invert</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+      {/* 添加移动端友好的控制栏 */}
+      <div className="fixed bottom-0 left-0 right-0 bg-black bg-opacity-50 p-2 md:hidden">
+        <div className="flex justify-around">
+          <Button size="sm" onClick={() => setScale(s => s + 0.1)}>放大</Button>
+          <Button size="sm" onClick={() => setScale(s => s - 0.1)}>缩小</Button>
+          <Button size="sm" onClick={() => setRotation(r => r + 90)}>旋转</Button>
+          <Button size="sm" onClick={resetView}>重置</Button>
+        </div>
       </div>
     </motion.div>
   );

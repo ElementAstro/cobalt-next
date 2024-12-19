@@ -2,65 +2,62 @@
 
 import { Github, Star, Twitter, Linkedin } from "lucide-react";
 import { useLanguage } from "../../contexts/LanguageContext";
-import styled from "styled-components";
-
-const FooterWrapper = styled.footer`
-  background-color: ${({ theme }) => theme.footerBackground};
-  padding: 2rem 0;
-  text-align: center;
-  transition: background-color 0.3s;
-`;
-
-const IconLinks = styled.div`
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-
-  a {
-    color: ${({ theme }) => theme.iconColor};
-    transition: color 0.3s;
-
-    &:hover {
-      color: ${({ theme }) => theme.iconHoverColor};
-    }
-  }
-`;
+import { Button } from "@/components/ui/button";
 
 export default function Footer() {
   const { t } = useLanguage();
-
+  
   return (
-    <FooterWrapper>
-      <div className="container mx-auto px-4">
-        <p className="mb-4 text-gray-600 dark:text-gray-300 animate-fade-in">
-          {t("footer")}
-        </p>
-        <IconLinks>
-          {[
-            { icon: Github, href: "#", label: "GitHub" },
-            { icon: Star, href: "#", label: "Star" },
-            { icon: Twitter, href: "#", label: "Twitter" },
-            { icon: Linkedin, href: "#", label: "LinkedIn" },
-          ].map((item, index) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors hover-effect animate-scale"
-              style={{ animationDelay: `${index * 100}ms` }}
-              aria-label={item.label}
-            >
-              <item.icon className="w-6 h-6" />
-            </a>
-          ))}
-        </IconLinks>
-        <p
-          className="text-sm text-gray-500 dark:text-gray-400 animate-fade-in"
-          style={{ animationDelay: "400ms" }}
-        >
+    <footer className="border-t bg-background/80 backdrop-blur-lg">
+      <div className="container mx-auto px-4 py-12">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">{t("about")}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {t("footer")}
+            </p>
+          </div>
+          
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">{t("links")}</h3>
+            <div className="flex gap-2">
+              {[
+                { icon: Github, href: "#", label: "GitHub" },
+                { icon: Star, href: "#", label: "Star" },
+                { icon: Twitter, href: "#", label: "Twitter" },
+                { icon: Linkedin, href: "#", label: "LinkedIn" },
+              ].map((item) => (
+                <Button
+                  key={item.label}
+                  variant="ghost"
+                  size="icon"
+                  asChild
+                >
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={item.label}
+                  >
+                    <item.icon className="h-5 w-5" />
+                  </a>
+                </Button>
+              ))}
+            </div>
+          </div>
+          
+          <div className="space-y-4 md:col-span-2 lg:col-span-1">
+            <h3 className="text-lg font-semibold">{t("contact")}</h3>
+            <p className="text-sm text-muted-foreground">
+              support@example.com
+            </p>
+          </div>
+        </div>
+        
+        <div className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
           © {new Date().getFullYear()} Lithium Project. {t("allRightsReserved")}
-        </p>
+        </div>
       </div>
-    </FooterWrapper>
+    </footer>
   );
 }

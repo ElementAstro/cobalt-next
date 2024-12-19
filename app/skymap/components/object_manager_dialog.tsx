@@ -8,7 +8,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Printer } from "lucide-react";
 import ObjectManagement from "./object_manager";
 import { useGlobalStore } from "@/lib/store/skymap/target";
 import { motion } from "framer-motion";
@@ -43,19 +43,29 @@ const ObjectManagementDialog: React.FC<ObjectManagementDialogProps> = (
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.2 }}
       >
-        <DialogContent className="fixed top-[2.5vh] left-[2.5vw] w-[95vw] h-[95vh] max-w-7xl -translate-x-0 -translate-y-0 bg-gray-800/95 dark:bg-gray-900/95 backdrop-blur-md text-gray-200 rounded-lg shadow-lg p-2 overflow-hidden">
+        <DialogContent className="fixed top-[2.5vh] left-[2.5vw] w-[95vw] h-[95vh] max-w-[1920px] -translate-x-0 -translate-y-0 bg-gray-800/95 dark:bg-gray-900/95 backdrop-blur-md text-gray-200 rounded-lg shadow-lg p-2 overflow-hidden">
           <div className="flex flex-col h-full">
-            <DialogHeader className="flex-shrink-0">
+            <DialogHeader className="flex-shrink-0 sticky top-0 z-10 bg-gray-800/95 dark:bg-gray-900/95 backdrop-blur-md px-4 py-2">
               <div className="flex justify-between items-center">
                 <DialogTitle>目标管理</DialogTitle>
-                <DialogClose asChild>
-                  <Button variant="ghost" size="sm">
-                    <X className="h-4 w-4" />
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.print()}
+                  >
+                    <Printer className="h-4 w-4 mr-2" />
+                    打印
                   </Button>
-                </DialogClose>
+                  <DialogClose asChild>
+                    <Button variant="ghost" size="sm">
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </DialogClose>
+                </div>
               </div>
             </DialogHeader>
-            <div className="flex-grow overflow-y-auto">
+            <div className="flex-grow overflow-y-auto px-4">
               <ObjectManagement on_choice_maken={handleClose} />
             </div>
           </div>

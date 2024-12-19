@@ -29,10 +29,17 @@ const Container = styled(motion.div)`
 `;
 
 const StyledCard = styled(Card)`
-  background-color: #374151;
+  background: linear-gradient(to bottom right, #374151, #1f2937);
   border-color: #4b5563;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  backdrop-filter: blur(8px);
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  }
 `;
 
 const containerVariants = {
@@ -124,7 +131,7 @@ export function TelescopePage() {
           console.log(`Selected telescope: ${device}`)
         }
       />
-      <motion.div variants={itemVariants} className="flex flex-col gap-4">
+      <motion.div variants={itemVariants} className="grid gap-6 lg:grid-cols-2">
         <StyledCard>
           <CardHeader>
             <CardTitle>Telescope Information</CardTitle>
@@ -187,176 +194,243 @@ export function TelescopePage() {
             </motion.div>
           </CardContent>
         </StyledCard>
-
-        <StyledCard>
-          <CardHeader>
-            <CardTitle>Manual Control</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="flex flex-col items-center"
-            >
+        
+        <motion.div className="grid gap-6">
+          <StyledCard>
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+                状态监控
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
               <motion.div
-                variants={itemVariants}
-                className="grid grid-cols-3 gap-2 max-w-[240px] w-full"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
               >
-                <div />
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="aspect-square text-white"
-                  onClick={() => handleManualMove("up")}
-                >
-                  <ChevronUp className="h-4 w-4" />
-                </Button>
-                <div />
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="aspect-square text-white"
-                  onClick={() => handleManualMove("left")}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="aspect-square text-white"
-                  onClick={() => handleManualMove("stop")}
-                >
-                  Stop
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="aspect-square text-white"
-                  onClick={() => handleManualMove("right")}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <div />
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="aspect-square text-white"
-                  onClick={() => handleManualMove("down")}
-                >
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-                <div />
-              </motion.div>
-
-              <motion.div
-                variants={itemVariants}
-                className="flex flex-col sm:flex-row justify-center gap-2 mt-4 w-full"
-              >
-                <Button
-                  variant="secondary"
-                  className="w-full sm:w-24 text-white"
-                  onClick={handlePark}
-                >
-                  <ParkingSquare className="mr-2 h-4 w-4" />
-                  Park
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="w-full sm:w-24 text-white"
-                  onClick={handleHome}
-                >
-                  <Home className="mr-2 h-4 w-4" />
-                  Home
-                </Button>
-              </motion.div>
-            </motion.div>
-          </CardContent>
-        </StyledCard>
-
-        <StyledCard>
-          <CardHeader>
-            <CardTitle>Slew to Coordinates</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-            >
-              <motion.div variants={itemVariants} className="space-y-2">
-                <Label htmlFor="target-ra">Target RA</Label>
-                <Input
-                  id="target-ra"
-                  value={targetRA}
-                  onChange={(e) => setTargetRA(e.target.value)}
-                  placeholder="HH:MM:SS"
-                  className="text-white bg-gray-700"
-                />
-              </motion.div>
-              <motion.div variants={itemVariants} className="space-y-2">
-                <Label htmlFor="target-dec">Target Dec</Label>
-                <Input
-                  id="target-dec"
-                  value={targetDec}
-                  onChange={(e) => setTargetDec(e.target.value)}
-                  placeholder="DD:MM:SS"
-                  className="text-white bg-gray-700"
-                />
-              </motion.div>
-              <motion.div variants={itemVariants} className="flex items-end">
-                <Button
-                  onClick={handleSlew}
-                  className="w-full sm:w-auto text-white"
-                >
-                  Slew
-                </Button>
-              </motion.div>
-            </motion.div>
-          </CardContent>
-        </StyledCard>
-
-        <StyledCard>
-          <CardHeader>
-            <CardTitle>高级控制</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>追踪速率</Label>
-                <div className="flex gap-2">
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label>Site Latitude</Label>
                   <Input
-                    value={trackingRate}
-                    onChange={(e) => setTrackingRate(e.target.value)}
-                    className="w-24"
+                    value={telescopeInfo.siteLatitude}
+                    readOnly
+                    className="text-white bg-gray-700"
                   />
-                  <Button onClick={handleSetTrackingRate}>设置</Button>
+                </motion.div>
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label>Site Longitude</Label>
+                  <Input
+                    value={telescopeInfo.siteLongitude}
+                    readOnly
+                    className="text-white bg-gray-700"
+                  />
+                </motion.div>
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label>Right Ascension</Label>
+                  <Input
+                    value={telescopeInfo.rightAscension}
+                    readOnly
+                    className="text-white bg-gray-700"
+                  />
+                </motion.div>
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label>Declination</Label>
+                  <Input
+                    value={telescopeInfo.declination}
+                    readOnly
+                    className="text-white bg-gray-700"
+                  />
+                </motion.div>
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label>Altitude</Label>
+                  <Input
+                    value={telescopeInfo.altitude}
+                    readOnly
+                    className="text-white bg-gray-700"
+                  />
+                </motion.div>
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label>Azimuth</Label>
+                  <Input
+                    value={telescopeInfo.azimuth}
+                    readOnly
+                    className="text-white bg-gray-700"
+                  />
+                </motion.div>
+              </motion.div>
+            </CardContent>
+          </StyledCard>
+          
+          <StyledCard>
+            <CardHeader>
+              <CardTitle>Manual Control</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="flex flex-col items-center"
+              >
+                <motion.div
+                  variants={itemVariants}
+                  className="grid grid-cols-3 gap-2 max-w-[240px] w-full"
+                >
+                  <div />
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="aspect-square text-white"
+                    onClick={() => handleManualMove("up")}
+                  >
+                    <ChevronUp className="h-4 w-4" />
+                  </Button>
+                  <div />
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="aspect-square text-white"
+                    onClick={() => handleManualMove("left")}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="aspect-square text-white"
+                    onClick={() => handleManualMove("stop")}
+                  >
+                    Stop
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="aspect-square text-white"
+                    onClick={() => handleManualMove("right")}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <div />
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="aspect-square text-white"
+                    onClick={() => handleManualMove("down")}
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                  <div />
+                </motion.div>
+
+                <motion.div
+                  variants={itemVariants}
+                  className="flex flex-col sm:flex-row justify-center gap-2 mt-4 w-full"
+                >
+                  <Button
+                    variant="secondary"
+                    className="w-full sm:w-24 text-white"
+                    onClick={handlePark}
+                  >
+                    <ParkingSquare className="mr-2 h-4 w-4" />
+                    Park
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="w-full sm:w-24 text-white"
+                    onClick={handleHome}
+                  >
+                    <Home className="mr-2 h-4 w-4" />
+                    Home
+                  </Button>
+                </motion.div>
+              </motion.div>
+            </CardContent>
+          </StyledCard>
+
+          <StyledCard>
+            <CardHeader>
+              <CardTitle>Slew to Coordinates</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+              >
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label htmlFor="target-ra">Target RA</Label>
+                  <Input
+                    id="target-ra"
+                    value={targetRA}
+                    onChange={(e) => setTargetRA(e.target.value)}
+                    placeholder="HH:MM:SS"
+                    className="text-white bg-gray-700"
+                  />
+                </motion.div>
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label htmlFor="target-dec">Target Dec</Label>
+                  <Input
+                    id="target-dec"
+                    value={targetDec}
+                    onChange={(e) => setTargetDec(e.target.value)}
+                    placeholder="DD:MM:SS"
+                    className="text-white bg-gray-700"
+                  />
+                </motion.div>
+                <motion.div variants={itemVariants} className="flex items-end">
+                  <Button
+                    onClick={handleSlew}
+                    className="w-full sm:w-auto text-white"
+                  >
+                    Slew
+                  </Button>
+                </motion.div>
+              </motion.div>
+            </CardContent>
+          </StyledCard>
+
+          <StyledCard>
+            <CardHeader>
+              <CardTitle>高级控制</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>追踪速率</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={trackingRate}
+                      onChange={(e) => setTrackingRate(e.target.value)}
+                      className="w-24"
+                    />
+                    <Button onClick={handleSetTrackingRate}>设置</Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>导星速率</Label>
+                  <Select value={guideRate} onValueChange={setGuideRate}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0.25">0.25x</SelectItem>
+                      <SelectItem value="0.5">0.5x</SelectItem>
+                      <SelectItem value="1.0">1.0x</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>子午线侧</Label>
+                  <div className="flex gap-2">
+                    <div>{pierSide}</div>
+                    <Button onClick={handleFlipMeridian}>翻转</Button>
+                  </div>
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>导星速率</Label>
-                <Select value={guideRate} onValueChange={setGuideRate}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0.25">0.25x</SelectItem>
-                    <SelectItem value="0.5">0.5x</SelectItem>
-                    <SelectItem value="1.0">1.0x</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>子午线侧</Label>
-                <div className="flex gap-2">
-                  <div>{pierSide}</div>
-                  <Button onClick={handleFlipMeridian}>翻转</Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </StyledCard>
+            </CardContent>
+          </StyledCard>
+        </motion.div>
       </motion.div>
     </Container>
   );

@@ -4,14 +4,11 @@ import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { Highlight, themes } from "prism-react-renderer";
 import { useLanguage } from "../../contexts/LanguageContext";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AnimatePresence, motion } from "framer-motion";
 import styled from "styled-components";
-import { motion, AnimatePresence } from "framer-motion";
-
-const Section = styled.section`
-  padding: 4rem 0;
-  background-color: ${({ theme }) => theme.buildBackground};
-  transition: background-color 0.3s;
-`;
 
 const CodeButton = styled.button`
   position: absolute;
@@ -60,7 +57,13 @@ const CopyNotification = styled(motion.div)`
   z-index: 100;
 `;
 
-const CodeBlockComponent = ({ code, language }: { code: string; language: string }) => {
+const CodeBlockComponent = ({
+  code,
+  language,
+}: {
+  code: string;
+  language: string;
+}) => {
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = () => {
@@ -123,71 +126,106 @@ const CodeBlockComponent = ({ code, language }: { code: string; language: string
 
 export default function BuildInstructions() {
   const { t } = useLanguage();
+  const [activeTab, setActiveTab] = useState("windows");
 
   return (
-    <Section id="build">
-      <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-bold mb-8 text-center text-gray-900 dark:text-white animate-fade-in">
-          {t("buildInstructions")}
-        </h2>
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="animate-slide-in" style={{ animationDelay: "200ms" }}>
-            <h3 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">
-              {t("windowsMSYS2")}
-            </h3>
-            <CodeBlockComponent
-              language="bash"
-              code={`
+    <section id="build" className="py-16 md:py-24 px-4">
+      <div className="container mx-auto max-w-6xl">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+          className="space-y-12"
+        >
+          <div className="text-center space-y-4">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+              {t("buildInstructions")}
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              {t("buildInstructionsSubtitle")}
+            </p>
+          </div>
+
+          <Tabs defaultValue="windows" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="windows">Windows (MSYS2)</TabsTrigger>
+              <TabsTrigger value="ubuntu">Ubuntu/Debian</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="windows" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("windowsMSYS2")}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <CodeBlockComponent
+                    language="bash"
+                    code={`
 # Add Tsinghua University mirror source
 sed -i 's|https://mirror.msys2.org/|https://mirrors.tuna.tsinghua.edu.cn/msys2/|g' /etc/pacman.d/mirrorlist.mingw64
 
 # Update system packages and install dependencies
 pacman -Syu
 pacman -S mingw-w64-x86_64-toolchain mingw-w64-x86_64-dlfcn mingw-w64-x86_64-cfitsio mingw-w64-x86_64-cmake mingw-w64-x86_64-libzip mingw-w64-x86_64-zlib mingw-w64-x86_64-fmt mingw-w64-x86_64-libnova make mingw-w64-x86_64-gtest
-              `}
-            />
-          </div>
-          <div className="animate-slide-in" style={{ animationDelay: "400ms" }}>
-            <h3 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">
-              {t("ubuntuDebian")}
-            </h3>
-            <CodeBlockComponent
-              language="bash"
-              code={`
+                    `}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="ubuntu" className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("ubuntuDebian")}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <CodeBlockComponent
+                    language="bash"
+                    code={`
 sudo apt-get update && sudo apt-get upgrade
 sudo apt-get install build-essential cmake libcfitsio-dev zlib1g-dev libssl-dev libzip-dev libfmt-dev
-              `}
-            />
-          </div>
-        </div>
-        <div
-          className="mt-8 animate-slide-in"
-          style={{ animationDelay: "600ms" }}
-        >
-          <h3 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">
-            {t("buildingSteps")}
-          </h3>
-          <ol className="list-decimal list-inside space-y-2 text-gray-800 dark:text-gray-200">
-            <li>
-              {t("createBuildDirectory")}:{" "}
-              <CodeBlockComponent language="bash" code="mkdir build && cd build" />
-            </li>
-            <li>
-              {t("configureProject")}:{" "}
-              <CodeBlockComponent language="bash" code="cmake .." />
-            </li>
-            <li>
-              {t("compileAndExecute")}:{" "}
-              <CodeBlockComponent language="bash" code="make -jN" /> or{" "}
-              <CodeBlockComponent language="bash" code="cmake --build . --parallel N" />
-            </li>
-            <li>
-              {t("launchProgram")}:{" "}
-              <CodeBlockComponent language="bash" code="./lithium_server" />
-            </li>
-          </ol>
-        </div>
+                    `}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle>{t("buildingSteps")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ol className="space-y-6 list-decimal list-inside">
+                <li>
+                  {t("createBuildDirectory")}:{" "}
+                  <CodeBlockComponent
+                    language="bash"
+                    code="mkdir build && cd build"
+                  />
+                </li>
+                <li>
+                  {t("configureProject")}:{" "}
+                  <CodeBlockComponent language="bash" code="cmake .." />
+                </li>
+                <li>
+                  {t("compileAndExecute")}:{" "}
+                  <CodeBlockComponent language="bash" code="make -jN" /> or{" "}
+                  <CodeBlockComponent
+                    language="bash"
+                    code="cmake --build . --parallel N"
+                  />
+                </li>
+                <li>
+                  {t("launchProgram")}:{" "}
+                  <CodeBlockComponent language="bash" code="./lithium_server" />
+                </li>
+              </ol>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
-    </Section>
+    </section>
   );
 }
