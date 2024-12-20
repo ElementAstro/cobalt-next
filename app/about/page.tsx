@@ -1,9 +1,9 @@
-import Header from '@/components/about/Header'
-import Hero from '@/components/about/Hero'
-import Features from '@/components/about/Features'
-import BuildInstructions from '@/components/about/BuildInstructions'
-import Footer from '@/components/about/Footer'
-import ScrollToTop from '@/components/about/ScrollToTop'
+import Header from '@/app/about/components/Header'
+import Hero from '@/app/about/components/Hero'
+import Features from '@/app/about/components/Features'
+import BuildInstructions from '@/app/about/components/BuildInstructions'
+import Footer from '@/app/about/components/Footer'
+import ScrollToTop from '@/app/about/components/ScrollToTop'
 
 export default function Home() {
   return (

@@ -3,126 +3,40 @@
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { Highlight, themes } from "prism-react-renderer";
-import { useLanguage } from "../../contexts/LanguageContext";
+import { useLanguage } from "../../../contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnimatePresence, motion } from "framer-motion";
 import styled from "styled-components";
 
-const CodeButton = styled.button`
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background-color: #374151;
-  color: #ffffff;
-  padding: 0.5rem;
-  border-radius: 0.375rem;
-  transition: background-color 0.3s;
-
-  &:hover {
-    background-color: #4b5563;
-  }
-`;
-
-const StyledPre = styled.pre`
-  position: relative;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  overflow-x: auto;
-  background-color: #1e293b;
-  color: #cbd5e1;
-`;
-
-const CodeBlock = styled(motion.div)`
-  position: relative;
-  background: ${({ theme }) => (theme.dark ? "#1a2233" : "#f8fafc")};
-  border-radius: 12px;
-  overflow: hidden;
-
-  @media (orientation: landscape) {
-    max-height: 80vh;
-    overflow-y: auto;
-  }
-`;
-
-const CopyNotification = styled(motion.div)`
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  padding: 1rem;
-  background: #4ade80;
-  color: white;
-  border-radius: 8px;
-  z-index: 100;
-`;
-
-const CodeBlockComponent = ({
-  code,
-  language,
-}: {
-  code: string;
-  language: string;
-}) => {
+function CodeBlock({ code, language }: { code: string; language: string }) {
   const [copied, setCopied] = useState(false);
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
-    <>
-      <CodeBlock
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: "spring" }}
+    <div className="relative">
+      <div className="rounded-lg overflow-hidden bg-muted">
+        <pre className="p-4 overflow-x-auto text-sm">
+          <code>{code}</code>
+        </pre>
+      </div>
+      <button
+        onClick={() => {
+          navigator.clipboard.writeText(code);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }}
+        className="absolute top-2 right-2 p-2 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors"
       >
-        <StyledPre>
-          <Highlight
-            theme={themes.nightOwl}
-            code={code.trim()}
-            language={language as any}
-          >
-            {({ className, style, tokens, getLineProps, getTokenProps }) => (
-              <pre
-                className={`${className} p-4 rounded-lg overflow-x-auto text-sm`}
-                style={style}
-              >
-                {tokens.map((line, i) => (
-                  <div key={i} {...getLineProps({ line, key: i })}>
-                    {line.map((token, key) => (
-                      <span key={key} {...getTokenProps({ token, key })} />
-                    ))}
-                  </div>
-                ))}
-              </pre>
-            )}
-          </Highlight>
-          <CodeButton onClick={copyToClipboard} aria-label="Copy code">
-            {copied ? (
-              <Check size={16} className="text-green-500" />
-            ) : (
-              <Copy size={16} />
-            )}
-          </CodeButton>
-        </StyledPre>
-      </CodeBlock>
-      <AnimatePresence>
-        {copied && (
-          <CopyNotification
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-          >
-            Code copied to clipboard!
-          </CopyNotification>
+        {copied ? (
+          <Check className="h-4 w-4" />
+        ) : (
+          <Copy className="h-4 w-4" />
         )}
-      </AnimatePresence>
-    </>
+      </button>
+    </div>
   );
-};
+}
 
 export default function BuildInstructions() {
   const { t } = useLanguage();
@@ -130,13 +44,13 @@ export default function BuildInstructions() {
 
   return (
     <section id="build" className="py-16 md:py-24 px-4">
-      <div className="container mx-auto max-w-6xl">
+      <div className="container mx-auto max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="space-y-12"
+          className="space-y-8"
         >
           <div className="text-center space-y-4">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
@@ -159,7 +73,7 @@ export default function BuildInstructions() {
                   <CardTitle>{t("windowsMSYS2")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <CodeBlockComponent
+                  <CodeBlock
                     language="bash"
                     code={`
 # Add Tsinghua University mirror source
@@ -180,7 +94,7 @@ pacman -S mingw-w64-x86_64-toolchain mingw-w64-x86_64-dlfcn mingw-w64-x86_64-cfi
                   <CardTitle>{t("ubuntuDebian")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <CodeBlockComponent
+                  <CodeBlock
                     language="bash"
                     code={`
 sudo apt-get update && sudo apt-get upgrade
@@ -200,26 +114,26 @@ sudo apt-get install build-essential cmake libcfitsio-dev zlib1g-dev libssl-dev 
               <ol className="space-y-6 list-decimal list-inside">
                 <li>
                   {t("createBuildDirectory")}:{" "}
-                  <CodeBlockComponent
+                  <CodeBlock
                     language="bash"
                     code="mkdir build && cd build"
                   />
                 </li>
                 <li>
                   {t("configureProject")}:{" "}
-                  <CodeBlockComponent language="bash" code="cmake .." />
+                  <CodeBlock language="bash" code="cmake .." />
                 </li>
                 <li>
                   {t("compileAndExecute")}:{" "}
-                  <CodeBlockComponent language="bash" code="make -jN" /> or{" "}
-                  <CodeBlockComponent
+                  <CodeBlock language="bash" code="make -jN" /> or{" "}
+                  <CodeBlock
                     language="bash"
                     code="cmake --build . --parallel N"
                   />
                 </li>
                 <li>
                   {t("launchProgram")}:{" "}
-                  <CodeBlockComponent language="bash" code="./lithium_server" />
+                  <CodeBlock language="bash" code="./lithium_server" />
                 </li>
               </ol>
             </CardContent>

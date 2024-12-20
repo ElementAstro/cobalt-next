@@ -38,6 +38,52 @@ body {
   }
 }
 
+@layer base {
+  :root {
+    --header-height: 4rem;
+  }
+
+  body {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Landscape mode optimizations */
+@media (orientation: landscape) and (max-height: 600px) {
+  .min-h-screen {
+    min-height: 100%;
+  }
+}
+
+/* Improved scrollbar for touch devices */
+@media (hover: none) {
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+}
+
 /* Custom styles for code blocks */
 pre {
   overflow-x: auto;
