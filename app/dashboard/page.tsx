@@ -14,13 +14,12 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { toast, Toaster } from "react-hot-toast";
 
-import CameraViewfinder from "./components/CameraViewfinder";
-import ExposureControls from "./components/ExposureControls";
-import DeviceWindow from "./components/DeviceWindow";
+import CameraViewfinder from "./layout/CameraView";
+import ExposureControls from "./layout/RightSideBar";
 import ParameterAdjust from "./components/ParameterAdjust";
-import { TopBar } from "./components/TopBar";
-import { Offcanvas } from "../../components/Offcanvas";
-import { Sidebar } from "./components/Sidebar";
+import { TopBar } from "./layout/TopBar";
+import { Offcanvas } from "@/components/Offcanvas";
+import { Sidebar } from "./layout/Sidebar";
 import FocusAssistant from "./components/FocusAssistant";
 import SequenceEditor from "./components/SequenceEditor";
 import DeviceConnection from "./components/DeviceConnection";
@@ -29,17 +28,17 @@ import StarSearch from "./components/StarSearch";
 import ToolPanel from "./components/ToolPanel";
 import SettingsPage from "./components/Settings";
 
-import { CameraPage } from "../../components/device/Camera";
-import { FocuserPage } from "../../components/device/Focuser";
-import { FilterWheelPage } from "../../components/device/FilterWheel";
-import { GuiderPage } from "../../components/device/Guider";
-import { TelescopePage } from "../../components/device/Telescope";
+import { Camera } from "@/components/device/Camera";
+import { FocuserPage } from "@/components/device/Focuser";
+import { FilterWheelPage } from "@/components/device/FilterWheel";
+import { GuiderPage } from "@/components/device/Guider";
+import { TelescopePage } from "@/components/device/Telescope";
 
 import Log from "./components/Log";
-import AuthorInfo from "./components/AuthorInfo";
+import AuthorInfo from "./components/Information";
 
 import LandscapeDetector from "@/components/LandscapeDetection";
-import SplashScreen from "../../components/loading/SplashScreen";
+import SplashScreen from "@/components/loading/SplashScreen";
 import ConnectionForm from "@/components/server/ConnectionForm";
 import { UserAgreementMask } from "@/components/UserAgreementMask";
 import CookieConsent from "@/components/CookieConsent";
@@ -135,6 +134,9 @@ export default function CameraInterface() {
     exposureTime: 10,
     exposureMode: "Auto",
     whiteBalance: "Daylight",
+    gain: 0,
+    offset: 0,
+    binning: "1x1",
   });
 
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -294,7 +296,7 @@ export default function CameraInterface() {
       case "guider":
         return <GuiderPage />;
       case "camera":
-        return <CameraPage />;
+        return <Camera />;
       case "Logs":
         return <Log />;
       case "Settings":
@@ -464,9 +466,7 @@ export default function CameraInterface() {
                           {activeDevice === "plugin" && <PluginPage />}
                           {activeDevice === "starChart" && <StarSearch />}
                           {activeDevice === "focusAssistant" && (
-                            <FocusAssistant
-                              onClose={() => setActiveDevice(null)}
-                            />
+                            <FocusAssistant />
                           )}
                           {activeDevice === "sequenceEditor" && (
                             <SequenceEditor
@@ -512,15 +512,6 @@ export default function CameraInterface() {
                   </motion.div>
                 </div>
               </div>
-              <DragOverlay>
-                {activeId ? (
-                  <DeviceWindow
-                    device={devices.find((d) => d.id === activeId)!}
-                    onParamChange={handleDeviceParamChange}
-                    onClose={() => {}}
-                  />
-                ) : null}
-              </DragOverlay>
               <Offcanvas
                 isOpen={offcanvasOpen}
                 onClose={handleCloseOffcanvas}

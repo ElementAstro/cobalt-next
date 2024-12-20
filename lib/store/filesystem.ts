@@ -1,3 +1,4 @@
+import { CustomizationOptions } from "@/types/filesystem";
 import { create } from "zustand";
 
 interface SearchState {
@@ -120,8 +121,10 @@ export const useFileCompression = create<FileCompressionState>((set) => ({
 interface FileEncryptionState {
   selectedFile: File | null;
   password: string;
+  isSuccess: boolean;
   isEncrypting: boolean;
   isProcessing: boolean;
+  setIsSuccess: (success: boolean) => void;
   setSelectedFile: (file: File | null) => void;
   setPassword: (password: string) => void;
   toggleEncrypting: () => void;
@@ -131,8 +134,10 @@ interface FileEncryptionState {
 export const useFileEncryption = create<FileEncryptionState>((set) => ({
   selectedFile: null,
   password: "",
+  isSuccess: false,
   isEncrypting: true,
   isProcessing: false,
+  setIsSuccess: (success) => set({ isSuccess: success }),
   setSelectedFile: (file) => set({ selectedFile: file }),
   setPassword: (password) => set({ password }),
   toggleEncrypting: () =>
@@ -187,12 +192,6 @@ export const useCollaborationStore = create<CollaborationState>((set) => ({
   reset: () => set({ collaborators: [], chat: [] }),
 }));
 
-export interface CustomizationOptions {
-  theme: "light" | "dark";
-  gridSize: "small" | "medium" | "large";
-  showHiddenFiles: boolean;
-}
-
 interface SettingsState {
   options: CustomizationOptions;
   setOptions: (options: CustomizationOptions) => void;
@@ -200,9 +199,19 @@ interface SettingsState {
 
 export const useSettingsStore = create<SettingsState>((set) => ({
   options: {
-    theme: "dark",
-    gridSize: "medium",
-    showHiddenFiles: false,
+    isOpen: false,
+    onClose: () => {},
+    options: {
+      gridSize: "medium",
+      showHiddenFiles: false,
+      listView: "comfortable",
+      sortBy: "name",
+      sortDirection: "asc",
+      thumbnailQuality: "medium",
+      autoBackup: false,
+      defaultView: "grid"
+    },
+    setOptions: () => {}
   },
   setOptions: (options) => set({ options }),
 }));

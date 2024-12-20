@@ -1,3 +1,4 @@
+import * as Icons from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -5,51 +6,28 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import {
-  Telescope,
-  Focus,
-  Compass,
-  Filter,
-  Image,
-  Cloud,
-  Star,
-  Crosshair,
-  Target,
-  List,
-  Layers,
-  Wifi,
-  Plug
-} from "lucide-react";
 
-interface DeviceToggleProps {
+interface SideBarToggleProps {
   device: { id: string; name: string; icon: string; active: boolean };
   onToggle: () => void;
 }
 
-const iconMap: { [key: string]: React.ComponentType<{ className?: string }> } =
-  {
-    telescope: Telescope,
-    focus: Focus,
-    compass: Compass,
-    filter: Filter,
-    image: Image,
-    cloud: Cloud,
-    star: Star,
-    crosshair: Crosshair,
-    target: Target,
-    list: List,
-    layers: Layers,
-    wifi: Wifi,
-    plug: Plug
-  };
+const getIconComponent = (iconName: string) => {
+  // 转换图标名称为pascal case (例如: arrow-left -> ArrowLeft)
+  const pascalCase = iconName
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join("");
 
-export default function DeviceToggle({ device, onToggle }: DeviceToggleProps) {
-  const Icon = iconMap[device.icon];
+  return (Icons[pascalCase as keyof typeof Icons] ||
+    Icons.HelpCircle) as React.FC<{ className?: string }>;
+};
 
-  if (!Icon) {
-    console.error(`Icon not found for device: ${device.name}`);
-    return null;
-  }
+export default function SideBarToggle({
+  device,
+  onToggle,
+}: SideBarToggleProps) {
+  const Icon = getIconComponent(device.icon.toLowerCase());
 
   return (
     <TooltipProvider>

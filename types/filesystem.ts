@@ -28,12 +28,23 @@ export interface Folder {
   files: (File | Folder)[];
 }
 
-export interface CustomizationOptions {
-  theme: "light" | "dark";
+export type CustomizationOptionsData = {
   gridSize: "small" | "medium" | "large";
   showHiddenFiles: boolean;
-  listView: "compact" | "comfortable";
-}
+  listView: "comfortable";
+  sortBy: "name" | "size" | "date";
+  sortDirection: "asc" | "desc";
+  thumbnailQuality: "low" | "medium" | "high";
+  autoBackup: boolean;
+  defaultView: "grid" | "list";
+};
+
+export type CustomizationOptions = {
+  isOpen: boolean;
+  onClose: () => void;
+  options: CustomizationOptionsData;
+  setOptions: (options: CustomizationOptionsData) => void;
+};
 
 export type FileOperation =
   | "open"

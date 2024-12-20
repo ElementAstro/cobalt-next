@@ -43,7 +43,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-export default function CameraComponent() {
+export function Camera() {
   return (
     <motion.div
       className="text-white bg-gray-800 min-h-screen p-4"

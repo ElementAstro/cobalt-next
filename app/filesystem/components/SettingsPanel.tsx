@@ -22,25 +22,10 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { useSettingsStore } from "@/lib/store/filesystem";
+import { CustomizationOptions } from "@/types/filesystem";
 
-interface SettingsPanelProps {
-  isOpen: boolean;
-  onClose: () => void;
-  options: {
-    theme: "light" | "dark";
-    gridSize: "small" | "medium" | "large";
-    showHiddenFiles: boolean;
-    listView: "comfortable";
-    sortBy: "name" | "date" | "size";
-    sortDirection: "asc" | "desc";
-    thumbnailQuality: "low" | "medium" | "high";
-    autoBackup: boolean;
-    defaultView: "list" | "grid";
-  };
-  setOptions: (options: SettingsPanelProps["options"]) => void;
-}
 
-export const SettingsPanel: React.FC<SettingsPanelProps> = ({
+export const SettingsPanel: React.FC<CustomizationOptions> = ({
   isOpen,
   onClose,
   options,

@@ -17,6 +17,7 @@ import {
   FileType,
   CustomizationOptions,
   FileOperation,
+  CustomizationOptionsData,
 } from "@/types/filesystem";
 import { useFileItemStore } from "@/lib/store/filesystem";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,7 @@ interface FileItemProps {
   };
   index: number;
   viewMode: "grid" | "list";
-  customOptions?: CustomizationOptions;
+  customOptions?: CustomizationOptionsData;
   onDelete?: (id: string) => void;
   onContextMenu?: (e: React.MouseEvent, file: File) => void;
   onFileOperation?: (operation: FileOperation, file: File) => void;

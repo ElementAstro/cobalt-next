@@ -7,10 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, X, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMediaQuery } from "@/hooks/use-media-query";
-import { ProfileTab } from "../../../components/connection/ProfileTab";
-import { DevicesTab } from "../../../components/connection/DevicesTab";
-import { AdvancedTab } from "../../../components/connection/AdvancedTab";
-import { LogsTab } from "../../../components/connection/LogsTab";
+import { ProfileTab } from "@/components/connection/ProfileTab";
+import { DevicesTab } from "@/components/connection/DevicesTab";
+import { AdvancedTab } from "@/components/connection/AdvancedTab";
+import { LogsTab } from "@/components/connection/LogsTab";
 import { useApiService } from "@/services/connection";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -104,79 +104,76 @@ export default function DeviceConnection() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="w-full mx-auto h-full max-h-screen mt-2"
+      className="w-full mx-auto h-full max-h-screen"
     >
-      <Card className="h-full">
-        <CardContent>
+      <Card className="h-full border-0 shadow-none">
+        <CardContent className="p-2">
           <motion.div variants={containerVariants}>
-            <motion.div variants={itemVariants}>
-              <Tabs
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className="w-full"
-              >
-                <TabsList className={`grid w-full ${"grid-cols-4 gap-2"}`}>
-                  <TabsTrigger value="profile">Profile</TabsTrigger>
-                  <TabsTrigger value="devices">Devices</TabsTrigger>
-                  <TabsTrigger
-                    value="advanced"
-                    className={isMobile ? "col-span-1" : ""}
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
+              <TabsList className="grid w-full grid-cols-4 gap-1 p-0.5">
+                <TabsTrigger value="profile" className="text-xs py-1">
+                  Profile
+                </TabsTrigger>
+                <TabsTrigger value="devices" className="text-xs py-1">
+                  Devices
+                </TabsTrigger>
+                <TabsTrigger value="advanced" className="text-xs py-1">
+                  Advanced
+                </TabsTrigger>
+                <TabsTrigger value="logs" className="text-xs py-1">
+                  Logs
+                </TabsTrigger>
+              </TabsList>
+
+              <div className="mt-2">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    variants={itemVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
                   >
-                    Advanced
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="logs"
-                    className={isMobile ? "col-span-1" : ""}
-                  >
-                    Logs
-                  </TabsTrigger>
-                </TabsList>
-                <AnimatePresence>
-                  <motion.div variants={itemVariants}>
                     <TabsContent value="profile">
                       <ProfileTab toast={toast} />
                     </TabsContent>
-                  </motion.div>
-                  <motion.div variants={itemVariants}>
                     <TabsContent value="devices">
                       <DevicesTab />
                     </TabsContent>
-                  </motion.div>
-                  <motion.div variants={itemVariants}>
                     <TabsContent value="advanced">
                       <AdvancedTab />
                     </TabsContent>
-                  </motion.div>
-                  <motion.div variants={itemVariants}>
                     <TabsContent value="logs">
                       <LogsTab />
                     </TabsContent>
                   </motion.div>
                 </AnimatePresence>
-              </Tabs>
-            </motion.div>
+              </div>
+            </Tabs>
+
             <motion.div
               variants={itemVariants}
-              className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-6 border-t"
+              className="flex justify-between items-center gap-2 pt-2 mt-2 border-t border-gray-800"
             >
-              <div className="flex items-center space-x-2">
-                <motion.div
-                  variants={itemVariants}
-                  className={`w-3 h-3 rounded-full ${
+              <div className="flex items-center gap-2">
+                <span
+                  className={`w-2 h-2 rounded-full ${
                     isConnected ? "bg-green-500" : "bg-red-500"
                   }`}
                 />
-                <motion.span
-                  variants={itemVariants}
-                  className="text-sm font-medium"
-                >
+                <span className="text-xs font-medium">
                   {isConnected ? "Connected" : "Disconnected"}
-                </motion.span>
+                </span>
               </div>
-              <motion.div variants={itemVariants} className="flex space-x-2">
+
+              <div className="flex gap-1">
                 <Button
                   variant="outline"
                   size="sm"
+                  className="h-7 text-xs px-2"
                   onClick={() =>
                     toast({
                       title: "Settings saved",
@@ -185,32 +182,41 @@ export default function DeviceConnection() {
                     })
                   }
                 >
-                  <Save className="w-4 h-4 mr-2" />
+                  <Save className="w-3 h-3 mr-1" />
                   Save
                 </Button>
+
                 <Button
                   variant="outline"
                   size="sm"
+                  className="h-7 text-xs px-2"
                   onClick={() => setActiveTab("profile")}
                 >
-                  <X className="w-4 h-4 mr-2" />
+                  <X className="w-3 h-3 mr-1" />
                   Close
                 </Button>
+
                 {isConnected ? (
                   <Button
                     variant="destructive"
                     size="sm"
+                    className="h-7 text-xs px-2"
                     onClick={handleDisconnect}
                   >
                     Disconnect
                   </Button>
                 ) : (
-                  <Button variant="default" size="sm" onClick={handleConnect}>
-                    <RefreshCw className="w-4 h-4 mr-2" />
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="h-7 text-xs px-2"
+                    onClick={handleConnect}
+                  >
+                    <RefreshCw className="w-3 h-3 mr-1" />
                     Connect
                   </Button>
                 )}
-              </motion.div>
+              </div>
             </motion.div>
           </motion.div>
         </CardContent>

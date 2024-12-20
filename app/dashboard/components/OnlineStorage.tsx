@@ -7,20 +7,16 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CookieManager } from "@/components/storage/CookieManager";
 import { IndexedDBManager } from "@/components/storage/IndexedDbManager";
 import { LocalStorageManager } from "@/components/storage/LocalStorageManager";
+import { SessionStorageEditor } from "@/components/storage/SessionManager";
 
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1,
+      duration: 0.3,
     },
   },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
 };
 
 export default function OnlineStorage() {
@@ -71,73 +67,68 @@ export default function OnlineStorage() {
 
   return (
     <motion.div
-      className="dark bg-gray-900 min-h-screen container"
+      className="dark bg-gray-900 min-h-screen p-2"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6"
-        variants={containerVariants}
+      <div className="grid grid-cols-3 gap-2 mb-2">
+        <Card className="bg-gray-800 text-white">
+          <CardHeader className="p-2">
+            <CardTitle className="text-sm">Cookies</CardTitle>
+          </CardHeader>
+          <CardContent className="p-2 pt-0">
+            <p className="text-sm">{cookieCount} 项</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-gray-800 text-white">
+          <CardHeader className="p-2">
+            <CardTitle className="text-sm">LocalStorage</CardTitle>
+          </CardHeader>
+          <CardContent className="p-2 pt-0">
+            <p className="text-sm">{localStorageCount} 项</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-gray-800 text-white">
+          <CardHeader className="p-2">
+            <CardTitle className="text-sm">IndexedDB</CardTitle>
+          </CardHeader>
+          <CardContent className="p-2 pt-0">
+            <p className="text-sm">{indexedDBCount} 项</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs
+        defaultValue="cookies"
+        className="bg-gray-800 text-white rounded-lg"
       >
-        <motion.div variants={itemVariants}>
-          <Card className="bg-gray-800 text-white">
-            <CardHeader>
-              <CardTitle>Cookies</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>{cookieCount} 项</p>
-            </CardContent>
-          </Card>
-        </motion.div>
-        <motion.div variants={itemVariants}>
-          <Card className="bg-gray-800 text-white">
-            <CardHeader>
-              <CardTitle>LocalStorage</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>{localStorageCount} 项</p>
-            </CardContent>
-          </Card>
-        </motion.div>
-        <motion.div variants={itemVariants}>
-          <Card className="bg-gray-800 text-white">
-            <CardHeader>
-              <CardTitle>IndexedDB</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>{indexedDBCount} 项</p>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </motion.div>
-      <motion.div variants={itemVariants}>
-        <Tabs
-          defaultValue="cookies"
-          className="bg-gray-800 text-white rounded-lg"
-        >
-          <TabsList className="flex space-x-1 bg-gray-700 p-1 rounded-lg">
-            <TabsTrigger value="cookies" className="flex-1">
-              Cookies
-            </TabsTrigger>
-            <TabsTrigger value="localstorage" className="flex-1">
-              LocalStorage
-            </TabsTrigger>
-            <TabsTrigger value="indexeddb" className="flex-1">
-              IndexedDB
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="cookies" className="mt-4">
+        <TabsList className="flex bg-gray-700 p-0.5 rounded-t-lg">
+          <TabsTrigger value="cookies" className="flex-1 text-sm py-1">
+            Cookies
+          </TabsTrigger>
+          <TabsTrigger value="localstorage" className="flex-1 text-sm py-1">
+            LocalStorage
+          </TabsTrigger>
+          <TabsTrigger value="indexeddb" className="flex-1 text-sm py-1">
+            IndexedDB
+          </TabsTrigger>
+        </TabsList>
+        <div className="p-2">
+          <TabsContent value="cookies" className="mt-0">
             <CookieManager isLandscape={isLandscape} />
           </TabsContent>
-          <TabsContent value="localstorage" className="mt-4">
+          <TabsContent value="localstorage" className="mt-0">
             <LocalStorageManager isLandscape={isLandscape} />
           </TabsContent>
-          <TabsContent value="indexeddb" className="mt-4">
+          <TabsContent value="indexeddb" className="mt-0">
             <IndexedDBManager isLandscape={isLandscape} />
           </TabsContent>
-        </Tabs>
-      </motion.div>
+          <TabsContent value="sessionstorage" className="mt-0">
+            <SessionStorageEditor />
+          </TabsContent>
+        </div>
+      </Tabs>
     </motion.div>
   );
 }

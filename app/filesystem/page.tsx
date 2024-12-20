@@ -3,27 +3,19 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   ArrowLeft,
-  Moon,
   Search,
   List,
   Grid,
   ArrowUpDown,
-  FileIcon,
-  Trash2,
-  Eye,
-  Download,
-  Edit,
-  Sun,
-  Settings,
   Upload,
-  RefreshCw,
   Share2,
   Clock,
   Tag,
-  Lock,
-  Cloud,
+  RefreshCw,
   Archive,
-  Trash,
+  Cloud,
+  Lock,
+  Trash2,
 } from "lucide-react";
 import { mockFileSystem } from "@/utils/mock-filesystem";
 import {
@@ -31,23 +23,14 @@ import {
   Folder as FolderType,
   CustomizationOptions,
 } from "@/types/filesystem";
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  DropResult,
-} from "react-beautiful-dnd";
+import { DragDropContext, DropResult } from "react-beautiful-dnd";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Header } from "./layout/Header";
+import { FileList } from "./layout/FileList";
+import { ContextMenu } from "./layout/ContextMenu";
 import { SettingsPanel } from "./components/SettingsPanel";
-import { FileItem } from "./components/FileItem";
-import { FilePreview } from "./components/FilePreview";
 import { SearchModal } from "./components/SearchModal";
 import { ShareModal } from "./components/ShareModal";
 import { VersionHistory } from "./components/VersionHistory";
@@ -59,9 +42,8 @@ import { AdvancedSearch } from "./components/AdvancedSearch";
 import { TrashBin } from "./components/TrashBin";
 import { FileEncryption } from "./components/FileEncryption";
 import { FileProperties } from "./components/FileProperties";
-import { DropEvent, FileRejection, useDropzone } from "react-dropzone";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useDropzone, DropEvent, FileRejection } from "react-dropzone";
+import { FilePreview } from "./components/FilePreview";
 
 export default function FileBrowser() {
   const [time, setTime] = useState(new Date().toLocaleTimeString());
@@ -79,11 +61,17 @@ export default function FileBrowser() {
     y: number;
     file: File | FolderType;
   } | null>(null);
-  const [customOptions, setCustomOptions] = useState<CustomizationOptions>({
-    theme: "dark",
+  const [customOptions, setCustomOptions] = useState<
+    CustomizationOptions["options"]
+  >({
     gridSize: "medium",
     showHiddenFiles: false,
     listView: "comfortable",
+    sortBy: "name",
+    sortDirection: "asc",
+    thumbnailQuality: "medium",
+    autoBackup: true,
+    defaultView: "grid",
   });
   const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -132,11 +120,6 @@ export default function FileBrowser() {
     },
     []
   );
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    noClick: true,
-    noKeyboard: true,
-  });
 
   // 添加批量选择状态
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -270,7 +253,6 @@ export default function FileBrowser() {
   const toggleTheme = useCallback(() => {
     setCustomOptions((prev) => ({
       ...prev,
-      theme: prev.theme === "dark" ? "light" : "dark",
     }));
   }, []);
 
@@ -330,203 +312,41 @@ export default function FileBrowser() {
     reorderedFiles.splice(destination.index, 0, movedFile);
 
     // 更新 mockFileSystem 或状态以反映重新排序
-    // 这里只是示例，具体实现需要根据实际数据结构调整
     currentFolder.files = reorderedFiles as (File | FolderType)[];
   };
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="flex-1 flex flex-col">
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{
-            type: "spring",
-            stiffness: 300,
-            damping: 30,
-            delay: 0.1,
+        <Header
+          currentPath={currentPath}
+          setCurrentPath={setCurrentPath}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          setSortBy={setSortBy}
+          setSortOrder={setSortOrder}
+          openModals={{
+            settings: () => setIsSettingsPanelOpen(true),
+            upload: () => setIsUploadModalOpen(true),
+            search: () => setIsSearchModalOpen(true),
+            share: () => setIsShareModalOpen(true),
+            versionHistory: () => setIsVersionHistoryOpen(true),
+            tagManager: () => setIsTagManagerOpen(true),
+            realtimeCollaboration: () => setIsRealtimeCollaborationOpen(true),
+            fileCompression: () => setIsFileCompressionOpen(true),
+            cloudIntegration: () => setIsCloudIntegrationOpen(true),
+            advancedSearch: () => setIsAdvancedSearchOpen(true),
+            authModal: () => setIsAuthModalOpen(true),
+            trashBin: () => setIsTrashBinOpen(true),
+            fileEncryption: () => setIsFileEncryptionOpen(true),
           }}
-          className={`${
-            customOptions.theme === "dark" ? "bg-gray-800" : "bg-white"
-          } p-4 flex items-center justify-between shadow-md`}
-        >
-          <div className="flex items-center space-x-4">
-            <Button
-              onClick={() => setCurrentPath(currentPath.slice(0, -1))}
-              variant="outline"
-              size="sm"
-              disabled={currentPath.length === 0}
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <Breadcrumb>
-              <BreadcrumbList>
-                {currentPath.map((folder, index) => (
-                  <React.Fragment key={folder}>
-                    <BreadcrumbItem>
-                      <BreadcrumbLink
-                        onClick={() =>
-                          setCurrentPath(currentPath.slice(0, index + 1))
-                        }
-                      >
-                        {folder}
-                      </BreadcrumbLink>
-                    </BreadcrumbItem>
-                    {index < currentPath.length - 1 && <BreadcrumbSeparator />}
-                  </React.Fragment>
-                ))}
-              </BreadcrumbList>
-            </Breadcrumb>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search files..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className={`${
-                  customOptions.theme === "dark"
-                    ? "bg-gray-700 text-white"
-                    : "bg-gray-200 text-black"
-                } rounded-full px-4 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200`}
-              />
-              <Search className="w-5 h-5 absolute left-3 top-2.5 text-gray-400" />
-            </div>
-          </div>
-          <ScrollArea className="w-full max-w-md">
-            <div className="flex space-x-2">
-              <Button onClick={toggleTheme} variant="ghost" size="sm">
-                {customOptions.theme === "dark" ? (
-                  <Sun className="w-5 h-5" />
-                ) : (
-                  <Moon className="w-5 h-5" />
-                )}
-              </Button>
-              <Button
-                onClick={() => setIsSettingsPanelOpen(true)}
-                variant="ghost"
-                size="sm"
-              >
-                <Settings className="w-5 h-5" />
-              </Button>
-              <Button
-                onClick={() =>
-                  setViewMode(viewMode === "grid" ? "list" : "grid")
-                }
-                variant="ghost"
-                size="sm"
-              >
-                {viewMode === "grid" ? (
-                  <List className="w-5 h-5" />
-                ) : (
-                  <Grid className="w-5 h-5" />
-                )}
-              </Button>
-              <Button
-                onClick={() => {
-                  if (sortBy === "name") {
-                    setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                  } else {
-                    setSortBy("name");
-                    setSortOrder("asc");
-                  }
-                }}
-                variant="ghost"
-                size="sm"
-              >
-                <ArrowUpDown className="w-5 h-5" />
-              </Button>
-              <Button
-                onClick={() => setIsUploadModalOpen(true)}
-                variant="ghost"
-                size="sm"
-              >
-                <Upload className="w-5 h-5" />
-              </Button>
-              <Button
-                onClick={() => setIsSearchModalOpen(true)}
-                variant="ghost"
-                size="sm"
-              >
-                <Search className="w-5 h-5" />
-              </Button>
-              <Button
-                onClick={() => setIsShareModalOpen(true)}
-                variant="ghost"
-                size="sm"
-              >
-                <Share2 className="w-5 h-5" />
-              </Button>
-              <Button
-                onClick={() => setIsVersionHistoryOpen(true)}
-                variant="ghost"
-                size="sm"
-              >
-                <Clock className="w-5 h-5" />
-              </Button>
-              <Button
-                onClick={() => setIsTagManagerOpen(true)}
-                variant="ghost"
-                size="sm"
-              >
-                <Tag className="w-5 h-5" />
-              </Button>
-              <Button
-                onClick={() => setIsRealtimeCollaborationOpen(true)}
-                variant="ghost"
-                size="sm"
-              >
-                <RefreshCw className="w-5 h-5" />
-              </Button>
-              <Button
-                onClick={() => setIsFileCompressionOpen(true)}
-                variant="ghost"
-                size="sm"
-              >
-                <Archive className="w-5 h-5" />
-              </Button>
-              <Button
-                onClick={() => setIsCloudIntegrationOpen(true)}
-                variant="ghost"
-                size="sm"
-              >
-                <Cloud className="w-5 h-5" />
-              </Button>
-              <Button
-                onClick={() => setIsAdvancedSearchOpen(true)}
-                variant="ghost"
-                size="sm"
-              >
-                <Search className="w-5 h-5" />
-              </Button>
-              <Button
-                onClick={() => setIsAuthModalOpen(true)}
-                variant="ghost"
-                size="sm"
-              >
-                <Lock className="w-5 h-5" />
-              </Button>
-              <Button
-                onClick={() => setIsTrashBinOpen(true)}
-                variant="ghost"
-                size="sm"
-              >
-                <Trash className="w-5 h-5" />
-              </Button>
-              <Button
-                onClick={() => setIsFileEncryptionOpen(true)}
-                variant="ghost"
-                size="sm"
-              >
-                <Lock className="w-5 h-5" />
-              </Button>
-              {selectedFiles.length > 0 && (
-                <Button onClick={handleDelete} variant="destructive" size="sm">
-                  <Trash2 className="w-5 h-5" />
-                </Button>
-              )}
-            </div>
-          </ScrollArea>
-        </motion.div>
+          selectedFiles={selectedFiles}
+          handleDelete={handleDelete}
+        />
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -543,174 +363,25 @@ export default function FileBrowser() {
               : "space-y-2"
           }`}
         >
-          <AnimatePresence>
-            <Droppable droppableId="file-list" direction="horizontal">
-              {(provided) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className={`${
-                    viewMode === "grid" ? "flex flex-wrap" : "flex flex-col"
-                  }`}
-                >
-                  {files
-                    .filter((file) => !isFolder(file))
-                    .map((file, index) => (
-                      <Draggable
-                        key={file.id}
-                        draggableId={file.id}
-                        index={index}
-                      >
-                        {(provided) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                          >
-                            <FileItem
-                              file={file as File}
-                              index={index}
-                              viewMode={viewMode}
-                              customOptions={customOptions}
-                              onDelete={handleDelete}
-                              onContextMenu={handleContextMenu}
-                              onFileOperation={handleFileOperation}
-                              isSelectionMode={selectedFiles.length > 0}
-                              onShowMenu={(e) => handleContextMenu(e, file)}
-                            />
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </AnimatePresence>
+          <FileList
+            files={files}
+            viewMode={viewMode}
+            customOptions={customOptions}
+            handleDelete={handleDelete}
+            handleContextMenu={handleContextMenu}
+            handleFileOperation={handleFileOperation}
+            selectedFiles={selectedFiles}
+          />
         </motion.div>
         <AnimatePresence>
           {contextMenu && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              style={{
-                position: "fixed",
-                top: contextMenu.y,
-                left: contextMenu.x,
-                zIndex: 1000,
-              }}
-              className={`${
-                customOptions.theme === "dark" ? "bg-gray-800" : "bg-white"
-              } rounded-lg shadow-lg`}
-            >
-              <ul className="py-2">
-                <li
-                  className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                  onClick={() => {
-                    handleFileOperation("preview", contextMenu.file as File);
-                    closeContextMenu();
-                  }}
-                >
-                  <Eye className="w-4 h-4 inline-block mr-2" />
-                  Preview
-                </li>
-                <li
-                  className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                  onClick={() => {
-                    handleFileOperation("download", contextMenu.file as File);
-                    closeContextMenu();
-                  }}
-                >
-                  <Download className="w-4 h-4 inline-block mr-2" />
-                  Download
-                </li>
-                <li
-                  className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                  onClick={() => {
-                    handleFileOperation("rename", contextMenu.file as File);
-                    closeContextMenu();
-                  }}
-                >
-                  <Edit className="w-4 h-4 inline-block mr-2" />
-                  Rename
-                </li>
-                <li
-                  className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                  onClick={() => {
-                    handleFileOperation("share", contextMenu.file as File);
-                    closeContextMenu();
-                  }}
-                >
-                  <Share2 className="w-4 h-4 inline-block mr-2" />
-                  Share
-                </li>
-                <li
-                  className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                  onClick={() => {
-                    handleFileOperation(
-                      "versionHistory",
-                      contextMenu.file as File
-                    );
-                    closeContextMenu();
-                  }}
-                >
-                  <Clock className="w-4 h-4 inline-block mr-2" />
-                  Version History
-                </li>
-                <li
-                  className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                  onClick={() => {
-                    handleFileOperation("manageTags", contextMenu.file as File);
-                    closeContextMenu();
-                  }}
-                >
-                  <Tag className="w-4 h-4 inline-block mr-2" />
-                  Manage Tags
-                </li>
-                <li
-                  className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                  onClick={() => {
-                    handleFileOperation("compress", contextMenu.file as File);
-                    closeContextMenu();
-                  }}
-                >
-                  <Archive className="w-4 h-4 inline-block mr-2" />
-                  Compress/Decompress
-                </li>
-                <li
-                  className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                  onClick={() => {
-                    handleFileOperation("encrypt", contextMenu.file as File);
-                    closeContextMenu();
-                  }}
-                >
-                  <Lock className="w-4 h-4 inline-block mr-2" />
-                  Encrypt/Decrypt
-                </li>
-                <li
-                  className="px-4 py-2 hover:bg-gray-700 cursor-pointer text-red-500"
-                  onClick={() => {
-                    handleFileOperation("delete", contextMenu.file as File);
-                    closeContextMenu();
-                  }}
-                >
-                  <Trash2 className="w-4 h-4 inline-block mr-2" />
-                  Delete
-                </li>
-                <li
-                  className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                  onClick={() => {
-                    handleFileOperation("properties", contextMenu.file as File);
-                    closeContextMenu();
-                  }}
-                >
-                  <FileIcon className="w-4 h-4 inline-block mr-2" />
-                  Properties
-                </li>
-              </ul>
-            </motion.div>
+            <ContextMenu
+              x={contextMenu.x}
+              y={contextMenu.y}
+              file={contextMenu.file as File}
+              handleFileOperation={handleFileOperation}
+              closeContextMenu={closeContextMenu}
+            />
           )}
         </AnimatePresence>
         <AnimatePresence>

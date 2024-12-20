@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import DeviceToggle from "./DeviceToggle";
+import SideBarToggle from "./SideBarToggle";
 
 interface SidebarProps {
   devices: Array<{
@@ -43,7 +43,7 @@ export function Sidebar({ devices, onToggle }: SidebarProps) {
       >
         {devices.map((device) => (
           <motion.div key={device.id} variants={itemVariants}>
-            <DeviceToggle
+            <SideBarToggle
               device={device}
               onToggle={() => onToggle(device.id)}
             />
