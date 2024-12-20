@@ -17,28 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useGuiderStore } from "@/lib/store/device/guiding";
 import { DeviceSelector } from "./DeviceSelector";
 import { motion } from "framer-motion";
-import styled from "styled-components";
-
-const Container = styled(motion.div)`
-  color: white;
-  background-color: #1f2937;
-  min-height: 100vh;
-  padding: 1rem;
-`;
-
-const StyledCard = styled(Card)`
-  background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
-  border-color: rgba(75, 85, 99, 0.4);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  border-radius: 16px;
-  overflow: hidden;
-  backdrop-filter: blur(8px);
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-  }
-`;
+import { guiderApi } from "@/services/device/guider";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -70,39 +49,79 @@ export function GuiderPage() {
     changeFilter,
   } = useGuiderStore();
 
-  const handleStartGuiding = () => {
-    startGuiding();
-    toast({
-      title: "Guiding Started",
-      description: "导星已开始。",
-    });
+  const handleStartGuiding = async () => {
+    try {
+      await guiderApi.startGuiding();
+      toast({
+        title: "Guiding Started",
+        description: "导星已开始。",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "启动导星失败：" + (error as Error).message,
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleStopGuiding = () => {
-    stopGuiding();
-    toast({
-      title: "Guiding Stopped",
-      description: "导星已停止。",
-    });
+  const handleStopGuiding = async () => {
+    try {
+      await guiderApi.stopGuiding();
+      toast({
+        title: "Guiding Stopped",
+        description: "导星已停止。",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "停止导星失败：" + (error as Error).message,
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDither = () => {
-    dither(parseInt(ditherPixels));
-    toast({
-      title: "Dithering",
-      description: `已进行 ${ditherPixels} 像素的抖动。`,
-    });
+  const handleDither = async () => {
+    try {
+      await guiderApi.dither(parseInt(ditherPixels));
+      toast({
+        title: "Dithering",
+        description: `已进行 ${ditherPixels} 像素的抖动。`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "抖动失败：" + (error as Error).message,
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleSettingsChange = () => {
-    setGuiderSettings({
-      ditherPixels: parseInt(ditherPixels),
-      settleTimeout: parseInt(settleTimeout),
-    });
-    toast({
-      title: "Settings Updated",
-      description: "导星仪设置已更新。",
-    });
+  const handleSettingsChange = async () => {
+    try {
+      // 更新曝光时间
+      if (guiderInfo.exposureTime !== undefined) {
+        await guiderApi.setExposureTime(guiderInfo.exposureTime);
+      }
+      // 更新导星精度
+      if (guiderInfo.guidingAccuracy !== undefined) {
+        await guiderApi.setGuidingAccuracy(guiderInfo.guidingAccuracy);
+      }
+      setGuiderSettings({
+        ditherPixels: parseInt(ditherPixels),
+        settleTimeout: parseInt(settleTimeout),
+      });
+      toast({
+        title: "Settings Updated",
+        description: "导星仪设置已更新。",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "更新设置失败：" + (error as Error).message,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleFilterChange = () => {
@@ -114,164 +133,165 @@ export function GuiderPage() {
   };
 
   return (
-    <Container variants={containerVariants} initial="hidden" animate="visible">
-      <DeviceSelector
-        deviceType="Guider"
-        devices={[
-          "ZWO ASI120MM Mini",
-          "Starlight Xpress Lodestar X2",
-          "QHY5L-II-M",
-        ]}
-        onDeviceChange={(device) => console.log(`Selected guider: ${device}`)}
-      />
-      <motion.div
-        variants={itemVariants}
-        className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3"
-      >
-        <StyledCard>
-          <CardHeader>
-            <CardTitle>导星仪设置</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-6">
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-            >
-              <motion.div variants={itemVariants} className="space-y-2">
-                <Label>像素刻度</Label>
-                <div className="text-sm">{guiderInfo.pixelScale} arcsec/px</div>
-              </motion.div>
-              <motion.div variants={itemVariants} className="space-y-2">
-                <Label>状态</Label>
-                <div className="text-sm">{guiderInfo.state}</div>
-              </motion.div>
-              <motion.div
-                variants={itemVariants}
-                className="flex items-center space-x-2"
-              >
-                <Label htmlFor="show-corrections">显示校正</Label>
-                <Switch
-                  id="show-corrections"
-                  checked={guiderInfo.showCorrections}
-                  onCheckedChange={(checked) => setGuiderSettings({})}
-                  className="bg-gray-700"
-                />
-              </motion.div>
-            </motion.div>
+    <motion.div
+      className="min-h-screen bg-gray-900 text-white p-4"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <div className="max-w-7xl mx-auto space-y-8">
+        <DeviceSelector
+          deviceType="Guider"
+          onDeviceChange={(device) => console.log(`Selected guider: ${device}`)}
+        />
 
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
-            >
-              <motion.div variants={itemVariants} className="space-y-2">
-                <Label htmlFor="dither-pixels">抖动像素</Label>
-                <Input
-                  id="dither-pixels"
-                  type="number"
-                  value={ditherPixels}
-                  onChange={(e) => setDitherPixels(e.target.value)}
-                  placeholder="输入像素"
-                  className="bg-gray-700 text-white"
-                />
-              </motion.div>
-              <motion.div variants={itemVariants} className="space-y-2">
-                <Label htmlFor="settle-timeout">稳定超时</Label>
-                <Input
-                  id="settle-timeout"
-                  type="number"
-                  value={settleTimeout}
-                  onChange={(e) => setSettleTimeout(e.target.value)}
-                  placeholder="输入超时"
-                  className="bg-gray-700 text-white"
-                />
-              </motion.div>
-              <motion.div variants={itemVariants} className="space-y-2">
-                <Label htmlFor="phd2-profile">PHD2 配置文件</Label>
-                <Select
-                  value={guiderInfo.phd2Profile}
-                  onValueChange={(value) =>
-                    setGuiderSettings({
-                      phd2Profile: value,
-                    })
-                  }
+        <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Main Control Panel */}
+          <motion.div variants={itemVariants} className="md:col-span-2">
+            <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 shadow-xl rounded-2xl backdrop-blur-md transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl">
+              <CardHeader>
+                <CardTitle>导星仪设置</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-6">
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                 >
-                  <SelectTrigger
-                    id="phd2-profile"
-                    className="bg-gray-700 text-white"
+                  <motion.div variants={itemVariants} className="space-y-2">
+                    <Label>像素刻度</Label>
+                    <div className="text-sm">
+                      {guiderInfo.pixelScale} arcsec/px
+                    </div>
+                  </motion.div>
+                  <motion.div variants={itemVariants} className="space-y-2">
+                    <Label>状态</Label>
+                    <div className="text-sm">{guiderInfo.state}</div>
+                  </motion.div>
+                  <motion.div
+                    variants={itemVariants}
+                    className="flex items-center space-x-2"
                   >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-gray-700 text-white">
-                    <SelectItem value="default">默认</SelectItem>
-                    <SelectItem value="aggressive">激进</SelectItem>
-                    <SelectItem value="conservative">保守</SelectItem>
-                  </SelectContent>
-                </Select>
-              </motion.div>
-            </motion.div>
-            <motion.div variants={itemVariants}>
-              <Button
-                onClick={handleSettingsChange}
-                className="w-full bg-gray-700 hover:bg-gray-600"
-              >
-                应用设置
-              </Button>
-            </motion.div>
+                    <Label htmlFor="show-corrections">显示校正</Label>
+                    <Switch
+                      id="show-corrections"
+                      checked={guiderInfo.showCorrections}
+                      onCheckedChange={(checked) => setGuiderSettings({})}
+                    />
+                  </motion.div>
+                </motion.div>
 
-            <motion.div variants={itemVariants} className="space-y-2 mt-4">
-              <Label>描述</Label>
-              <div className="text-sm">{guiderInfo.description}</div>
-            </motion.div>
-          </CardContent>
-        </StyledCard>
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+                >
+                  <motion.div variants={itemVariants} className="space-y-2">
+                    <Label htmlFor="dither-pixels">抖动像素</Label>
+                    <Input
+                      id="dither-pixels"
+                      type="number"
+                      value={ditherPixels}
+                      onChange={(e) => setDitherPixels(e.target.value)}
+                      placeholder="输入像素"
+                      className="bg-gray-700"
+                    />
+                  </motion.div>
+                  <motion.div variants={itemVariants} className="space-y-2">
+                    <Label htmlFor="settle-timeout">稳定超时</Label>
+                    <Input
+                      id="settle-timeout"
+                      type="number"
+                      value={settleTimeout}
+                      onChange={(e) => setSettleTimeout(e.target.value)}
+                      placeholder="输入超时"
+                      className="bg-gray-700"
+                    />
+                  </motion.div>
+                  <motion.div variants={itemVariants} className="space-y-2">
+                    <Label htmlFor="phd2-profile">PHD2 配置文件</Label>
+                    <Select
+                      value={guiderInfo.phd2Profile}
+                      onValueChange={(value) =>
+                        setGuiderSettings({
+                          phd2Profile: value,
+                        })
+                      }
+                    >
+                      <SelectTrigger id="phd2-profile" className="bg-gray-700">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-700">
+                        <SelectItem value="default">默认</SelectItem>
+                        <SelectItem value="aggressive">激进</SelectItem>
+                        <SelectItem value="conservative">保守</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </motion.div>
+                </motion.div>
+                <motion.div variants={itemVariants}>
+                  <Button onClick={handleSettingsChange} className="w-full">
+                    应用设置
+                  </Button>
+                </motion.div>
 
-        <StyledCard>
-          <CardHeader>
-            <CardTitle>导星控制</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="flex flex-col sm:flex-row gap-4"
-            >
-              <motion.div variants={itemVariants} className="flex-1">
-                <Button
-                  onClick={handleStartGuiding}
-                  disabled={guiderInfo.state === "Guiding"}
-                  className="w-full bg-gray-700 hover:bg-gray-600"
+                <motion.div variants={itemVariants} className="space-y-2 mt-4">
+                  <Label>描述</Label>
+                  <div className="text-sm">{guiderInfo.description}</div>
+                </motion.div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Side Panel */}
+          <motion.div variants={itemVariants} className="space-y-4">
+            <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 shadow-xl rounded-2xl backdrop-blur-md transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl">
+              <CardHeader>
+                <CardTitle>导星控制</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="flex flex-col sm:flex-row gap-4"
                 >
-                  开始导星
-                </Button>
-              </motion.div>
-              <motion.div variants={itemVariants} className="flex-1">
-                <Button
-                  variant="destructive"
-                  onClick={handleStopGuiding}
-                  disabled={guiderInfo.state !== "Guiding"}
-                  className="w-full bg-red-700 hover:bg-red-600"
-                >
-                  停止导星
-                </Button>
-              </motion.div>
-              <motion.div variants={itemVariants} className="flex-1">
-                <Button
-                  onClick={handleDither}
-                  disabled={guiderInfo.state !== "Guiding"}
-                  className="w-full bg-gray-700 hover:bg-gray-600"
-                >
-                  抖动
-                </Button>
-              </motion.div>
-            </motion.div>
-          </CardContent>
-        </StyledCard>
-      </motion.div>
-    </Container>
+                  <motion.div variants={itemVariants} className="flex-1">
+                    <Button
+                      onClick={handleStartGuiding}
+                      disabled={guiderInfo.state === "Guiding"}
+                      className="w-full"
+                    >
+                      开始导星
+                    </Button>
+                  </motion.div>
+                  <motion.div variants={itemVariants} className="flex-1">
+                    <Button
+                      variant="destructive"
+                      onClick={handleStopGuiding}
+                      disabled={guiderInfo.state !== "Guiding"}
+                      className="w-full"
+                    >
+                      停止导星
+                    </Button>
+                  </motion.div>
+                  <motion.div variants={itemVariants} className="flex-1">
+                    <Button
+                      onClick={handleDither}
+                      disabled={guiderInfo.state !== "Guiding"}
+                      className="w-full"
+                    >
+                      抖动
+                    </Button>
+                  </motion.div>
+                </motion.div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </motion.div>
+      </div>
+    </motion.div>
   );
 }

@@ -1,162 +1,156 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import {
-  AreaChart,
-  Area,
+  Line,
+  LineChart as RechartsTemperatureLineChart,
+  ResponsiveContainer,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
+  CartesianGrid,
+  Legend,
 } from "recharts";
-import { motion } from "framer-motion";
-import styled, { ThemeProvider } from "styled-components";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { ChartWrapper } from "./ChartWrapper";
+import { CustomizationPanel } from "./CustomizationPanel";
 
-// 定义主题
-const lightTheme = {
-  background: "#fff",
-  grid: "#ccc",
-  text: "#000",
-  tooltipBg: "#fff",
-  tooltipText: "#000",
-  areaColors: {
-    r: "#ff0000",
-    g: "#00ff00",
-    b: "#0000ff",
-  },
-};
-
-const darkTheme = {
-  background: "#333",
-  grid: "#555",
-  text: "#fff",
-  tooltipBg: "#444",
-  tooltipText: "#fff",
-  areaColors: {
-    r: "#ff5555",
-    g: "#55ff55",
-    b: "#5555ff",
-  },
-};
-
-// 样式容器
-const ChartContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  background-color: ${(props) => props.theme.background};
-  padding: 20px;
-  box-sizing: border-box;
-`;
-
-// 动画变体
-const containerVariants = {
-  hidden: { opacity: 0, scale: 0.9 },
-  visible: { opacity: 1, scale: 1 },
-};
-
-interface HistogramChartProps {
-  data: { x: number; r: number; g: number; b: number }[];
-  width: string | number;
-  height: number;
-  darkMode?: boolean;
-  customize?: {
-    gridColor?: string;
-    tooltipBg?: string;
-    tooltipText?: string;
-    areaColors?: {
-      r?: string;
-      g?: string;
-      b?: string;
-    };
-  };
+interface DataPoint {
+  time: string;
+  temperature: number;
 }
 
-const HistogramChart: React.FC<HistogramChartProps> = ({
+interface ChartCustomization {
+  showGrid: boolean;
+  showTooltip: boolean;
+  showLegend: boolean;
+  showAxis: boolean;
+  enableAnimation: boolean;
+  dataPointSize: number;
+  lineThickness: number;
+  curveType: "monotone" | "linear" | "natural" | "step";
+  colorScheme: string;
+  darkMode: boolean;
+}
+
+const initialChartOptions: ChartCustomization = {
+  showGrid: true,
+  showTooltip: true,
+  showLegend: true,
+  showAxis: true,
+  enableAnimation: true,
+  dataPointSize: 4,
+  lineThickness: 2,
+  curveType: "monotone",
+  colorScheme: "default",
+  darkMode: false,
+};
+
+const initialViewOptions = {
+  searchBar: true,
+  statusBar: true,
+  toolbar: true,
+  minimap: false,
+  zoomControls: true,
+};
+
+export function TemperatureLineChart({
   data,
-  width,
-  height,
-  darkMode = false,
-  customize = {},
-}) => {
-  const theme = darkMode ? darkTheme : lightTheme;
-  const gridColor = customize.gridColor || theme.grid;
-  const tooltipBg = customize.tooltipBg || theme.tooltipBg;
-  const tooltipText = customize.tooltipText || theme.tooltipText;
-  const areaColors = {
-    r: customize.areaColors?.r || theme.areaColors.r,
-    g: customize.areaColors?.g || theme.areaColors.g,
-    b: customize.areaColors?.b || theme.areaColors.b,
+  enableZoom = true,
+  showGrid = true,
+  showLegend = true,
+}: {
+  data: DataPoint[];
+  enableZoom?: boolean;
+  showGrid?: boolean;
+  showLegend?: boolean;
+}) {
+  const [chartOptions, setChartOptions] = useState(initialChartOptions);
+  const [viewOptions, setViewOptions] = useState(initialViewOptions);
+
+  const handleDownload = () => {
+    const svg = document.querySelector(".recharts-wrapper svg");
+    if (svg) {
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const blob = new Blob([svgData], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "temperature-chart.svg";
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const handleExport = () => {
+    console.log("Exporting data...");
+  };
+
+  const handleShare = () => {
+    console.log("Sharing chart...");
   };
 
   return (
-    <ThemeProvider theme={theme}>
-      <ChartContainer>
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          transition={{ duration: 0.5 }}
+    <ChartWrapper
+      title="温度折线图"
+      controls={
+        <Button onClick={handleDownload} className="mr-2">
+          <Download size={16} className="mr-2" />
+          下载
+        </Button>
+      }
+      customization={
+        <CustomizationPanel
+          chartOptions={chartOptions}
+          setChartOptions={setChartOptions}
+          viewOptions={viewOptions}
+          setViewOptions={setViewOptions}
+          onExport={handleExport}
+          onShare={handleShare}
+        />
+      }
+      darkMode={chartOptions.darkMode}
+    >
+      <ResponsiveContainer width="100%" height={300}>
+        <RechartsTemperatureLineChart
+          data={data}
+          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
-          <ResponsiveContainer width={width} height={height}>
-            <AreaChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-              <XAxis
-                dataKey="x"
-                domain={[0, 255]}
-                stroke={theme.text}
-                tick={{ fill: theme.text }}
-              />
-              <YAxis stroke={theme.text} tick={{ fill: theme.text }} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: tooltipBg,
-                  color: tooltipText,
-                }}
-              />
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                <Area
-                  type="monotone"
-                  dataKey="r"
-                  stroke={areaColors.r}
-                  fill={areaColors.r}
-                  fillOpacity={0.6}
-                />
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
-              >
-                <Area
-                  type="monotone"
-                  dataKey="g"
-                  stroke={areaColors.g}
-                  fill={areaColors.g}
-                  fillOpacity={0.6}
-                />
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-              >
-                <Area
-                  type="monotone"
-                  dataKey="b"
-                  stroke={areaColors.b}
-                  fill={areaColors.b}
-                  fillOpacity={0.6}
-                />
-              </motion.div>
-            </AreaChart>
-          </ResponsiveContainer>
-        </motion.div>
-      </ChartContainer>
-    </ThemeProvider>
+          {chartOptions.showGrid && <CartesianGrid strokeDasharray="3 3" />}
+          <XAxis
+            dataKey="time"
+            stroke="#888888"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+          />
+          <YAxis
+            stroke="#888888"
+            fontSize={12}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(value) => `${value}°C`}
+          />
+          <Tooltip
+            contentStyle={{ backgroundColor: "#333", borderColor: "#333" }}
+            itemStyle={{ color: "#fff" }}
+          />
+          {chartOptions.showLegend && <Legend />}
+          <Line
+            type={chartOptions.curveType}
+            dataKey="temperature"
+            stroke="#4ade80"
+            strokeWidth={chartOptions.lineThickness}
+            dot={{ r: chartOptions.dataPointSize }}
+            isAnimationActive={chartOptions.enableAnimation}
+            animationDuration={1500}
+            animationEasing="ease-in-out"
+          />
+        </RechartsTemperatureLineChart>
+      </ResponsiveContainer>
+    </ChartWrapper>
   );
-};
+}
 
-export default HistogramChart;
+export default TemperatureLineChart;

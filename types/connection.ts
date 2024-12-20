@@ -13,13 +13,41 @@ export interface AdvancedSettings {
   backupInterval: number;
 }
 
+export interface DeviceStatus {
+  isOnline: boolean;
+  temperature: number;
+  humidity: number;
+  lastUpdate: string;
+  batteryLevel: number;
+  signalStrength: number;
+}
+
 export interface DeviceData {
   id: string;
   name: string;
   type: string;
+  model: string;
   connected: boolean;
-  status: "online" | "offline" | "error";
-  lastConnected?: string;
-  ipAddress?: string;
-  properties?: Record<string, any>;
+  status: DeviceStatus;
 }
+
+export type DeviceType =
+  | "Camera"
+  | "Mount"
+  | "Focuser"
+  | "FilterWheel"
+  | "Guider"
+  | "Weather"
+  | "Dome"
+  | "Rotator";
+
+export const DEVICE_TYPES: DeviceType[] = [
+  "Camera",
+  "Mount",
+  "Focuser",
+  "FilterWheel",
+  "Guider",
+  "Weather",
+  "Dome",
+  "Rotator",
+];

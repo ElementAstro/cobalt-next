@@ -22,6 +22,7 @@ interface MountState {
   toggleTrackSwitch: () => void;
   incrementSpeed: () => void;
   decrementSpeed: () => void;
+  setSpeedNum: (num: number) => void;
   setSpeedTotalNum: (nums: number[]) => void;
   setIsIdle: (idle: boolean) => void;
   setIsConnected: (connected: boolean) => void;
@@ -55,6 +56,7 @@ export const useMountStore = create<MountState>((set) => ({
     })),
   decrementSpeed: () =>
     set((state) => ({ speedNum: Math.max(state.speedNum - 1, 0) })),
+  setSpeedNum: (num) => set({ speedNum: num }),
   setSpeedTotalNum: (nums) => set({ speedTotalNum: nums }),
   setIsIdle: (idle) => set({ isIdle: idle }),
   setIsConnected: (connected) => set({ isConnected: connected }),

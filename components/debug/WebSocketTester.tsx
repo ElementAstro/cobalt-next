@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { motion } from "framer-motion";
-import { useWebSocketStore } from "@/lib/store/debug";
+import { useWebSocketStore } from "@/lib/store/debug/websocket";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 

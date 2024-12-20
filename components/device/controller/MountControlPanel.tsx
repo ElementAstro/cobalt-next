@@ -1,13 +1,22 @@
-// components/MountControlPanel.tsx
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
+import { Button } from "@/components/ui/button";
+import {
+  ChevronUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  StopCircle,
+  Home,
+  RefreshCw,
+  Settings2,
+  Power,
+} from "lucide-react";
 import { useMountControl } from "@/hooks/use-mount-control";
-import { Settings } from "./Settings";
-import styles from "./MountControlPanel.module.css";
 import { useMountStore } from "@/lib/store/device/telescope";
 
 interface MountControlPanelProps {
@@ -72,168 +81,127 @@ export const MountControlPanel: React.FC<MountControlPanelProps> = ({
   return (
     <motion.div
       ref={setNodeRef}
-      className={`${styles.mountControlPanel} ${
-        nightMode ? styles.nightMode : ""
-      } ${isLandscape ? styles.landscape : ""}`}
+      className={`
+        fixed z-50 p-4 rounded-lg shadow-lg
+        bg-background/80 dark:bg-slate-900/80 backdrop-blur
+        border border-border
+        ${isLandscape ? "right-4 top-20" : "bottom-20 right-4"}
+      `}
       style={{
-        width: `${size.width}px`,
-        height: `${size.height}px`,
         transform: CSS.Translate.toString(transform),
-        transformOrigin: "top left",
+      }}
+      drag
+      dragConstraints={{
+        top: 0,
+        left: 0,
+        right: window.innerWidth - 200,
+        bottom: window.innerHeight - 300,
       }}
       initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: zoomLevel }}
-      exit={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
-      {...attributes}
-      {...listeners}
     >
-      <div className={styles.dragHandle}>
-        <span>拖动这里</span>
-      </div>
-      <div className={styles.directionBtn}>
-        <motion.button
-          className={styles.raPlus}
-          onTouchStart={() => handleMouseDownRA("plus")}
-          onTouchEnd={stop}
-          whileTap={{ scale: 0.95 }}
-        >
-          <img src="/images/RA+.svg" height="40" alt="RA+" />
-        </motion.button>
-        <motion.button
-          className={styles.raMinus}
-          onTouchStart={() => handleMouseDownRA("minus")}
-          onTouchEnd={stop}
-          whileTap={{ scale: 0.95 }}
-        >
-          <img src="/images/RA-.svg" height="40" alt="RA-" />
-        </motion.button>
-        <motion.button
-          className={styles.decPlus}
-          onTouchStart={() => handleMouseDownDEC("plus")}
-          onTouchEnd={stop}
-          whileTap={{ scale: 0.95 }}
-        >
-          <img src="/images/DEC+.svg" height="40" alt="DEC+" />
-        </motion.button>
-        <motion.button
-          className={styles.decMinus}
-          onTouchStart={() => handleMouseDownDEC("minus")}
-          onTouchEnd={stop}
-          whileTap={{ scale: 0.95 }}
-        >
-          <img src="/images/DEC-.svg" height="40" alt="DEC-" />
-        </motion.button>
-      </div>
-
-      <motion.button
-        className={styles.btnStop}
-        onClick={stop}
-        whileTap={{ scale: 0.95 }}
-      >
-        <span>停止</span>
-      </motion.button>
-
-      <motion.button
-        className={styles.btnSpeed}
-        onClick={mountSlewRateSwitch}
-        ref={speedContentRef}
-        whileTap={{ scale: 0.95 }}
-      >
-        {speedNum}
-      </motion.button>
-
-      <motion.button
-        className={parkSwitch ? styles.btnParkOn : styles.btnPark}
-        onClick={mountPark}
-        whileTap={{ scale: 0.95 }}
-      >
-        <img src="/images/Park.svg" height="25" alt="Park" />
-      </motion.button>
-      <motion.button
-        className={trackSwitch ? styles.btnTrackOn : styles.btnTrack}
-        onClick={mountTrack}
-        whileTap={{ scale: 0.95 }}
-      >
-        <span>跟踪</span>
-      </motion.button>
-      <motion.button
-        className={styles.btnHome}
-        onClick={mountHome}
-        whileTap={{ scale: 0.95 }}
-      >
-        <img src="/images/Home.svg" height="20" alt="Home" />
-      </motion.button>
-      <motion.button
-        className={styles.btnSync}
-        onClick={mountSync}
-        whileTap={{ scale: 0.95 }}
-      >
-        <img src="/images/Sync.svg" height="20" alt="Sync" />
-      </motion.button>
-      <motion.button
-        className={styles.btnSolve}
-        onClick={solveSync}
-        whileTap={{ scale: 0.95 }}
-      >
-        <img src="/images/Solve.svg" height="20" alt="Solve" />
-      </motion.button>
-
-      <div className={styles.iconContainer}>
-        <motion.img
-          src={isIdle ? "/images/Status-idle.svg" : "/images/Status-busy.svg"}
-          height="15"
-          alt={isIdle ? "空闲" : "忙碌"}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-        />
-      </div>
-
-      <motion.button
-        className={styles.btnSettings}
-        onClick={toggleSettings}
-        whileTap={{ scale: 0.95 }}
-      >
-        <img src="/images/settings.svg" height="15" alt="设置" />
-      </motion.button>
-
-      <motion.button
-        className={styles.btnClose}
-        onClick={() => {
-          /* 关闭面板逻辑 */
-        }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <img src="/images/OFF.svg" height="12" alt="关闭" />
-      </motion.button>
-
-      <div
-        className={`${styles.connectionStatus} ${
-          useMountStore.getState().isConnected
-            ? styles.connected
-            : styles.disconnected
-        }`}
-      >
-        {useMountStore.getState().isConnected ? "已连接" : "已断开"}
-      </div>
-
-      <div className={styles.zoomControls}>
-        <button onClick={handleZoomIn}>+</button>
-        <button onClick={handleZoomOut}>-</button>
-      </div>
-
-      <AnimatePresence>
-        {showSettings && (
-          <Settings nightMode={nightMode} onClose={toggleSettings} />
-        )}
-      </AnimatePresence>
-
-      {isLandscape && (
-        <div className={styles.landscapeControls}>
-          {/* 添加横屏专用控制按钮 */}
+      <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-3 gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="aspect-square"
+            onTouchStart={() => handleMouseDownRA("plus")}
+            onTouchEnd={stop}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="aspect-square"
+            onTouchStart={() => handleMouseDownDEC("plus")}
+            onTouchEnd={stop}
+          >
+            <ChevronUp className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="aspect-square"
+            onTouchStart={() => handleMouseDownRA("minus")}
+            onTouchEnd={stop}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
-      )}
+
+        <Button
+          variant="destructive"
+          size="icon"
+          className="rounded-full"
+          onClick={stop}
+        >
+          <StopCircle className="h-4 w-4" />
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="aspect-square"
+          onClick={mountSlewRateSwitch}
+          ref={speedContentRef}
+        >
+          {speedNum}
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="aspect-square"
+          onClick={mountPark}
+        >
+          <img src="/images/Park.svg" height="25" alt="Park" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="aspect-square"
+          onClick={mountTrack}
+        >
+          <span>跟踪</span>
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="aspect-square"
+          onClick={mountHome}
+        >
+          <Home className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="aspect-square"
+          onClick={mountSync}
+        >
+          <RefreshCw className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="aspect-square"
+          onClick={solveSync}
+        >
+          <img src="/images/Solve.svg" height="20" alt="Solve" />
+        </Button>
+
+        <div className="flex justify-between items-center mt-2">
+          <span
+            className={`text-xs ${
+              isConnected ? "text-green-500" : "text-red-500"
+            }`}
+          >
+            {isConnected ? "已连接" : "已断开"}
+          </span>
+        </div>
+      </div>
     </motion.div>
   );
 };

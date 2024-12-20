@@ -11,6 +11,13 @@ interface GuiderInfo {
   exposureTime: number; // 新增：曝光时间
   calibrationStatus: string; // 新增：校准状态
   guidingAccuracy: number; // 新增：导星精度
+  isCalibrating: boolean; // 新增：是否正在校准
+  lastError: string | null; // 新增：最后一次错误信息
+  guidingStats: {          // 新增：导星统计信息
+    rms: number;
+    peak: number;
+    total: number;
+  };
 }
 
 interface GuiderSettings {
@@ -37,6 +44,9 @@ interface GuiderState {
   setExposureTime: (time: number) => void; // 新增：设置曝光时间
   setCalibrationStatus: (status: string) => void; // 新增：设置校准状态
   setGuidingAccuracy: (accuracy: number) => void; // 新增：设置导星精度
+  setCalibrating: (calibrating: boolean) => void; // 新增：设置是否正在校准
+  setLastError: (error: string | null) => void; // 新增：设置最后一次错误信息
+  setGuidingStats: (stats: GuiderInfo['guidingStats']) => void; // 新增：设置导星统计信息
 }
 
 export const useGuiderStore = create<GuiderState>((set) => ({
@@ -51,6 +61,13 @@ export const useGuiderStore = create<GuiderState>((set) => ({
     exposureTime: 1.0, // 默认曝光时间
     calibrationStatus: "Not Calibrated", // 默认校准状态
     guidingAccuracy: 0.0, // 默认导星精度
+    isCalibrating: false, // 默认是否正在校准
+    lastError: null, // 默认最后一次错误信息
+    guidingStats: { // 默认导星统计信息
+      rms: 0.0,
+      peak: 0.0,
+      total: 0.0,
+    },
   },
   selectedFilter: "1",
   isConnected: false,
@@ -99,5 +116,17 @@ export const useGuiderStore = create<GuiderState>((set) => ({
   setGuidingAccuracy: (accuracy) =>
     set((state) => ({
       guiderInfo: { ...state.guiderInfo, guidingAccuracy: accuracy },
+    })),
+  setCalibrating: (calibrating) =>
+    set((state) => ({
+      guiderInfo: { ...state.guiderInfo, isCalibrating: calibrating },
+    })),
+  setLastError: (error) =>
+    set((state) => ({
+      guiderInfo: { ...state.guiderInfo, lastError: error },
+    })),
+  setGuidingStats: (stats) =>
+    set((state) => ({
+      guiderInfo: { ...state.guiderInfo, guidingStats: stats },
     })),
 }));

@@ -1,8 +1,9 @@
 "use client";
 
+import React, { useState } from "react";
 import {
   Line,
-  LineChart as RechartsLineChart,
+  LineChart as RechartsTemperatureLineChart,
   ResponsiveContainer,
   XAxis,
   YAxis,
@@ -11,27 +12,63 @@ import {
   Legend,
 } from "recharts";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
 import { Download } from "lucide-react";
+import { ChartWrapper } from "./ChartWrapper";
+import { CustomizationPanel } from "./CustomizationPanel";
 
 interface DataPoint {
   time: string;
   temperature: number;
 }
 
-interface LineChartProps {
-  data: DataPoint[];
-  enableZoom?: boolean;
-  showGrid?: boolean;
-  showLegend?: boolean;
+interface ChartCustomization {
+  showGrid: boolean;
+  showTooltip: boolean;
+  showLegend: boolean;
+  showAxis: boolean;
+  enableAnimation: boolean;
+  dataPointSize: number;
+  lineThickness: number;
+  curveType: "monotone" | "linear" | "natural" | "step";
+  colorScheme: string;
+  darkMode: boolean;
 }
 
-export function LineChart({
+const initialChartOptions: ChartCustomization = {
+  showGrid: true,
+  showTooltip: true,
+  showLegend: true,
+  showAxis: true,
+  enableAnimation: true,
+  dataPointSize: 4,
+  lineThickness: 2,
+  curveType: "monotone",
+  colorScheme: "default",
+  darkMode: false,
+};
+
+const initialViewOptions = {
+  searchBar: true,
+  statusBar: true,
+  toolbar: true,
+  minimap: false,
+  zoomControls: true,
+};
+
+export function TemperatureLineChart({
   data,
   enableZoom = true,
   showGrid = true,
   showLegend = true,
-}: LineChartProps) {
+}: {
+  data: DataPoint[];
+  enableZoom?: boolean;
+  showGrid?: boolean;
+  showLegend?: boolean;
+}) {
+  const [chartOptions, setChartOptions] = useState(initialChartOptions);
+  const [viewOptions, setViewOptions] = useState(initialViewOptions);
+
   const handleDownload = () => {
     const svg = document.querySelector(".recharts-wrapper svg");
     if (svg) {
@@ -46,25 +83,41 @@ export function LineChart({
     }
   };
 
+  const handleExport = () => {
+    console.log("Exporting data...");
+  };
+
+  const handleShare = () => {
+    console.log("Sharing chart...");
+  };
+
   return (
-    <motion.div
-      className="p-4 bg-gray-800 text-white rounded-lg shadow-lg"
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="flex justify-end mb-2">
+    <ChartWrapper
+      title="温度折线图"
+      controls={
         <Button onClick={handleDownload} className="mr-2">
           <Download size={16} className="mr-2" />
           下载
         </Button>
-      </div>
+      }
+      customization={
+        <CustomizationPanel
+          chartOptions={chartOptions}
+          setChartOptions={setChartOptions}
+          viewOptions={viewOptions}
+          setViewOptions={setViewOptions}
+          onExport={handleExport}
+          onShare={handleShare}
+        />
+      }
+      darkMode={chartOptions.darkMode}
+    >
       <ResponsiveContainer width="100%" height={300}>
-        <RechartsLineChart
+        <RechartsTemperatureLineChart
           data={data}
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
-          {showGrid && <CartesianGrid strokeDasharray="3 3" />}
+          {chartOptions.showGrid && <CartesianGrid strokeDasharray="3 3" />}
           <XAxis
             dataKey="time"
             stroke="#888888"
@@ -83,19 +136,21 @@ export function LineChart({
             contentStyle={{ backgroundColor: "#333", borderColor: "#333" }}
             itemStyle={{ color: "#fff" }}
           />
-          {showLegend && <Legend />}
+          {chartOptions.showLegend && <Legend />}
           <Line
-            type="monotone"
+            type={chartOptions.curveType}
             dataKey="temperature"
             stroke="#4ade80"
-            strokeWidth={2}
-            dot={false}
-            isAnimationActive={true}
+            strokeWidth={chartOptions.lineThickness}
+            dot={{ r: chartOptions.dataPointSize }}
+            isAnimationActive={chartOptions.enableAnimation}
             animationDuration={1500}
             animationEasing="ease-in-out"
           />
-        </RechartsLineChart>
+        </RechartsTemperatureLineChart>
       </ResponsiveContainer>
-    </motion.div>
+    </ChartWrapper>
   );
 }
+
+export default TemperatureLineChart;

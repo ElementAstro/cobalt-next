@@ -1,5 +1,5 @@
 import { api } from "@/services/axios";
-import { useGuiderStore } from "@/lib/store/device";
+import { useGuiderStore } from "@/lib/store/device/guiding";
 import * as yup from "yup";
 import logger from "@/lib/logger";
 
@@ -156,6 +156,48 @@ export const guiderApi = {
     } catch (error) {
       logger.error("Failed to dither:", error);
       throw new Error("Failed to dither");
+    }
+  },
+
+  // 新增：获取导星信息实时更新
+  subscribeToUpdates: (onUpdate: (data: any) => void) => {
+    const ws = new WebSocket(`ws://${process.env.NEXT_PUBLIC_API_HOST}/guider`);
+    
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      onUpdate(data);
+      
+      // 更新状态存储
+      const store = useGuiderStore.getState();
+      if (data.exposureTime !== undefined) {
+        store.setExposureTime(data.exposureTime);
+      }
+      if (data.calibrationStatus !== undefined) {
+        store.setCalibrationStatus(data.calibrationStatus);
+      }
+      if (data.guidingAccuracy !== undefined) {
+        store.setGuidingAccuracy(data.guidingAccuracy);
+      }
+    };
+
+    return () => {
+      ws.close();
+    };
+  },
+
+  // 新增：校准导星
+  calibrate: async () => {
+    logger.info("Starting guider calibration...");
+    try {
+      await api.request({
+        url: `${BASE_URL}/calibrate`,
+        method: "POST",
+      });
+      useGuiderStore.getState().setCalibrationStatus("Calibrating");
+      logger.info("Guider calibration started.");
+    } catch (error) {
+      logger.error("Failed to start calibration:", error);
+      throw new Error("Failed to start calibration");
     }
   },
 };

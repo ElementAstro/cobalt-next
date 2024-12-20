@@ -204,4 +204,92 @@ export const domeApi = {
       throw new Error("Failed to set dome rain status");
     }
   },
+
+  openShutter: async () => {
+    logger.info("Opening dome shutter...");
+    try {
+      await api.request({
+        url: `${BASE_URL}/shutter/open`,
+        method: "POST",
+      });
+      useDomeStore.getState().setShutterStatus("opening");
+      logger.info("Dome shutter opening...");
+    } catch (error) {
+      logger.error("Failed to open dome shutter:", error);
+      throw new Error("Failed to open dome shutter");
+    }
+  },
+
+  closeShutter: async () => {
+    logger.info("Closing dome shutter...");
+    try {
+      await api.request({
+        url: `${BASE_URL}/shutter/close`,
+        method: "POST",
+      });
+      useDomeStore.getState().setShutterStatus("closing");
+      logger.info("Dome shutter closing...");
+    } catch (error) {
+      logger.error("Failed to close dome shutter:", error);
+      throw new Error("Failed to close dome shutter");
+    }
+  },
+
+  sync: async () => {
+    logger.info("Syncing dome with telescope...");
+    try {
+      await api.request({
+        url: `${BASE_URL}/sync`,
+        method: "POST",
+      });
+      useDomeStore.getState().setSynced(true);
+      logger.info("Dome synced with telescope.");
+    } catch (error) {
+      logger.error("Failed to sync dome:", error);
+      throw new Error("Failed to sync dome");
+    }
+  },
+
+  findHome: async () => {
+    logger.info("Finding dome home position...");
+    try {
+      await api.request({
+        url: `${BASE_URL}/findHome`,
+        method: "POST",
+      });
+      logger.info("Dome finding home position...");
+    } catch (error) {
+      logger.error("Failed to find dome home:", error);
+      throw new Error("Failed to find dome home");
+    }
+  },
+
+  park: async () => {
+    logger.info("Parking dome...");
+    try {
+      await api.request({
+        url: `${BASE_URL}/park`,
+        method: "POST",
+      });
+      logger.info("Dome parking...");
+    } catch (error) {
+      logger.error("Failed to park dome:", error);
+      throw new Error("Failed to park dome");
+    }
+  },
+
+  stop: async () => {
+    logger.info("Stopping dome movement...");
+    try {
+      await api.request({
+        url: `${BASE_URL}/stop`,
+        method: "POST",
+      });
+      useDomeStore.getState().setSlewing(false);
+      logger.info("Dome movement stopped.");
+    } catch (error) {
+      logger.error("Failed to stop dome:", error);
+      throw new Error("Failed to stop dome");
+    }
+  },
 };

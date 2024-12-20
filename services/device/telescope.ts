@@ -1,5 +1,5 @@
 import { api } from "@/services/axios";
-import { useMountStore } from "@/lib/store/device";
+import { useMountStore } from "@/lib/store/device/telescope";
 import * as yup from "yup";
 import logger from "@/lib/logger";
 

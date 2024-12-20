@@ -30,58 +30,66 @@ const mockProfileData: ProfileData = {
   indiWebManager: false,
 };
 
-// 更新模拟设备数据
+// Mock device data with updated interface
 const mockDevices: DeviceData[] = [
   {
     id: "mount-01",
-    name: "Mount",
-    type: "Mount Simulator",
+    name: "EQ6-R Pro Mount",
+    type: "Mount",
+    model: "EQ6-R Pro",
     connected: false,
-    status: "offline",
-    lastConnected: "2023-07-01T10:00:00Z",
-    ipAddress: "192.168.1.100",
-    properties: {
-      model: "EQ6-R Pro",
-      firmware: "v1.0.0",
+    status: {
+      isOnline: false,
+      temperature: 25.0,
+      humidity: 45.0,
+      lastUpdate: "2023-07-01T10:00:00Z",
+      batteryLevel: 100,
+      signalStrength: 95,
     },
   },
   {
     id: "camera-01",
-    name: "Camera 1",
-    type: "CCD Simulator",
+    name: "ZWO ASI294MM Pro",
+    type: "Camera",
+    model: "ASI294MM Pro",
     connected: false,
-    status: "offline",
-    lastConnected: "2023-07-01T10:00:00Z",
-    ipAddress: "192.168.1.101",
-    properties: {
-      resolution: "3096x2080",
-      pixelSize: "3.8um",
+    status: {
+      isOnline: false,
+      temperature: -10.0,
+      humidity: 20.0,
+      lastUpdate: "2023-07-01T10:00:00Z",
+      batteryLevel: 100,
+      signalStrength: 98,
     },
   },
   {
     id: "focuser-01",
-    name: "Focuser",
-    type: "Focuser Simulator",
+    name: "ZWO EAF",
+    type: "Focuser",
+    model: "EAF",
     connected: false,
-    status: "offline",
-    lastConnected: "2023-07-01T10:00:00Z",
-    ipAddress: "192.168.1.102",
-    properties: {
-      maxTravel: 100000,
-      position: 0,
+    status: {
+      isOnline: false,
+      temperature: 22.0,
+      humidity: 40.0,
+      lastUpdate: "2023-07-01T10:00:00Z",
+      batteryLevel: 95,
+      signalStrength: 92,
     },
   },
   {
     id: "filterwheel-01",
-    name: "Filter Wheel",
-    type: "Filter Simulator",
+    name: "ZWO EFW",
+    type: "FilterWheel",
+    model: "EFW 7x36mm",
     connected: false,
-    status: "offline",
-    lastConnected: "2023-07-01T10:00:00Z",
-    ipAddress: "192.168.1.103",
-    properties: {
-      positions: 8,
-      currentPosition: 1,
+    status: {
+      isOnline: false,
+      temperature: 23.0,
+      humidity: 42.0,
+      lastUpdate: "2023-07-01T10:00:00Z",
+      batteryLevel: 90,
+      signalStrength: 94,
     },
   },
 ];
@@ -95,6 +103,10 @@ const mockAdvancedSettings: AdvancedSettings = {
   notifications: true,
   autoSave: true,
   language: "en",
+  maxConnections: 5,
+  bufferSize: 1024,
+  autoBackup: true,
+  backupInterval: 24,
 };
 
 export function createApiService(useMock: boolean) {
@@ -187,7 +199,6 @@ export function createApiService(useMock: boolean) {
             const updatedDevice = {
               ...device,
               connected: true,
-              status: "online" as const,
               lastConnected: new Date().toISOString(),
             };
             logger.info("Returning updated mock device data", updatedDevice);
@@ -224,9 +235,7 @@ export function createApiService(useMock: boolean) {
             const updatedDevice = {
               ...device,
               connected: false,
-              status: "offline" as const,
             };
-            logger.info("Returning updated mock device data", updatedDevice);
             resolve(updatedDevice);
           } else {
             logger.error("Device not found");

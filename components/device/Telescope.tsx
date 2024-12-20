@@ -1,54 +1,53 @@
-"use client";
-
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import React from "react";
+import { useEffect } from "react";
+import { motion } from "framer-motion";
+import { toast } from "@/hooks/use-toast";
+import { mountApi } from "@/services/device/telescope";
 import {
+  Home,
+  Power,
+  ChevronUp,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ChevronUp,
-  Home,
+  Compass,
+  Settings2,
+  Activity,
+  Timer,
+  Target,
   ParkingSquare,
 } from "lucide-react";
-import { useMockBackend } from "@/utils/mock-device";
-import { DeviceSelector } from "./DeviceSelector";
-import { motion } from "framer-motion";
 import { useMountStore } from "@/lib/store/device/telescope";
-import styled from "styled-components";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-
-const Container = styled(motion.div)`
-  color: white;
-  background-color: #1f2937;
-  min-height: 100vh;
-  padding: 1rem;
-`;
-
-const StyledCard = styled(Card)`
-  background: linear-gradient(to bottom right, #374151, #1f2937);
-  border-color: #4b5563;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  border-radius: 16px;
-  backdrop-filter: blur(8px);
-  transition: transform 0.2s, box-shadow 0.2s;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-  }
-`;
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { DeviceSelector } from "./DeviceSelector";
 
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.2,
-    },
+    transition: { staggerChildren: 0.1 },
   },
 };
 
@@ -57,381 +56,390 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-export function TelescopePage() {
-  const [targetRA, setTargetRA] = useState("00:00:00");
-  const [targetDec, setTargetDec] = useState("00:00:00");
-  const { toast } = useToast();
+export default function TelescopePage() {
   const {
-    telescopeInfo,
-    moveTelescopeManual,
-    slewToCoordinates,
-    parkTelescope,
-    homeTelescope,
-  } = useMockBackend();
+    parkSwitch,
+    homeSwitch,
+    trackSwitch,
+    speedNum,
+    speedTotalNum,
+    isIdle,
+    isConnected,
+    nightMode,
+    currentRA,
+    currentDec,
+    currentAz,
+    currentAlt,
+    setCurrentRA,
+    setCurrentDec,
+    setCurrentAz,
+    setCurrentAlt,
+    toggleParkSwitch,
+    toggleHomeSwitch,
+    toggleTrackSwitch,
+    incrementSpeed,
+    decrementSpeed,
+    setSpeedNum,
+    setSpeedTotalNum,
+    setIsIdle,
+    setIsConnected,
+    toggleNightMode,
+  } = useMountStore();
 
-  const [trackingRate, setTrackingRate] = useState("1.0");
-  const [pierSide, setPierSide] = useState<"East" | "West">("East");
-  const [guideRate, setGuideRate] = useState("0.5");
+  useEffect(() => {
+    if (speedTotalNum.length === 0) {
+      setSpeedTotalNum([1, 2, 5, 10, 20, 30]);
+    }
+  }, [speedTotalNum.length, setSpeedTotalNum]);
 
-  const handleManualMove = (direction: string) => {
-    moveTelescopeManual(direction);
-    toast({
-      title: "Telescope Moving",
-      description: `Moving telescope ${direction}`,
-    });
+  const handleConnect = async () => {
+    try {
+      await mountApi.connect();
+      toast({
+        title: "成功",
+        description: "设备连接成功",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "错误",
+        description: "设备连接失败",
+        variant: "destructive",
+      });
+      console.error(error);
+    }
   };
 
-  const handleSlew = () => {
-    slewToCoordinates(targetRA, targetDec);
-    toast({
-      title: "Slewing Telescope",
-      description: `Slewing to RA: ${targetRA}, Dec: ${targetDec}`,
-    });
+  const handleDisconnect = async () => {
+    try {
+      await mountApi.disconnect();
+      toast({
+        title: "成功",
+        description: "设备已断开连接",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "错误",
+        description: "设备断开失败",
+        variant: "destructive",
+      });
+      console.error(error);
+    }
   };
 
-  const handlePark = () => {
-    parkTelescope();
-    toast({
-      title: "Parking Telescope",
-      description: "Telescope is being parked",
-    });
+  const handleTogglePark = async () => {
+    try {
+      await mountApi.togglePark();
+      toast({
+        title: "成功",
+        description: parkSwitch ? "停靠已启动" : "停靠已取消",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "错误",
+        description: "停靠操作失败",
+        variant: "destructive",
+      });
+      console.error(error);
+    }
   };
 
-  const handleHome = () => {
-    homeTelescope();
-    toast({
-      title: "Homing Telescope",
-      description: "Telescope is moving to home position",
-    });
+  const handleToggleHome = async () => {
+    try {
+      await mountApi.toggleHome();
+      toast({
+        title: "成功",
+        description: homeSwitch ? "归位已启动" : "归位已取消",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "错误",
+        description: "归位操作失败",
+        variant: "destructive",
+      });
+      console.error(error);
+    }
   };
 
-  const handleSetTrackingRate = () => {
-    toast({
-      title: "追踪速率已更新",
-      description: `速率设置为 ${trackingRate}x 恒星速率`,
-    });
+  const handleToggleTrack = async () => {
+    try {
+      await mountApi.toggleTrack();
+      toast({
+        title: "成功",
+        description: trackSwitch ? "追踪已启动" : "追踪已停止",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "错误",
+        description: "追踪切换失败",
+        variant: "destructive",
+      });
+      console.error(error);
+    }
   };
 
-  const handleFlipMeridian = () => {
-    setPierSide((prev) => (prev === "East" ? "West" : "East"));
-    toast({
-      title: "子午线翻转",
-      description: `转换到子午线${pierSide === "East" ? "西" : "东"}侧`,
-    });
-  };
+  const handleManualMove = async (direction: string) => {
+    try {
+      let newAz = currentAz;
+      let newAlt = currentAlt;
+      const step = speedTotalNum[speedNum] || 1;
 
-  const mountStore = useMountStore();
+      switch (direction) {
+        case "up":
+          newAlt = Math.min(currentAlt + step, 90);
+          await mountApi.setCurrentAlt(newAlt);
+          break;
+        case "down":
+          newAlt = Math.max(currentAlt - step, 0);
+          await mountApi.setCurrentAlt(newAlt);
+          break;
+        case "left":
+          newAz = (currentAz - step + 360) % 360;
+          await mountApi.setCurrentAz(newAz);
+          break;
+        case "right":
+          newAz = (currentAz + step) % 360;
+          await mountApi.setCurrentAz(newAz);
+          break;
+        case "stop":
+          break;
+      }
+    } catch (error) {
+      toast({
+        title: "错误",
+        description: "移动操作失败",
+        variant: "destructive",
+      });
+      console.error(error);
+    }
+  };
 
   return (
-    <Container variants={containerVariants} initial="hidden" animate="visible">
-      <DeviceSelector
-        deviceType="Telescope"
-        devices={["Celestron CGX", "Skywatcher EQ6-R", "iOptron CEM60"]}
-        onDeviceChange={(device) =>
-          console.log(`Selected telescope: ${device}`)
-        }
-      />
-      <motion.div variants={itemVariants} className="grid gap-6 lg:grid-cols-2">
-        <StyledCard>
-          <CardHeader>
-            <CardTitle>Telescope Information</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-            >
-              <motion.div variants={itemVariants} className="space-y-2">
-                <Label>Site Latitude</Label>
-                <Input
-                  value={telescopeInfo.siteLatitude}
-                  readOnly
-                  className="text-white bg-gray-700"
-                />
-              </motion.div>
-              <motion.div variants={itemVariants} className="space-y-2">
-                <Label>Site Longitude</Label>
-                <Input
-                  value={telescopeInfo.siteLongitude}
-                  readOnly
-                  className="text-white bg-gray-700"
-                />
-              </motion.div>
-              <motion.div variants={itemVariants} className="space-y-2">
-                <Label>Right Ascension</Label>
-                <Input
-                  value={telescopeInfo.rightAscension}
-                  readOnly
-                  className="text-white bg-gray-700"
-                />
-              </motion.div>
-              <motion.div variants={itemVariants} className="space-y-2">
-                <Label>Declination</Label>
-                <Input
-                  value={telescopeInfo.declination}
-                  readOnly
-                  className="text-white bg-gray-700"
-                />
-              </motion.div>
-              <motion.div variants={itemVariants} className="space-y-2">
-                <Label>Altitude</Label>
-                <Input
-                  value={telescopeInfo.altitude}
-                  readOnly
-                  className="text-white bg-gray-700"
-                />
-              </motion.div>
-              <motion.div variants={itemVariants} className="space-y-2">
-                <Label>Azimuth</Label>
-                <Input
-                  value={telescopeInfo.azimuth}
-                  readOnly
-                  className="text-white bg-gray-700"
-                />
-              </motion.div>
-            </motion.div>
-          </CardContent>
-        </StyledCard>
-        
-        <motion.div className="grid gap-6">
-          <StyledCard>
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-                状态监控
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-              >
-                <motion.div variants={itemVariants} className="space-y-2">
-                  <Label>Site Latitude</Label>
-                  <Input
-                    value={telescopeInfo.siteLatitude}
-                    readOnly
-                    className="text-white bg-gray-700"
-                  />
-                </motion.div>
-                <motion.div variants={itemVariants} className="space-y-2">
-                  <Label>Site Longitude</Label>
-                  <Input
-                    value={telescopeInfo.siteLongitude}
-                    readOnly
-                    className="text-white bg-gray-700"
-                  />
-                </motion.div>
-                <motion.div variants={itemVariants} className="space-y-2">
-                  <Label>Right Ascension</Label>
-                  <Input
-                    value={telescopeInfo.rightAscension}
-                    readOnly
-                    className="text-white bg-gray-700"
-                  />
-                </motion.div>
-                <motion.div variants={itemVariants} className="space-y-2">
-                  <Label>Declination</Label>
-                  <Input
-                    value={telescopeInfo.declination}
-                    readOnly
-                    className="text-white bg-gray-700"
-                  />
-                </motion.div>
-                <motion.div variants={itemVariants} className="space-y-2">
-                  <Label>Altitude</Label>
-                  <Input
-                    value={telescopeInfo.altitude}
-                    readOnly
-                    className="text-white bg-gray-700"
-                  />
-                </motion.div>
-                <motion.div variants={itemVariants} className="space-y-2">
-                  <Label>Azimuth</Label>
-                  <Input
-                    value={telescopeInfo.azimuth}
-                    readOnly
-                    className="text-white bg-gray-700"
-                  />
-                </motion.div>
-              </motion.div>
-            </CardContent>
-          </StyledCard>
-          
-          <StyledCard>
-            <CardHeader>
-              <CardTitle>Manual Control</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="flex flex-col items-center"
-              >
+    <motion.div
+      className="min-h-screen bg-gray-900 text-white p-4"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <div className="max-w-7xl mx-auto space-y-8">
+        <DeviceSelector
+          deviceType="Telescope"
+          onDeviceChange={(device) =>
+            console.log(`Selected telescope: ${device}`)
+          }
+        />
+
+        <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Main Control Panel */}
+          <motion.div variants={itemVariants} className="md:col-span-2">
+            <ScrollArea className="h-screen w-full bg-gray-900 text-white">
+              <motion.div className="grid grid-cols-12 gap-4 p-4">
+                {/* Status Bar */}
                 <motion.div
                   variants={itemVariants}
-                  className="grid grid-cols-3 gap-2 max-w-[240px] w-full"
+                  className="col-span-12 flex items-center justify-between bg-gray-800 p-4 rounded-lg"
                 >
-                  <div />
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="aspect-square text-white"
-                    onClick={() => handleManualMove("up")}
-                  >
-                    <ChevronUp className="h-4 w-4" />
-                  </Button>
-                  <div />
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="aspect-square text-white"
-                    onClick={() => handleManualMove("left")}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="aspect-square text-white"
-                    onClick={() => handleManualMove("stop")}
-                  >
-                    Stop
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="aspect-square text-white"
-                    onClick={() => handleManualMove("right")}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  <div />
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="aspect-square text-white"
-                    onClick={() => handleManualMove("down")}
-                  >
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                  <div />
+                  <div className="flex items-center gap-4">
+                    <Badge variant={isConnected ? "default" : "destructive"}>
+                      {isConnected ? "已连接" : "未连接"}
+                    </Badge>
+                    <Badge variant={parkSwitch ? "default" : "secondary"}>
+                      {parkSwitch ? "已停靠" : "未停靠"}
+                    </Badge>
+                    <Badge variant={trackSwitch ? "default" : "secondary"}>
+                      {trackSwitch ? "追踪中" : "未追踪"}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Button
+                      size="sm"
+                      variant={isConnected ? "destructive" : "default"}
+                      onClick={handleConnect}
+                    >
+                      <Power className="w-4 h-4 mr-2" />
+                      {isConnected ? "断开连接" : "连接望远镜"}
+                    </Button>
+                  </div>
                 </motion.div>
 
+                {/* Main Controls */}
+                <motion.div variants={itemVariants} className="col-span-8">
+                  <Tabs defaultValue="movement" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="movement">
+                        <Compass className="w-4 h-4 mr-2" />
+                        移动控制
+                      </TabsTrigger>
+                      <TabsTrigger value="tracking">
+                        <Target className="w-4 h-4 mr-2" />
+                        追踪设置
+                      </TabsTrigger>
+                      <TabsTrigger value="advanced">
+                        <Settings2 className="w-4 h-4 mr-2" />
+                        高级选项
+                      </TabsTrigger>
+                    </TabsList>
+
+                    {/* Movement Controls */}
+                    <TabsContent value="movement">
+                      <Card>
+                        <CardContent className="space-y-4 pt-4">
+                          {/* Direction Controls */}
+                          <div className="flex flex-col items-center space-y-4">
+                            {/* ...existing direction control buttons... */}
+                          </div>
+
+                          {/* Speed Controls */}
+                          <div className="space-y-2">
+                            <Label>移动速度</Label>
+                            <div className="flex items-center gap-2">
+                              <Slider
+                                value={[speedNum]}
+                                onValueChange={([v]) => setSpeedNum(v)}
+                                max={speedTotalNum.length - 1}
+                                step={1}
+                                className="flex-1"
+                              />
+                              <div className="w-20 text-center">
+                                {speedTotalNum[speedNum]}x
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Park & Home Controls */}
+                          <div className="flex justify-between">
+                            <Button
+                              variant="outline"
+                              onClick={handleTogglePark}
+                              disabled={!isConnected}
+                            >
+                              <ParkingSquare className="w-4 h-4 mr-2" />
+                              {parkSwitch ? "取消停靠" : "停靠"}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={handleToggleHome}
+                              disabled={!isConnected}
+                            >
+                              <Home className="w-4 h-4 mr-2" />
+                              {homeSwitch ? "取消归位" : "归位"}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+
+                    {/* Tracking Settings */}
+                    <TabsContent value="tracking">
+                      <Card>
+                        <CardContent className="space-y-4 pt-4">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <Label>天体追踪</Label>
+                              <Switch
+                                checked={trackSwitch}
+                                onCheckedChange={handleToggleTrack}
+                                disabled={!isConnected}
+                              />
+                            </div>
+                            <Select defaultValue="sidereal">
+                              <SelectTrigger className="w-full bg-gray-600">
+                                <SelectValue placeholder="选择追踪速率" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="sidereal">恒星时</SelectItem>
+                                <SelectItem value="solar">太阳时</SelectItem>
+                                <SelectItem value="lunar">月球时</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+
+                    {/* Advanced Settings */}
+                    <TabsContent value="advanced">
+                      {/* ...existing advanced settings... */}
+                    </TabsContent>
+                  </Tabs>
+                </motion.div>
+
+                {/* Side Info */}
                 <motion.div
                   variants={itemVariants}
-                  className="flex flex-col sm:flex-row justify-center gap-2 mt-4 w-full"
+                  className="col-span-4 space-y-4"
                 >
-                  <Button
-                    variant="secondary"
-                    className="w-full sm:w-24 text-white"
-                    onClick={handlePark}
-                  >
-                    <ParkingSquare className="mr-2 h-4 w-4" />
-                    Park
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    className="w-full sm:w-24 text-white"
-                    onClick={handleHome}
-                  >
-                    <Home className="mr-2 h-4 w-4" />
-                    Home
-                  </Button>
+                  {/* Current Position */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>当前位置</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>赤经 (RA)</Label>
+                          <div className="text-sm">{currentRA.toFixed(2)}°</div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>赤纬 (DEC)</Label>
+                          <div className="text-sm">
+                            {currentDec.toFixed(2)}°
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>方位角 (AZ)</Label>
+                          <div className="text-sm">{currentAz.toFixed(2)}°</div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>高度角 (ALT)</Label>
+                          <div className="text-sm">
+                            {currentAlt.toFixed(2)}°
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Status Info */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>状态信息</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>连接状态</Label>
+                          <Badge variant="default">
+                            {isConnected ? "已连接" : "未连接"}
+                          </Badge>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>移动速度</Label>
+                          <div className="flex items-center">
+                            <Activity className="w-4 h-4 mr-2" />
+                            <span>{speedTotalNum[speedNum]}x</span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>追踪状态</Label>
+                          <div className="flex items-center">
+                            <Timer className="w-4 h-4 mr-2" />
+                            <span>{trackSwitch ? "追踪中" : "未追踪"}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </motion.div>
               </motion.div>
-            </CardContent>
-          </StyledCard>
-
-          <StyledCard>
-            <CardHeader>
-              <CardTitle>Slew to Coordinates</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-              >
-                <motion.div variants={itemVariants} className="space-y-2">
-                  <Label htmlFor="target-ra">Target RA</Label>
-                  <Input
-                    id="target-ra"
-                    value={targetRA}
-                    onChange={(e) => setTargetRA(e.target.value)}
-                    placeholder="HH:MM:SS"
-                    className="text-white bg-gray-700"
-                  />
-                </motion.div>
-                <motion.div variants={itemVariants} className="space-y-2">
-                  <Label htmlFor="target-dec">Target Dec</Label>
-                  <Input
-                    id="target-dec"
-                    value={targetDec}
-                    onChange={(e) => setTargetDec(e.target.value)}
-                    placeholder="DD:MM:SS"
-                    className="text-white bg-gray-700"
-                  />
-                </motion.div>
-                <motion.div variants={itemVariants} className="flex items-end">
-                  <Button
-                    onClick={handleSlew}
-                    className="w-full sm:w-auto text-white"
-                  >
-                    Slew
-                  </Button>
-                </motion.div>
-              </motion.div>
-            </CardContent>
-          </StyledCard>
-
-          <StyledCard>
-            <CardHeader>
-              <CardTitle>高级控制</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>追踪速率</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={trackingRate}
-                      onChange={(e) => setTrackingRate(e.target.value)}
-                      className="w-24"
-                    />
-                    <Button onClick={handleSetTrackingRate}>设置</Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>导星速率</Label>
-                  <Select value={guideRate} onValueChange={setGuideRate}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0.25">0.25x</SelectItem>
-                      <SelectItem value="0.5">0.5x</SelectItem>
-                      <SelectItem value="1.0">1.0x</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>子午线侧</Label>
-                  <div className="flex gap-2">
-                    <div>{pierSide}</div>
-                    <Button onClick={handleFlipMeridian}>翻转</Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </StyledCard>
+            </ScrollArea>
+          </motion.div>
         </motion.div>
-      </motion.div>
-    </Container>
+      </div>
+    </motion.div>
   );
 }

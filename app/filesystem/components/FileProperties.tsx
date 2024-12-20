@@ -1,17 +1,22 @@
 import React from "react";
-import { X } from "lucide-react";
+import { X, Star, StarOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { File } from "@/types/filesystem";
 import { format } from "date-fns";
 import {
   Card,
   CardHeader,
   CardFooter,
   CardContent,
+  CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useThemeStore } from "@/lib/store/theme";
+import { Switch } from "@/components/ui/switch";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { File } from "@/types/filesystem";
 
 interface FilePropertiesProps {
   file: File;
@@ -19,12 +24,19 @@ interface FilePropertiesProps {
   onClose: () => void;
 }
 
-export const FileProperties: React.FC<FilePropertiesProps> = ({
+export function FileProperties({
   file,
   isOpen,
   onClose,
-}) => {
+}: FilePropertiesProps) {
   const { theme, toggleTheme } = useThemeStore();
+  const [favorite, setFavorite] = React.useState(false);
+  const [readOnly, setReadOnly] = React.useState<boolean>(
+    file.permissions.includes("read") && !file.permissions.includes("write")
+  );
+  const [detailLevel, setDetailLevel] = React.useState<"basic" | "advanced">(
+    "basic"
+  );
 
   const variants = {
     backdrop: {
@@ -37,22 +49,16 @@ export const FileProperties: React.FC<FilePropertiesProps> = ({
       visible: {
         y: 0,
         opacity: 1,
-        transition: {
-          type: "spring",
-          stiffness: 300,
-          damping: 24,
-          staggerChildren: 0.1,
-        },
+        transition: { type: "spring", stiffness: 300, damping: 24 },
       },
       exit: { y: 50, opacity: 0 },
     },
-    item: {
-      hidden: { opacity: 0, y: 20 },
-      visible: { opacity: 1, y: 0 },
-    },
+    item: { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } },
   };
 
   if (!isOpen) return null;
+
+  const handleFavorite = () => setFavorite((prev) => !prev);
 
   return (
     <AnimatePresence>
@@ -62,7 +68,7 @@ export const FileProperties: React.FC<FilePropertiesProps> = ({
           initial="hidden"
           animate="visible"
           exit="exit"
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
         >
           <motion.div
             variants={variants.modal}
@@ -73,77 +79,110 @@ export const FileProperties: React.FC<FilePropertiesProps> = ({
               theme === "dark"
                 ? "bg-gray-800 text-white"
                 : "bg-white text-black"
-            } w-full max-w-lg mx-4 sm:mx-0 p-6 rounded-lg shadow-lg`}
+            } w-full max-w-lg mx-4 sm:mx-0 p-4 rounded-lg shadow-lg`}
           >
             <Card className="w-full">
-              <CardHeader className="flex justify-between items-center mb-4">
-                <Label className="text-2xl font-bold">文件属性</Label>
-                <div className="flex items-center space-x-2">
+              <CardHeader className="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="flex items-center space-x-3">
+                  <CardTitle className="text-lg font-bold">文件属性</CardTitle>
                   <Button
-                    variant="ghost"
-                    onClick={toggleTheme}
-                    className="p-1 rounded-full hover:bg-gray-700 transition duration-200"
+                    variant="secondary"
+                    onClick={handleFavorite}
+                    size="sm"
                   >
-                    {theme === "dark" ? "亮色" : "暗色"}模式
+                    {favorite ? (
+                      <Star className="mr-1 w-4 h-4" />
+                    ) : (
+                      <StarOff className="mr-1 w-4 h-4" />
+                    )}
+                    {favorite ? "已收藏" : "收藏"}
                   </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={onClose}
-                    className="p-1 rounded-full hover:bg-gray-700 transition duration-200"
-                  >
-                    <X className="w-6 h-6" />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button variant="outline" onClick={toggleTheme} size="sm">
+                    {theme === "dark" ? "亮色" : "暗色"}
+                  </Button>
+                  <Button variant="ghost" onClick={onClose} size="sm">
+                    <X className="w-5 h-5" />
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <motion.div variants={variants.item}>
-                  <Label>
-                    <strong>名称:</strong> {file.name}
-                  </Label>
-                </motion.div>
-                <motion.div variants={variants.item}>
-                  <Label>
-                    <strong>类型:</strong> {file.type}
-                  </Label>
-                </motion.div>
-                <motion.div variants={variants.item}>
-                  <Label>
-                    <strong>大小:</strong> {(file.size / 1024).toFixed(2)} KB
-                  </Label>
-                </motion.div>
-                <motion.div variants={variants.item}>
-                  <Label>
-                    <strong>创建时间:</strong>{" "}
-                    {format(file.createdAt, "yyyy-MM-dd HH:mm:ss")}
-                  </Label>
-                </motion.div>
-                <motion.div variants={variants.item}>
-                  <Label>
-                    <strong>修改时间:</strong>{" "}
-                    {format(file.lastModified, "yyyy-MM-dd HH:mm:ss")}
-                  </Label>
-                </motion.div>
-                <motion.div variants={variants.item}>
-                  <Label>
-                    <strong>所有者:</strong> {file.owner}
-                  </Label>
-                </motion.div>
-                <motion.div variants={variants.item}>
-                  <Label>
-                    <strong>权限:</strong> {file.permissions}
-                  </Label>
-                </motion.div>
-                <motion.div variants={variants.item}>
-                  <Label>
-                    <strong>路径:</strong> {file.path}
-                  </Label>
-                </motion.div>
+
+              <Separator />
+
+              <CardContent className="pb-0">
+                <ScrollArea className="max-h-[60vh] w-full pr-2">
+                  <motion.div
+                    variants={variants.item}
+                    className="mb-4 space-y-2"
+                  >
+                    <Label>
+                      <strong>名称:</strong> {file.name}
+                    </Label>
+                    <Label>
+                      <strong>类型:</strong> {file.type}
+                    </Label>
+                    <Label>
+                      <strong>大小:</strong>{" "}
+                      {((file.size || 0) / 1024).toFixed(2)} KB
+                    </Label>
+                  </motion.div>
+
+                  <ToggleGroup
+                    type="single"
+                    value={detailLevel}
+                    onValueChange={(v) => setDetailLevel((v || "basic") as any)}
+                    className="mb-4 flex"
+                  >
+                    <ToggleGroupItem value="basic" className="flex-1">
+                      基本信息
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="advanced" className="flex-1">
+                      高级信息
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+
+                  {detailLevel === "basic" ? (
+                    <motion.div variants={variants.item} className="space-y-2">
+                      <Label>
+                        <strong>创建时间:</strong>{" "}
+                        {format(file.createdAt, "yyyy-MM-dd HH:mm:ss")}
+                      </Label>
+                      <Label>
+                        <strong>修改时间:</strong>{" "}
+                        {format(file.lastModified, "yyyy-MM-dd HH:mm:ss")}
+                      </Label>
+                    </motion.div>
+                  ) : (
+                    <motion.div variants={variants.item} className="space-y-2">
+                      <Label>
+                        <strong>所有者:</strong> {file.owner}
+                      </Label>
+                      <div className="flex items-center space-x-2">
+                        <Label className="cursor-pointer">
+                          <strong>只读模式:</strong>
+                        </Label>
+                        <Switch
+                          checked={readOnly}
+                          onCheckedChange={(checked) => setReadOnly(checked)}
+                        />
+                      </div>
+                      <Label>
+                        <strong>权限:</strong> {readOnly ? "读" : "读/写"}
+                      </Label>
+                      <Label>
+                        <strong>路径:</strong> {file.path}
+                      </Label>
+                    </motion.div>
+                  )}
+                </ScrollArea>
               </CardContent>
-              <CardFooter className="flex justify-end mt-4">
+
+              <CardFooter className="flex flex-col sm:flex-row items-center sm:justify-end space-y-2 sm:space-y-0 sm:space-x-2 mt-4">
                 <Button
-                  variant="default"
+                  variant="outline"
                   onClick={onClose}
-                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition duration-200"
+                  className="w-full sm:w-auto"
                 >
                   关闭
                 </Button>
@@ -154,4 +193,4 @@ export const FileProperties: React.FC<FilePropertiesProps> = ({
       )}
     </AnimatePresence>
   );
-};
+}

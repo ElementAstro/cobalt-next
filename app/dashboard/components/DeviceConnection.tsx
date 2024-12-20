@@ -10,7 +10,6 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { ProfileTab } from "@/components/connection/ProfileTab";
 import { DevicesTab } from "@/components/connection/DevicesTab";
 import { AdvancedTab } from "@/components/connection/AdvancedTab";
-import { LogsTab } from "@/components/connection/LogsTab";
 import { useApiService } from "@/services/connection";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -145,9 +144,6 @@ export default function DeviceConnection() {
                     </TabsContent>
                     <TabsContent value="advanced">
                       <AdvancedTab />
-                    </TabsContent>
-                    <TabsContent value="logs">
-                      <LogsTab />
                     </TabsContent>
                   </motion.div>
                 </AnimatePresence>

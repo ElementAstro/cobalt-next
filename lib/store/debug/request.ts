@@ -1,87 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-interface EnvironmentState {
-  environment: { [key: string]: string };
-  addVariable: (key: string, value: string) => void;
-  updateVariable: (key: string, value: string) => void;
-  removeVariable: (key: string) => void;
-  resetEnvironment: () => void;
-}
-
-export const useEnvironmentStore = create<EnvironmentState>()(
-  persist(
-    (set) => ({
-      environment: {},
-      addVariable: (key, value) =>
-        set((state) => ({
-          environment: { ...state.environment, [key]: value },
-        })),
-      updateVariable: (key, value) =>
-        set((state) => ({
-          environment: { ...state.environment, [key]: value },
-        })),
-      removeVariable: (key) =>
-        set((state) => {
-          const newEnv = { ...state.environment };
-          delete newEnv[key];
-          return { environment: newEnv };
-        }),
-      resetEnvironment: () => set({ environment: {} }),
-    }),
-    {
-      name: "environment-storage", // 存储名称
-    }
-  )
-);
-
-interface HistoryItem {
-  id: string;
-  config: {
-    method: string;
-    url: string;
-    timestamp: number;
-  };
-}
-
-interface HistoryState {
-  history: HistoryItem[];
-  addHistory: (config: { method: string; url: string }) => void;
-  removeHistory: (id: string) => void;
-  clearHistory: () => void;
-  selectHistory: (id: string) => HistoryItem | undefined;
-}
-
-export const useHistoryStore = create<HistoryState>()(
-  persist(
-    (set, get) => ({
-      history: [],
-      addHistory: (config) => {
-        const newHistory: HistoryItem = {
-          id: Date.now().toString(),
-          config: {
-            ...config,
-            timestamp: Date.now(),
-          },
-        };
-        set({ history: [newHistory, ...get().history] });
-      },
-      removeHistory: (id) => {
-        set({ history: get().history.filter((item) => item.id !== id) });
-      },
-      clearHistory: () => {
-        set({ history: [] });
-      },
-      selectHistory: (id) => {
-        return get().history.find((item) => item.id === id);
-      },
-    }),
-    {
-      name: "history-storage", // 存储名称
-    }
-  )
-);
-
 interface TemplateConfig {
   method: string;
   url: string;
@@ -98,6 +17,15 @@ interface Template {
   config: TemplateConfig;
 }
 
+interface HistoryItem {
+  id: string;
+  config: {
+    method: string;
+    url: string;
+    timestamp: number;
+  };
+}
+
 interface RequestState {
   templates: Template[];
   history: HistoryItem[];
@@ -105,6 +33,7 @@ interface RequestState {
   updateTemplate: (template: Template) => void;
   deleteTemplate: (name: string) => void;
   addHistory: (item: HistoryItem) => void;
+  removeHistory: (id: string) => void;
   clearHistory: () => void;
 }
 
@@ -187,6 +116,10 @@ export const useRequestStore = create<RequestState>()(
         set((state) => ({
           history: [item, ...state.history],
         })),
+      removeHistory: (id) =>
+        set((state) => ({
+          history: state.history.filter((item) => item.id !== id),
+        })),
       clearHistory: () => set({ history: [] }),
     }),
     {
@@ -194,33 +127,3 @@ export const useRequestStore = create<RequestState>()(
     }
   )
 );
-
-interface WebSocketState {
-  url: string;
-  setUrl: (url: string) => void;
-  message: string;
-  setMessage: (message: string) => void;
-  logs: string[];
-  addLog: (log: string) => void;
-  isConnected: boolean;
-  setIsConnected: (status: boolean) => void;
-  autoReconnect: boolean;
-  setAutoReconnect: (autoReconnect: boolean) => void;
-  reconnectInterval: number;
-  setReconnectInterval: (interval: number) => void;
-}
-
-export const useWebSocketStore = create<WebSocketState>((set) => ({
-  url: "",
-  setUrl: (url) => set({ url }),
-  message: "",
-  setMessage: (message) => set({ message }),
-  logs: [],
-  addLog: (log) => set((state) => ({ logs: [...state.logs, log] })),
-  isConnected: false,
-  setIsConnected: (status) => set({ isConnected: status }),
-  autoReconnect: false,
-  setAutoReconnect: (autoReconnect) => set({ autoReconnect }),
-  reconnectInterval: 5000,
-  setReconnectInterval: (interval) => set({ reconnectInterval: interval }),
-}));

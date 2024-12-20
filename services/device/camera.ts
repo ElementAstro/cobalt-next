@@ -1,5 +1,5 @@
 import { api } from "../axios";
-import { useCameraStore } from "@/lib/store/device";
+import { CameraStatus, useCameraStore } from "@/lib/store/device/camera";
 import { useExposureStore } from "@/lib/store/dashboard";
 import logger from "@/lib/logger";
 import * as yup from "yup";
@@ -52,6 +52,26 @@ const startExposureSchema = yup.object().shape({
   gain: yup.number().required().positive(),
   binning: yup.number().required().positive().integer().oneOf([1, 2, 4, 8]),
 });
+
+// Type guard function
+function isCameraStatus(data: any): data is CameraStatus {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    typeof data.status === "string" &&
+    typeof data.exposure === "number" &&
+    typeof data.gain === "number" &&
+    typeof data.iso === "number" &&
+    typeof data.offset === "number" &&
+    typeof data.binning === "number" &&
+    typeof data.coolerOn === "boolean" &&
+    typeof data.temperature === "number" &&
+    typeof data.power === "number" &&
+    typeof data.targetTemperature === "number" &&
+    typeof data.targetCoolingPower === "number" &&
+    typeof data.isConnected === "boolean"
+  );
+}
 
 // Camera API
 export const cameraApi = {
@@ -288,6 +308,27 @@ export const cameraApi = {
     } catch (error) {
       logger.error("Failed to abort exposure:", error);
       throw new Error("Failed to abort exposure");
+    }
+  },
+
+  async getStatus() {
+    logger.info("Fetching camera status...");
+    try {
+      const response = await api.request<CameraStatus>({
+        url: `${BASE_URL}/status`,
+        method: "GET",
+      });
+
+      // Add type guard to validate response shape
+      const data = response;
+      if (!isCameraStatus(data)) {
+        throw new Error("Invalid camera status response format");
+      }
+
+      return data;
+    } catch (error) {
+      logger.error("Failed to get camera status:", error);
+      throw new Error("Failed to get camera status");
     }
   },
 };

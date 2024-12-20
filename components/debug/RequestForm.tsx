@@ -15,8 +15,25 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash, Edit, Save, Eye, Search } from "lucide-react";
-import { useRequestStore } from "@/lib/store/debug";
+import { Plus, Trash, Edit, Save, Eye } from "lucide-react";
+import { useRequestStore } from "@/lib/store/debug/request";
+import { useEnvironmentStore } from "@/lib/store/debug/environment";
+import { Badge } from "../ui/badge";
+
+const BUILT_IN_TEMPLATES = [
+  {
+    name: "GET Example",
+    config: {
+      method: "GET",
+      url: "https://api.example.com/data",
+      headers: {},
+      timeout: 5000,
+      retries: 3,
+      retryDelay: 1000,
+      rejectUnauthorized: true,
+    },
+  },
+];
 
 interface RequestFormProps {
   onSubmit: (config: any) => void;
@@ -33,6 +50,8 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
     addHistory,
     clearHistory,
   } = useRequestStore();
+
+  const { environment, addVariable, removeVariable } = useEnvironmentStore();
 
   const [method, setMethod] = useState("GET");
   const [url, setUrl] = useState("");
@@ -51,6 +70,8 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
   const [batchCount, setBatchCount] = useState(1);
   const [batchDelay, setBatchDelay] = useState(1000);
   const [batchInProgress, setBatchInProgress] = useState(false);
+  const [newEnvKey, setNewEnvKey] = useState("");
+  const [newEnvValue, setNewEnvValue] = useState("");
 
   useEffect(() => {
     if (selectedTemplate !== "none") {
@@ -80,6 +101,7 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
         retries,
         retryDelay,
         rejectUnauthorized: validateSSL,
+        environment,
       };
       onSubmit(config);
       const newHistory = {
@@ -109,6 +131,7 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
           retries,
           retryDelay,
           rejectUnauthorized: validateSSL,
+          environment,
         },
       };
       addTemplate(newTemplate);
@@ -128,6 +151,7 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
           retries,
           retryDelay,
           rejectUnauthorized: validateSSL,
+          environment,
         },
       };
       updateTemplate(updatedTemplate);
@@ -161,6 +185,7 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
         retries,
         retryDelay,
         rejectUnauthorized: validateSSL,
+        environment,
       };
       return JSON.stringify(config, null, 2);
     } catch {
@@ -171,14 +196,25 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
   const handleBatchSubmit = async () => {
     setBatchInProgress(true);
     for (let i = 0; i < batchCount; i++) {
-      const form = document.createElement('form');
-      const event = new Event('submit', { bubbles: true, cancelable: true });
+      const form = document.createElement("form");
+      const event = new Event("submit", {
+        bubbles: true,
+        cancelable: true,
+      });
       form.dispatchEvent(event);
       if (i < batchCount - 1) {
-        await new Promise(resolve => setTimeout(resolve, batchDelay));
+        await new Promise((resolve) => setTimeout(resolve, batchDelay));
       }
     }
     setBatchInProgress(false);
+  };
+
+  const addEnvironmentVariable = () => {
+    if (newEnvKey && newEnvValue) {
+      addVariable(newEnvKey, newEnvValue);
+      setNewEnvKey("");
+      setNewEnvValue("");
+    }
   };
 
   return (
@@ -194,6 +230,7 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
         </CardHeader>
         <CardContent className="space-y-6">
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* 模板选择 */}
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               animate={{ opacity: 1, x: 0 }}
@@ -263,6 +300,7 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
               )}
             </motion.div>
 
+            {/* 请求方法与URL */}
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               animate={{ opacity: 1, x: 0 }}
@@ -293,6 +331,7 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
               />
             </motion.div>
 
+            {/* Headers */}
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               animate={{ opacity: 1, x: 0 }}
@@ -310,6 +349,7 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
               />
             </motion.div>
 
+            {/* Body */}
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
@@ -327,11 +367,12 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
               />
             </motion.div>
 
+            {/* 请求参数 */}
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
             >
               <Input
                 type="number"
@@ -360,26 +401,74 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
                 required
                 min={0}
               />
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="validate-ssl"
+                  checked={validateSSL}
+                  onCheckedChange={setValidateSSL}
+                />
+                <Label htmlFor="validate-ssl" className="dark:text-gray-300">
+                  验证 SSL
+                </Label>
+              </div>
             </motion.div>
 
+            {/* 环境变量管理 */}
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6 }}
-              className="flex items-center space-x-2"
+              className="space-y-2"
             >
-              <Switch
-                id="validate-ssl"
-                checked={validateSSL}
-                onCheckedChange={setValidateSSL}
-              />
-              <Label htmlFor="validate-ssl" className="dark:text-gray-300">
-                验证 SSL
-              </Label>
+              <Label className="mb-1">环境变量</Label>
+              <div className="flex space-x-2">
+                <Input
+                  type="text"
+                  value={newEnvKey}
+                  onChange={(e) => setNewEnvKey(e.target.value)}
+                  placeholder="键"
+                  className="w-1/2 dark:bg-gray-700 dark:text-gray-200"
+                />
+                <Input
+                  type="text"
+                  value={newEnvValue}
+                  onChange={(e) => setNewEnvValue(e.target.value)}
+                  placeholder="值"
+                  className="w-1/2 dark:bg-gray-700 dark:text-gray-200"
+                />
+                <Button
+                  type="button"
+                  onClick={addEnvironmentVariable}
+                  variant="ghost"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(environment).map(([key, value]) => (
+                  <Badge
+                    key={key}
+                    variant="outline"
+                    className="flex items-center space-x-1"
+                  >
+                    <span>{`${key}: ${value}`}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeVariable(key)}
+                    >
+                      <Trash className="h-3 w-3 text-red-500" />
+                      <span className="sr-only">删除变量</span>
+                    </Button>
+                  </Badge>
+                ))}
+              </div>
             </motion.div>
 
+            {/* 请求预览 */}
             <motion.div>
-              <div className="flex items-center space-x-4 mb-4">
+              <div className="flex items-center mb-4">
                 <Switch
                   id="show-preview"
                   checked={showPreview}
@@ -388,12 +477,13 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
                 <Label htmlFor="show-preview">显示请求预览</Label>
               </div>
               {showPreview && (
-                <pre className="bg-gray-100 p-4 rounded overflow-auto">
+                <pre className="bg-gray-100 p-4 rounded overflow-auto dark:bg-gray-700">
                   <code>{previewRequest()}</code>
                 </pre>
               )}
             </motion.div>
 
+            {/* 批量请求设置 */}
             <motion.div className="flex flex-col space-y-2">
               <Label>批量请求设置</Label>
               <div className="flex space-x-4">
@@ -424,11 +514,12 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
               </div>
             </motion.div>
 
+            {/* 按钮组 */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+              className="grid grid-cols-1 sm:grid-cols-3 gap-4"
             >
               <Button
                 type="submit"
@@ -530,7 +621,7 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
                         </span>
                       </div>
                       <pre className="bg-gray-200 dark:bg-gray-600 p-2 rounded overflow-x-auto">
-                        <code>{JSON.stringify(req, null, 2)}</code>
+                        <code>{JSON.stringify(req.config, null, 2)}</code>
                       </pre>
                     </motion.div>
                   ))}

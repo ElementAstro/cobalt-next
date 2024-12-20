@@ -1,33 +1,35 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Cog, RefreshCcw, Power, Info } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useDomeStore } from "@/lib/store/device/dome";
+import { DeviceSelector } from "./DeviceSelector";
+import { Power, RefreshCcw, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { domeApi } from "@/services/device/dome";
-import { mockDomeApi } from "@/utils/mock-dome";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from "@/components/ui/tooltip";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 
-const api =
-  process.env.NEXT_PUBLIC_USE_MOCK_API === "true" ? mockDomeApi : domeApi;
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+    },
+  },
+};
 
-export default function DomeSimulator() {
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
+
+export default function DomeInterface() {
   const {
     azimuth,
     shutterStatus,
@@ -44,363 +46,264 @@ export default function DomeSimulator() {
   } = useDomeStore();
 
   const [targetAzimuth, setTargetAzimuth] = useState(azimuth);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     setTargetAzimuth(azimuth);
   }, [azimuth]);
 
-  const handleConnect = async () => {
+  const handleAsyncOperation = async (
+    operation: () => Promise<void>,
+    successMessage: string
+  ) => {
+    setIsLoading(true);
+    setError(null);
     try {
-      await api.connect();
-      setConnected(true);
+      await operation();
+      toast({
+        title: "Success",
+        description: successMessage,
+      });
     } catch (err) {
-      setError((err as Error).message);
+      const errorMessage = (err as Error).message;
+      setError(errorMessage);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: errorMessage,
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleDisconnect = async () => {
-    try {
-      await api.disconnect();
-      setConnected(false);
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  };
+  const handleConnect = () =>
+    handleAsyncOperation(
+      () => domeApi.connect(),
+      "Successfully connected to dome"
+    );
 
-  const handleSlewToAzimuth = async () => {
-    try {
-      setSlewing(true);
-      await api.setAzimuth(targetAzimuth);
-      setSlewing(false);
-      setAzimuth(targetAzimuth);
-    } catch (err) {
-      setSlewing(false);
-      setError((err as Error).message);
-    }
-  };
+  const handleDisconnect = () =>
+    handleAsyncOperation(
+      () => domeApi.disconnect(),
+      "Successfully disconnected from dome"
+    );
 
-  const handleOpenShutter = async () => {
-    try {
-      await api.openShutter();
-      setShutterStatus("open");
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  };
+  const handleSlewToAzimuth = () =>
+    handleAsyncOperation(
+      () => domeApi.setAzimuth(targetAzimuth),
+      `Successfully slewed to azimuth ${targetAzimuth}°`
+    );
 
-  const handleCloseShutter = async () => {
-    try {
-      await api.closeShutter();
-      setShutterStatus("closed");
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  };
+  const handleOpenShutter = () =>
+    handleAsyncOperation(
+      () => domeApi.openShutter(),
+      "Shutter opened successfully"
+    );
 
-  const handleSync = async () => {
-    try {
-      await api.sync();
-      setSynced(true);
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  };
+  const handleCloseShutter = () =>
+    handleAsyncOperation(
+      () => domeApi.closeShutter(),
+      "Shutter closed successfully"
+    );
 
-  const handleFindHome = async () => {
-    try {
-      await api.findHome();
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  };
+  const handleSync = () =>
+    handleAsyncOperation(() => domeApi.sync(), "Dome synced successfully");
 
-  const handleStop = async () => {
-    try {
-      await api.stop();
-      setSlewing(false);
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  };
+  const handleFindHome = () =>
+    handleAsyncOperation(() => domeApi.findHome(), "Dome found home position");
 
-  const handlePark = async () => {
-    try {
-      await api.park();
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  };
+  const handleStop = () =>
+    handleAsyncOperation(() => domeApi.stop(), "Dome stopped successfully");
+
+  const handlePark = () =>
+    handleAsyncOperation(() => domeApi.park(), "Dome parked successfully");
 
   return (
-    <TooltipProvider>
-      <div className="container mx-auto p-4 space-y-6">
-        {/* 头部 */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Cog className="h-6 w-6" />
-            罩棚
-          </h1>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleConnect}
-              disabled={isConnected}
-              aria-label="连接罩棚"
-            >
-              <Power className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleDisconnect}
-              disabled={!isConnected}
-              aria-label="断开罩棚连接"
-            >
-              <RefreshCcw className="h-4 w-4" />
-            </Button>
-            <Tooltip>
-              <TooltipTrigger>
-                <Button variant="ghost" size="icon" aria-label="设置">
-                  <Info className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>系统设置</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
+    <motion.div
+      className="min-h-screen bg-gray-900 text-white p-4"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <div className="max-w-7xl mx-auto space-y-6">
+        <DeviceSelector
+          deviceType="Dome"
+          onDeviceChange={(device) => console.log(`Selected dome: ${device}`)}
+        />
 
         {error && (
-          <div
-            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
-            role="alert"
-            aria-live="assertive"
-          >
-            <span className="block sm:inline">{error}</span>
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {isLoading && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin" />
           </div>
         )}
 
-        {/* 信息卡片 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>模拟器信息</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHeader>属性</TableHeader>
-                  <TableHeader>值</TableHeader>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium">连接状态</TableCell>
-                  <TableCell>{isConnected ? "已连接" : "未连接"}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">方位角</TableCell>
-                  <TableCell>{azimuth}°</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">快门状态</TableCell>
-                  <TableCell>{shutterStatus}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">翘曲中</TableCell>
-                  <TableCell>{isSlewing ? "是" : "否"}</TableCell>
-                </TableRow>
-                {/* 额外信息 */}
-                <TableRow>
-                  <TableCell className="font-medium">同步状态</TableCell>
-                  <TableCell>{isSynced ? "同步" : "未同步"}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">当前位置</TableCell>
-                  <TableCell>北纬23°，东经45°</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        {/* 控制部分 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {/* 同步控制 */}
-          <Card>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="bg-gray-800 border-gray-700 shadow-xl rounded-2xl">
             <CardHeader>
-              <CardTitle>同步控制</CardTitle>
+              <CardTitle>圆顶状态</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center space-x-2">
-                <Label htmlFor="sync-toggle">罩棚跟随望远镜</Label>
-                <Switch
-                  id="sync-toggle"
-                  checked={isSynced}
-                  onCheckedChange={handleSync}
-                  disabled={!isConnected}
-                  aria-label="切换同步"
-                />
-                <span className="text-sm text-muted-foreground">
-                  {isSynced ? "开启" : "关闭"}
-                </span>
-              </div>
+              <motion.div
+                variants={containerVariants}
+                className="grid grid-cols-2 gap-4"
+              >
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label>方位角</Label>
+                  <div className="text-sm">{azimuth}°</div>
+                </motion.div>
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label>快门状态</Label>
+                  <div className="text-sm">{shutterStatus}</div>
+                </motion.div>
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label>连接状态</Label>
+                  <div className="text-sm">
+                    {isConnected ? "已连接" : "未连接"}
+                  </div>
+                </motion.div>
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label>同步状态</Label>
+                  <div className="text-sm">
+                    {isSynced ? "已同步" : "未同步"}
+                  </div>
+                </motion.div>
+              </motion.div>
             </CardContent>
           </Card>
 
-          {/* 手动控制 */}
-          <Card>
+          <Card className="bg-gray-800 border-gray-700 shadow-xl rounded-2xl">
             <CardHeader>
-              <CardTitle>手动控制</CardTitle>
+              <CardTitle>圆顶控制</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Button
-                  className="w-full"
-                  variant="outline"
-                  onClick={handleOpenShutter}
-                  disabled={
-                    !isConnected ||
-                    shutterStatus === "open" ||
-                    shutterStatus === "opening"
-                  }
-                  aria-label="打开快门"
-                >
-                  打开快门
-                </Button>
-                <Button
-                  className="w-full"
-                  variant="outline"
-                  onClick={handleCloseShutter}
-                  disabled={
-                    !isConnected ||
-                    shutterStatus === "closed" ||
-                    shutterStatus === "closing"
-                  }
-                  aria-label="关闭快门"
-                >
-                  关闭快门
-                </Button>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    setTargetAzimuth(Math.max(0, targetAzimuth - 1))
-                  }
-                  disabled={!isConnected}
-                  aria-label="减少方位角"
-                >
-                  -
-                </Button>
-                <Input
-                  type="number"
-                  value={targetAzimuth}
-                  onChange={(e) => setTargetAzimuth(Number(e.target.value))}
-                  className="w-20 text-center"
-                  disabled={!isConnected}
-                  aria-label="目标方位角"
-                />
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    setTargetAzimuth(Math.min(360, targetAzimuth + 1))
-                  }
-                  disabled={!isConnected}
-                  aria-label="增加方位角"
-                >
-                  +
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={handleSlewToAzimuth}
-                  disabled={!isConnected || isSlewing}
-                  aria-label="翘曲到方位角"
-                >
-                  翘曲
-                </Button>
-              </div>
+            <CardContent>
+              <motion.div variants={containerVariants} className="space-y-8">
+                <motion.div variants={itemVariants} className="space-y-4">
+                  <Label>方位角控制</Label>
+                  <div className="flex space-x-4">
+                    <Input
+                      type="number"
+                      value={targetAzimuth}
+                      onChange={(e) => setTargetAzimuth(Number(e.target.value))}
+                      className="flex-1 bg-gray-700"
+                    />
+                    <Button
+                      onClick={handleSlewToAzimuth}
+                      disabled={!isConnected || isSlewing || isLoading}
+                      className="relative"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "翘曲"
+                      )}
+                    </Button>
+                  </div>
+                </motion.div>
+
+                <motion.div variants={itemVariants} className="flex space-x-4">
+                  <Button
+                    className="flex-1"
+                    onClick={handleOpenShutter}
+                    disabled={!isConnected || isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      "打开快门"
+                    )}
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={handleCloseShutter}
+                    disabled={!isConnected || isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      "关闭快门"
+                    )}
+                  </Button>
+                </motion.div>
+              </motion.div>
             </CardContent>
           </Card>
         </div>
 
-        {/* 额外信息卡片 */}
-        <Card>
+        <Card className="bg-gray-800 border-gray-700 shadow-xl rounded-2xl">
           <CardHeader>
-            <CardTitle>附加信息</CardTitle>
+            <CardTitle>高级设置</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHeader>属性</TableHeader>
-                  <TableHeader>值</TableHeader>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium">电源状态</TableCell>
-                  <TableCell>{isConnected ? "开启" : "关闭"}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">维护模式</TableCell>
-                  <TableCell>正常</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">系统时间</TableCell>
-                  <TableCell>2024-04-27 12:34:56</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">固件版本</TableCell>
-                  <TableCell>v1.2.3</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+            <motion.div variants={containerVariants} className="space-y-4">
+              <motion.div
+                variants={itemVariants}
+                className="flex items-center space-x-2"
+              >
+                <Label>跟随望远镜</Label>
+                <Switch
+                  checked={isSynced}
+                  onCheckedChange={handleSync}
+                  disabled={!isConnected || isLoading}
+                />
+              </motion.div>
+
+              <motion.div
+                variants={itemVariants}
+                className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+              >
+                <Button
+                  onClick={handleFindHome}
+                  disabled={!isConnected || isLoading}
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "寻找归位"
+                  )}
+                </Button>
+                <Button
+                  onClick={handlePark}
+                  disabled={!isConnected || isLoading}
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "停靠"
+                  )}
+                </Button>
+                <Button
+                  onClick={handleStop}
+                  disabled={!isConnected || isLoading}
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "停止"
+                  )}
+                </Button>
+                <Button
+                  onClick={handleSync}
+                  disabled={!isConnected || isLoading}
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "同步"
+                  )}
+                </Button>
+              </motion.div>
+            </motion.div>
           </CardContent>
         </Card>
-
-        {/* 底部操作按钮 */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <Button
-            variant="default"
-            className="w-full"
-            onClick={handleSync}
-            disabled={!isConnected}
-            aria-label="同步"
-          >
-            同步
-          </Button>
-          <Button
-            variant="default"
-            className="w-full"
-            onClick={handleFindHome}
-            disabled={!isConnected}
-            aria-label="寻找归位"
-          >
-            寻找归位
-          </Button>
-          <Button
-            variant="default"
-            className="w-full"
-            onClick={handleStop}
-            disabled={!isConnected}
-            aria-label="停止"
-          >
-            停止
-          </Button>
-          <Button
-            variant="default"
-            className="w-full"
-            onClick={handlePark}
-            disabled={!isConnected}
-            aria-label="设为归位"
-          >
-            设为归位
-          </Button>
-        </div>
       </div>
-    </TooltipProvider>
+    </motion.div>
   );
 }

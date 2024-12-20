@@ -34,6 +34,8 @@ import { FormProvider, useForm } from "react-hook-form";
 
 // 添加缺失的 CardHeader 和 CardContent 组件导入
 import { CardHeader, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_FILE_TYPES = [
@@ -212,40 +214,60 @@ export function FileUpload() {
 
   return (
     <ToastProvider>
-      <div className="w-full max-w-md mx-auto p-4 space-y-4">
-        <CardHeader>
-          <div className="flex justify-between">
-            <h2 className="text-lg font-semibold">文件上传</h2>
-            <Button>
-              <X className="w-6 h-6" />
+      <div className="w-full max-w-full sm:max-w-md mx-auto p-2 sm:p-4 space-y-2 sm:space-y-4">
+        <CardHeader className="p-2 sm:p-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-2">
+              <h2 className="text-base sm:text-lg font-semibold">文件上传</h2>
+              <Badge variant="secondary" className="hidden sm:inline-flex">
+                最大 5MB
+              </Badge>
+            </div>
+            <Button size="sm" variant="ghost">
+              <X className="w-4 h-4 sm:w-6 sm:h-6" />
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+
+        <CardContent className="space-y-2 sm:space-y-4 p-2 sm:p-4">
           <FormProvider {...methods}>
             <form
               onSubmit={methods.handleSubmit(handleSubmit)}
-              className="space-y-4"
+              className="space-y-2 sm:space-y-4"
             >
               <motion.div
                 initial="hidden"
                 animate="visible"
-                className={`border-2 border-dashed rounded-lg p-8 text-center ${
-                  isDragActive
-                    ? "border-blue-500"
-                    : theme === "dark"
-                    ? "border-gray-600"
-                    : "border-gray-300"
-                }`}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className={`
+                  border-2 border-dashed rounded-lg 
+                  p-4 sm:p-8 text-center
+                  ${
+                    isDragActive
+                      ? "border-primary"
+                      : theme === "dark"
+                      ? "border-gray-600"
+                      : "border-gray-300"
+                  }
+                  transition-colors duration-200
+                `}
                 {...(getRootProps() as any)}
               >
                 <input {...getInputProps()} />
                 {isDragActive ? (
-                  <p>将文件拖放到这里...</p>
+                  <p className="text-sm sm:text-base">将文件拖放到这里...</p>
                 ) : (
                   <>
-                    <p>拖放一些文件到这里，或点击选择文件</p>
-                    <p>最大文件大小: 5MB。允许类型: JPEG, PNG, GIF, PDF</p>
+                    <div className="flex flex-col items-center gap-2">
+                      <Upload className="w-8 h-8 sm:w-12 sm:h-12 text-muted-foreground" />
+                      <p className="text-sm sm:text-base">
+                        拖放文件到这里，或点击选择文件
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        最大文件大小: 5MB • 支持格式: JPEG, PNG, GIF, PDF
+                      </p>
+                    </div>
                   </>
                 )}
               </motion.div>
@@ -253,112 +275,119 @@ export function FileUpload() {
           </FormProvider>
 
           <AnimatePresence>
-            {files.map((file) => (
-              <Collapsible
-                key={file.name}
-                open={expandedFiles[file.name]}
-                onOpenChange={() => toggleFileExpansion(file.name)}
-              >
-                <motion.div
-                  initial={{ opacity: 0, y: 50 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -50 }}
-                  className="bg-muted p-2 rounded"
-                >
-                  <div className="flex items-center space-x-2">
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="sm" className="p-1">
-                        {expandedFiles[file.name] ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </CollapsibleTrigger>
-                    <div className="flex-shrink-0">
-                      {isImage(file) ? (
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={file.name}
-                          className="w-8 h-8 object-cover rounded"
-                        />
-                      ) : (
-                        getFileIcon(file)
-                      )}
-                    </div>
-                    <div className="flex-grow min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {file.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {(file.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    </div>
-                    {uploadStatus[file.name] === "success" && (
-                      <CheckCircle className="text-success w-5 h-5" />
-                    )}
-                    {uploadStatus[file.name] === "error" && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => retryUpload(file)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <AlertCircle className="w-5 h-5" />
-                      </Button>
-                    )}
-                    {!uploadStatus[file.name] && uploading && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => cancelUpload(file)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <X className="w-5 h-5" />
-                      </Button>
-                    )}
-                    {!uploadStatus[file.name] && !uploading && (
-                      <motion.div
-                        className="w-5 h-5"
-                        animate={uploading ? { rotate: 360 } : {}}
-                        transition={{
-                          repeat: Infinity,
-                          duration: 2,
-                          ease: "linear",
-                        }}
-                      >
-                        <Upload className="text-primary" />
-                      </motion.div>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeFile(file)}
-                      disabled={uploading}
-                      className="flex-shrink-0"
+            {files.length > 0 && (
+              <ScrollArea className="h-[200px] sm:h-[300px] w-full rounded-md border">
+                <div className="p-2 sm:p-4 space-y-2">
+                  {files.map((file, index) => (
+                    <Collapsible
+                      key={file.name}
+                      open={expandedFiles[file.name]}
+                      onOpenChange={() => toggleFileExpansion(file.name)}
                     >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <CollapsibleContent>
-                    <div className="mt-2 space-y-2">
-                      {uploadStatus[file.name] && (
-                        <Progress
-                          value={uploadProgress[file.name]}
-                          className="h-1"
-                        />
-                      )}
-                      <p className="text-xs text-muted-foreground">
-                        类型: {file.type}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        最后修改: {new Date(file.lastModified).toLocaleString()}
-                      </p>
-                    </div>
-                  </CollapsibleContent>
-                </motion.div>
-              </Collapsible>
-            ))}
+                      <motion.div
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -50 }}
+                        className="bg-muted p-2 rounded"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="sm" className="p-1">
+                              {expandedFiles[file.name] ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </CollapsibleTrigger>
+                          <div className="flex-shrink-0">
+                            {isImage(file) ? (
+                              <img
+                                src={URL.createObjectURL(file)}
+                                alt={file.name}
+                                className="w-8 h-8 object-cover rounded"
+                              />
+                            ) : (
+                              getFileIcon(file)
+                            )}
+                          </div>
+                          <div className="flex-grow min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {file.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                          {uploadStatus[file.name] === "success" && (
+                            <CheckCircle className="text-success w-5 h-5" />
+                          )}
+                          {uploadStatus[file.name] === "error" && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => retryUpload(file)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <AlertCircle className="w-5 h-5" />
+                            </Button>
+                          )}
+                          {!uploadStatus[file.name] && uploading && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => cancelUpload(file)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <X className="w-5 h-5" />
+                            </Button>
+                          )}
+                          {!uploadStatus[file.name] && !uploading && (
+                            <motion.div
+                              className="w-5 h-5"
+                              animate={uploading ? { rotate: 360 } : {}}
+                              transition={{
+                                repeat: Infinity,
+                                duration: 2,
+                                ease: "linear",
+                              }}
+                            >
+                              <Upload className="text-primary" />
+                            </motion.div>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeFile(file)}
+                            disabled={uploading}
+                            className="flex-shrink-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <CollapsibleContent>
+                          <div className="mt-2 space-y-2">
+                            {uploadStatus[file.name] && (
+                              <Progress
+                                value={uploadProgress[file.name]}
+                                className="h-1"
+                              />
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                              类型: {file.type}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              最后修改:{" "}
+                              {new Date(file.lastModified).toLocaleString()}
+                            </p>
+                          </div>
+                        </CollapsibleContent>
+                      </motion.div>
+                    </Collapsible>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
           </AnimatePresence>
 
           {files.length > 0 && (

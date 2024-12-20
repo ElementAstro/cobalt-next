@@ -10,40 +10,53 @@ import {
   ReferenceLine,
 } from "recharts";
 import { motion } from "framer-motion";
-import styled, { ThemeProvider } from "styled-components";
+import { ChartWrapper } from "./ChartWrapper";
+import { CustomizationPanel } from "./CustomizationPanel";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { combinedLightTheme, combinedDarkTheme } from "./chartThemes";
 
-// 定义主题
-const lightTheme = {
-  background: "#fff",
-  grid: "#ccc",
-  text: "#000",
-  scatter: "#82ca9d",
-  reference: "red",
-  tooltipBg: "#fff",
-  tooltipText: "#000",
+interface DataPoint {
+  x: number;
+  y: number;
+}
+
+interface ChartCustomization {
+  showGrid: boolean;
+  showTooltip: boolean;
+  showLegend: boolean;
+  showAxis: boolean;
+  enableAnimation: boolean;
+  dataPointSize: number;
+  lineThickness: number;
+  curveType: "linear" | "natural" | "step" | "monotone";
+  colorScheme: string;
+  darkMode: boolean;
+}
+
+const initialChartOptions: ChartCustomization = {
+  showGrid: true,
+  showTooltip: true,
+  showLegend: true,
+  showAxis: true,
+  enableAnimation: true,
+  dataPointSize: 4,
+  lineThickness: 2,
+  curveType: "monotone",
+  colorScheme: "default",
+  darkMode: false,
 };
 
-const darkTheme = {
-  background: "#333",
-  grid: "#555",
-  text: "#fff",
-  scatter: "#8884d8",
-  reference: "red",
-  tooltipBg: "#444",
-  tooltipText: "#fff",
+const initialViewOptions = {
+  searchBar: true,
+  statusBar: true,
+  toolbar: true,
+  minimap: false,
+  zoomControls: true,
 };
-
-// 样式容器
-const ChartContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  background-color: ${(props) => props.theme.background};
-  padding: 20px;
-  box-sizing: border-box;
-`;
 
 interface FocusChartProps {
-  data: { x: number; y: number }[];
+  data: DataPoint[];
   width: string | number;
   height: number;
   currentX: number;
@@ -63,54 +76,91 @@ const FocusChart: React.FC<FocusChartProps> = ({
   darkMode = false,
   customize = {},
 }) => {
-  const theme = darkMode ? darkTheme : lightTheme;
-  const scatterColor = customize.scatterColor || theme.scatter;
+  const [chartOptions, setChartOptions] = useState(initialChartOptions);
+  const [viewOptions, setViewOptions] = useState(initialViewOptions);
+
+  const handleDownload = () => {
+    const svg = document.querySelector(".recharts-wrapper svg");
+    if (svg) {
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const blob = new Blob([svgData], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "focus-chart.svg";
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const handleExport = () => {
+    console.log("Exporting data...");
+  };
+
+  const handleShare = () => {
+    console.log("Sharing chart...");
+  };
+
+  const theme = darkMode ? combinedDarkTheme : combinedLightTheme;
+  const scatterColor = customize.scatterColor || theme.scatterColor;
   const gridColor = customize.gridColor || theme.grid;
-  const referenceLineColor = customize.referenceLineColor || theme.reference;
+  const referenceLineColor =
+    customize.referenceLineColor || theme.referenceLineColor;
 
   return (
-    <ThemeProvider theme={theme}>
-      <ChartContainer>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <ResponsiveContainer width={width} height={height}>
-            <ScatterChart>
-              <CartesianGrid stroke={gridColor} />
-              <XAxis
-                type="number"
-                dataKey="x"
-                name="Position"
-                stroke={theme.text}
-                tick={{ fill: theme.text }}
-              />
-              <YAxis
-                type="number"
-                dataKey="y"
-                name="FWHM"
-                stroke={theme.text}
-                tick={{ fill: theme.text }}
-              />
-              <Tooltip
-                cursor={{ strokeDasharray: "3 3" }}
-                contentStyle={{
-                  backgroundColor: theme.tooltipBg,
-                  color: theme.tooltipText,
-                }}
-              />
-              <Scatter name="FWHM" data={data} fill={scatterColor} />
-              <ReferenceLine
-                x={currentX}
-                stroke={referenceLineColor}
-                strokeDasharray="3 3"
-              />
-            </ScatterChart>
-          </ResponsiveContainer>
-        </motion.div>
-      </ChartContainer>
-    </ThemeProvider>
+    <ChartWrapper
+      title="焦点散点图"
+      controls={
+        <Button onClick={handleDownload} className="mr-2">
+          <Download size={16} className="mr-2" />
+          下载
+        </Button>
+      }
+      customization={
+        <CustomizationPanel
+          chartOptions={chartOptions}
+          setChartOptions={setChartOptions}
+          viewOptions={viewOptions}
+          setViewOptions={setViewOptions}
+          onExport={handleExport}
+          onShare={handleShare}
+        />
+      }
+      darkMode={chartOptions.darkMode}
+    >
+      <ResponsiveContainer width={width} height={height}>
+        <ScatterChart>
+          <CartesianGrid stroke={gridColor} />
+          <XAxis
+            type="number"
+            dataKey="x"
+            name="Position"
+            stroke={theme.text}
+            tick={{ fill: theme.text }}
+          />
+          <YAxis
+            type="number"
+            dataKey="y"
+            name="FWHM"
+            stroke={theme.text}
+            tick={{ fill: theme.text }}
+          />
+          <Tooltip
+            cursor={{ strokeDasharray: "3 3" }}
+            contentStyle={{
+              backgroundColor: theme.tooltipBg,
+              color: theme.tooltipText,
+            }}
+          />
+          <Scatter name="FWHM" data={data} fill={scatterColor} />
+          <ReferenceLine
+            x={currentX}
+            stroke={referenceLineColor}
+            strokeDasharray="3 3"
+          />
+        </ScatterChart>
+      </ResponsiveContainer>
+    </ChartWrapper>
   );
 };
 

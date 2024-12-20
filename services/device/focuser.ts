@@ -1,5 +1,5 @@
 import { api } from "@/services/axios";
-import { useFocuserStore } from "@/lib/store/device";
+import { useFocuserStore } from "@/lib/store/device/focuser";
 import * as yup from "yup";
 import logger from "@/lib/logger";
 
@@ -150,6 +150,42 @@ export const focuserApi = {
     } catch (error) {
       logger.error("Failed to move focuser:", error);
       throw new Error("Failed to move focuser");
+    }
+  },
+
+  setTemperatureCompensation: async (enabled: boolean) => {
+    logger.info(`Setting temperature compensation to ${enabled}...`);
+    try {
+      await api.request({
+        url: `${BASE_URL}/temperature-compensation`,
+        method: "POST",
+        data: { enabled },
+      });
+      useFocuserStore.getState().setTemperatureCompensation(enabled);
+      logger.info(
+        `Temperature compensation ${enabled ? "enabled" : "disabled"}.`
+      );
+    } catch (error) {
+      logger.error("Failed to set temperature compensation:", error);
+      throw new Error("Failed to set temperature compensation");
+    }
+  },
+
+  setBackflashCompensation: async (enabled: boolean) => {
+    logger.info(`Setting backflash compensation to ${enabled}...`);
+    try {
+      await api.request({
+        url: `${BASE_URL}/backflash-compensation`,
+        method: "POST",
+        data: { enabled },
+      });
+      useFocuserStore.getState().setBackflashCompensation(enabled);
+      logger.info(
+        `Backflash compensation ${enabled ? "enabled" : "disabled"}.`
+      );
+    } catch (error) {
+      logger.error("Failed to set backflash compensation:", error);
+      throw new Error("Failed to set backflash compensation");
     }
   },
 };

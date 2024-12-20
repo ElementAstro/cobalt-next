@@ -15,14 +15,13 @@ import { motion } from "framer-motion";
 import {
   File,
   FileType,
-  CustomizationOptions,
   FileOperation,
   CustomizationOptionsData,
 } from "@/types/filesystem";
 import { useFileItemStore } from "@/lib/store/filesystem";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { formatFileSize } from "@/lib/utils";
+import { cn, formatFileSize } from "@/lib/utils";
 
 interface FileItemProps {
   file: File & {
@@ -88,9 +87,8 @@ export const FileItem: React.FC<FileItemProps> = ({
         </div>
       );
     }
-
     return (
-      <div className="relative w-full pt-[100%] bg-gray-700 rounded">
+      <div className="relative w-full pt-[100%] bg-gray-700 rounded flex items-center justify-center">
         {getIconForFileType(file.type)}
       </div>
     );
@@ -99,18 +97,23 @@ export const FileItem: React.FC<FileItemProps> = ({
   return (
     <Draggable draggableId={file.id} index={index}>
       {(provided, snapshot) => (
-        <div
+        <motion.div
           ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          className={`
-            group relative
-            ${viewMode === "grid" ? "flex flex-col" : "flex items-center"}
-            ${isSelected ? "ring-2 ring-blue-500" : ""}
-            ${snapshot.isDragging ? "opacity-50" : ""}
-            rounded-lg overflow-hidden
-            hover:bg-gray-700 transition-all duration-200
-          `}
+          {...(provided.draggableProps as any)}
+          {...(provided.dragHandleProps as any)}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className={cn(
+            "group relative p-2 rounded-lg transition-all duration-200",
+            "md:flex-row flex flex-col items-center md:items-start",
+            "md:gap-3 gap-2",
+            viewMode === "grid"
+              ? "w-[120px] md:w-[150px]"
+              : "w-full md:w-auto justify-start",
+            isSelected && "ring-2 ring-primary",
+            snapshot.isDragging && "opacity-75 shadow-lg",
+            "hover:bg-accent/50"
+          )}
           onClick={handleSelect}
         >
           {isSelectionMode && (
@@ -118,53 +121,58 @@ export const FileItem: React.FC<FileItemProps> = ({
               <Checkbox
                 checked={isSelected}
                 onCheckedChange={handleCheckedChange}
+                className="data-[state=checked]:bg-primary"
               />
             </div>
           )}
 
-          {viewMode === "grid" ? (
-            renderThumbnail()
-          ) : (
-            <div className="flex-shrink-0 w-10 h-10">
-              {getIconForFileType(file.type)}
-            </div>
-          )}
-
+          {/* Thumbnail/Icon */}
           <div
-            className={`
-            ${viewMode === "grid" ? "p-2" : "flex-1 ml-3"}
-          `}
+            className={cn(
+              "relative",
+              viewMode === "grid" ? "w-full" : "w-10 h-10"
+            )}
           >
-            <div className="font-medium truncate">{file.name}</div>
+            {renderThumbnail()}
+          </div>
+
+          {/* File info */}
+          <div className="flex-1 min-w-0 text-center md:text-left">
+            <p className="font-medium truncate text-sm">{file.name}</p>
             {viewMode === "list" && (
-              <div className="text-sm text-gray-400">
-                {formatFileSize(file.size)} •{" "}
-                {format(file.lastModified, "yyyy-MM-dd HH:mm")}
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-xs text-muted-foreground mt-1">
+                <span>{formatFileSize(file.size)}</span>
+                <span>•</span>
+                <span>{format(file.lastModified, "yyyy-MM-dd HH:mm")}</span>
               </div>
             )}
           </div>
 
+          {/* Actions */}
           <div
-            className={`
-            absolute right-2 top-2
-            opacity-0 group-hover:opacity-100
-            transition-opacity duration-200
-          `}
+            className={cn(
+              "md:absolute md:right-2",
+              viewMode === "grid"
+                ? "md:top-2 mt-2"
+                : "md:top-1/2 md:-translate-y-1/2",
+              "opacity-0 group-hover:opacity-100 transition-opacity"
+            )}
           >
             {onShowMenu && (
               <Button
-                size="sm"
                 variant="ghost"
-                onClick={(e: React.MouseEvent) => {
+                size="icon"
+                className="h-8 w-8"
+                onClick={(e) => {
                   e.stopPropagation();
                   onShowMenu(e, file);
                 }}
               >
-                <MoreVertical className="w-4 h-4" />
+                <MoreVertical className="h-4 w-4" />
               </Button>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
     </Draggable>
   );
