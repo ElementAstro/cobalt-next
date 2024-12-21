@@ -15,136 +15,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { X, Settings } from "lucide-react";
-import { motion } from "framer-motion";
-
-interface ColorScheme {
-  primary: string;
-  secondary: string;
-  background: string;
-  foreground: string;
-  border: string;
-  input: string;
-  ring: string;
-  accent: string;
-  popover: string;
-  card: string;
-  muted: string;
-}
-
-interface ThemeSettings {
-  colorScheme: ColorScheme;
-  fontSize: number;
-  borderRadius: number;
-  fontFamily: string;
-  buttonStyle: "default" | "rounded" | "square";
-  useShadows: boolean;
-}
-
-const defaultLightScheme: ColorScheme = {
-  primary: "#000000",
-  secondary: "#4A90A7",
-  background: "#FFFFFF",
-  foreground: "#000000",
-  border: "#e5e5e5",
-  input: "#e5e5e5",
-  ring: "#003B4F",
-  accent: "#0077A7",
-  popover: "#FFFFFF",
-  card: "#FFFFFF",
-  muted: "#f1f5f9",
-};
-
-const defaultDarkScheme: ColorScheme = {
-  primary: "#FFFFFF",
-  secondary: "#4A90A7",
-  background: "#1a1a1a",
-  foreground: "#FFFFFF",
-  border: "#2a2a2a",
-  input: "#2a2a2a",
-  ring: "#4A90A7",
-  accent: "#0077A7",
-  popover: "#1a1a1a",
-  card: "#1a1a1a",
-  muted: "#2a2a2a",
-};
-
-const astronomyRedEyeProtectionScheme: ColorScheme = {
-  primary: "#FF3F3F",
-  secondary: "#A30000",
-  background: "#1A0000",
-  foreground: "#FFB3B3",
-  border: "#4D0000",
-  input: "#4D0000",
-  ring: "#FF7F7F",
-  accent: "#FF0000",
-  popover: "#2E0000",
-  card: "#2E0000",
-  muted: "#4D0000",
-};
-
-const oceanBlueScheme: ColorScheme = {
-  primary: "#0077BE",
-  secondary: "#00A3E0",
-  background: "#F0F8FF",
-  foreground: "#333333",
-  border: "#B0E0E6",
-  input: "#B0E0E6",
-  ring: "#4682B4",
-  accent: "#1E90FF",
-  popover: "#E6F3FF",
-  card: "#E6F3FF",
-  muted: "#B0E0E6",
-};
-
-const forestGreenScheme: ColorScheme = {
-  primary: "#228B22",
-  secondary: "#32CD32",
-  background: "#F0FFF0",
-  foreground: "#333333",
-  border: "#90EE90",
-  input: "#90EE90",
-  ring: "#2E8B57",
-  accent: "#00FF00",
-  popover: "#E6FFE6",
-  card: "#E6FFE6",
-  muted: "#98FB98",
-};
-
-const defaultThemeSettings: ThemeSettings = {
-  colorScheme: defaultLightScheme,
-  fontSize: 16,
-  borderRadius: 4,
-  fontFamily: "Inter",
-  buttonStyle: "default",
-  useShadows: true,
-};
-
-const presetThemes = {
-  light: { ...defaultThemeSettings, colorScheme: defaultLightScheme },
-  dark: { ...defaultThemeSettings, colorScheme: defaultDarkScheme },
-  astronomyRed: {
-    ...defaultThemeSettings,
-    colorScheme: astronomyRedEyeProtectionScheme,
-  },
-  oceanBlue: { ...defaultThemeSettings, colorScheme: oceanBlueScheme },
-  forestGreen: { ...defaultThemeSettings, colorScheme: forestGreenScheme },
-};
+import { useTheme } from "@/contexts/ThemeContext";
+import {
+  ThemeSettings,
+  ColorScheme,
+  presetThemes,
+  ThemeName,
+} from "@/types/theme";
 
 export function ThemeCustomizer() {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTheme, setActiveTheme] =
-    useState<keyof typeof presetThemes>("light");
-  const [customTheme, setCustomTheme] = useState<ThemeSettings>(
-    presetThemes.light
-  );
-  const [themePreview, setThemePreview] = useState<string>("light");
-  const [animationSpeed, setAnimationSpeed] = useState<number>(1);
-  const [containerWidth, setContainerWidth] = useState<string>("max-w-lg");
-
-  const previewVariants = {
-    hidden: { opacity: 0, scale: 0.9 },
-    visible: { opacity: 1, scale: 1 },
-  };
+  const { theme, setTheme, activePreset, setActivePreset } = useTheme();
 
   const applyTheme = (theme: ThemeSettings) => {
     const {
@@ -154,7 +35,10 @@ export function ThemeCustomizer() {
       fontFamily,
       buttonStyle,
       useShadows,
+      animationSpeed,
+      contrast,
     } = theme;
+
     Object.entries(colorScheme).forEach(([key, value]) => {
       document.documentElement.style.setProperty(`--${key}`, value);
     });
@@ -172,15 +56,21 @@ export function ThemeCustomizer() {
       "--use-shadows",
       useShadows ? "1" : "0"
     );
+    document.documentElement.style.setProperty(
+      "--animation-speed",
+      animationSpeed
+    );
+    document.documentElement.style.setProperty("--contrast", contrast);
+
     document.documentElement.classList.toggle(
       "dark",
-      activeTheme === "dark" || activeTheme === "astronomyRed"
+      activePreset === "dark" || activePreset === "astronomyRed"
     );
   };
 
   useEffect(() => {
-    applyTheme(customTheme);
-  }, [customTheme, activeTheme]);
+    applyTheme(theme);
+  }, [theme, activePreset]);
 
   const ColorPicker = ({
     label,
@@ -211,17 +101,74 @@ export function ThemeCustomizer() {
   );
 
   const handleColorChange = (key: keyof ColorScheme, value: string) => {
-    const newTheme = {
-      ...customTheme,
-      colorScheme: { ...customTheme.colorScheme, [key]: value },
+    const newTheme: ThemeSettings = {
+      ...theme,
+      colorScheme: { ...theme.colorScheme, [key]: value },
     };
-    setCustomTheme(newTheme);
+    setTheme(newTheme);
     applyTheme(newTheme);
   };
 
-  const handlePresetChange = (preset: keyof typeof presetThemes) => {
-    setActiveTheme(preset);
-    setCustomTheme(presetThemes[preset]);
+  const handlePresetChange = (preset: ThemeName) => {
+    setActivePreset(preset);
+    setTheme(presetThemes[preset]);
+  };
+
+  const handleFontFamilyChange = (value: string) => {
+    setTheme({
+      ...theme,
+      fontFamily: value,
+    });
+    applyTheme({
+      ...theme,
+      fontFamily: value,
+    });
+  };
+
+  const handleButtonStyleChange = (value: "default" | "rounded" | "square") => {
+    setTheme({
+      ...theme,
+      buttonStyle: value,
+    });
+    applyTheme({
+      ...theme,
+      buttonStyle: value,
+    });
+  };
+
+  const handleUseShadowsChange = (value: boolean) => {
+    setTheme({
+      ...theme,
+      useShadows: value,
+    });
+    applyTheme({
+      ...theme,
+      useShadows: value,
+    });
+  };
+
+  const handleAnimationSpeedChange = (
+    value: "none" | "slow" | "normal" | "fast"
+  ) => {
+    setTheme({
+      ...theme,
+      animationSpeed: value,
+    });
+    applyTheme({
+      ...theme,
+      animationSpeed: value,
+    });
+  };
+
+  const handleContrastChange = (value: "normal" | "high") => {
+    setTheme({
+      ...theme,
+      contrast: value,
+    });
+    applyTheme({
+      ...theme,
+      contrast: value,
+    });
   };
 
   return (
@@ -236,9 +183,7 @@ export function ThemeCustomizer() {
       </Button>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <Card
-            className={`w-full ${containerWidth} max-h-[90vh] overflow-auto`}
-          >
+          <Card className="w-full max-w-lg max-h-[90vh] overflow-auto">
             <CardContent className="p-4">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold">主题定制器</h2>
@@ -252,14 +197,9 @@ export function ThemeCustomizer() {
               </div>
               <div className="flex items-center justify-between mb-4">
                 <span className="text-sm font-medium">预设主题</span>
-                <Select
-                  value={activeTheme}
-                  onValueChange={(value: keyof typeof presetThemes) =>
-                    handlePresetChange(value)
-                  }
-                >
+                <Select value={activePreset} onValueChange={handlePresetChange}>
                   <SelectTrigger className="w-[180px]">
-                    <SelectValue />
+                    <SelectValue placeholder="选择主题" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="light">明亮</SelectItem>
@@ -271,36 +211,38 @@ export function ThemeCustomizer() {
                 </Select>
               </div>
               <Tabs defaultValue="colors" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="flex space-x-2">
                   <TabsTrigger value="colors">颜色</TabsTrigger>
                   <TabsTrigger value="typography">排版</TabsTrigger>
                   <TabsTrigger value="layout">布局</TabsTrigger>
-                  <TabsTrigger value="preview">预览</TabsTrigger>
+                  <TabsTrigger value="advanced">高级</TabsTrigger>
                 </TabsList>
-                <TabsContent value="colors" className="space-y-2">
-                  {Object.entries(customTheme.colorScheme).map(
-                    ([key, value]) => (
-                      <ColorPicker
-                        key={key}
-                        label={key}
-                        value={value}
-                        onChange={(newValue) =>
-                          handleColorChange(key as keyof ColorScheme, newValue)
-                        }
-                      />
-                    )
-                  )}
+
+                {/* 颜色配置 */}
+                <TabsContent value="colors" className="space-y-4">
+                  {Object.keys(theme.colorScheme).map((key) => (
+                    <ColorPicker
+                      key={key}
+                      label={key.charAt(0).toUpperCase() + key.slice(1)}
+                      value={theme.colorScheme[key as keyof ColorScheme]}
+                      onChange={(value) =>
+                        handleColorChange(key as keyof ColorScheme, value)
+                      }
+                    />
+                  ))}
                 </TabsContent>
+
+                {/* 排版配置 */}
                 <TabsContent value="typography" className="space-y-4">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs">字体大小</Label>
                     <Slider
-                      value={[customTheme.fontSize]}
+                      value={[theme.fontSize]}
                       onValueChange={(value) =>
-                        setCustomTheme((prev) => ({
-                          ...prev,
+                        setTheme({
+                          ...theme,
                           fontSize: value[0],
-                        }))
+                        })
                       }
                       max={24}
                       min={12}
@@ -309,37 +251,44 @@ export function ThemeCustomizer() {
                     />
                   </div>
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs">字体家族</Label>
+                    <Label className="text-xs">字体类别</Label>
                     <Select
-                      value={customTheme.fontFamily}
-                      onValueChange={(value) =>
-                        setCustomTheme((prev) => ({
-                          ...prev,
-                          fontFamily: value,
-                        }))
-                      }
+                      value={theme.fontFamily}
+                      onValueChange={handleFontFamilyChange}
                     >
-                      <SelectTrigger className="w-[120px]">
+                      <SelectTrigger className="w-[180px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Inter">Inter</SelectItem>
-                        <SelectItem value="Roboto">Roboto</SelectItem>
-                        <SelectItem value="Open Sans">Open Sans</SelectItem>
+                        <SelectItem value="system-ui, sans-serif">
+                          系统默认
+                        </SelectItem>
+                        <SelectItem value="'Arial', sans-serif">
+                          Arial
+                        </SelectItem>
+                        <SelectItem value="'Roboto', sans-serif">
+                          Roboto
+                        </SelectItem>
+                        <SelectItem value="'Open Sans', sans-serif">
+                          Open Sans
+                        </SelectItem>
+                        <SelectItem value="'Lato', sans-serif">Lato</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </TabsContent>
+
+                {/* 布局配置 */}
                 <TabsContent value="layout" className="space-y-4">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs">边框圆角</Label>
                     <Slider
-                      value={[customTheme.borderRadius]}
+                      value={[theme.borderRadius]}
                       onValueChange={(value) =>
-                        setCustomTheme((prev) => ({
-                          ...prev,
+                        setTheme({
+                          ...theme,
                           borderRadius: value[0],
-                        }))
+                        })
                       }
                       max={20}
                       min={0}
@@ -350,17 +299,10 @@ export function ThemeCustomizer() {
                   <div className="flex items-center justify-between">
                     <Label className="text-xs">按钮样式</Label>
                     <Select
-                      value={customTheme.buttonStyle}
-                      onValueChange={(
-                        value: "default" | "rounded" | "square"
-                      ) =>
-                        setCustomTheme((prev) => ({
-                          ...prev,
-                          buttonStyle: value,
-                        }))
-                      }
+                      value={theme.buttonStyle}
+                      onValueChange={handleButtonStyleChange}
                     >
-                      <SelectTrigger className="w-[120px]">
+                      <SelectTrigger className="w-[180px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -370,44 +312,57 @@ export function ThemeCustomizer() {
                       </SelectContent>
                     </Select>
                   </div>
+                </TabsContent>
+
+                {/* 高级配置 */}
+                <TabsContent value="advanced" className="space-y-4">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs">使用阴影</Label>
                     <Switch
-                      checked={customTheme.useShadows}
-                      onCheckedChange={(checked) =>
-                        setCustomTheme((prev) => ({
-                          ...prev,
-                          useShadows: checked,
-                        }))
-                      }
+                      checked={theme.useShadows}
+                      onCheckedChange={handleUseShadowsChange}
                     />
                   </div>
-                </TabsContent>
-                <TabsContent value="preview" className="space-y-4">
-                  <motion.div
-                    variants={previewVariants}
-                    initial="hidden"
-                    animate="visible"
-                    className={`preview-container ${themePreview}`}
-                  >
-                    {/* 主题预览内容 */}
-                  </motion.div>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Label>动画速度</Label>
-                      <Slider
-                        value={[animationSpeed]}
-                        onValueChange={(value) => setAnimationSpeed(value[0])}
-                        min={0.5}
-                        max={2}
-                        step={0.1}
-                        className="w-[60%]"
-                      />
-                    </div>
-                    {/* 其他新增的自定义选项 */}
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">动画速度</Label>
+                    <Select
+                      value={theme.animationSpeed}
+                      onValueChange={handleAnimationSpeedChange}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">无</SelectItem>
+                        <SelectItem value="slow">慢</SelectItem>
+                        <SelectItem value="normal">正常</SelectItem>
+                        <SelectItem value="fast">快</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">对比度</Label>
+                    <Select
+                      value={theme.contrast}
+                      onValueChange={handleContrastChange}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="normal">正常</SelectItem>
+                        <SelectItem value="high">高对比</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </TabsContent>
               </Tabs>
+              <div className="mt-4 flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setIsOpen(false)}>
+                  取消
+                </Button>
+                <Button onClick={() => setIsOpen(false)}>保存</Button>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -415,3 +370,5 @@ export function ThemeCustomizer() {
     </>
   );
 }
+
+export default ThemeCustomizer;

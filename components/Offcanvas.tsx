@@ -1,14 +1,17 @@
-// FILE: Offcanvas.tsx
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "framer-motion";
-import React, { useEffect } from "react";
+import { motion, AnimatePresence, useAnimation, PanInfo } from "framer-motion";
+import React, { useEffect, useCallback } from "react";
+import { useMediaQuery } from "react-responsive";
 
 interface OffcanvasProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  side?: "left" | "right";
+  width?: string;
+  showBackdrop?: boolean;
 }
 
 export function Offcanvas({
@@ -16,65 +19,163 @@ export function Offcanvas({
   onClose,
   title,
   children,
+  side = "right",
+  width = "w-80 md:w-2/3",
+  showBackdrop = true,
 }: OffcanvasProps) {
-  // 禁用页面滚动当 Offcanvas 打开时
+  const controls = useAnimation();
+  const isMobile = useMediaQuery({ maxWidth: 768 });
+
+  // 禁用页面滚动
   useEffect(() => {
     if (isOpen) {
-      document.body.classList.add("overflow-hidden");
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.classList.remove("overflow-hidden");
+      document.body.style.overflow = "";
     }
-    // 清理效果
     return () => {
-      document.body.classList.remove("overflow-hidden");
+      document.body.style.overflow = "";
     };
   }, [isOpen]);
+
+  // 键盘事件处理
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
+  // 拖拽处理
+  const handleDragEnd = useCallback(
+    (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+      const threshold = 0.5;
+      const velocity = side === "right" ? info.velocity.x : -info.velocity.x;
+      const offset = side === "right" ? info.offset.x : -info.offset.x;
+
+      if (velocity > 500 || offset > 100 * threshold) {
+        onClose();
+      } else {
+        controls.start({ x: 0 });
+      }
+    },
+    [controls, onClose, side]
+  );
+
+  const slideVariants = {
+    hidden: {
+      x: side === "right" ? "100%" : "-100%",
+      opacity: 0,
+    },
+    visible: {
+      x: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        damping: 30,
+        stiffness: 300,
+      },
+    },
+    exit: {
+      x: side === "right" ? "100%" : "-100%",
+      opacity: 0,
+      transition: {
+        type: "spring",
+        damping: 40,
+        stiffness: 400,
+      },
+    },
+  };
+
+  const backdropVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.2,
+      },
+    },
+    exit: {
+      opacity: 0,
+      transition: {
+        delay: 0.2,
+        duration: 0.2,
+      },
+    },
+  };
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* 背景遮罩 */}
-          <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 z-40"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.5 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            aria-hidden="true"
-          />
+          {showBackdrop && (
+            <motion.div
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+              variants={backdropVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              onClick={onClose}
+              aria-hidden="true"
+            />
+          )}
 
-          {/* 侧边栏面板 */}
           <motion.div
-            className="fixed top-0 right-0 w-80 md:w-2/3 max-w-full h-full bg-gray-800 dark:bg-gray-900 shadow-lg z-50 flex flex-col"
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "tween", duration: 0.3 }}
+            className={`fixed top-0 ${side}-0 ${width} h-full bg-background/95 shadow-2xl z-50 flex flex-col backdrop-blur supports-[backdrop-filter]:bg-background/60`}
+            variants={slideVariants}
+            initial="hidden"
+            animate={controls}
+            exit="exit"
+            drag={isMobile ? "x" : false}
+            dragDirectionLock
+            dragElastic={0.1}
+            dragConstraints={{ left: 0, right: 0 }}
+            onDragEnd={handleDragEnd}
             role="dialog"
             aria-modal="true"
             aria-labelledby="offcanvas-title"
           >
-            {title && (
-              <div className="flex justify-between items-center border-b border-gray-700 p-4">
-                <h2
-                  id="offcanvas-title"
-                  className="text-xl font-semibold text-white"
-                >
-                  {title}
-                </h2>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onClose}
-                  aria-label="关闭侧边栏"
-                >
-                  <X className="w-5 h-5 text-white" />
-                </Button>
-              </div>
+            <motion.div
+              className="flex justify-between items-center border-b p-4"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <h2 id="offcanvas-title" className="text-xl font-semibold">
+                {title}
+              </h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="hover:bg-accent"
+                aria-label="关闭侧边栏"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </motion.div>
+
+            <motion.div
+              className="flex-1 overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              {children}
+            </motion.div>
+
+            {isMobile && (
+              <motion.div
+                className="absolute top-1/2 -left-2 w-1 h-16 bg-accent/30 rounded-full"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ delay: 0.4 }}
+              />
             )}
-            {/* 使用 flex-1 和 overflow-y-auto 实现内部滚动 */}
-            <div className="flex-1 overflow-y-auto p-4">{children}</div>
           </motion.div>
         </>
       )}

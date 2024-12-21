@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import BlueScreen404 from "./BlueScreen404";
 
 interface Props {
   children: ReactNode;
@@ -14,6 +15,7 @@ interface Props {
   customLogger?: (error: Error, errorInfo: ErrorInfo) => void;
   language?: "en" | "zh";
   getSuggestion?: (error: Error) => string;
+  useBlueScreen?: boolean;
 }
 
 interface State {
@@ -130,10 +132,20 @@ class ErrorBoundary extends Component<Props, State> {
   };
 
   render(): ReactNode {
-    const { children } = this.props;
-    const { hasError } = this.state;
+    const { children, useBlueScreen = true } = this.props;
+    const { hasError, error, errorInfo } = this.state;
 
     if (hasError) {
+      if (useBlueScreen) {
+        return (
+          <BlueScreen404
+            error={error}
+            errorInfo={errorInfo}
+            isErrorBoundary={true}
+          />
+        );
+      }
+
       const { theme = "dark" } = this.props;
       const bgColor = theme === "light" ? "bg-white" : "bg-gray-800";
       const textColor = theme === "light" ? "text-gray-800" : "text-gray-200";

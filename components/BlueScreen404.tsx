@@ -24,7 +24,17 @@ export const config404 = {
   feedbackText: "提交错误反馈",
 };
 
-export default function BlueScreen404() {
+interface BlueScreen404Props {
+  error?: Error;
+  errorInfo?: React.ErrorInfo;
+  isErrorBoundary?: boolean;
+}
+
+export default function BlueScreen404({
+  error,
+  errorInfo,
+  isErrorBoundary = false,
+}: BlueScreen404Props) {
   const [progress, setProgress] = useState(0);
   const [showContent, setShowContent] = useState(false);
   const isLandscape = useOrientation();
@@ -47,8 +57,13 @@ export default function BlueScreen404() {
     错误时间: ${new Date().toLocaleString()}
     浏览器: ${typeof navigator !== "undefined" ? navigator.userAgent : "N/A"}
     页面URL: ${typeof window !== "undefined" ? window.location.href : ""}
-    错误代码: ${config404.errorCode}
-  `;
+    错误代码: ${
+      isErrorBoundary ? error?.name || "UNKNOWN_ERROR" : config404.errorCode
+    }
+    错误信息: ${error?.message || config404.errorMessage}
+    ${errorInfo ? `\n组件堆栈:\n${errorInfo.componentStack}` : ""}
+    ${error?.stack ? `\n错误堆栈:\n${error.stack}` : ""}
+  `.trim();
 
   return (
     <div
@@ -66,13 +81,18 @@ export default function BlueScreen404() {
         </div>
         <div className="space-y-2 sm:space-y-4">
           <h2 className="text-xl sm:text-2xl font-semibold">
-            你的电脑遇到了问题，需要重新启动。
+            {isErrorBoundary
+              ? "你的应用遇到了致命错误，需要重新启动。"
+              : "你的电脑遇到了问题，需要重新启动。"}
           </h2>
           <p className="text-base sm:text-lg">
-            错误代码: {config404.errorCode}
+            错误代码:{" "}
+            {isErrorBoundary
+              ? error?.name || "UNKNOWN_ERROR"
+              : config404.errorCode}
           </p>
           <p className="text-base sm:text-lg">
-            错误信息: {config404.errorMessage}
+            错误信息: {error?.message || config404.errorMessage}
           </p>
         </div>
         <div className="space-y-2">

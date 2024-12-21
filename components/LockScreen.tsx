@@ -176,7 +176,7 @@ export default function LockScreen({
       initial="hidden"
       animate="visible"
       exit="exit"
-      className={`relative flex flex-col lg:flex-row items-stretch justify-between h-screen overflow-hidden bg-cover bg-center ${
+      className={`relative flex flex-row items-stretch justify-between h-screen overflow-hidden bg-cover bg-center ${
         isDarkMode ? "dark" : ""
       }`}
       style={{ backgroundImage: `url(${backgroundImage})` }}
@@ -187,27 +187,20 @@ export default function LockScreen({
         } backdrop-blur-md transition-colors duration-500`}
       ></div>
 
-      {/* 左侧/顶部区域：时间、日期和天气 */}
+      {/* 左侧: 时间和天气 */}
       <motion.div
         variants={containerVariants}
-        className="z-10 text-white text-center p-4 lg:w-1/3 lg:p-8"
+        className="z-10 text-white p-4 w-1/3 flex flex-col justify-center items-start"
       >
-        <motion.h1
-          variants={itemVariants}
-          className="text-4xl font-bold mb-1 md:text-6xl lg:text-8xl lg:mb-2"
-        >
+        <motion.h1 variants={itemVariants} className="text-3xl font-bold mb-1">
           {currentTime.toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
           })}
         </motion.h1>
-        <motion.h2
-          variants={itemVariants}
-          className="text-lg mb-2 md:text-xl lg:text-3xl lg:mb-4"
-        >
+        <motion.h2 variants={itemVariants} className="text-base mb-2">
           {currentTime.toLocaleDateString([], {
             weekday: "long",
-            year: "numeric",
             month: "long",
             day: "numeric",
           })}
@@ -215,36 +208,133 @@ export default function LockScreen({
         {showWeather && (
           <motion.div
             variants={itemVariants}
-            className="mb-2 flex items-center justify-center lg:mb-8"
+            className="flex items-center text-sm"
           >
             {weather.condition === "Sunny" ? (
-              <SunIcon className="mr-2" />
+              <SunIcon className="w-4 h-4 mr-1" />
             ) : (
-              <CloudIcon className="mr-2" />
+              <CloudIcon className="w-4 h-4 mr-1" />
             )}
-            <span className="text-lg lg:text-xl">{weather.temp}°C</span>
-            <ThermometerIcon className="ml-2" />
+            <span>{weather.temp}°C</span>
+            <ThermometerIcon className="w-4 h-4 ml-1" />
           </motion.div>
         )}
       </motion.div>
 
-      {/* 中间区域：通知 */}
+      {/* 中间: 控制区 */}
       <motion.div
         variants={containerVariants}
-        className="z-10 w-full lg:w-1/3 p-4"
+        className="z-10 w-1/3 p-4 flex flex-col justify-center"
       >
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-white text-lg lg:text-xl flex items-center">
-            <BellIcon className="mr-2" /> 通知
+        {/* 音乐控制 */}
+        <motion.div
+          variants={itemVariants}
+          className="bg-white/20 backdrop-blur-md rounded-lg p-2 mb-2"
+        >
+          <div className="flex items-center justify-between mb-1">
+            <MusicIcon className="w-4 h-4" />
+            <div className="text-center flex-1 mx-2">
+              <h4 className="text-sm text-white font-medium truncate">
+                {currentSong.title}
+              </h4>
+              <p className="text-xs text-white/80 truncate">
+                {currentSong.artist}
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={toggleSettings}
+            >
+              <SettingsIcon className="w-3 h-3" />
+            </Button>
+          </div>
+          <div className="flex justify-center items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-6 w-6">
+              <SkipBackIcon className="w-3 h-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={togglePlayPause}
+            >
+              {isPlaying ? (
+                <PauseIcon className="w-3 h-3" />
+              ) : (
+                <PlayIcon className="w-3 h-3" />
+              )}
+            </Button>
+            <Button variant="ghost" size="icon" className="h-6 w-6">
+              <SkipForwardIcon className="w-3 h-3" />
+            </Button>
+          </div>
+        </motion.div>
+
+        {/* 解锁控制 */}
+        <AnimatePresence>
+          {showPasswordInput ? (
+            <motion.form
+              onSubmit={handlePasswordSubmit}
+              className="mb-2"
+              variants={itemVariants}
+            >
+              <Input
+                type="password"
+                placeholder="输入密码"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-8 text-sm mb-1"
+              />
+              <Button type="submit" size="sm" className="w-full h-8">
+                解锁
+              </Button>
+            </motion.form>
+          ) : (
+            <motion.div variants={itemVariants} className="mb-2">
+              <div className="bg-white/20 p-1 rounded-full mb-1">
+                <Slider
+                  defaultValue={[0]}
+                  max={100}
+                  step={1}
+                  onValueChange={handleUnlock}
+                  className="w-full"
+                />
+              </div>
+              <p className="text-center text-white text-xs">
+                <LockIcon className="inline w-3 h-3 mr-1" />
+                滑动解锁
+                <UnlockIcon className="inline w-3 h-3 ml-1" />
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
+      {/* 右侧: 通知 */}
+      <motion.div
+        variants={containerVariants}
+        className="z-10 w-1/3 p-4 flex flex-col justify-center"
+      >
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-white text-sm flex items-center">
+            <BellIcon className="w-4 h-4 mr-1" /> 通知
           </h3>
-          <Button variant="ghost" size="sm" onClick={toggleNotifications}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            onClick={toggleNotifications}
+          >
             {isNotificationExpanded ? (
-              <ChevronUpIcon className="text-white" />
+              <ChevronUpIcon className="w-4 h-4 text-white" />
             ) : (
-              <ChevronDownIcon className="text-white" />
+              <ChevronDownIcon className="w-4 h-4 text-white" />
             )}
           </Button>
         </div>
+
         <AnimatePresence>
           {isNotificationExpanded && (
             <motion.div
@@ -252,21 +342,23 @@ export default function LockScreen({
               initial="hidden"
               animate="visible"
               exit="hidden"
-              className="overflow-hidden"
+              className="space-y-1 max-h-[40vh] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20"
             >
               {notifications.map((notification) => (
                 <motion.div
                   key={notification.id}
                   variants={itemVariants}
-                  className="bg-white bg-opacity-20 backdrop-blur-md rounded-lg p-2 mb-2 text-white"
+                  className="bg-white/20 backdrop-blur-md rounded-lg p-2"
                 >
                   <div className="flex items-center">
-                    {notification.icon}
-                    <div className="ml-2">
-                      <h4 className="font-semibold text-sm lg:text-base">
+                    <div className="w-4 h-4 flex-shrink-0">
+                      {notification.icon}
+                    </div>
+                    <div className="ml-2 min-w-0">
+                      <h4 className="text-white text-xs font-medium truncate">
                         {notification.title}
                       </h4>
-                      <p className="text-xs lg:text-sm">
+                      <p className="text-white/80 text-xs truncate">
                         {notification.message}
                       </p>
                     </div>
@@ -276,136 +368,37 @@ export default function LockScreen({
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.div>
-
-      {/* 右侧/底部区域：音乐控制、解锁滑块和快速启动 */}
-      <motion.div
-        variants={containerVariants}
-        className="z-10 w-full lg:w-1/3 p-4 flex flex-col justify-end"
-      >
-        {/* 音乐控制 */}
-        <motion.div
-          variants={itemVariants}
-          className="bg-white bg-opacity-20 backdrop-blur-md rounded-lg p-2 mb-2 text-white lg:p-3 lg:mb-4"
-        >
-          <div className="flex items-center justify-between mb-1 lg:mb-2">
-            <MusicIcon className="w-4 h-4 lg:w-5 lg:h-5" />
-            <div className="text-center">
-              <h4 className="font-semibold text-sm lg:text-base">
-                {currentSong.title}
-              </h4>
-              <p className="text-xs lg:text-sm">{currentSong.artist}</p>
-            </div>
-            <Button variant="ghost" size="icon" onClick={toggleSettings}>
-              <SettingsIcon className="w-4 h-4 lg:w-5 lg:h-5" />
-            </Button>
-          </div>
-          <div className="flex justify-center items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => console.log("Previous song")}
-            >
-              <SkipBackIcon className="w-4 h-4 lg:w-5 lg:h-5" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={togglePlayPause}>
-              {isPlaying ? (
-                <PauseIcon className="w-4 h-4 lg:w-5 lg:h-5" />
-              ) : (
-                <PlayIcon className="w-4 h-4 lg:w-5 lg:h-5" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => console.log("Next song")}
-            >
-              <SkipForwardIcon className="w-4 h-4 lg:w-5 lg:h-5" />
-            </Button>
-          </div>
-        </motion.div>
-
-        {/* 解锁滑块或密码输入 */}
-        <AnimatePresence>
-          {showPasswordInput ? (
-            <motion.form
-              onSubmit={handlePasswordSubmit}
-              className="mb-2 lg:mb-4"
-              variants={itemVariants}
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-            >
-              <Input
-                type="password"
-                placeholder="输入密码"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mb-2"
-              />
-              <Button type="submit" className="w-full">
-                解锁
-              </Button>
-            </motion.form>
-          ) : (
-            <motion.div variants={itemVariants} className="mb-4">
-              <motion.div
-                className="w-full bg-white bg-opacity-20 p-1 rounded-full mb-2 lg:p-2 lg:mb-4"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Slider
-                  defaultValue={[0]}
-                  max={100}
-                  step={1}
-                  onValueChange={handleUnlock}
-                  className="w-full"
-                />
-              </motion.div>
-              <motion.p
-                className="text-center text-white text-sm mb-2 lg:text-base lg:mb-4"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-              >
-                <LockIcon className="inline mr-2 w-4 h-4 lg:w-5 lg:h-5" />{" "}
-                滑动解锁{" "}
-                <UnlockIcon className="inline ml-2 w-4 h-4 lg:w-5 lg:h-5" />
-              </motion.p>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* 快速启动 */}
-        <motion.div variants={itemVariants} className="flex justify-around">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleQuickLaunch("Messages")}
-          >
-            <MessageSquareIcon className="text-white w-4 h-4 lg:w-5 lg:h-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleQuickLaunch("Phone")}
-          >
-            <PhoneIcon className="text-white w-4 h-4 lg:w-5 lg:h-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleQuickLaunch("Instagram")}
-          >
-            <InstagramIcon className="text-white w-4 h-4 lg:w-5 lg:h-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleQuickLaunch("Twitter")}
-          >
-            <TwitterIcon className="text-white w-4 h-4 lg:w-5 lg:h-5" />
-          </Button>
+        <motion.div
+          variants={itemVariants}
+          className="grid grid-cols-4 gap-1 mt-2"
+        >
+          {[
+            {
+              icon: <MessageSquareIcon />,
+              action: () => handleQuickLaunch("Messages"),
+            },
+            { icon: <PhoneIcon />, action: () => handleQuickLaunch("Phone") },
+            {
+              icon: <InstagramIcon />,
+              action: () => handleQuickLaunch("Instagram"),
+            },
+            {
+              icon: <TwitterIcon />,
+              action: () => handleQuickLaunch("Twitter"),
+            },
+          ].map((item, index) => (
+            <Button
+              key={index}
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={item.action}
+            >
+              <div className="w-4 h-4 text-white">{item.icon}</div>
+            </Button>
+          ))}
         </motion.div>
       </motion.div>
 
@@ -413,39 +406,28 @@ export default function LockScreen({
       <AnimatePresence>
         {settingsOpen && (
           <motion.div
-            className="absolute top-4 right-4 bg-white bg-opacity-20 backdrop-blur-md rounded-lg p-4 text-white"
+            className="absolute top-2 right-2 bg-white/20 backdrop-blur-md rounded-lg p-2"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
             exit="hidden"
           >
-            <motion.h3 variants={itemVariants} className="text-lg mb-2">
-              设置
-            </motion.h3>
             <motion.div
               variants={itemVariants}
-              className="flex items-center mb-2"
+              className="flex items-center gap-2"
             >
-              <SunIcon className="mr-2" />
-              <Switch checked={isDarkMode} onCheckedChange={toggleDarkMode} />
-              <MoonIcon className="ml-2" />
+              <SunIcon className="w-3 h-3 text-white" />
+              <Switch
+                checked={isDarkMode}
+                onCheckedChange={toggleDarkMode}
+                className="scale-75"
+              />
+              <MoonIcon className="w-3 h-3 text-white" />
             </motion.div>
-            {/* 添加更多设置项 */}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* 深色模式切换 */}
-      <motion.div
-        className="absolute bottom-2 right-2 flex items-center lg:bottom-4 lg:right-4"
-        variants={itemVariants}
-      >
-        <SunIcon className="mr-1 text-white w-3 h-3 lg:mr-2 lg:w-4 lg:h-4" />
-        <Switch checked={isDarkMode} onCheckedChange={toggleDarkMode} />
-        <MoonIcon className="ml-1 text-white w-3 h-3 lg:ml-2 lg:w-4 lg:h-4" />
-      </motion.div>
-
-      {/* 隐藏的音频元素 */}
       <audio ref={audioRef} src="/path-to-your-audio-file.mp3" />
     </motion.div>
   );

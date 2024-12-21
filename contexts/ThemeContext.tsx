@@ -1,12 +1,13 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-
-type Theme = "light" | "dark" | "astronomical-dark-red" | "solarized-light" | "solarized-dark";
+import { ColorScheme, ThemeSettings, presetThemes } from "@/types/theme";
 
 interface ThemeContextType {
-  theme: Theme;
-  toggleTheme: () => void;
+  theme: ThemeSettings;
+  setTheme: (theme: ThemeSettings) => void;
+  activePreset: keyof typeof presetThemes;
+  setActivePreset: (preset: keyof typeof presetThemes) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -14,31 +15,75 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<ThemeSettings>(presetThemes.dark);
+  const [activePreset, setActivePreset] =
+    useState<keyof typeof presetThemes>("dark");
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") as Theme | null;
+    const savedTheme = localStorage.getItem("theme-settings");
+    const savedPreset = localStorage.getItem(
+      "theme-preset"
+    ) as keyof typeof presetThemes;
+
     if (savedTheme) {
-      setTheme(savedTheme);
-    } else if (
-      window.matchMedia &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches
-    ) {
-      setTheme("dark");
+      setTheme(JSON.parse(savedTheme));
+    }
+    if (savedPreset) {
+      setActivePreset(savedPreset);
     }
   }, []);
 
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    localStorage.setItem("theme", theme);
-  }, [theme]);
+    const applyTheme = (settings: ThemeSettings) => {
+      const {
+        colorScheme,
+        fontSize,
+        borderRadius,
+        fontFamily,
+        buttonStyle,
+        useShadows,
+      } = settings;
 
-  const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
-  };
+      // 应用颜色方案
+      Object.entries(colorScheme).forEach(([key, value]) => {
+        document.documentElement.style.setProperty(`--${key}`, value);
+      });
+
+      // 应用其他样式设置
+      document.documentElement.style.setProperty(
+        "--font-size",
+        `${fontSize}px`
+      );
+      document.documentElement.style.setProperty(
+        "--border-radius",
+        `${borderRadius}px`
+      );
+      document.documentElement.style.setProperty("--font-family", fontFamily);
+      document.documentElement.style.setProperty(
+        "--button-radius",
+        buttonStyle === "rounded" ? "9999px" : `${borderRadius}px`
+      );
+      document.documentElement.style.setProperty(
+        "--use-shadows",
+        useShadows ? "1" : "0"
+      );
+
+      // 应用暗色模式
+      document.documentElement.classList.toggle(
+        "dark",
+        activePreset === "dark" || activePreset === "astronomyRed"
+      );
+    };
+
+    applyTheme(theme);
+    localStorage.setItem("theme-settings", JSON.stringify(theme));
+    localStorage.setItem("theme-preset", activePreset);
+  }, [theme, activePreset]);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider
+      value={{ theme, setTheme, activePreset, setActivePreset }}
+    >
       {children}
     </ThemeContext.Provider>
   );

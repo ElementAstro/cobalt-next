@@ -11,10 +11,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "framer-motion";
+import { Progress } from "@/components/ui/progress";
 import useLandscapeStore from "@/lib/store/landscape-detection";
-import { useTheme } from "next-themes";
 import { useMediaQuery } from "react-responsive";
+import { cn } from "@/lib/utils";
 
 interface LandscapeDetectorProps {
   children: React.ReactNode;
@@ -44,9 +44,30 @@ export default function LandscapeDetector({
     isFullscreen,
     setIsFullscreen,
   } = useLandscapeStore();
+
   const { t } = useTranslation();
-  const { theme, setTheme } = useTheme();
   const isMobile = useMediaQuery({ maxWidth: 768 });
+  const [progress, setProgress] = useState(0);
+
+  // 进度条动画
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isVisible) {
+      setProgress(0);
+      timer = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(timer);
+            return 100;
+          }
+          return prev + 1;
+        });
+      }, 20);
+    }
+    return () => {
+      clearInterval(timer);
+    };
+  }, [isVisible]);
 
   const checkFullscreen = useCallback(() => {
     const fullscreen =
@@ -64,9 +85,8 @@ export default function LandscapeDetector({
         await (docEl as any).webkitRequestFullscreen();
       }
       checkFullscreen();
-      console.log("进入全屏模式");
     } catch (error) {
-      console.error("进入全屏模式失败:", error);
+      console.error("Failed to enter fullscreen:", error);
     }
   }, [checkFullscreen]);
 
@@ -78,9 +98,8 @@ export default function LandscapeDetector({
         await (document as any).webkitExitFullscreen();
       }
       checkFullscreen();
-      console.log("退出全屏模式");
     } catch (error) {
-      console.error("退出全屏模式失败:", error);
+      console.error("Failed to exit fullscreen:", error);
     }
   }, [checkFullscreen]);
 
@@ -96,9 +115,7 @@ export default function LandscapeDetector({
   const debounce = useCallback((func: () => void, delay: number) => {
     let timer: number | null = null;
     return () => {
-      if (timer) {
-        clearTimeout(timer);
-      }
+      if (timer) clearTimeout(timer);
       timer = window.setTimeout(func, delay);
     };
   }, []);
@@ -115,7 +132,6 @@ export default function LandscapeDetector({
     window.addEventListener("fullscreenchange", checkFullscreen);
     window.addEventListener("webkitfullscreenchange", checkFullscreen);
 
-    // 加载用户偏好
     if (persistPreference) {
       const savedPreference = localStorage.getItem("landscapePreference");
       if (savedPreference === "ignored") {
@@ -127,7 +143,6 @@ export default function LandscapeDetector({
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("fullscreenchange", checkFullscreen);
       window.removeEventListener("webkitfullscreenchange", checkFullscreen);
-      // 确保组件存在时再尝试移除
       if (isVisible) {
         hideDialog();
       }
@@ -149,7 +164,7 @@ export default function LandscapeDetector({
   useEffect(() => {
     if (enableSound && isMobile && isVisible) {
       const audio = new Audio("/notification.mp3");
-      audio.play();
+      audio.play().catch(() => {});
     }
   }, [enableSound, isMobile, isVisible]);
 
@@ -161,141 +176,63 @@ export default function LandscapeDetector({
     setHasInteracted(true);
   };
 
-  const toggleThemeMode = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
-
   return (
     <>
-      <AnimatePresence>
-        {isVisible && isMobile && (
-          <motion.div
-            className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md overflow-hidden ${className}`}
-              initial={{ scale: 0.9, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 50 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      <Dialog open={isVisible && isMobile} onOpenChange={() => {}}>
+        <DialogContent
+          className={cn(
+            "bg-background/95 backdrop-blur-sm border-none shadow-2xl w-full max-w-md",
+            className
+          )}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">
+              {customMessage || t("pleaseRotate")}
+            </DialogTitle>
+            <DialogDescription>{t("bestExperience")}</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            <div className="relative w-16 h-16 mx-auto">
+              <svg
+                className="w-full h-full transform rotate-90 text-foreground/80"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
+                <line x1="12" y1="18" x2="12" y2="18" />
+              </svg>
+            </div>
+
+            <Progress value={progress} className="w-full h-2" />
+
+            <DialogDescription className="text-center">
+              {isFullscreen ? t("fullscreenEnabled") : t("fullscreenDisabled")}
+            </DialogDescription>
+          </div>
+
+          <DialogFooter className="grid grid-cols-2 gap-4 sm:grid-cols-2">
+            <Button
+              variant="outline"
+              onClick={ignoreWarning}
+              className="w-full"
             >
-              <div className="p-6 space-y-6">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {customMessage || t("pleaseRotate")}
-                  </DialogTitle>
-                  <DialogDescription className="text-sm text-gray-500 dark:text-gray-400">
-                    {t("bestExperience")}
-                  </DialogDescription>
-                </DialogHeader>
-                <motion.div
-                  initial="hidden"
-                  animate="visible"
-                  variants={{
-                    hidden: { opacity: 0, y: -20 },
-                    visible: {
-                      opacity: 1,
-                      y: 0,
-                      transition: {
-                        staggerChildren: 0.2,
-                      },
-                    },
-                  }}
-                  className="space-y-4"
-                >
-                  <motion.div
-                    variants={{
-                      hidden: { opacity: 0, x: -20 },
-                      visible: { opacity: 1, x: 0 },
-                    }}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="w-16 h-16 mx-auto mb-4 text-blue-500 animate-spin"
-                    >
-                      <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                      <path d="M9 12l2 2 4-4"></path>
-                    </svg>
-                  </motion.div>
-                  <motion.div
-                    variants={{
-                      hidden: { opacity: 0 },
-                      visible: { opacity: 1 },
-                    }}
-                  >
-                    <DialogDescription className="text-center">
-                      {isFullscreen
-                        ? t("fullscreenEnabled")
-                        : t("fullscreenDisabled")}
-                    </DialogDescription>
-                  </motion.div>
-                </motion.div>
-                <DialogFooter className="grid grid-cols-2 gap-4">
-                  <motion.div
-                    variants={{
-                      hidden: { opacity: 0, x: -20 },
-                      visible: { opacity: 1, x: 0 },
-                    }}
-                  >
-                    <Button
-                      variant="outline"
-                      onClick={ignoreWarning}
-                      aria-label={t("ignore")}
-                      className="bg-gray-700 text-white border-gray-600 w-full"
-                    >
-                      {t("ignore")}
-                    </Button>
-                  </motion.div>
-                  <motion.div
-                    variants={{
-                      hidden: { opacity: 0, x: 20 },
-                      visible: { opacity: 1, x: 0 },
-                    }}
-                  >
-                    <Button
-                      variant="default"
-                      onClick={isFullscreen ? exitFullscreen : enterFullscreen}
-                      aria-label={
-                        isFullscreen
-                          ? t("exitFullscreen")
-                          : t("enterFullscreen")
-                      }
-                      className="bg-blue-600 text-white w-full"
-                    >
-                      {isFullscreen
-                        ? t("exitFullscreen")
-                        : t("enterFullscreen")}
-                    </Button>
-                  </motion.div>
-                </DialogFooter>
-                <motion.div
-                  variants={{
-                    hidden: { opacity: 0 },
-                    visible: { opacity: 1 },
-                  }}
-                >
-                  <Button
-                    onClick={toggleThemeMode}
-                    variant="ghost"
-                    className="mt-4 w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                  >
-                    {theme === "dark" ? t("switchToLight") : t("switchToDark")}
-                  </Button>
-                </motion.div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              {t("ignore")}
+            </Button>
+            <Button
+              variant="default"
+              onClick={isFullscreen ? exitFullscreen : enterFullscreen}
+              className="w-full"
+            >
+              {isFullscreen ? t("exitFullscreen") : t("enterFullscreen")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {!isVisible && children}
     </>
   );

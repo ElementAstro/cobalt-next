@@ -1,9 +1,8 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Globe } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface LanguageSwitcherProps {
   position?: {
@@ -32,31 +31,19 @@ export function LanguageSwitcher({
   ],
   icon = <Globe className="mr-2" />,
 }: LanguageSwitcherProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const locale = useLocale();
-  const t = useTranslations();
+  const { language, switchLanguage, t } = useLanguage();
 
-  const switchLocale =
-    availableLocales.find((loc) => loc.code !== locale)?.code ||
-    availableLocales[0].code;
-
-  const handleSwitch = () => {
-    router.push(pathname.replace(`/${locale}`, `/${switchLocale}`));
-  };
+  const nextLanguage = availableLocales.find((loc) => loc.code !== language);
 
   return (
     <Button
-      onClick={handleSwitch}
-      className={`fixed z-10 ${buttonStyle}`}
+      onClick={switchLanguage}
+      className="fixed z-10"
       style={{ ...position }}
       variant={buttonStyle}
     >
       {icon}
-      {t("languageSwitch", {
-        language: availableLocales.find((loc) => loc.code === switchLocale)
-          ?.label,
-      })}
+      {nextLanguage?.label || availableLocales[0].label}
     </Button>
   );
 }
