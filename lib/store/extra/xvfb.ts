@@ -16,7 +16,15 @@ interface XvfbLog {
   type: "info" | "error" | "warning";
 }
 
+export interface XvfbInstance {
+  id: string;
+  display: string;
+  config: XvfbConfig;
+  status: string;
+}
+
 interface XvfbStore {
+  instances: XvfbInstance[];
   config: XvfbConfig;
   isRunning: boolean;
   logs: XvfbLog[];
@@ -40,6 +48,7 @@ interface XvfbStore {
 const useXvfbStore = create<XvfbStore>()(
   persist(
     (set, get) => ({
+      instances: [],
       config: {
         display: ":99",
         resolution: "1024x768",

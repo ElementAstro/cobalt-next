@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, X, Sun, Moon } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +15,8 @@ interface SearchBarProps {
   variant?: "default" | "minimal";
   animationDuration?: number;
   disabled?: boolean;
+  value?: string;
+  onChange?: (value: string) => void;
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
@@ -25,8 +27,15 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   variant = "default",
   animationDuration = 0.3,
   disabled = false,
+  value,
+  onChange,
 }) => {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [internalSearchTerm, setInternalSearchTerm] = useState("");
+  const searchTerm = value !== undefined ? value : internalSearchTerm;
+  const setSearchTerm = onChange
+    ? onChange
+    : (term: string) => setInternalSearchTerm(term);
+
   const [suggestions, setSuggestions] = useState(initialSuggestions);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);

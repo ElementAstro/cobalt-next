@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import useXvfbStore from "@/lib/store/extra/xvfb";
+import useXvfbStore, { XvfbInstance } from "@/lib/store/extra/xvfb";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Settings, Save, Upload, Trash2, RefreshCw } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 export default function XvfbConfig() {
   const {
@@ -43,6 +44,7 @@ export default function XvfbConfig() {
     restartServer,
   } = useXvfbStore();
   const [configName, setConfigName] = useState("");
+  const [instances, setInstances] = useState<XvfbInstance[]>([]);
 
   const handleChange = (field: string, value: string | number) => {
     setConfig({ [field]: value });
@@ -74,9 +76,23 @@ export default function XvfbConfig() {
     error: "bg-red-500",
   };
 
+  const addInstance = () => {
+    const newInstance: XvfbInstance = {
+      id: Date.now().toString(),
+      display: `:${99 + instances.length}`,
+      config: { ...config },
+      status: "idle",
+    };
+    setInstances([...instances, newInstance]);
+  };
+
+  const removeInstance = (id: string) => {
+    setInstances(instances.filter((instance) => instance.id !== id));
+  };
+
   return (
-    <div className="max-w-4xl mx-auto p-4 space-y-4">
-      <Card>
+    <div className="lg:flex lg:flex-row lg:space-x-4 max-w-[100vw] overflow-x-auto p-4">
+      <Card className="lg:w-2/3 mb-4 lg:mb-0">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Xvfb Configuration</CardTitle>
           <div className="flex items-center space-x-2">
@@ -272,6 +288,39 @@ export default function XvfbConfig() {
           </div>
         </CardContent>
       </Card>
+
+      <div className="lg:w-1/3 space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Xvfb Instances</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={addInstance} className="w-full mb-4">
+              Add New Instance
+            </Button>
+
+            <ScrollArea className="h-[calc(100vh-300px)]">
+              {instances.map((instance) => (
+                <div key={instance.id} className="p-4 border rounded-lg mb-2">
+                  <div className="flex justify-between items-center">
+                    <h3>Display {instance.display}</h3>
+                    <Badge>{instance.status}</Badge>
+                  </div>
+                  <div className="mt-2 flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => removeInstance(instance.id)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

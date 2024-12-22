@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useX11VNCStore } from "@/lib/store/extra/x11vnc";
+import useXvfbStore from "@/lib/store/extra/xvfb";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -10,13 +11,23 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Terminal } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
 export default function X11VNCConfig() {
   const { toast } = useToast();
   const store = useX11VNCStore();
+  const xvfbStore = useXvfbStore();
   const { control, handleSubmit, watch } = useForm({
     defaultValues: {
       display: store.display,
@@ -60,14 +71,19 @@ export default function X11VNCConfig() {
     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   };
 
+  const getAvailableDisplays = () => {
+    if (xvfbStore.instances?.length > 0) {
+      return xvfbStore.instances.map((instance) => ({
+        value: instance.display,
+        label: `Xvfb ${instance.display}`,
+      }));
+    }
+    return [];
+  };
+
   return (
-    <motion.div
-      className="max-w-4xl mx-auto p-2 space-y-4"
-      initial="hidden"
-      animate="visible"
-      variants={formAnimation}
-    >
-      <Card className="p-3">
+    <motion.div className="max-w-[100vw] overflow-x-auto p-2 lg:flex lg:flex-row lg:gap-4">
+      <Card className="lg:w-2/3 mb-4 lg:mb-0">
         <CardHeader>
           <CardTitle className="text-xl font-bold">
             x11vnc Configuration
@@ -82,7 +98,7 @@ export default function X11VNCConfig() {
                 <TabsTrigger value="security">Security</TabsTrigger>
               </TabsList>
               <TabsContent value="basic" className="mt-2">
-                <div className="flex flex-col space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
                     <Label htmlFor="display" className="w-full sm:w-1/3">
                       Display
@@ -91,7 +107,21 @@ export default function X11VNCConfig() {
                       name="display"
                       control={control}
                       render={({ field }) => (
-                        <Input {...field} placeholder=":0" className="w-full" />
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select display" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getAvailableDisplays().map(({ value, label }) => (
+                              <SelectItem key={value} value={value}>
+                                {label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       )}
                     />
                   </div>
@@ -414,6 +444,24 @@ export default function X11VNCConfig() {
           </form>
         </CardContent>
       </Card>
+
+      <div className="lg:w-1/3 space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Connection Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span>Active Connections:</span>
+                <Badge>3</Badge>
+              </div>
+              <Progress value={75} className="mb-2" />
+              <p className="text-sm">Network Usage: 75%</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </motion.div>
   );
 }

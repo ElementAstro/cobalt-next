@@ -43,8 +43,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Wifi, Save, AlertCircle, WifiOff } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDnsmasqStore } from "@/lib/store/extra/dnsmasq";
+import { Progress } from "@/components/ui/progress";
 
 export function HostapdConfigForm() {
+  const dnsmasqStore = useDnsmasqStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isAdvancedMode, setIsAdvancedMode] = useState(false);
   const [status, setStatus] = useState<"active" | "inactive" | "error">(
@@ -114,6 +117,15 @@ export function HostapdConfigForm() {
     }
   };
 
+  const syncWithDnsmasq = () => {
+    if (status === "active" && dnsmasqStore.config) {
+      dnsmasqStore.updateConfig({
+        ...dnsmasqStore.config,
+        listenAddress: form.getValues("interface"),
+      });
+    }
+  };
+
   async function onSubmit(values: HostapdConfig) {
     setIsLoading(true);
     try {
@@ -134,179 +146,80 @@ export function HostapdConfigForm() {
   }
 
   return (
-    <Card className="w-full max-w-3xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Wifi className="w-6 h-6" />
-          Hostapd Configuration
-        </CardTitle>
-        <CardDescription>
-          Configure your WiFi access point settings
-        </CardDescription>
-        <div className="flex items-center justify-between">
-          <Button
-            variant={status === "active" ? "destructive" : "default"}
-            onClick={handleToggleAP}
-            disabled={isLoading}
-          >
-            {status === "active" ? (
-              <WifiOff className="mr-2" />
-            ) : (
-              <Wifi className="mr-2" />
-            )}
-            {status === "active" ? "Stop Access Point" : "Start Access Point"}
-          </Button>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="advanced-mode"
-              checked={isAdvancedMode}
-              onCheckedChange={setIsAdvancedMode}
-            />
-            <Label htmlFor="advanced-mode">Advanced Mode</Label>
+    <div className="lg:flex lg:flex-row lg:gap-4 max-w-[100vw] overflow-x-auto">
+      <Card className="lg:w-2/3 mb-4 lg:mb-0">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wifi className="w-6 h-6" />
+            Hostapd Configuration
+          </CardTitle>
+          <CardDescription>
+            Configure your WiFi access point settings
+          </CardDescription>
+          <div className="flex items-center justify-between">
+            <Button
+              variant={status === "active" ? "destructive" : "default"}
+              onClick={handleToggleAP}
+              disabled={isLoading}
+            >
+              {status === "active" ? (
+                <WifiOff className="mr-2" />
+              ) : (
+                <Wifi className="mr-2" />
+              )}
+              {status === "active" ? "Stop Access Point" : "Start Access Point"}
+            </Button>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="advanced-mode"
+                checked={isAdvancedMode}
+                onCheckedChange={setIsAdvancedMode}
+              />
+              <Label htmlFor="advanced-mode">Advanced Mode</Label>
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="basic" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="basic">Basic Settings</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
-          </TabsList>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="basic" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="basic">Basic Settings</TabsTrigger>
+              <TabsTrigger value="security">Security</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="basic">
-            <Form {...form}>
-              <motion.form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-4"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="ssid"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Network Name (SSID)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="MyWiFi" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="country_code"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Country Code</FormLabel>
-                        <FormControl>
-                          <Input placeholder="US" maxLength={2} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {isAdvancedMode && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-4"
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="hw_mode"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Frequency Band</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select band" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="a">
-                                  5 GHz (802.11a/n/ac)
-                                </SelectItem>
-                                <SelectItem value="g">
-                                  2.4 GHz (802.11b/g/n)
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="channel"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Channel</FormLabel>
-                            <Select
-                              onValueChange={(value) =>
-                                field.onChange(Number(value))
-                              }
-                              value={field.value.toString()}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select channel" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {availableChannels.map((channel) => (
-                                  <SelectItem
-                                    key={channel}
-                                    value={channel.toString()}
-                                  >
-                                    Channel {channel}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </motion.div>
-                )}
-              </motion.form>
-            </Form>
-          </TabsContent>
-
-          <TabsContent value="security">
-            <Form {...form}>
-              <motion.form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-4"
-              >
-                <div className="grid grid-cols-1 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="wpa_passphrase"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Security Password</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="password"
-                            placeholder="********"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            <TabsContent value="basic">
+              <Form {...form}>
+                <motion.form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-4"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="ssid"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Network Name (SSID)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="MyWiFi" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="country_code"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Country Code</FormLabel>
+                          <FormControl>
+                            <Input placeholder="US" maxLength={2} {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
                   {isAdvancedMode && (
                     <motion.div
@@ -318,71 +231,195 @@ export function HostapdConfigForm() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
-                          name="ignore_broadcast_ssid"
+                          name="hw_mode"
                           render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                              <div className="space-y-0.5">
-                                <FormLabel className="text-base">
-                                  Hide Network
-                                </FormLabel>
-                                <FormDescription>
-                                  Don't broadcast SSID
-                                </FormDescription>
-                              </div>
-                              <FormControl>
-                                <Switch
-                                  checked={field.value === 1}
-                                  onCheckedChange={(checked) =>
-                                    field.onChange(checked ? 1 : 0)
-                                  }
-                                />
-                              </FormControl>
+                            <FormItem>
+                              <FormLabel>Frequency Band</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select band" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="a">
+                                    5 GHz (802.11a/n/ac)
+                                  </SelectItem>
+                                  <SelectItem value="g">
+                                    2.4 GHz (802.11b/g/n)
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
                         <FormField
                           control={form.control}
-                          name="wmm_enabled"
+                          name="channel"
                           render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                              <div className="space-y-0.5">
-                                <FormLabel className="text-base">
-                                  WMM (QoS)
-                                </FormLabel>
-                                <FormDescription>
-                                  Enable WiFi Multimedia
-                                </FormDescription>
-                              </div>
-                              <FormControl>
-                                <Switch
-                                  checked={field.value === 1}
-                                  onCheckedChange={(checked) =>
-                                    field.onChange(checked ? 1 : 0)
-                                  }
-                                />
-                              </FormControl>
+                            <FormItem>
+                              <FormLabel>Channel</FormLabel>
+                              <Select
+                                onValueChange={(value) =>
+                                  field.onChange(Number(value))
+                                }
+                                value={field.value.toString()}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select channel" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {availableChannels.map((channel) => (
+                                    <SelectItem
+                                      key={channel}
+                                      value={channel.toString()}
+                                    >
+                                      Channel {channel}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
                       </div>
                     </motion.div>
                   )}
-                </div>
-              </motion.form>
-            </Form>
-          </TabsContent>
-        </Tabs>
+                </motion.form>
+              </Form>
+            </TabsContent>
 
-        {status === "error" && (
-          <Alert variant="destructive" className="mt-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>
-              There was a problem with the access point configuration.
-            </AlertDescription>
-          </Alert>
-        )}
-      </CardContent>
-    </Card>
+            <TabsContent value="security">
+              <Form {...form}>
+                <motion.form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-4"
+                >
+                  <div className="grid grid-cols-1 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="wpa_passphrase"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Security Password</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="********"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {isAdvancedMode && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="space-y-4"
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="ignore_broadcast_ssid"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-base">
+                                    Hide Network
+                                  </FormLabel>
+                                  <FormDescription>
+                                    Don't broadcast SSID
+                                  </FormDescription>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value === 1}
+                                    onCheckedChange={(checked) =>
+                                      field.onChange(checked ? 1 : 0)
+                                    }
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="wmm_enabled"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-base">
+                                    WMM (QoS)
+                                  </FormLabel>
+                                  <FormDescription>
+                                    Enable WiFi Multimedia
+                                  </FormDescription>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value === 1}
+                                    onCheckedChange={(checked) =>
+                                      field.onChange(checked ? 1 : 0)
+                                    }
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                </motion.form>
+              </Form>
+            </TabsContent>
+          </Tabs>
+
+          {status === "error" && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>
+                There was a problem with the access point configuration.
+              </AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+      
+      <div className="lg:w-1/3 space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Network Statistics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <p className="text-sm font-medium">Connected Devices</p>
+                  <p className="text-2xl font-bold">5</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Network Load</p>
+                  <p className="text-2xl font-bold">45%</p>
+                </div>
+              </div>
+              <Progress value={45} className="mt-2" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }
