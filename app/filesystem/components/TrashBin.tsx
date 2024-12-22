@@ -86,24 +86,24 @@ export const TrashBin: React.FC<{
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           className="w-full"
-                        >
-                          <Search className="w-4 h-4 text-gray-400" />
-                        </Input>
+                        />
                       </div>
                       <div className="flex items-center space-x-2 ml-4">
                         <Button
-                          variant={viewMode === "list" ? "default" : "outline"}
-                          onClick={() => setViewMode("list")}
+                          variant="outline"
+                          onClick={() =>
+                            setViewMode(viewMode === "list" ? "grid" : "list")
+                          }
                           className="p-2"
+                          aria-label={`切换到${
+                            viewMode === "list" ? "网格" : "列表"
+                          }视图`}
                         >
-                          <List className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant={viewMode === "grid" ? "default" : "outline"}
-                          onClick={() => setViewMode("grid")}
-                          className="p-2"
-                        >
-                          <Grid className="w-4 h-4" />
+                          {viewMode === "list" ? (
+                            <Grid className="w-4 h-4" />
+                          ) : (
+                            <List className="w-4 h-4" />
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -144,9 +144,6 @@ export const TrashBin: React.FC<{
                                     <p className="text-sm font-medium truncate w-full text-center">
                                       {file.name}
                                     </p>
-                                    <p className="text-xs text-gray-400">
-                                      {file.deletedAt}
-                                    </p>
                                   </div>
                                   <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                     <Button
@@ -176,15 +173,6 @@ export const TrashBin: React.FC<{
                                 >
                                   <div>
                                     <p className="font-medium">{file.name}</p>
-                                    <p
-                                      className={`text-sm ${
-                                        theme === "dark"
-                                          ? "text-gray-400"
-                                          : "text-gray-500"
-                                      }`}
-                                    >
-                                      删除时间: {file.deletedAt}
-                                    </p>
                                   </div>
                                   <Button
                                     variant="outline"

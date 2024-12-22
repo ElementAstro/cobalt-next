@@ -39,7 +39,11 @@ export const FileList: React.FC<FileListProps> = ({
             {files
               .filter((file) => !isFolder(file))
               .map((file, index) => (
-                <Draggable key={file.id} draggableId={file.id} index={index}>
+                <Draggable
+                  key={file.id}
+                  draggableId={file.id.toString()}
+                  index={index}
+                >
                   {(provided) => (
                     <div
                       ref={provided.innerRef}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { NetworkStatus } from "./NetworkStatus";
 import {
   Telescope,
   Focus,
@@ -12,7 +13,7 @@ import {
   Settings,
   WifiOff,
   WifiZero,
-  Info
+  Info,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -137,7 +138,7 @@ export function TopBar({ onOpenOffcanvas }: TopBarProps) {
           <span>
             {wifiStatus !== null ? (
               wifiStatus ? (
-                <Wifi className="w-5 h-5" />
+                <NetworkStatus />
               ) : (
                 <WifiOff className="w-5 h-5" />
               )

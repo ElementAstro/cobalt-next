@@ -15,6 +15,7 @@ import {
   Activity,
   Timer,
   Target,
+  StopCircle,
   ParkingSquare,
 } from "lucide-react";
 import { useMountStore } from "@/lib/store/device/telescope";
@@ -56,7 +57,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-export default function TelescopePage() {
+export function TelescopePage() {
   const {
     parkSwitch,
     homeSwitch,
@@ -220,12 +221,12 @@ export default function TelescopePage() {
 
   return (
     <motion.div
-      className="min-h-screen bg-gray-900 text-white p-4"
+      className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 text-white"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto">
         <DeviceSelector
           deviceType="Telescope"
           onDeviceChange={(device) =>
@@ -233,148 +234,180 @@ export default function TelescopePage() {
           }
         />
 
-        <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <motion.div className="grid grid-cols-1 lg:grid-cols-2">
           {/* Main Control Panel */}
-          <motion.div variants={itemVariants} className="md:col-span-2">
-            <ScrollArea className="h-screen w-full bg-gray-900 text-white">
-              <motion.div className="grid grid-cols-12 gap-4 p-4">
-                {/* Status Bar */}
-                <motion.div
-                  variants={itemVariants}
-                  className="col-span-12 flex items-center justify-between bg-gray-800 p-4 rounded-lg"
-                >
-                  <div className="flex items-center gap-4">
-                    <Badge variant={isConnected ? "default" : "destructive"}>
-                      {isConnected ? "已连接" : "未连接"}
-                    </Badge>
-                    <Badge variant={parkSwitch ? "default" : "secondary"}>
-                      {parkSwitch ? "已停靠" : "未停靠"}
-                    </Badge>
-                    <Badge variant={trackSwitch ? "default" : "secondary"}>
-                      {trackSwitch ? "追踪中" : "未追踪"}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <Button
-                      size="sm"
-                      variant={isConnected ? "destructive" : "default"}
-                      onClick={handleConnect}
-                    >
-                      <Power className="w-4 h-4 mr-2" />
-                      {isConnected ? "断开连接" : "连接望远镜"}
-                    </Button>
-                  </div>
-                </motion.div>
-
+          <motion.div variants={itemVariants} className="lg:col-span-2">
+            <ScrollArea className="h-[calc(100vh-4rem)] rounded-xl border border-gray-800">
+              <div className="grid grid-cols-12 gap-2 mt-2">
                 {/* Main Controls */}
-                <motion.div variants={itemVariants} className="col-span-8">
-                  <Tabs defaultValue="movement" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="movement">
-                        <Compass className="w-4 h-4 mr-2" />
-                        移动控制
-                      </TabsTrigger>
-                      <TabsTrigger value="tracking">
-                        <Target className="w-4 h-4 mr-2" />
-                        追踪设置
-                      </TabsTrigger>
-                      <TabsTrigger value="advanced">
-                        <Settings2 className="w-4 h-4 mr-2" />
-                        高级选项
-                      </TabsTrigger>
-                    </TabsList>
+                <motion.div variants={itemVariants} className="col-span-6">
+                  <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 shadow-xl backdrop-blur-md">
+                    <CardHeader>
+                      <CardTitle>移动控制</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Direction Controls */}
+                      <div className="grid grid-cols-3 gap-2">
+                        <Button
+                          variant="outline"
+                          onMouseDown={() => handleManualMove("up-left")}
+                          onMouseUp={() => handleManualMove("stop")}
+                          disabled={!isConnected}
+                        >
+                          <ChevronLeft className="w-4 h-4 rotate-45" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onMouseDown={() => handleManualMove("up")}
+                          onMouseUp={() => handleManualMove("stop")}
+                          disabled={!isConnected}
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onMouseDown={() => handleManualMove("up-right")}
+                          onMouseUp={() => handleManualMove("stop")}
+                          disabled={!isConnected}
+                        >
+                          <ChevronRight className="w-4 h-4 -rotate-45" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onMouseDown={() => handleManualMove("left")}
+                          onMouseUp={() => handleManualMove("stop")}
+                          disabled={!isConnected}
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onMouseDown={() => handleManualMove("stop")}
+                          disabled={!isConnected}
+                        >
+                          <StopCircle className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onMouseDown={() => handleManualMove("right")}
+                          onMouseUp={() => handleManualMove("stop")}
+                          disabled={!isConnected}
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onMouseDown={() => handleManualMove("down-left")}
+                          onMouseUp={() => handleManualMove("stop")}
+                          disabled={!isConnected}
+                        >
+                          <ChevronLeft className="w-4 h-4 -rotate-45" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onMouseDown={() => handleManualMove("down")}
+                          onMouseUp={() => handleManualMove("stop")}
+                          disabled={!isConnected}
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onMouseDown={() => handleManualMove("down-right")}
+                          onMouseUp={() => handleManualMove("stop")}
+                          disabled={!isConnected}
+                        >
+                          <ChevronRight className="w-4 h-4 rotate-45" />
+                        </Button>
+                      </div>
 
-                    {/* Movement Controls */}
-                    <TabsContent value="movement">
-                      <Card>
-                        <CardContent className="space-y-4 pt-4">
-                          {/* Direction Controls */}
-                          <div className="flex flex-col items-center space-y-4">
-                            {/* ...existing direction control buttons... */}
+                      {/* Speed Controls */}
+                      <div className="space-y-2">
+                        <Label>移动速度</Label>
+                        <div className="flex items-center gap-2">
+                          <Slider
+                            value={[speedNum]}
+                            onValueChange={([v]) => setSpeedNum(v)}
+                            max={speedTotalNum.length - 1}
+                            step={1}
+                            className="flex-1"
+                          />
+                          <div className="w-20 text-center">
+                            {speedTotalNum[speedNum]}x
                           </div>
+                        </div>
+                      </div>
 
-                          {/* Speed Controls */}
-                          <div className="space-y-2">
-                            <Label>移动速度</Label>
-                            <div className="flex items-center gap-2">
-                              <Slider
-                                value={[speedNum]}
-                                onValueChange={([v]) => setSpeedNum(v)}
-                                max={speedTotalNum.length - 1}
-                                step={1}
-                                className="flex-1"
-                              />
-                              <div className="w-20 text-center">
-                                {speedTotalNum[speedNum]}x
-                              </div>
-                            </div>
-                          </div>
+                      {/* Park & Home Controls */}
+                      <div className="flex justify-between">
+                        <Button
+                          variant="outline"
+                          onClick={handleTogglePark}
+                          disabled={!isConnected}
+                        >
+                          <ParkingSquare className="w-4 h-4 mr-2" />
+                          {parkSwitch ? "取消停靠" : "停靠"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={handleToggleHome}
+                          disabled={!isConnected}
+                        >
+                          <Home className="w-4 h-4 mr-2" />
+                          {homeSwitch ? "取消归位" : "归位"}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                          {/* Park & Home Controls */}
-                          <div className="flex justify-between">
-                            <Button
-                              variant="outline"
-                              onClick={handleTogglePark}
-                              disabled={!isConnected}
-                            >
-                              <ParkingSquare className="w-4 h-4 mr-2" />
-                              {parkSwitch ? "取消停靠" : "停靠"}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              onClick={handleToggleHome}
-                              disabled={!isConnected}
-                            >
-                              <Home className="w-4 h-4 mr-2" />
-                              {homeSwitch ? "取消归位" : "归位"}
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
+                  <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 shadow-xl backdrop-blur-md mt-6">
+                    <CardHeader>
+                      <CardTitle>追踪设置</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <Label>天体追踪</Label>
+                          <Switch
+                            checked={trackSwitch}
+                            onCheckedChange={handleToggleTrack}
+                            disabled={!isConnected}
+                          />
+                        </div>
+                        <Select defaultValue="sidereal">
+                          <SelectTrigger className="w-full bg-gray-600">
+                            <SelectValue placeholder="选择追踪速率" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="sidereal">恒星时</SelectItem>
+                            <SelectItem value="solar">太阳时</SelectItem>
+                            <SelectItem value="lunar">月球时</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                    {/* Tracking Settings */}
-                    <TabsContent value="tracking">
-                      <Card>
-                        <CardContent className="space-y-4 pt-4">
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <Label>天体追踪</Label>
-                              <Switch
-                                checked={trackSwitch}
-                                onCheckedChange={handleToggleTrack}
-                                disabled={!isConnected}
-                              />
-                            </div>
-                            <Select defaultValue="sidereal">
-                              <SelectTrigger className="w-full bg-gray-600">
-                                <SelectValue placeholder="选择追踪速率" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="sidereal">恒星时</SelectItem>
-                                <SelectItem value="solar">太阳时</SelectItem>
-                                <SelectItem value="lunar">月球时</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-
-                    {/* Advanced Settings */}
-                    <TabsContent value="advanced">
-                      {/* ...existing advanced settings... */}
-                    </TabsContent>
-                  </Tabs>
+                  <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 shadow-xl backdrop-blur-md mt-6">
+                    <CardHeader>
+                      <CardTitle>高级选项</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <Label>高级参数 （暂未设置）</Label>
+                      <p className="text-sm text-gray-300">
+                        这里可以进行更深入的设置，如精调电机、偏心检测等。
+                      </p>
+                    </CardContent>
+                  </Card>
                 </motion.div>
 
                 {/* Side Info */}
                 <motion.div
                   variants={itemVariants}
-                  className="col-span-4 space-y-4"
+                  className="col-span-6 space-y-4"
                 >
                   {/* Current Position */}
-                  <Card>
+                  <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 shadow-xl backdrop-blur-md">
                     <CardHeader>
                       <CardTitle>当前位置</CardTitle>
                     </CardHeader>
@@ -404,8 +437,43 @@ export default function TelescopePage() {
                     </CardContent>
                   </Card>
 
+                  {/* Telescope Info */}
+                  <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 shadow-xl backdrop-blur-md">
+                    <CardHeader>
+                      <CardTitle>望远镜信息</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>厂商</Label>
+                          <div className="text-sm">Celestron</div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>型号</Label>
+                          <div className="text-sm">NexStar 8SE</div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>口径 (mm)</Label>
+                          <div className="text-sm">203</div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>焦距 (mm)</Label>
+                          <div className="text-sm">2032</div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>F比</Label>
+                          <div className="text-sm">f/10</div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>类型</Label>
+                          <div className="text-sm">施密特-卡塞格林</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
                   {/* Status Info */}
-                  <Card>
+                  <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 shadow-xl backdrop-blur-md">
                     <CardHeader>
                       <CardTitle>状态信息</CardTitle>
                     </CardHeader>
@@ -435,7 +503,7 @@ export default function TelescopePage() {
                     </CardContent>
                   </Card>
                 </motion.div>
-              </motion.div>
+              </div>
             </ScrollArea>
           </motion.div>
         </motion.div>

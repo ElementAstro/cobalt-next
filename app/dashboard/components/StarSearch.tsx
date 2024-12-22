@@ -17,6 +17,8 @@ import {
   DialogContent,
   DialogFooter,
   DialogClose,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -187,6 +189,9 @@ export default function StarSearch() {
                 </Button>
               </DialogTrigger>
               <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Filters</DialogTitle>
+                </DialogHeader>
                 <FilterPanel
                   filters={filters}
                   onFilterChange={handleFilterChange}
@@ -210,7 +215,6 @@ export default function StarSearch() {
         <div className="max-w-5xl mx-auto">
           <AnimatePresence>
             <ScrollArea
-              asChild
               className="space-y-4 overflow-y-auto"
               style={{ maxHeight: "calc(100vh - 200px)" }}
             >

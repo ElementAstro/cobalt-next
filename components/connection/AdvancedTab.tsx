@@ -51,7 +51,7 @@ const languages = [
   { label: "日本語", value: "ja" },
 ];
 
-export default function AdvancedTab() {
+export function AdvancedTab() {
   const {
     settings,
     errors,

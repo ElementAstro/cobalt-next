@@ -120,8 +120,8 @@ export function DeviceSelector({
           </Alert>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl shadow-xl border border-gray-700">
-          <div className="relative">
+        <div className="grid grid-cols-1 md:grid-cols-3 bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl shadow-xl border border-gray-700 p-4">
+          <div className="col-span-2">
             <Select onValueChange={handleDeviceChange}>
               <SelectTrigger className="w-full bg-gray-800/50 backdrop-blur-sm border-gray-600 hover:bg-gray-700/50 transition-colors">
                 <SelectValue placeholder={`选择${deviceType}`} />
@@ -139,18 +139,14 @@ export function DeviceSelector({
               </SelectContent>
             </Select>
             {isConnected && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="mt-2"
-              >
-                <Progress value={connectionProgress} className="h-1" />
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <Progress value={connectionProgress} className="h-1 mt-2" />
               </motion.div>
             )}
           </div>
 
           <motion.div
-            className="flex justify-center space-x-3"
+            className="flex justify-end items-center space-x-2"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
@@ -187,38 +183,6 @@ export function DeviceSelector({
                 }`}
               />
             </Button>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-center justify-end text-sm text-gray-400 md:text-right"
-          >
-            {selectedDevice ? (
-              <div className="space-y-1">
-                <span className="inline-flex items-center">
-                  <span
-                    className={`w-2 h-2 rounded-full mr-2 ${
-                      isConnected ? "bg-green-400" : "bg-red-400"
-                    }`}
-                  />
-                  {selectedDevice.name}
-                </span>
-                <div className="text-xs text-gray-500">
-                  {selectedDevice.manufacturer} {selectedDevice.model}
-                </div>
-                <div className="text-xs text-gray-500">
-                  固件: {selectedDevice.firmware} | SN: {selectedDevice.serial}
-                </div>
-                {selectedDevice.capabilities && (
-                  <div className="text-xs text-gray-500">
-                    功能: {selectedDevice.capabilities.join(", ")}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <span className="text-gray-500">未选择设备</span>
-            )}
           </motion.div>
         </div>
       </motion.div>

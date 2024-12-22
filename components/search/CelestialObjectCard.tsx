@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 
 interface CelestialObjectProps {
@@ -195,6 +196,11 @@ export function CelestialObjectCard({
                     </div>
                     {/* 添加更多详细信息 */}
                   </div>
+                  <DialogClose asChild>
+                    <Button variant="outline" className="mt-4">
+                      关闭
+                    </Button>
+                  </DialogClose>
                 </DialogContent>
               </Dialog>
             </div>

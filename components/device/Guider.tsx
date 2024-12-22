@@ -134,21 +134,21 @@ export function GuiderPage() {
 
   return (
     <motion.div
-      className="min-h-screen bg-gray-900 text-white p-4"
+      className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 text-white p-4"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto space-y-6">
         <DeviceSelector
           deviceType="Guider"
           onDeviceChange={(device) => console.log(`Selected guider: ${device}`)}
         />
 
-        <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <motion.div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Control Panel */}
-          <motion.div variants={itemVariants} className="md:col-span-2">
-            <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 shadow-xl rounded-2xl backdrop-blur-md transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl">
+          <motion.div variants={itemVariants} className="lg:col-span-2">
+            <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 shadow-xl backdrop-blur-md">
               <CardHeader>
                 <CardTitle>导星仪设置</CardTitle>
               </CardHeader>
@@ -246,8 +246,8 @@ export function GuiderPage() {
           </motion.div>
 
           {/* Side Panel */}
-          <motion.div variants={itemVariants} className="space-y-4">
-            <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 shadow-xl rounded-2xl backdrop-blur-md transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl">
+          <motion.div variants={itemVariants}>
+            <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 shadow-xl backdrop-blur-md">
               <CardHeader>
                 <CardTitle>导星控制</CardTitle>
               </CardHeader>

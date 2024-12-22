@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import CryptoJS from "crypto-js";
 import { useCookieStore } from "@/lib/store/storage/cookie";
-import { useCookies } from "react-cookie";
+import Cookies from "js-cookie";
 
 interface ConnectionFormData {
   ip: string;
@@ -75,10 +75,10 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   },
 
   loadFromCookies: () => {
-    const [cookies] = useCookies(["connection_data"]);
-    if (cookies.connection_data) {
+    const cookieData = Cookies.get("connection_data");
+    if (cookieData) {
       try {
-        const parsedData = JSON.parse(cookies.connection_data);
+        const parsedData = JSON.parse(cookieData);
         set((state) => ({
           formData: { ...state.formData, ...parsedData },
         }));
@@ -90,16 +90,14 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
 
   saveToCookies: () => {
     const { formData } = get();
-    const [, setCookie, removeCookie] = useCookies(["connection_data"]);
-
     if (formData.rememberLogin) {
-      setCookie("connection_data", JSON.stringify(formData), {
-        maxAge: 30 * 24 * 60 * 60, // 30天
+      Cookies.set("connection_data", JSON.stringify(formData), {
+        expires: 30, // 30 days
         secure: true,
         sameSite: "strict",
       });
     } else {
-      removeCookie("connection_data");
+      Cookies.remove("connection_data");
     }
   },
 
@@ -119,15 +117,13 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     })),
   clearConnectionHistory: () => set({ connectionHistory: [] }),
 
-  // 注册相关操作
   registerUser: (data) => {
-    const [, setCookie] = useCookies(["registrationData"]);
     const encrypted = CryptoJS.AES.encrypt(
       JSON.stringify(data),
       SECRET_KEY
     ).toString();
 
-    setCookie("registrationData", encrypted, {
+    Cookies.set("registrationData", encrypted, {
       secure: true,
       sameSite: "strict",
     });
@@ -135,11 +131,11 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   },
 
   loadRegistration: () => {
-    const [cookies] = useCookies(["registrationData"]);
-    if (cookies.registrationData) {
+    const registrationData = Cookies.get("registrationData");
+    if (registrationData) {
       try {
         const decrypted = CryptoJS.AES.decrypt(
-          cookies.registrationData,
+          registrationData,
           SECRET_KEY
         ).toString(CryptoJS.enc.Utf8);
 
@@ -155,13 +151,12 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
 
   saveRegistration: () => {
     const { registrationData } = get();
-    const [, setCookie] = useCookies(["registrationData"]);
     const encrypted = CryptoJS.AES.encrypt(
       JSON.stringify(registrationData),
       SECRET_KEY
     ).toString();
 
-    setCookie("registrationData", encrypted, {
+    Cookies.set("registrationData", encrypted, {
       secure: true,
       sameSite: "strict",
     });

@@ -9,7 +9,7 @@ export type FileType =
   | "unknown";
 
 export interface File {
-  id: string;
+  id: number;
   name: string;
   type: FileType;
   size: number;
@@ -26,6 +26,11 @@ export interface Folder {
   id: string;
   name: string;
   files: (File | Folder)[];
+  createdAt: Date;
+  lastModified: Date;
+  owner: string;
+  permissions: string;
+  path: string;
 }
 
 export type CustomizationOptionsData = {

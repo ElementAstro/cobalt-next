@@ -82,7 +82,7 @@ const fadeInUp = {
 };
 
 // ------ Main Component ------
-export default function Component() {
+export function ProfileTab() {
   // from advanced store
   const { settings, errors, setSettings, validateField } = useSettingsStore();
   // from profile store

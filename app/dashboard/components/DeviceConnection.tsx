@@ -137,7 +137,7 @@ export default function DeviceConnection() {
                     exit="hidden"
                   >
                     <TabsContent value="profile">
-                      <ProfileTab toast={toast} />
+                      <ProfileTab />
                     </TabsContent>
                     <TabsContent value="devices">
                       <DevicesTab />

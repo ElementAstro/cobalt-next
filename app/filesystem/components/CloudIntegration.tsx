@@ -13,6 +13,13 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 import { useCloudStore } from "@/lib/store/filesystem";
 
 interface CloudIntegrationProps {
@@ -146,15 +153,7 @@ export const CloudIntegration: React.FC<CloudIntegrationProps> = ({
     <AnimatePresence>
       {isOpen && (
         <Dialog open={isOpen} onOpenChange={onClose}>
-          <DialogOverlay asChild>
-            <motion.div
-              className="fixed inset-0 bg-black bg-opacity-50 z-50"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            />
-          </DialogOverlay>
-          <DialogContent asChild>
+          <DialogContent>
             <motion.div
               className="bg-gray-800 text-white p-6 rounded-lg max-w-md w-full mx-4 shadow-lg relative"
               initial={{ scale: 0.9, opacity: 0, y: -50 }}
@@ -163,13 +162,17 @@ export const CloudIntegration: React.FC<CloudIntegrationProps> = ({
               transition={{ duration: 0.3 }}
             >
               <DialogHeader>
-                <DialogTitle className="flex justify-between items-center mb-4">
-                  <span className="text-2xl font-bold">Cloud Integration</span>
-                  <DialogClose asChild>
-                    <button className="p-1 rounded-full hover:bg-gray-700 transition duration-200">
-                      <X className="w-6 h-6" />
-                    </button>
-                  </DialogClose>
+                <DialogTitle className="mb-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-2xl font-bold">
+                      Cloud Integration
+                    </span>
+                    <DialogClose asChild>
+                      <button className="p-1 rounded-full hover:bg-gray-700 transition duration-200">
+                        <X className="w-6 h-6" />
+                      </button>
+                    </DialogClose>
+                  </div>
                 </DialogTitle>
               </DialogHeader>
 
@@ -182,17 +185,21 @@ export const CloudIntegration: React.FC<CloudIntegrationProps> = ({
                 <Label className="block mb-2 font-medium">
                   Select Cloud Service
                 </Label>
-                <select
+                <Select
                   value={selectedService}
-                  onChange={(e) => setSelectedService(e.target.value)}
-                  className="w-full p-2 rounded bg-gray-700 text-white"
+                  onValueChange={setSelectedService}
                 >
-                  {availableServices.map((service) => (
-                    <option key={service.value} value={service.value}>
-                      {service.label}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full p-2 rounded bg-gray-700 text-white">
+                    <SelectValue placeholder="Select a cloud service" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableServices.map((service) => (
+                      <SelectItem key={service.value} value={service.value}>
+                        {service.icon} {service.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </motion.div>
 
               {feedback && (

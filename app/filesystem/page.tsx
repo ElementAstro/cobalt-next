@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useMemo, useCallback } from "react";
 import {
   ArrowLeft,
   Search,
@@ -22,11 +22,10 @@ import {
   File,
   Folder as FolderType,
   CustomizationOptions,
+  CustomizationOptionsData,
 } from "@/types/filesystem";
 import { DragDropContext, DropResult } from "react-beautiful-dnd";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Header } from "./layout/Header";
 import { FileList } from "./layout/FileList";
 import { ContextMenu } from "./layout/ContextMenu";
@@ -45,57 +44,70 @@ import { FileProperties } from "./components/FileProperties";
 import { useDropzone, DropEvent, FileRejection } from "react-dropzone";
 import { FilePreview } from "./components/FilePreview";
 
+import {
+  useFileSystemStore,
+  useSettingsStore,
+  useShareModalStore,
+  useTrashBinStore,
+} from "@/lib/store/filesystem";
+
 export default function FileBrowser() {
-  const [time, setTime] = useState(new Date().toLocaleTimeString());
-  const [currentPath, setCurrentPath] = useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<"name" | "size" | "lastModified">(
-    "name"
-  );
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
-  const [previewFile, setPreviewFile] = useState<File | null>(null);
-  const [contextMenu, setContextMenu] = useState<{
-    x: number;
-    y: number;
-    file: File | FolderType;
-  } | null>(null);
-  const [customOptions, setCustomOptions] = useState<
-    CustomizationOptions["options"]
-  >({
-    gridSize: "medium",
-    showHiddenFiles: false,
-    listView: "comfortable",
-    sortBy: "name",
-    sortDirection: "asc",
-    thumbnailQuality: "medium",
-    autoBackup: true,
-    defaultView: "grid",
-  });
-  const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
-  const [isTagManagerOpen, setIsTagManagerOpen] = useState(false);
-  const [isRealtimeCollaborationOpen, setIsRealtimeCollaborationOpen] =
-    useState(false);
-  const [isFileCompressionOpen, setIsFileCompressionOpen] = useState(false);
-  const [isCloudIntegrationOpen, setIsCloudIntegrationOpen] = useState(false);
-  const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isTrashBinOpen, setIsTrashBinOpen] = useState(false);
-  const [isFileEncryptionOpen, setIsFileEncryptionOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [orientation, setOrientation] = useState<"portrait" | "landscape">(
-    "portrait"
-  );
-  const [user, setUser] = useState<{ name: string; email: string } | null>(
-    null
-  );
-  const [isPropertiesOpen, setIsPropertiesOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const {
+    currentPath,
+    setCurrentPath,
+    searchTerm,
+    setSearchTerm,
+    sortBy,
+    sortOrder,
+    setSortBy,
+    toggleSortOrder,
+    viewMode,
+    setViewMode,
+    selectedFiles,
+    setSelectedFiles,
+    loading,
+    error,
+    previewFile,
+    setPreviewFile,
+    contextMenu,
+    setContextMenu,
+    isSettingsPanelOpen,
+    setIsSettingsPanelOpen,
+    isUploadModalOpen,
+    setIsUploadModalOpen,
+    isSearchModalOpen,
+    setIsSearchModalOpen,
+    isShareModalOpen,
+    setIsShareModalOpen,
+    isVersionHistoryOpen,
+    setIsVersionHistoryOpen,
+    isTagManagerOpen,
+    setIsTagManagerOpen,
+    isRealtimeCollaborationOpen,
+    setIsRealtimeCollaborationOpen,
+    isFileCompressionOpen,
+    setIsFileCompressionOpen,
+    isCloudIntegrationOpen,
+    setIsCloudIntegrationOpen,
+    isAdvancedSearchOpen,
+    setIsAdvancedSearchOpen,
+    isAuthModalOpen,
+    setIsAuthModalOpen,
+    isTrashBinOpen,
+    setIsTrashBinOpen,
+    isFileEncryptionOpen,
+    setIsFileEncryptionOpen,
+    isPropertiesOpen,
+    setIsPropertiesOpen,
+  } = useFileSystemStore();
+
+  const { options: customOptions, setOptions } = useSettingsStore();
+  const { permissions, setPermissions } = useShareModalStore();
+  const { deletedFiles, restoreFile, emptyTrash } = useTrashBinStore();
+
+  const isFolder = (item: File | FolderType): item is FolderType => {
+    return (item as FolderType).files !== undefined;
+  };
 
   const onDrop = useCallback(
     <T extends File>(
@@ -104,7 +116,6 @@ export default function FileBrowser() {
       event: DropEvent
     ) => {
       console.log("Dropped files:", acceptedFiles);
-      // Transform browser File objects into your custom File type
       const customFiles = acceptedFiles.map((file) => ({
         id: crypto.randomUUID(),
         name: file.name,
@@ -121,37 +132,104 @@ export default function FileBrowser() {
     []
   );
 
-  // 添加批量选择状态
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const handleDelete = useCallback(() => {
+    if (!selectedFiles || selectedFiles.length === 0) return;
 
-  // 添加排序功能
-  const [sortConfig, setSortConfig] = useState({
-    key: "name",
-    direction: "asc",
-  });
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-      setOrientation(
-        window.innerHeight > window.innerWidth ? "portrait" : "landscape"
-      );
+    const deleteFiles = (folder: FolderType) => {
+      if (folder.files) {
+        folder.files = folder.files.filter(
+          (file) => !selectedFiles.includes(file.id.toString())
+        );
+        folder.files.forEach((file) => {
+          if (isFolder(file)) {
+            deleteFiles(file as FolderType);
+          }
+        });
+      }
     };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+    deleteFiles(mockFileSystem);
+    setSelectedFiles([]);
+  }, [selectedFiles, setSelectedFiles]);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTime(new Date().toLocaleTimeString());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent, file: File | FolderType) => {
+      e.preventDefault();
+      setContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        file,
+      });
+    },
+    [setContextMenu]
+  );
 
-  const isFolder = (item: File | FolderType): item is FolderType => {
-    return (item as FolderType).files !== undefined;
+  const closeContextMenu = useCallback(() => {
+    setContextMenu(null);
+  }, [setContextMenu]);
+
+  const handleFileOperation = useCallback(
+    (operation: string, file: File) => {
+      switch (operation) {
+        case "preview":
+          setPreviewFile(file);
+          break;
+        case "download":
+          // Handle download logic here
+          break;
+        case "rename":
+          // Handle rename logic here
+          break;
+        case "share":
+          setIsShareModalOpen(true);
+          break;
+        case "versionHistory":
+          setIsVersionHistoryOpen(true);
+          break;
+        case "manageTags":
+          setIsTagManagerOpen(true);
+          break;
+        case "compress":
+          setIsFileCompressionOpen(true);
+          break;
+        case "encrypt":
+          setIsFileEncryptionOpen(true);
+          break;
+        case "delete":
+          handleDelete();
+          break;
+        case "properties":
+          setIsPropertiesOpen(true);
+          break;
+        default:
+          break;
+      }
+    },
+    [
+      handleDelete,
+      setIsFileCompressionOpen,
+      setIsFileEncryptionOpen,
+      setIsShareModalOpen,
+      setIsTagManagerOpen,
+      setIsVersionHistoryOpen,
+      setIsPropertiesOpen,
+    ]
+  );
+
+  const onDragEnd = (result: DropResult) => {
+    const { destination, source } = result;
+    if (!destination) return;
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
+
+    const reorderedFiles = Array.from(mockFileSystem.files);
+    const [movedFile] = reorderedFiles.splice(source.index, 1);
+    reorderedFiles.splice(destination.index, 0, movedFile);
+
+    mockFileSystem.files = reorderedFiles as (File | FolderType)[];
   };
 
   const currentFolder = useMemo(() => {
@@ -216,108 +294,12 @@ export default function FileBrowser() {
         setPreviewFile(file as File);
       }
     },
-    [currentPath]
+    [currentPath, setCurrentPath, setPreviewFile]
   );
-
-  const handleDelete = useCallback(() => {
-    if (!selectedFiles || selectedFiles.length === 0) return;
-
-    const deleteFiles = (folder: FolderType) => {
-      if (folder.files) {
-        folder.files = folder.files.filter(
-          (file) => !selectedFiles.includes(file.id)
-        );
-        folder.files.forEach((file) => {
-          if (isFolder(file)) {
-            deleteFiles(file as FolderType);
-          }
-        });
-      }
-    };
-    deleteFiles(mockFileSystem);
-    setSelectedFiles([]);
-  }, [selectedFiles]);
-
-  const handleContextMenu = useCallback(
-    (e: React.MouseEvent, file: File | FolderType) => {
-      e.preventDefault();
-      setContextMenu({ x: e.clientX, y: e.clientY, file });
-    },
-    []
-  );
-
-  const closeContextMenu = useCallback(() => {
-    setContextMenu(null);
-  }, []);
-
-  const toggleTheme = useCallback(() => {
-    setCustomOptions((prev) => ({
-      ...prev,
-    }));
-  }, []);
-
-  const handleFileOperation = useCallback(
-    (operation: string, file: File) => {
-      switch (operation) {
-        case "preview":
-          setPreviewFile(file);
-          break;
-        case "download":
-          // Handle download logic here
-          break;
-        case "rename":
-          // Handle rename logic here
-          break;
-        case "share":
-          setIsShareModalOpen(true);
-          break;
-        case "versionHistory":
-          setIsVersionHistoryOpen(true);
-          break;
-        case "manageTags":
-          setIsTagManagerOpen(true);
-          break;
-        case "compress":
-          setIsFileCompressionOpen(true);
-          break;
-        case "encrypt":
-          setIsFileEncryptionOpen(true);
-          break;
-        case "delete":
-          handleDelete();
-          break;
-        case "properties":
-          setSelectedFile(file);
-          setIsPropertiesOpen(true);
-          break;
-        default:
-          break;
-      }
-    },
-    [handleDelete]
-  );
-
-  const onDragEnd = (result: DropResult) => {
-    const { destination, source, draggableId } = result;
-    if (!destination) return;
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
-      return;
-    }
-
-    const reorderedFiles = Array.from(files);
-    const [movedFile] = reorderedFiles.splice(source.index, 1);
-    reorderedFiles.splice(destination.index, 0, movedFile);
-
-    // 更新 mockFileSystem 或状态以反映重新排序
-    currentFolder.files = reorderedFiles as (File | FolderType)[];
-  };
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex-1 flex flex-col">
+      <div className="h-screen flex flex-col overflow-hidden bg-gray-900 text-gray-100">
         <Header
           currentPath={currentPath}
           setCurrentPath={setCurrentPath}
@@ -328,7 +310,7 @@ export default function FileBrowser() {
           sortBy={sortBy}
           sortOrder={sortOrder}
           setSortBy={setSortBy}
-          setSortOrder={setSortOrder}
+          setSortOrder={toggleSortOrder}
           openModals={{
             settings: () => setIsSettingsPanelOpen(true),
             upload: () => setIsUploadModalOpen(true),
@@ -351,16 +333,16 @@ export default function FileBrowser() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
-          className={`flex-1 overflow-auto p-4 ${
+          className={`flex-1 overflow-auto px-2 py-1 md:p-2 ${
             viewMode === "grid"
-              ? `grid gap-4 ${
+              ? `grid gap-2 md:gap-3 auto-rows-min ${
                   customOptions.gridSize === "small"
-                    ? "grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8"
+                    ? "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8"
                     : customOptions.gridSize === "medium"
-                    ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
-                    : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+                    ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7"
+                    : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
                 }`
-              : "space-y-2"
+              : "space-y-1"
           }`}
         >
           <FileList
@@ -397,7 +379,7 @@ export default function FileBrowser() {
         isOpen={isSettingsPanelOpen}
         onClose={() => setIsSettingsPanelOpen(false)}
         options={customOptions}
-        setOptions={setCustomOptions}
+        setOptions={setOptions}
       />
 
       <SearchModal
@@ -440,9 +422,9 @@ export default function FileBrowser() {
         isOpen={isFileEncryptionOpen}
         onClose={() => setIsFileEncryptionOpen(false)}
       />
-      {selectedFile && (
+      {isPropertiesOpen && contextMenu?.file && (
         <FileProperties
-          file={selectedFile}
+          item={contextMenu.file}
           isOpen={isPropertiesOpen}
           onClose={() => setIsPropertiesOpen(false)}
         />

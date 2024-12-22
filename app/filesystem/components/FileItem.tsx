@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { Draggable } from "react-beautiful-dnd";
 import {
@@ -46,7 +48,7 @@ export const FileItem: React.FC<FileItemProps> = ({
   onShowMenu,
 }) => {
   const { selectedFileId, setSelectedFileId } = useFileItemStore();
-  const isSelected = selectedFileId === file.id;
+  const isSelected = selectedFileId === file.id.toString();
 
   const getIconForFileType = (type: FileType) => {
     switch (type) {
@@ -68,11 +70,11 @@ export const FileItem: React.FC<FileItemProps> = ({
   };
 
   const handleSelect = () => {
-    setSelectedFileId(isSelected ? null : file.id);
+    setSelectedFileId(isSelected ? null : file.id.toString());
   };
 
   const handleCheckedChange = (checked: boolean) => {
-    setSelectedFileId(checked ? file.id : null);
+    setSelectedFileId(checked ? file.id.toString() : null);
   };
 
   const renderThumbnail = () => {
@@ -95,25 +97,18 @@ export const FileItem: React.FC<FileItemProps> = ({
   };
 
   return (
-    <Draggable draggableId={file.id} index={index}>
+    <Draggable draggableId={file.id.toString()} index={index}>
       {(provided, snapshot) => (
         <motion.div
           ref={provided.innerRef}
           {...(provided.draggableProps as any)}
           {...(provided.dragHandleProps as any)}
           whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className={cn(
-            "group relative p-2 rounded-lg transition-all duration-200",
-            "md:flex-row flex flex-col items-center md:items-start",
-            "md:gap-3 gap-2",
+          className={`relative group ${
             viewMode === "grid"
-              ? "w-[120px] md:w-[150px]"
-              : "w-full md:w-auto justify-start",
-            isSelected && "ring-2 ring-primary",
-            snapshot.isDragging && "opacity-75 shadow-lg",
-            "hover:bg-accent/50"
-          )}
+              ? "bg-gray-800/50 rounded-lg p-2 hover:bg-gray-700/50 transition-colors"
+              : "flex items-center space-x-2 p-1 hover:bg-gray-700/30 rounded-md"
+          }`}
           onClick={handleSelect}
         >
           {isSelectionMode && (

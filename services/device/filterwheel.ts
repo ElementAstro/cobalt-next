@@ -1,5 +1,5 @@
 import { api } from "@/services/axios";
-import { useFilterWheelStore } from "@/lib/store/device";
+import { useFilterWheelStore } from "@/lib/store/device/filterwheel";
 import * as yup from "yup";
 import logger from "@/lib/logger";
 

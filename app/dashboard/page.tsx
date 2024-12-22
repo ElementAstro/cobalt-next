@@ -28,7 +28,7 @@ import StarSearch from "./components/StarSearch";
 import ToolPanel from "./components/ToolPanel";
 import SettingsPage from "./components/Settings";
 
-import { Camera } from "@/components/device/Camera";
+import { CameraPage } from "@/components/device/Camera";
 import { FocuserPage } from "@/components/device/Focuser";
 import { FilterWheelPage } from "@/components/device/FilterWheel";
 import { GuiderPage } from "@/components/device/Guider";
@@ -296,7 +296,7 @@ export default function CameraInterface() {
       case "guider":
         return <GuiderPage />;
       case "camera":
-        return <Camera />;
+        return <CameraPage />;
       case "Logs":
         return <Log />;
       case "Settings":

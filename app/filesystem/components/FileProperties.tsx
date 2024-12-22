@@ -16,23 +16,21 @@ import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { File } from "@/types/filesystem";
+import { File, Folder } from "@/types/filesystem";
 
 interface FilePropertiesProps {
-  file: File;
+  item: File | Folder;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function FileProperties({
-  file,
-  isOpen,
-  onClose,
-}: FilePropertiesProps) {
+export function FileProperties({ item, isOpen, onClose }: FilePropertiesProps) {
   const { theme, toggleTheme } = useThemeStore();
   const [favorite, setFavorite] = React.useState(false);
   const [readOnly, setReadOnly] = React.useState<boolean>(
-    file.permissions.includes("read") && !file.permissions.includes("write")
+    "permissions" in item
+      ? item.permissions.includes("read") && !item.permissions.includes("write")
+      : false
   );
   const [detailLevel, setDetailLevel] = React.useState<"basic" | "advanced">(
     "basic"
@@ -60,6 +58,10 @@ export function FileProperties({
 
   const handleFavorite = () => setFavorite((prev) => !prev);
 
+  const isFolder = (obj: File | Folder): obj is Folder => {
+    return (obj as Folder).files !== undefined;
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -84,7 +86,9 @@ export function FileProperties({
             <Card className="w-full">
               <CardHeader className="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div className="flex items-center space-x-3">
-                  <CardTitle className="text-lg font-bold">文件属性</CardTitle>
+                  <CardTitle className="text-lg font-bold">
+                    {isFolder(item) ? "文件夹属性" : "文件属性"}
+                  </CardTitle>
                   <Button
                     variant="secondary"
                     onClick={handleFavorite}
@@ -117,15 +121,23 @@ export function FileProperties({
                     className="mb-4 space-y-2"
                   >
                     <Label>
-                      <strong>名称:</strong> {file.name}
+                      <strong>名称:</strong> {item.name}
                     </Label>
                     <Label>
-                      <strong>类型:</strong> {file.type}
+                      <strong>类型:</strong>{" "}
+                      {isFolder(item) ? "文件夹" : item.type}
                     </Label>
-                    <Label>
-                      <strong>大小:</strong>{" "}
-                      {((file.size || 0) / 1024).toFixed(2)} KB
-                    </Label>
+                    {!isFolder(item) && (
+                      <Label>
+                        <strong>大小:</strong>{" "}
+                        {((item.size || 0) / 1024).toFixed(2)} KB
+                      </Label>
+                    )}
+                    {isFolder(item) && (
+                      <Label>
+                        <strong>包含项数:</strong> {item.files.length} 项
+                      </Label>
+                    )}
                   </motion.div>
 
                   <ToggleGroup
@@ -146,17 +158,22 @@ export function FileProperties({
                     <motion.div variants={variants.item} className="space-y-2">
                       <Label>
                         <strong>创建时间:</strong>{" "}
-                        {format(file.createdAt, "yyyy-MM-dd HH:mm:ss")}
+                        {format(item.createdAt, "yyyy-MM-dd HH:mm:ss")}
                       </Label>
                       <Label>
                         <strong>修改时间:</strong>{" "}
-                        {format(file.lastModified, "yyyy-MM-dd HH:mm:ss")}
+                        {format(item.lastModified, "yyyy-MM-dd HH:mm:ss")}
                       </Label>
+                      {isFolder(item) && (
+                        <Label>
+                          <strong>路径:</strong> {item.path}
+                        </Label>
+                      )}
                     </motion.div>
                   ) : (
                     <motion.div variants={variants.item} className="space-y-2">
                       <Label>
-                        <strong>所有者:</strong> {file.owner}
+                        <strong>所有者:</strong> {item.owner}
                       </Label>
                       <div className="flex items-center space-x-2">
                         <Label className="cursor-pointer">
@@ -170,9 +187,18 @@ export function FileProperties({
                       <Label>
                         <strong>权限:</strong> {readOnly ? "读" : "读/写"}
                       </Label>
-                      <Label>
-                        <strong>路径:</strong> {file.path}
-                      </Label>
+                      {!isFolder(item) && (
+                        <>
+                          <Label>
+                            <strong>路径:</strong> {item.path}
+                          </Label>
+                          {item.language && (
+                            <Label>
+                              <strong>编程语言:</strong> {item.language}
+                            </Label>
+                          )}
+                        </>
+                      )}
                     </motion.div>
                   )}
                 </ScrollArea>

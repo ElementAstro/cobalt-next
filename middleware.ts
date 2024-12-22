@@ -3,6 +3,8 @@ import type { NextRequest } from "next/server";
 import { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE } from "@/config/languages";
 
 export function middleware(request: NextRequest) {
+  const isRedirectEnabled = false;
+  if (!isRedirectEnabled) return;
   const pathname = request.nextUrl.pathname;
 
   // Check if the pathname already includes a supported language

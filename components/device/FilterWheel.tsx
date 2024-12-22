@@ -124,174 +124,135 @@ export function FilterWheelPage() {
 
   return (
     <motion.div
-      className="min-h-screen bg-gray-900 text-white p-4"
+      className="container mx-auto p-4 space-y-6"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      <div className="max-w-7xl mx-auto space-y-8">
-        <div className="flex items-center justify-between">
-          <DeviceSelector
-            deviceType="FilterWheel"
-            onDeviceChange={(device) =>
-              console.log(`Selected filter wheel: ${device}`)
-            }
-          />
-          <div className="flex items-center gap-4">
-            <Badge
-              variant={isConnected ? "default" : "secondary"}
-              className="px-4 py-2"
-            >
-              {isConnected ? (
-                <CheckCircle2 className="w-4 h-4 mr-2" />
-              ) : (
-                <AlertCircle className="w-4 h-4 mr-2" />
-              )}
-              {isConnected ? "已连接" : "未连接"}
-            </Badge>
-            <Button
-              onClick={isConnected ? handleDisconnect : handleConnect}
-              disabled={isLoading}
-              variant={isConnected ? "destructive" : "default"}
-            >
-              {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {isConnected ? "断开连接" : "连接"}
-            </Button>
-          </div>
-        </div>
+      <DeviceSelector
+        deviceType="FilterWheel"
+        onDeviceChange={(device) =>
+          console.log(`Selected filter wheel: ${device}`)
+        }
+      />
 
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>错误</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Main Control Panel */}
-          <motion.div variants={itemVariants} className="md:col-span-2">
-            <Card className="bg-gray-800 border-gray-700">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  滤镜轮信息
-                  {filterWheelInfo.isMoving && (
-                    <div className="flex items-center text-sm font-normal">
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      正在移动...
-                    </div>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <motion.div
-                  className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3"
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="visible"
-                >
-                  <motion.div variants={itemVariants} className="space-y-2">
-                    <Label>名称</Label>
-                    <div className="text-sm">{filterWheelInfo.name}</div>
-                  </motion.div>
-                  <motion.div variants={itemVariants} className="space-y-2">
-                    <Label>驱动信息</Label>
-                    <div className="text-sm">{filterWheelInfo.driverInfo}</div>
-                  </motion.div>
-                  <motion.div variants={itemVariants} className="space-y-2">
-                    <Label>驱动版本</Label>
-                    <div className="text-sm">
-                      {filterWheelInfo.driverVersion}
-                    </div>
-                  </motion.div>
-                  <motion.div variants={itemVariants} className="space-y-2">
-                    <Label>当前滤镜</Label>
-                    <div className="text-sm">
-                      {filterWheelInfo.currentFilter}
-                    </div>
-                  </motion.div>
-                  <motion.div variants={itemVariants} className="space-y-2">
-                    <Label>描述</Label>
-                    <div className="text-sm">{filterWheelInfo.description}</div>
-                  </motion.div>
-                </motion.div>
-
-                <motion.div variants={itemVariants} className="mt-8 space-y-6">
-                  <div className="flex flex-col space-y-4">
-                    <div className="w-full">
-                      <Label htmlFor="filter-select">选择滤镜</Label>
-                      <div className="flex gap-4 mt-2">
-                        <Select
-                          value={selectedFilter}
-                          onValueChange={setSelectedFilter}
-                          disabled={!isConnected || isLoading}
-                        >
-                          <SelectTrigger id="filter-select">
-                            <SelectValue placeholder="请选择滤镜" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {filterWheelInfo.filters.map((filter, index) => (
-                              <SelectItem
-                                key={index}
-                                value={(index + 1).toString()}
-                              >
-                                {filter}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          onClick={handleFilterChange}
-                          disabled={!isConnected || isLoading}
-                          className="min-w-[120px]"
-                        >
-                          {isLoading && (
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          )}
-                          更换滤镜
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <motion.div variants={itemVariants} className="md:col-span-2">
+          <Card className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-gray-700">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                滤镜轮信息
                 {filterWheelInfo.isMoving && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="mt-6"
-                  >
-                    <Progress value={33} className="h-2" />
-                  </motion.div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Status Panel */}
-          <motion.div variants={itemVariants}>
-            <Card className="bg-gray-800 border-gray-700">
-              <CardHeader>
-                <CardTitle>状态监控</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <Label>当前位置</Label>
-                    <div className="text-2xl font-semibold mt-1">
-                      {filterWheelInfo.position} / {filterWheelInfo.maxPosition}
-                    </div>
+                  <div className="flex items-center text-sm font-normal">
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    正在移动...
                   </div>
-                  <div>
-                    <Label>移动历史</Label>
-                    <div className="mt-2 space-y-2">
-                      {/* Add movement history display here */}
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <motion.div
+                className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+              >
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label>名称</Label>
+                  <div className="text-sm">{filterWheelInfo.name}</div>
+                </motion.div>
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label>驱动信息</Label>
+                  <div className="text-sm">{filterWheelInfo.driverInfo}</div>
+                </motion.div>
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label>驱动版本</Label>
+                  <div className="text-sm">{filterWheelInfo.driverVersion}</div>
+                </motion.div>
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label>当前滤镜</Label>
+                  <div className="text-sm">{filterWheelInfo.currentFilter}</div>
+                </motion.div>
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <Label>描述</Label>
+                  <div className="text-sm">{filterWheelInfo.description}</div>
+                </motion.div>
+              </motion.div>
+
+              <motion.div variants={itemVariants} className="mt-8 space-y-6">
+                <div className="flex flex-col space-y-4">
+                  <div className="w-full">
+                    <Label htmlFor="filter-select">选择滤镜</Label>
+                    <div className="flex gap-4 mt-2">
+                      <Select
+                        value={selectedFilter}
+                        onValueChange={setSelectedFilter}
+                        disabled={!isConnected || isLoading}
+                      >
+                        <SelectTrigger id="filter-select">
+                          <SelectValue placeholder="请选择滤镜" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filterWheelInfo.filters.map((filter, index) => (
+                            <SelectItem
+                              key={index}
+                              value={(index + 1).toString()}
+                            >
+                              {filter}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        onClick={handleFilterChange}
+                        disabled={!isConnected || isLoading}
+                        className="min-w-[120px]"
+                      >
+                        {isLoading && (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        )}
+                        更换滤镜
+                      </Button>
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+              </motion.div>
+
+              {filterWheelInfo.isMoving && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mt-6"
+                >
+                  <Progress value={33} className="h-2" />
+                </motion.div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader>
+              <CardTitle>状态监控</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <Label>当前位置</Label>
+                  <div className="text-2xl font-semibold mt-1">
+                    {filterWheelInfo.position} / {filterWheelInfo.maxPosition}
+                  </div>
+                </div>
+                <div>
+                  <Label>移动历史</Label>
+                  <div className="mt-2 space-y-2">
+                    {/* Add movement history display here */}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
       </div>
     </motion.div>

@@ -34,7 +34,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 
-export default function DevicesTab() {
+export function DevicesTab() {
   const {
     devices,
     loading,
