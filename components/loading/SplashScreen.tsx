@@ -99,7 +99,7 @@ export default function SplashScreen() {
               >
                 <motion.div variants={itemVariants}>
                   <Image
-                    src="/logo.png"
+                    src="/atom.png"
                     alt="Logo"
                     width={isLandscape ? 150 : 100}
                     height={isLandscape ? 150 : 100}

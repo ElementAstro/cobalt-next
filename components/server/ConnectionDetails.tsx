@@ -1,17 +1,29 @@
-import React from 'react'
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
-import { UseFormReturn } from 'react-hook-form'
+"use client"
+
+import React from "react";
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { UseFormReturn } from "react-hook-form";
 
 interface ConnectionDetailsProps {
-  form: UseFormReturn<any>
-  isSSL: boolean
-  setIsSSL: (value: boolean) => void
+  form: UseFormReturn<any>;
+  isSSL: boolean;
+  setIsSSL: (value: boolean) => void;
 }
 
-export function ConnectionDetails({ form, isSSL, setIsSSL }: ConnectionDetailsProps) {
+export function ConnectionDetails({
+  form,
+  isSSL,
+  setIsSSL,
+}: ConnectionDetailsProps) {
   return (
     <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
       <FormField
@@ -42,11 +54,7 @@ export function ConnectionDetails({ form, isSSL, setIsSSL }: ConnectionDetailsPr
                 <Input type="number" className="w-24" {...field} />
               </FormControl>
               <div className="flex items-center gap-1">
-                <Switch
-                  id="ssl"
-                  checked={isSSL}
-                  onCheckedChange={setIsSSL}
-                />
+                <Checkbox id="ssl" checked={isSSL} onCheckedChange={setIsSSL} />
                 <Label htmlFor="ssl" className="text-sm">
                   SSL
                 </Label>
@@ -58,5 +66,5 @@ export function ConnectionDetails({ form, isSSL, setIsSSL }: ConnectionDetailsPr
         )}
       />
     </div>
-  )
+  );
 }

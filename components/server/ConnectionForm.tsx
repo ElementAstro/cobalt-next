@@ -6,9 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { useMediaQuery } from "react-responsive";
 import { useCookies } from "react-cookie";
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +17,7 @@ import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Tooltip,
   TooltipContent,
@@ -53,6 +52,7 @@ import useNetworkStatus from "@/hooks/useNetworkStatus";
 
 import { useConnectionStore } from "@/lib/store/server";
 import ServerPortScanModal from "./ServerPortScan";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // 定义表单模式
 const formSchema = z.object({
@@ -129,7 +129,7 @@ export default function ConnectionForm({
     document.body.classList.toggle("dark", isDarkMode);
   }, [isDarkMode]);
 
-  const isDesktop = useMediaQuery({ minWidth: 768 });
+  const isDesktop = useIsMobile(768);
 
   const handleConnect = async (values: z.infer<typeof formSchema>) => {
     setLoading(true);
@@ -255,22 +255,24 @@ export default function ConnectionForm({
 
       {isDesktop ? (
         // 桌面端布局
-        <div className="flex-grow flex flex-row items-center justify-center h-full space-x-4">
-          <Card className="w-full max-w-lg bg-gray-800 shadow-lg h-full flex flex-col">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-2xl font-semibold flex items-center gap-2 text-white">
-                <Plug className="w-6 h-6 text-blue-400" />
-                连接 (桌面)
+        <div className="flex-grow grid grid-cols-2 gap-8 p-8 h-full">
+          {/* 左侧连接面板 */}
+          <Card className="bg-gray-800 shadow-lg h-full">
+            <CardHeader className="flex flex-row items-center justify-between pb-6">
+              <CardTitle className="text-2xl font-semibold flex items-center gap-3 text-white">
+                <Plug className="w-7 h-7 text-blue-400" />
+                连接控制面板
               </CardTitle>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 {isConnected && (
                   <Badge
                     variant={connectionStrength > 50 ? "default" : "secondary"}
+                    className="px-3 py-1"
                   >
                     {connectionStrength > 50 ? (
-                      <Wifi className="w-4 h-4 mr-1 text-green-400" />
+                      <Wifi className="w-5 h-5 mr-2 text-green-400" />
                     ) : (
-                      <WifiOff className="w-4 h-4 mr-1 text-red-400" />
+                      <WifiOff className="w-5 h-5 mr-2 text-red-400" />
                     )}
                     {connectionStrength}%
                   </Badge>
@@ -282,9 +284,9 @@ export default function ConnectionForm({
                         variant="ghost"
                         size="icon"
                         onClick={toggleHistoryVisibility}
-                        className="text-purple-400"
+                        className="text-purple-400 hover:text-purple-300"
                       >
-                        <History className="h-4 w-4" />
+                        <History className="h-5 w-5" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -292,134 +294,122 @@ export default function ConnectionForm({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleCollapse}
-                  className="text-gray-400"
-                >
-                  {isCollapsed ? (
-                    <ChevronDown className="w-4 h-4" />
-                  ) : (
-                    <ChevronUp className="w-4 h-4" />
-                  )}
-                </Button>
               </div>
             </CardHeader>
-            <CardContent className="flex-1">
+
+            <CardContent className="space-y-6">
               <NetworkStatus status={networkStatus} />
-              <AnimatePresence>
-                {!isCollapsed && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
+
+              <ScrollArea className="h-[calc(100vh-400px)] pr-4">
+                <Form {...form}>
+                  <form
+                    onSubmit={form.handleSubmit(handleConnect)}
+                    className="space-y-6"
                   >
-                    <ScrollArea className="h-full pr-4 overflow-hidden">
-                      <Form {...form}>
-                        <form
-                          onSubmit={form.handleSubmit(handleConnect)}
-                          className="space-y-3"
-                        >
-                          <ConnectionDetails
-                            form={form}
-                            isSSL={formData.isSSL}
-                            setIsSSL={(val) => updateFormData({ isSSL: val })}
-                          />
-                          <LoginForm
-                            form={form}
-                            showPassword={showPassword}
-                            togglePasswordVisibility={togglePasswordVisibility}
-                          />
+                    <ConnectionDetails
+                      form={form}
+                      isSSL={formData.isSSL}
+                      setIsSSL={(val) => updateFormData({ isSSL: val })}
+                    />
+                    <LoginForm
+                      form={form}
+                      showPassword={showPassword}
+                      togglePasswordVisibility={togglePasswordVisibility}
+                    />
 
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              id="remember"
-                              checked={formData.rememberLogin}
-                              onCheckedChange={(checked) =>
-                                updateFormData({ rememberLogin: checked })
-                              }
-                            />
-                            <Label htmlFor="remember" className="text-white">
-                              记住登录数据
-                            </Label>
-                          </div>
+                    <div className="flex items-center gap-3 py-2">
+                      <Switch
+                        id="remember"
+                        checked={formData.rememberLogin}
+                        onCheckedChange={(checked) =>
+                          updateFormData({ rememberLogin: checked })
+                        }
+                      />
+                      <Label htmlFor="remember" className="text-white text-lg">
+                        记住登录数据
+                      </Label>
+                    </div>
 
-                          <div className="grid grid-cols-3 gap-4">
-                            <Button
-                              onClick={togglePortScanModal}
-                              className="w-full flex items-center justify-center"
-                              disabled={isConnected}
-                            >
-                              打开端口扫描
-                            </Button>
-                            <Button
-                              type="submit"
-                              className="w-full flex items-center justify-center"
-                              disabled={isConnected || isLoading}
-                            >
-                              {isLoading ? (
-                                <motion.div
-                                  animate={{ rotate: 360 }}
-                                  transition={{
-                                    duration: 1,
-                                    repeat: Infinity,
-                                    ease: "linear",
-                                  }}
-                                >
-                                  <Upload className="w-4 h-4 mr-2" />
-                                </motion.div>
-                              ) : (
-                                <Upload className="w-4 h-4 mr-2" />
-                              )}
-                              {isLoading ? "连接中..." : "连接"}
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              className="w-full flex items-center justify-center"
-                              onClick={handleDisconnect}
-                              disabled={!isConnected}
-                            >
-                              <Link2Off className="w-4 h-4 mr-2" />
-                              断开连接
-                            </Button>
-                          </div>
-                        </form>
-                      </Form>
-                    </ScrollArea>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    <div className="grid grid-cols-2 gap-4 pt-4">
+                      <Button
+                        onClick={togglePortScanModal}
+                        className="text-lg py-6"
+                        variant="outline"
+                      >
+                        端口扫描
+                      </Button>
+                      <Button
+                        type="submit"
+                        className="text-lg py-6"
+                        disabled={isConnected || isLoading}
+                      >
+                        {isLoading ? (
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{
+                              duration: 1,
+                              repeat: Infinity,
+                              ease: "linear",
+                            }}
+                          >
+                            <Upload className="w-5 h-5 mr-2" />
+                          </motion.div>
+                        ) : (
+                          <Upload className="w-5 h-5 mr-2" />
+                        )}
+                        {isLoading ? "连接中..." : "连接"}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </ScrollArea>
 
+              {isConnected && (
+                <div className="space-y-3 pt-4">
+                  <Label className="text-white text-lg">连接强度</Label>
+                  <Progress value={connectionStrength} className="h-3" />
+                  <Button
+                    variant="destructive"
+                    className="w-full py-6 text-lg"
+                    onClick={handleDisconnect}
+                  >
+                    <Link2Off className="w-5 h-5 mr-2" />
+                    断开连接
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 右侧配置面板 */}
+          <Card className="bg-gray-800 shadow-lg h-full">
+            <CardHeader>
+              <CardTitle className="text-2xl font-semibold text-white flex items-center gap-3">
+                <Settings className="w-7 h-7 text-blue-400" />
+                配置管理
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
               <AdvancedSettings
                 handleSaveConfig={handleSaveConfig}
                 handleLoadConfig={handleLoadConfig}
               />
 
-              {isConnected && (
-                <div className="mt-1 space-y-1">
-                  <Label className="text-white">连接强度</Label>
-                  <Progress value={connectionStrength} className="w-full" />
-                </div>
-              )}
-
-              <div className="mt-4 flex justify-between">
+              <div className="grid grid-cols-2 gap-4 pt-4">
                 <Button
                   variant="outline"
                   onClick={() => setShowConfigManager(true)}
-                  className="flex items-center"
+                  className="text-lg py-6"
                 >
-                  <Settings className="w-4 h-4 mr-2" />
-                  配置管理
+                  <Settings className="w-5 h-5 mr-2" />
+                  配置管理器
                 </Button>
                 <Button
                   variant="outline"
                   onClick={handleExportConfig}
-                  className="flex items-center"
+                  className="text-lg py-6"
                 >
-                  <Download className="w-4 h-4 mr-2" />
+                  <Download className="w-5 h-5 mr-2" />
                   导出配置
                 </Button>
               </div>
@@ -477,14 +467,17 @@ export default function ConnectionForm({
                   />
 
                   <div className="flex items-center gap-2">
-                    <Switch
+                    <Checkbox
                       id="remember"
                       checked={formData.rememberLogin}
                       onCheckedChange={(checked) =>
-                        updateFormData({ rememberLogin: checked })
+                        updateFormData({ rememberLogin: checked === true })
                       }
                     />
-                    <Label htmlFor="remember" className="text-white">
+                    <Label
+                      htmlFor="remember"
+                      className="text-white text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
                       记住登录数据
                     </Label>
                   </div>
@@ -492,42 +485,44 @@ export default function ConnectionForm({
                   <div className="flex flex-col space-y-2">
                     <Button
                       onClick={togglePortScanModal}
-                      className="w-full flex items-center justify-center"
+                      className="w-full flex items-center justify-center text-white"
                       disabled={isConnected}
                     >
                       打开端口扫描
                     </Button>
-                    <Button
-                      type="submit"
-                      className="w-full flex items-center justify-center"
-                      disabled={isConnected || isLoading}
-                    >
-                      {isLoading ? (
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{
-                            duration: 1,
-                            repeat: Infinity,
-                            ease: "linear",
-                          }}
-                        >
+                    <div className="flex gap-2">
+                      <Button
+                        type="submit"
+                        className="flex-1 flex items-center justify-center text-white"
+                        disabled={isConnected || isLoading}
+                      >
+                        {isLoading ? (
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{
+                              duration: 1,
+                              repeat: Infinity,
+                              ease: "linear",
+                            }}
+                          >
+                            <Upload className="w-4 h-4 mr-2" />
+                          </motion.div>
+                        ) : (
                           <Upload className="w-4 h-4 mr-2" />
-                        </motion.div>
-                      ) : (
-                        <Upload className="w-4 h-4 mr-2" />
-                      )}
-                      {isLoading ? "连接中..." : "连接"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className="w-full flex items-center justify-center"
-                      onClick={handleDisconnect}
-                      disabled={!isConnected}
-                    >
-                      <Link2Off className="w-4 h-4 mr-2" />
-                      断开连接
-                    </Button>
+                        )}
+                        {isLoading ? "连接中..." : "连接"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="flex-1 flex items-center justify-center text-white"
+                        onClick={handleDisconnect}
+                        disabled={!isConnected}
+                      >
+                        <Link2Off className="w-4 h-4 mr-2" />
+                        断开连接
+                      </Button>
+                    </div>
                   </div>
                 </form>
               </Form>

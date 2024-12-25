@@ -200,51 +200,55 @@ export const PropertyControl: React.FC<PropertyControlProps> = ({
 
   return (
     <motion.div
-      className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+      className="flex items-center gap-1 p-0.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       onDoubleClick={onDoubleClick}
-      initial={{ opacity: 0, y: -10 }}
+      initial={{ opacity: 0, y: -5 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.2 }}
     >
       <PropertyStateIcon state={property.state} />
-      <div className="grid gap-1 flex-1">
+      <div className="grid gap-0.5 flex-1 min-w-0">
         <Label
           htmlFor={`${deviceName}-${property.name}`}
-          className="text-sm dark:text-gray-300"
+          className="text-xs dark:text-gray-300 truncate"
         >
           {property.label}
         </Label>
-        {renderControl()}
-      </div>
-      {isChanging ? (
-        <Loader2 className="w-4 h-4 animate-spin" />
-      ) : (
-        <div className="flex gap-1">
-          <Button variant="ghost" size="icon" onClick={handleRefresh}>
-            <RefreshCw className="w-4 h-4" />
-          </Button>
-          {property.history && property.history.length > 0 && (
-            <Dialog open={showHistory} onOpenChange={setShowHistory}>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <History className="w-4 h-4" />
+        <div className="flex items-center gap-1">
+          {renderControl()}
+          <div className="flex gap-0.5">
+            {isChanging ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleRefresh}
+                  className="h-6 w-6"
+                >
+                  <RefreshCw className="w-3 h-3" />
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px] dark:bg-gray-800">
-                <DialogHeader>
-                  <DialogTitle className="dark:text-gray-300">
-                    {property.label} 历史记录
-                  </DialogTitle>
-                </DialogHeader>
-                {renderHistoryChart()}
-              </DialogContent>
-            </Dialog>
-          )}
+                {property.history && property.history.length > 0 && (
+                  <Dialog open={showHistory} onOpenChange={setShowHistory}>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-6 w-6">
+                        <History className="w-3 h-3" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-[90vw] h-[80vh]">
+                      {/* ...现有的对话框内容... */}
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </>
+            )}
+          </div>
         </div>
-      )}
+      </div>
     </motion.div>
   );
 };

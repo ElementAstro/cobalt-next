@@ -1,163 +1,132 @@
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import Image from "next/image";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { MoonData } from "@/types/astropanel";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { motion } from "framer-motion";
+import { useAstroStore } from "@/lib/store/astropanel";
+import { Moon as MoonIcon, ArrowUp, ArrowDown } from "lucide-react";
 
 interface MoonProps {
   data: MoonData;
 }
 
-const containerVariants = {
-  hidden: { opacity: 0, scale: 0.95 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
-};
-
-const Moon = ({ data }: MoonProps) => {
-  const [showDetails, setShowDetails] = useState(false);
-
-  const moonPhaseDetails = {
-    "New Moon": "新月是月球运行到太阳与地球之间时的状态",
-    "Waxing Crescent": "眉月是新月之后，月亮逐渐变亮的阶段",
-    "First Quarter": "上弦月是月亮运行到公转轨道的四分之一处",
-    "Waxing Gibbous": "盈凸月是上弦月之后，继续变圆的阶段",
-    "Full Moon": "满月是月球运行到地球背向太阳的一面时的状态",
-    "Waning Gibbous": "亏凸月是满月之后，开始变暗的阶段",
-    "Last Quarter": "下弦月是月亮运行到公转轨道的四分之三处",
-    "Waning Crescent": "残月是下弦月之后，继续变暗的阶段",
-  };
+export function Moon({ data }: MoonProps) {
+  const { data: celestialData } = useAstroStore();
 
   return (
     <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="dark:bg-gray-800 bg-white rounded-lg shadow-lg p-4"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="bg-gradient-to-br from-indigo-950/90 to-gray-900/95 p-4 rounded-xl shadow-xl border border-indigo-800/20 backdrop-blur-sm"
     >
-      <Card className="w-full">
-        <CardHeader className="space-y-2">
-          <CardTitle className="text-2xl font-bold text-white dark:text-gray-200">
-            月亮信息
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Card className="bg-transparent border-0 shadow-none">
+        <CardHeader className="pb-2">
           <motion.div
-            variants={containerVariants}
-            className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start"
+            className="flex items-start gap-6"
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.5 }}
           >
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="relative w-full aspect-square max-w-[300px] mx-auto"
-            >
+            <div className="relative w-28 h-28">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 blur-lg opacity-20" />
               <Image
-                src={`/assets/img/moon_${data.phase.toLowerCase()}.png`}
+                src={`/assets/img/moon_${data.phase}.png`}
                 alt="Moon"
                 layout="fill"
                 objectFit="contain"
-                className="rounded-full shadow-lg cursor-pointer"
-                onClick={() => setShowDetails(!showDetails)}
+                className="relative z-10 drop-shadow-2xl"
               />
-            </motion.div>
-            <AnimatePresence>
-              {showDetails && (
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="mt-4 p-4 bg-gray-700 rounded-lg"
-                >
-                  <h3 className="text-lg font-semibold mb-2">月相详情</h3>
-                  <p className="text-sm text-gray-300">
-                    {
-                      moonPhaseDetails[
-                        data.phase as keyof typeof moonPhaseDetails
-                      ]
-                    }
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            <motion.div variants={itemVariants} className="flex-1">
-              <p className="mb-4 text-xl text-gray-700 dark:text-gray-300">
-                {data.phase} ({data.light}%)
-              </p>
-              <Table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <TableBody>
-                  <motion.tr
-                    variants={itemVariants}
-                    className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                      升起时间
-                    </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                      {data.rise || "N/A"}
-                    </TableCell>
-                  </motion.tr>
-                  <motion.tr
-                    variants={itemVariants}
-                    className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                      过境时间
-                    </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                      {data.transit || "N/A"}
-                    </TableCell>
-                  </motion.tr>
-                  <motion.tr
-                    variants={itemVariants}
-                    className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                      落下时间
-                    </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                      {data.set || "N/A"}
-                    </TableCell>
-                  </motion.tr>
-                  <motion.tr
-                    variants={itemVariants}
-                    className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                      方位角
-                    </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                      {data.az || "N/A"}
-                    </TableCell>
-                  </motion.tr>
-                  <motion.tr
-                    variants={itemVariants}
-                    className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                      高度角
-                    </TableCell>
-                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                      {data.alt || "N/A"}
-                    </TableCell>
-                  </motion.tr>
-                </TableBody>
-              </Table>
-            </motion.div>
+            </div>
+            <div className="flex-1">
+              <CardTitle className="text-2xl font-bold text-indigo-100 mb-2 flex items-center gap-2">
+                <MoonIcon className="w-6 h-6 text-indigo-400" />
+                月亮信息
+              </CardTitle>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center gap-2">
+                  <ArrowUp className="w-5 h-5 text-indigo-400" />
+                  <div>
+                    <div className="text-indigo-200 text-sm">升起时间</div>
+                    <div className="text-white font-semibold">
+                      {celestialData.moon.rise || "N/A"}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ArrowDown className="w-5 h-5 text-indigo-400" />
+                  <div>
+                    <div className="text-indigo-200 text-sm">落下时间</div>
+                    <div className="text-white font-semibold">
+                      {celestialData.moon.set || "N/A"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </CardHeader>
+
+        <CardContent className="pt-4">
+          <div className="grid grid-cols-3 gap-2">
+            <InfoCard
+              label="过境时间"
+              value={data.transit || "N/A"}
+              className="from-blue-950/40 to-indigo-950/40"
+            />
+            <InfoCard
+              label="方位角"
+              value={`${data.az || "N/A"}°`}
+              className="from-indigo-950/40 to-violet-950/40"
+            />
+            <InfoCard
+              label="高度角"
+              value={`${data.alt || "N/A"}°`}
+              className="from-violet-950/40 to-purple-950/40"
+            />
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-4 p-3 bg-indigo-500/10 rounded-lg border border-indigo-500/20"
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <div className="text-indigo-200 text-sm">月相</div>
+                <div className="text-white font-semibold">{data.phase}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-indigo-200 text-sm">月亮照明度</div>
+                <div className="text-white font-semibold">{data.light}%</div>
+              </div>
+            </div>
           </motion.div>
         </CardContent>
       </Card>
     </motion.div>
   );
-};
+}
 
-export default Moon;
+function InfoCard({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: string;
+  className: string;
+}) {
+  return (
+    <div
+      className={`p-2 rounded-lg bg-gradient-to-br ${className} border border-indigo-800/10 backdrop-blur-sm`}
+    >
+      <div className="text-indigo-200/80 text-xs mb-1">{label}</div>
+      <div className="text-white font-medium">{value}</div>
+    </div>
+  );
+}

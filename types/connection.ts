@@ -11,6 +11,10 @@ export interface AdvancedSettings {
   bufferSize: number;
   autoBackup: boolean;
   backupInterval: number;
+  logLevel: "error" | "warn" | "info" | "debug";
+  logPath: string;
+  logCompression: boolean;
+  logRotation: boolean;
 }
 
 export interface DeviceStatus {

@@ -221,7 +221,7 @@ export function ProfileTab() {
     >
       <header className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-bold">
-          天文摄影软件 - {showAdvanced ? "高级设置" : "设备配置"}
+          {showAdvanced ? "高级设置" : "设备配置"}
         </h1>
         <Button variant="outline" onClick={handleToggleView}>
           {showAdvanced ? "切换到配置管理" : "切换到高级设置"}

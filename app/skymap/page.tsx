@@ -212,11 +212,7 @@ const ImageFraming: React.FC = () => {
   };
 
   return (
-    <div
-      className={`framing-root relative h-screen w-screen overflow-hidden ${
-        nightMode ? "night-mode" : ""
-      }`}
-    >
+    <div className="framing-root relative h-screen w-screen overflow-hidden">
       <div className="absolute inset-0">
         <AladinLiteView
           ra={target_ra}
@@ -228,124 +224,138 @@ const ImageFraming: React.FC = () => {
         />
       </div>
 
-      {/* 左侧控制面板 - 横屏优化 */}
+      {/* 左侧控制面板 - 使用固定宽度 */}
       <motion.div
         initial="expanded"
         animate={leftPanelCollapsed ? "collapsed" : "expanded"}
         variants={panelVariants}
         custom={true}
-        className="fixed left-2 top-2 lg:top-1/2 lg:transform lg:-translate-y-1/2 z-40 flex"
+        className="fixed left-0 top-0 bottom-0 z-40 flex h-full"
       >
-        <Card className="bg-black/50 backdrop-blur-md border border-white/10">
-          <CardContent className="p-3 lg:p-6">
-            <CardTitle className="text-sm lg:text-base text-white text-shadow-lg">
-              当前目标: {target_store.find((t) => t.checked)?.name || "无"}
-            </CardTitle>
-            <div className="space-y-1 mt-2 text-xs lg:text-sm">
-              <div className="text-white/90 text-shadow flex justify-between">
-                <span>Ra:</span>
-                <span>{target_ra.toFixed(5)}</span>
+        <Card className="w-64 bg-black/50 backdrop-blur-md border-r border-white/10">
+          <CardContent className="p-4 h-full flex flex-col">
+            <CardTitle className="text-base text-white mb-4">天体信息</CardTitle>
+            <ScrollArea className="flex-grow">
+              <div className="space-y-4">
+                {/* 目标信息区域 */}
+                <div className="space-y-2 text-sm">
+                  <div className="text-white/90 flex justify-between">
+                    <span>当前目标:</span>
+                    <span>{target_store.find((t) => t.checked)?.name || "无"}</span>
+                  </div>
+                  <div className="text-white/90 flex justify-between">
+                    <span>Ra:</span>
+                    <span>{target_ra.toFixed(5)}</span>
+                  </div>
+                  <div className="text-white/90 flex justify-between">
+                    <span>Dec:</span>
+                    <span>{target_dec.toFixed(5)}</span>
+                  </div>
+                </div>
+
+                {/* 控制按钮组 */}
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => set_open_fov_dialog(open_fov_dialog + 1)}
+                    className="w-full"
+                  >
+                    视场参数
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => set_open_search_dialog(open_search_dialog + 1)}
+                    className="w-full"
+                  >
+                    搜索目标
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => set_open_manage_dialog(open_manage_dialog + 1)}
+                    className="w-full"
+                  >
+                    目标管理
+                  </Button>
+                </div>
               </div>
-              <div className="text-white/90 text-shadow flex justify-between">
-                <span>Dec:</span>
-                <span>{target_dec.toFixed(5)}</span>
-              </div>
-            </div>
+            </ScrollArea>
           </CardContent>
-          <CardFooter className="p-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => set_open_fov_dialog(open_fov_dialog + 1)}
-              className="w-full text-xs lg:text-sm backdrop-blur-sm hover:bg-white/20"
-            >
-              修改视场参数
-            </Button>
-          </CardFooter>
         </Card>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
-          className="h-full ml-1 bg-black/30 backdrop-blur-sm"
+          className="h-full px-1 bg-black/30 backdrop-blur-sm"
         >
           {leftPanelCollapsed ? <ChevronRight /> : <ChevronLeft />}
         </Button>
       </motion.div>
 
-      {/* 右侧工具栏 - 横屏优化 */}
+      {/* 右侧工具栏 - 使用固定宽度 */}
       <motion.div
         initial="expanded"
         animate={rightPanelCollapsed ? "collapsed" : "expanded"}
         variants={panelVariants}
         custom={false}
-        className="fixed right-2 top-2 lg:top-1/2 lg:transform lg:-translate-y-1/2 z-40 flex"
+        className="fixed right-0 top-0 bottom-0 z-40 flex h-full"
       >
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setRightPanelCollapsed(!rightPanelCollapsed)}
-          className="h-full mr-1 bg-black/30 backdrop-blur-sm"
+          className="h-full px-1 bg-black/30 backdrop-blur-sm"
         >
           {rightPanelCollapsed ? <ChevronLeft /> : <ChevronRight />}
         </Button>
-        <div className="flex flex-col gap-1 lg:gap-2">
-          <div className="grid grid-cols-2 gap-1 lg:gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => set_open_search_dialog(open_search_dialog + 1)}
-              className="text-xs lg:text-sm bg-black/50 backdrop-blur-md"
-            >
-              <Search className="w-3 h-3 lg:w-4 lg:h-4 mr-1" /> 搜索
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => set_open_manage_dialog(open_manage_dialog + 1)}
-              className="text-xs lg:text-sm"
-            >
-              <Gear className="w-3 h-3 lg:w-4 lg:h-4 mr-1" /> 目标
-            </Button>
-          </div>
-          <div className="grid grid-cols-2 gap-1 lg:gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              className="text-xs lg:text-sm"
-              onClick={on_click_reset_with_current_center}
-            >
-              更新中心
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="text-xs lg:text-sm"
-              onClick={update_target_center_points}
-              disabled={target_store.find((t) => t.checked) == null}
-            >
-              更新坐标
-            </Button>
-          </div>
-          <div className="grid grid-cols-2 gap-1 lg:gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              className="text-xs lg:text-sm"
-              onClick={add_current_as_new_target}
-            >
-              新建目标
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              className="text-xs lg:text-sm"
-              onClick={start_goto_and_focus_target}
-            >
-              移动居中
-            </Button>
-          </div>
-        </div>
+        <Card className="w-64 bg-black/50 backdrop-blur-md border-l border-white/10">
+          <CardContent className="p-4 h-full">
+            <ScrollArea className="h-full">
+              <div className="space-y-4">
+                {/* 工具按钮组 */}
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={on_click_reset_with_current_center}
+                  >
+                    更新中心
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={update_target_center_points}
+                    disabled={target_store.find((t) => t.checked) == null}
+                  >
+                    更新坐标
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={add_current_as_new_target}
+                  >
+                    新建目标
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full"
+                    onClick={start_goto_and_focus_target}
+                  >
+                    移动居中
+                  </Button>
+                </div>
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* 底部状态栏 - 横屏优化 */}

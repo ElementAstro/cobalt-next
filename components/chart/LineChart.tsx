@@ -23,12 +23,7 @@ import {
 import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import styled, { ThemeProvider } from "styled-components";
 import { ChartWrapper } from "./ChartWrapper";
-import {
-  Download,
-  Eye,
-  EyeOff,
-  Share2,
-} from "lucide-react";
+import { Download, Eye, EyeOff, Share2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -37,15 +32,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { combinedLightTheme, combinedDarkTheme } from "./chartThemes";
-
-// 样式容器
-const ChartContainer = styled.div`
-  width: 100%;
-  height: 100%;
-  background-color: ${(props) => props.theme.background};
-  padding: 20px;
-  box-sizing: border-box;
-`;
 
 // 动画变体
 const containerVariants = {
@@ -63,6 +49,10 @@ interface LineGraphProps {
   showControls?: boolean;
   enableBrush?: boolean;
   enableZoom?: boolean;
+  customize?: {
+    lineColors?: { ra: string; dec: string };
+    trending?: boolean;
+  };
 }
 
 export const LineChart: React.FC<LineGraphProps> = ({
@@ -74,6 +64,10 @@ export const LineChart: React.FC<LineGraphProps> = ({
   showControls = true,
   enableBrush = true,
   enableZoom = true,
+  customize = {
+    lineColors: { ra: "#FFC107", dec: "#FF5722" },
+    trending: false,
+  },
 }) => {
   const [zoomDomain, setZoomDomain] = React.useState<{
     x: [number, number];
@@ -148,8 +142,6 @@ export const LineChart: React.FC<LineGraphProps> = ({
           </SelectContent>
         </Select>
       </div>
-      
-      {/* ...additional customization options... */}
     </div>
   );
 

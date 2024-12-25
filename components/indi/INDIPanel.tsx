@@ -433,75 +433,104 @@ export function INDIPanel({
   }, [devices]);
 
   return (
-    <div className="min-h-screen dark:bg-gray-900 dark:text-white">
-      <Card className="max-w-[1200px] mx-auto">
-        <CardContent className="p-2">
-          {renderQuickControls()}
-          {showDashboard && <DeviceDashboard devices={devices} />}
-          {showAdvancedFilter && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-            >
-              <AdvancedFilter
-                options={filterOptions}
-                onChange={setFilterOptions}
-                groups={allGroups}
-              />
-            </motion.div>
-          )}
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mb-4"
-          >
-            <Input
-              placeholder="搜索属性..."
-              value={filterOptions.searchTerm}
-              onChange={(e) =>
-                setFilterOptions({
-                  ...filterOptions,
-                  searchTerm: e.target.value,
-                })
-              }
-            />
-          </motion.div>
-
-          <Tabs defaultValue={devices[0]?.name} className="space-y-4">
-            <ScrollArea className="w-full overscroll-x-auto">
-              <TabsList className="w-full justify-start">
-                {devices.map((device) => (
-                  <TabsTrigger key={device.name} value={device.name}>
-                    {device.name}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </ScrollArea>
-
-            {devices.map(renderDevice)}
-          </Tabs>
-
-          {/* 日志部分 */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-6 border rounded-lg"
-          >
-            <div className="flex items-center justify-between p-2 bg-gray-800">
-              <h2 className="text-lg font-semibold text-white">日志</h2>
-              <Button variant="outline" size="sm" onClick={() => setLogs([])}>
-                清除日志
-              </Button>
+    <div className="min-h-screen dark:bg-gray-900 dark:text-white max-h-screen overflow-hidden">
+      <Card className="h-full m-0 rounded-none">
+        <CardContent className="p-1 sm:p-2">
+          <div className="grid grid-rows-[auto_1fr_auto] h-[100vh] gap-1">
+            {/* 顶部控制栏，使用更紧凑的布局 */}
+            <div className="flex gap-1 items-center">
+              {renderQuickControls()}
+              <div className="flex-1">
+                <Input
+                  placeholder="搜索属性..."
+                  value={filterOptions.searchTerm}
+                  onChange={(e) =>
+                    setFilterOptions({
+                      ...filterOptions,
+                      searchTerm: e.target.value,
+                    })
+                  }
+                  className="h-8"
+                />
+              </div>
             </div>
-            <ScrollArea className="h-48 p-4 bg-gray-900 text-white">
-              {logs.map((log, index) => (
-                <div key={index} className="text-sm font-mono">
-                  {log}
-                </div>
-              ))}
-            </ScrollArea>
-          </motion.div>
+
+            {/* 主要内容区域，使用flex布局实现左右分栏 */}
+            <div className="flex gap-1 overflow-hidden">
+              {/* 左侧设备列表 */}
+              <div className="w-32 flex-shrink-0">
+                <TabsList className="flex flex-col h-full w-full gap-1">
+                  {devices.map((device) => (
+                    <TabsTrigger
+                      key={device.name}
+                      value={device.name}
+                      className="w-full text-left px-2 py-1"
+                    >
+                      <div className="truncate">{device.name}</div>
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+
+              {/* 右侧属性面板 */}
+              <div className="flex-1 overflow-hidden">
+                <Tabs defaultValue={devices[0]?.name} className="h-full">
+                  {devices.map((device) => (
+                    <TabsContent
+                      key={device.name}
+                      value={device.name}
+                      className="h-full overflow-auto m-0 p-1"
+                    >
+                      <div className="flex flex-col gap-1">
+                        {/* 设备控制栏 */}
+                        <div className="flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-1 rounded">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarFallback>{device.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <h2 className="text-sm font-semibold dark:text-gray-300">
+                              {device.name}
+                            </h2>
+                          </div>
+                          <div className="flex gap-1">
+                            {renderDeviceStateButton(device)}
+                            {/* ...其他按钮... */}
+                          </div>
+                        </div>
+
+                        {/* 属性组列表 */}
+                        <Accordion type="multiple" className="w-full space-y-1">
+                          {device.groups.map((group) => renderGroup(device.name, group))}
+                        </Accordion>
+                      </div>
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </div>
+            </div>
+
+            {/* 底部日志区域，高度固定 */}
+            <div className="h-24">
+              <div className="flex items-center justify-between p-1 bg-gray-800">
+                <h2 className="text-sm font-semibold text-white">日志</h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setLogs([])}
+                  className="h-6 text-xs"
+                >
+                  清除
+                </Button>
+              </div>
+              <ScrollArea className="h-[calc(100%-24px)] bg-gray-900 text-white text-xs">
+                {logs.map((log, index) => (
+                  <div key={index} className="px-1 py-0.5 font-mono">
+                    {log}
+                  </div>
+                ))}
+              </ScrollArea>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

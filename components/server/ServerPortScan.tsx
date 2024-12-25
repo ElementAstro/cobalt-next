@@ -307,7 +307,7 @@ const ServerPortScanModal: React.FC<{
             </Button>
             <h2 className="text-2xl font-bold mb-4 flex items-center text-gray-900 dark:text-gray-100">
               <Shield className="mr-2 text-blue-500" />
-              高级服务器端口扫描
+              服务器端口扫描
             </h2>
             <Tabs defaultValue="scan" className="w-full">
               <TabsList className="grid w-full grid-cols-3">

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
 import { useDevicesStore } from "@/lib/store/connection/devices";
 import { DeviceData, DeviceType } from "@/types/connection";
@@ -108,52 +109,92 @@ export function DevicesTab() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="container max-w-4xl mx-auto p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="h-[calc(100vh-5rem)] flex flex-col space-y-4"
     >
-      <div className="space-y-6 bg-gray-800/90 backdrop-blur p-6 rounded-xl shadow-lg">
-        {/* 搜索栏 */}
+      {/* 顶部控制栏 - 固定高度 */}
+      <div className="flex items-center space-x-4 bg-gray-800/90 backdrop-blur rounded-lg">
+        <Input
+          placeholder="搜索设备..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1 dark:bg-gray-700/50"
+        />
+        <div className="flex items-center space-x-2">
+          <Label htmlFor="auto-refresh" className="sr-only">
+            自动刷新
+          </Label>
+          <Switch
+            id="auto-refresh"
+            checked={isAutoRefresh}
+            onCheckedChange={() =>
+              isAutoRefresh ? stopAutoRefresh() : startAutoRefresh()
+            }
+          />
+          <span className="text-sm text-gray-400">自动刷新</span>
+        </div>
+      </div>
+
+      {/* 统计卡片 - 固定高度 */}
+      <div className="grid grid-cols-3 gap-4">
         <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
+          className="p-4 bg-gray-800/90 backdrop-blur rounded-lg"
+          initial={{ scale: 0.95 }}
+          animate={{ scale: 1 }}
+        >
+          <p className="text-sm text-gray-400">总设备数</p>
+          <p className="text-2xl font-bold">{deviceStats.total}</p>
+        </motion.div>
+        <motion.div
+          className="p-4 bg-gray-800/90 backdrop-blur rounded-lg"
+          initial={{ scale: 0.95 }}
+          animate={{ scale: 1 }}
           transition={{ delay: 0.1 }}
         >
-          <Input
-            placeholder="搜索设备..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="mb-4 dark:bg-gray-700/50 dark:text-gray-200 border-0"
-          />
+          <p className="text-sm text-gray-400">已连接</p>
+          <p className="text-2xl font-bold text-green-500">
+            {deviceStats.connected}
+          </p>
         </motion.div>
-
-        {/* 设备列表 */}
         <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
+          className="p-4 bg-gray-800/90 backdrop-blur rounded-lg"
+          initial={{ scale: 0.95 }}
+          animate={{ scale: 1 }}
           transition={{ delay: 0.2 }}
-          className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"
         >
+          <p className="text-sm text-gray-400">错误</p>
+          <p className="text-2xl font-bold text-red-500">{deviceStats.error}</p>
+        </motion.div>
+      </div>
+
+      {/* 设备列表 - 可滚动区域 */}
+      <ScrollArea className="flex-1 rounded-lg bg-gray-800/90 backdrop-blur">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredDevices.map((device) => (
             <motion.div
               key={device.name}
-              className="space-y-3 p-4 bg-gray-700/50 backdrop-blur rounded-lg shadow-md hover:shadow-lg transition-shadow"
-              initial={{ opacity: 0, y: 10 }}
+              className="p-4 bg-gray-700/50 rounded-lg hover:bg-gray-700/70 transition-colors"
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              layout
             >
-              <Label htmlFor={device.name.toLowerCase().replace(" ", "-")}>
-                {device.name}
-              </Label>
+              <div className="flex justify-between items-start mb-3">
+                <Label className="text-lg font-semibold">{device.name}</Label>
+                {device.connected && (
+                  <Badge variant="default" className="ml-2">
+                    在线
+                  </Badge>
+                )}
+              </div>
+
               <Select
                 value={device.type}
                 onValueChange={(value: DeviceType) => {
-                  // 更新设备类型
-                  // 这里可以添加相应的逻辑
+                  // Update device type
                 }}
               >
-                <SelectTrigger className="w-full dark:bg-gray-600 dark:text-gray-200">
+                <SelectTrigger className="mb-3 w-full bg-gray-600/50">
                   <SelectValue placeholder="选择设备类型" />
                 </SelectTrigger>
                 <SelectContent>
@@ -162,6 +203,7 @@ export function DevicesTab() {
                   <SelectItem value="Mount">赤道仪</SelectItem>
                 </SelectContent>
               </Select>
+
               <Button
                 variant={device.connected ? "destructive" : "default"}
                 size="sm"
@@ -174,85 +216,36 @@ export function DevicesTab() {
               >
                 {device.connected ? "断开连接" : "连接"}
               </Button>
-              {device.connected && (
-                <Badge variant="outline" className="mt-2">
-                  在线
-                </Badge>
-              )}
             </motion.div>
           ))}
-        </motion.div>
+        </div>
+      </ScrollArea>
 
-        {/* 远程驱动器输入 */}
-        <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <Label htmlFor="remote">远程驱动器</Label>
+      {/* 底部控制栏 - 固定高度 */}
+      <div className="grid grid-cols-2 gap-4 bg-gray-800/90 backdrop-blur rounded-lg">
+        <div>
+          <Label htmlFor="remote" className="text-sm text-gray-400">
+            远程驱动器
+          </Label>
           <Input
             id="remote"
             value={remoteDrivers}
             onChange={(e) => setRemoteDrivers(e.target.value)}
-            className="font-mono text-sm mt-1 dark:bg-gray-700 dark:text-gray-200"
+            className="mt-1 bg-gray-700/50"
           />
-        </motion.div>
-
-        {/* 更新间隔输入 */}
-        <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <Label htmlFor="update-interval">更新间隔 (ms)</Label>
+        </div>
+        <div>
+          <Label htmlFor="update-interval" className="text-sm text-gray-400">
+            更新间隔 (ms)
+          </Label>
           <Input
             id="update-interval"
             type="number"
             value={updateInterval}
             onChange={(e) => setUpdateInterval(Number(e.target.value))}
-            className="font-mono text-sm mt-1 dark:bg-gray-700 dark:text-gray-200"
+            className="mt-1 bg-gray-700/50"
           />
-          <div className="flex items-center mt-2">
-            <Label htmlFor="auto-refresh">自动刷新</Label>
-            <Switch
-              id="auto-refresh"
-              checked={isAutoRefresh}
-              onCheckedChange={() =>
-                isAutoRefresh ? stopAutoRefresh() : startAutoRefresh()
-              }
-              className="ml-2"
-            />
-          </div>
-        </motion.div>
-
-        {/* 设备统计信息 */}
-        <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.6 }}
-        >
-          <Label>设备统计</Label>
-          <div className="grid grid-cols-3 gap-4 mt-2">
-            <div className="p-4 bg-gray-700/50 backdrop-blur rounded-lg shadow-md">
-              <p className="text-sm text-gray-400">总设备数</p>
-              <p className="text-lg font-semibold text-gray-200">
-                {deviceStats.total}
-              </p>
-            </div>
-            <div className="p-4 bg-gray-700/50 backdrop-blur rounded-lg shadow-md">
-              <p className="text-sm text-gray-400">已连接</p>
-              <p className="text-lg font-semibold text-gray-200">
-                {deviceStats.connected}
-              </p>
-            </div>
-            <div className="p-4 bg-gray-700/50 backdrop-blur rounded-lg shadow-md">
-              <p className="text-sm text-gray-400">错误</p>
-              <p className="text-lg font-semibold text-gray-200">
-                {deviceStats.error}
-              </p>
-            </div>
-          </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* 断开连接确认对话框 */}

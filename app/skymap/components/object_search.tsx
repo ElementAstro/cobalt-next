@@ -19,7 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { FilterIcon, Download } from "lucide-react";
+import { FilterIcon, Download, Search, ChevronDown } from "lucide-react";
 import { IDSOObjectDetailedInfo } from "@/types/skymap/find-object";
 import {
   Select,
@@ -42,6 +42,8 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ObjectSearchProps {
   on_choice_maken: (() => void) | null;
@@ -177,202 +179,198 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="flex flex-col sm:flex-row w-full p-2 bg-gradient-to-b from-gray-900 to-gray-800 min-h-[70vh] sm:min-h-[60vh] rounded-lg overflow-hidden"
+      className="flex flex-col lg:flex-row w-full gap-4 p-4 bg-gradient-to-b from-gray-900 to-gray-800 min-h-[70vh] rounded-lg"
     >
-      <motion.div
-        initial={{ x: -20 }}
-        animate={{ x: 0 }}
-        className="w-full sm:w-1/4 p-2 overflow-y-auto"
-      >
-        <div className="sticky top-2 space-y-4">
-          <Input
-            placeholder="输入搜索关键词"
-            value={toSearchText}
-            onChange={(e) => setToSearchText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleSearch();
-              }
-            }}
-            className="bg-black/50 backdrop-blur-md border-white/10"
-          />
-          <Button onClick={handleSearch} className="w-full">
-            搜索
-          </Button>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
+      {/* 搜索工具栏 */}
+      <div className="w-full lg:w-1/4 space-y-4">
+        <Card className="bg-black/20 backdrop-blur">
+          <CardHeader>
+            <CardTitle>搜索工具</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="relative">
+              <Input
+                placeholder="输入搜索关键词"
+                value={toSearchText}
+                onChange={(e) => setToSearchText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSearch();
+                }}
+                className="pr-10"
+              />
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+            </div>
+
+            <Button onClick={handleSearch} className="w-full">
+              搜索
+            </Button>
+
+            <Collapsible>
+              <CollapsibleTrigger asChild>
                 <Button
                   variant="outline"
-                  onClick={handleFilterToggle}
-                  className="flex items-center justify-center w-full"
+                  className="w-full flex justify-between"
                 >
-                  <FilterIcon className="mr-2" />
-                  高级搜索
+                  高级筛选
+                  <ChevronDown className="h-4 w-4" />
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>设置搜索过滤条件</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <Collapsible open={expandFilter} onOpenChange={setExpandFilter}>
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" className="w-full">
-                {expandFilter ? "隐藏过滤条件" : "显示过滤条件"}
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="mt-2 space-y-4">
-              <Label className="block text-sm text-gray-300">
-                角大小 (度):
-                <Input
-                  type="number"
-                  value={filterSettings.angular_size}
-                  onChange={(e) =>
-                    updateFilterSettings((prevState) => ({
-                      ...prevState,
-                      angular_size: Number(e.target.value),
-                    }))
-                  }
-                  className="mt-1 block w-full p-2 bg-gray-800 border border-gray-700 rounded-md text-white"
-                />
-              </Label>
-              <Label className="block text-sm text-gray-300">
-                星等限制:
-                <Input
-                  type="number"
-                  value={filterSettings.magnitude_limit}
-                  onChange={(e) =>
-                    updateFilterSettings((prev) => ({
-                      ...prev,
-                      magnitude_limit: Number(e.target.value),
-                    }))
-                  }
-                  className="mt-1 block w-full p-2 bg-gray-800 border border-gray-700 rounded-md text-white"
-                />
-              </Label>
-              <Label className="block text-sm text-gray-300">
-                天体类型:
-                <Select
-                  value={filterSettings.type}
-                  onValueChange={(value) =>
-                    updateFilterSettings((prev) => ({
-                      ...prev,
-                      type: value,
-                    }))
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="选择类型" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全部</SelectItem>
-                    <SelectItem value="galaxy">星系</SelectItem>
-                    <SelectItem value="nebula">星云</SelectItem>
-                    <SelectItem value="cluster">星团</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Label>
-              <Label className="block text-sm text-gray-300">
-                排序方式:
-                <Select
-                  value={filterSettings.sort_by}
-                  onValueChange={(value) =>
-                    updateFilterSettings((prev) => ({
-                      ...prev,
-                      sort_by: value,
-                    }))
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="选择排序方式" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="magnitude">按星等</SelectItem>
-                    <SelectItem value="size">按大小</SelectItem>
-                    <SelectItem value="name">按名称</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Label>
-              <Label className="block text-sm text-gray-300">
-                排序顺序:
-                <Select
-                  value={filterSettings.sort_order}
-                  onValueChange={(value) =>
-                    updateFilterSettings((prev) => ({
-                      ...prev,
-                      sort_order: value,
-                    }))
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="选择排序顺序" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="asc">升序</SelectItem>
-                    <SelectItem value="desc">降序</SelectItem>
-                  </SelectContent>
-                </Select>
-              </Label>
-            </CollapsibleContent>
-          </Collapsible>
-          <Button
-            variant="outline"
-            onClick={exportResults}
-            className="w-full flex items-center justify-center"
-          >
-            <Download className="mr-2" />
-            导出结果
-          </Button>
-        </div>
-      </motion.div>
-
-      <motion.div
-        initial={{ x: 20 }}
-        animate={{ x: 0 }}
-        className="w-full sm:w-3/4 p-2 overflow-y-auto"
-      >
-        <div className="h-full">
-          {foundTargetResult.length === 0 ? (
-            <Alert
-              variant={alertVariant}
-              className="bg-black/50 backdrop-blur-md border-white/10"
-            >
-              {alertText}
-            </Alert>
-          ) : (
-            <>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={chartData.typeData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    fill="#8884d8"
-                    label
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4 mt-4">
+                <Label className="block text-sm text-gray-300">
+                  角大小 (度):
+                  <Input
+                    type="number"
+                    value={filterSettings.angular_size}
+                    onChange={(e) =>
+                      updateFilterSettings((prevState) => ({
+                        ...prevState,
+                        angular_size: Number(e.target.value),
+                      }))
+                    }
+                    className="mt-1 block w-full p-2 bg-gray-800 border border-gray-700 rounded-md text-white"
+                  />
+                </Label>
+                <Label className="block text-sm text-gray-300">
+                  星等限制:
+                  <Input
+                    type="number"
+                    value={filterSettings.magnitude_limit}
+                    onChange={(e) =>
+                      updateFilterSettings((prev) => ({
+                        ...prev,
+                        magnitude_limit: Number(e.target.value),
+                      }))
+                    }
+                    className="mt-1 block w-full p-2 bg-gray-800 border border-gray-700 rounded-md text-white"
+                  />
+                </Label>
+                <Label className="block text-sm text-gray-300">
+                  天体类型:
+                  <Select
+                    value={filterSettings.type}
+                    onValueChange={(value) =>
+                      updateFilterSettings((prev) => ({
+                        ...prev,
+                        type: value,
+                      }))
+                    }
                   >
-                    {chartData.typeData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
-                    ))}
-                  </Pie>
-                  <ReTooltip />
-                </PieChart>
-              </ResponsiveContainer>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData.magData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="magnitude" />
-                  <YAxis />
-                  <ReTooltip />
-                  <Legend />
-                  <Bar dataKey="count" fill="#82ca9d" />
-                </BarChart>
-              </ResponsiveContainer>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="选择类型" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">全部</SelectItem>
+                      <SelectItem value="galaxy">星系</SelectItem>
+                      <SelectItem value="nebula">星云</SelectItem>
+                      <SelectItem value="cluster">星团</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Label>
+                <Label className="block text-sm text-gray-300">
+                  排序方式:
+                  <Select
+                    value={filterSettings.sort_by}
+                    onValueChange={(value) =>
+                      updateFilterSettings((prev) => ({
+                        ...prev,
+                        sort_by: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="选择排序方式" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="magnitude">按星等</SelectItem>
+                      <SelectItem value="size">按大小</SelectItem>
+                      <SelectItem value="name">按名称</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Label>
+                <Label className="block text-sm text-gray-300">
+                  排序顺序:
+                  <Select
+                    value={filterSettings.sort_order}
+                    onValueChange={(value) =>
+                      updateFilterSettings((prev) => ({
+                        ...prev,
+                        sort_order: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="选择排序顺序" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="asc">升序</SelectItem>
+                      <SelectItem value="desc">降序</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </Label>
+              </CollapsibleContent>
+            </Collapsible>
+
+            <Button
+              variant="outline"
+              onClick={exportResults}
+              className="w-full flex items-center justify-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              导出结果
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* 统计图表 */}
+        <Card className="bg-black/20 backdrop-blur">
+          <CardHeader>
+            <CardTitle>搜索统计</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={chartData.typeData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  fill="#8884d8"
+                  label
+                >
+                  {chartData.typeData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
+                  ))}
+                </Pie>
+                <ReTooltip />
+              </PieChart>
+            </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartData.magData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="magnitude" />
+                <YAxis />
+                <ReTooltip />
+                <Legend />
+                <Bar dataKey="count" fill="#82ca9d" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 搜索结果 */}
+      <div className="w-full lg:w-3/4">
+        <ScrollArea className="h-[calc(100vh-10rem)]">
+          {foundTargetResult.length === 0 ? (
+            <Alert variant={alertVariant}>{alertText}</Alert>
+          ) : (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
                 {paginatedResults.map((target, index) => (
                   <motion.div
                     key={target.id || index}
@@ -389,9 +387,10 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
                   </motion.div>
                 ))}
               </div>
+
               {/* 分页控制 */}
               {totalPages > 1 && (
-                <div className="flex justify-center items-center space-x-2 mt-4">
+                <div className="flex justify-center items-center gap-2 py-4">
                   <Button
                     onClick={() =>
                       setCurrentPage((prev) => Math.max(prev - 1, 1))
@@ -413,10 +412,10 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
                   </Button>
                 </div>
               )}
-            </>
+            </div>
           )}
-        </div>
-      </motion.div>
+        </ScrollArea>
+      </div>
     </motion.div>
   );
 };

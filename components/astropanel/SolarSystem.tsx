@@ -1,22 +1,62 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { CelestialData } from "@/types/astropanel";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect } from "react";
+import { useAstroStore } from "@/lib/store/astropanel";
+import { AlertCircle, AlertTriangle } from "lucide-react";
 
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1
-    }
-  }
+      staggerChildren: 0.1,
+    },
+  },
 };
 
 interface SolarSystemProps {
   data: CelestialData;
 }
 
-export default function SolarSystem({ data }: SolarSystemProps) {
+export function SolarSystem() {
+  const { data, error, updateData } = useAstroStore();
+
+  useEffect(() => {
+    updateData();
+  }, [updateData]);
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center p-4">
+        <div className="text-red-500 bg-red-500/10 px-4 py-2 rounded-lg flex items-center gap-2">
+          <AlertCircle className="w-4 h-4" />
+          错误: {error}
+        </div>
+      </div>
+    );
+  }
+
+  if (!data.solarSystem) {
+    return (
+      <div className="flex items-center justify-center p-4">
+        <div className="text-yellow-500 bg-yellow-500/10 px-4 py-2 rounded-lg flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4" />
+          太阳系数据不可用
+        </div>
+      </div>
+    );
+  }
+
   const planets = [
     "mercury",
     "venus",
@@ -29,70 +69,70 @@ export default function SolarSystem({ data }: SolarSystemProps) {
 
   return (
     <motion.div
-      className="bg-gray-900 text-white p-4 sm:p-6 rounded-lg shadow-lg"
+      className="bg-gradient-to-br from-purple-950/90 to-gray-900/95 rounded-xl shadow-xl border border-purple-800/20 backdrop-blur-sm p-4"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center">Solar System</h2>
-      <div className="overflow-x-auto -mx-4 sm:mx-0">
-        <div className="inline-block min-w-full align-middle">
-          <table className="min-w-full divide-y divide-gray-700">
-            <thead>
-              <tr className="bg-blue-800">
-                <th className="text-left py-2 px-4">Planet</th>
-                <th className="py-2 px-4">Rise</th>
-                <th className="py-2 px-4">Transit</th>
-                <th className="py-2 px-4">Set</th>
-                <th className="py-2 px-4">Azimuth</th>
-                <th className="py-2 px-4">Altitude</th>
-              </tr>
-            </thead>
-            <tbody>
-              {planets.map((planet) => (
-                <motion.tr
-                  key={planet}
-                  className={getPlanetColor(String(data[`${planet}_alt`] || "0"))}
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <td className="capitalize py-2 px-4">{planet}</td>
-                  <td className="text-right py-2 px-4">
-                    {formatData(data[`${planet}_rise`])}
-                  </td>
-                  <td className="text-right py-2 px-4">
-                    {formatData(data[`${planet}_transit`])}
-                  </td>
-                  <td className="text-right py-2 px-4">
-                    {formatData(data[`${planet}_set`])}
-                  </td>
-                  <td className="text-right py-2 px-4">
-                    {formatData(data[`${planet}_az`])}
-                  </td>
-                  <td className="text-right py-2 px-4">
-                    {formatData(data[`${planet}_alt`])}
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div className="flex justify-center mt-8">
-        <motion.div
-          className="relative w-full max-w-lg aspect-[2/1]"
-          initial={{ rotate: 0 }}
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
-        >
-          <Image
-            src="/assets/img/solar_system.png"
-            alt="Solar System"
-            layout="fill"
-            objectFit="contain"
-          />
-        </motion.div>
-      </div>
+      <Card className="bg-transparent border-0 shadow-none">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-2xl font-bold text-purple-100 flex items-center gap-2">
+            <motion.div
+              className="w-6 h-6 text-purple-400"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            >
+              ⚫
+            </motion.div>
+            太阳系行星
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-hidden rounded-lg border border-purple-800/20">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-purple-900/30">
+                  <TableRow className="hover:bg-purple-800/20">
+                    <TableHead className="text-purple-200 font-medium">
+                      行星
+                    </TableHead>
+                    <TableHead className="text-purple-200 font-medium">
+                      升起
+                    </TableHead>
+                    <TableHead className="text-purple-200 font-medium">
+                      过境
+                    </TableHead>
+                    <TableHead className="text-purple-200 font-medium">
+                      落下
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="bg-purple-950/20">
+                  {planets.map((planet, index) => (
+                    <TableRow
+                      key={planet}
+                      className="hover:bg-purple-800/20 transition-colors"
+                    >
+                      <TableCell className="font-medium capitalize text-purple-100">
+                        {planet}
+                      </TableCell>
+                      <TableCell className="text-purple-200">
+                        {data?.solarSystem?.planets?.[index]?.rise ?? "N/A"}
+                      </TableCell>
+                      <TableCell className="text-purple-200">
+                        {data?.solarSystem?.planets?.[index]?.transit ?? "N/A"}
+                      </TableCell>
+                      <TableCell className="text-purple-200">
+                        {data?.solarSystem?.planets?.[index]?.set ?? "N/A"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </motion.div>
   );
 }

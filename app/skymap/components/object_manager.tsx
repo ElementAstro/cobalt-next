@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useMemo, useCallback } from "react";
 import { FC } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -276,240 +278,189 @@ const ObjectManagement: FC<ObjectManagementProps> = (props) => {
   }, [filteredTargets, sortOrder, sortField]);
 
   return (
-    <>
-      <div className="mx-auto dark:bg-gray-900 overflow-hidden">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 p-2">
-            {/* 左侧工具栏 */}
-            <div className="lg:col-span-1 flex flex-col gap-2">
-              <Card className="dark:bg-gray-800">
-                <CardHeader>
-                  <CardTitle>工具栏</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() =>
-                          setViewMode(viewMode === "grid" ? "list" : "grid")
-                        }
-                        variant="outline"
-                      >
-                        {viewMode === "grid" ? "列表视图" : "网格视图"}
-                      </Button>
-                      <Button
-                        onClick={() => setBatchMode(!batchMode)}
-                        variant="outline"
-                      >
-                        {batchMode ? "退出批量" : "批量操作"}
-                      </Button>
-                    </div>
-                    <Select
-                      value={sortField}
-                      onValueChange={(value: any) => setSortField(value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="排序字段" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="name">名称</SelectItem>
-                        <SelectItem value="type">类型</SelectItem>
-                        <SelectItem value="tag">标签</SelectItem>
-                        <SelectItem value="flag">标记</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      onClick={() =>
-                        setSortOrder(sortOrder === "asc" ? "desc" : "asc")
-                      }
-                      variant="outline"
-                      className="w-full"
-                    >
-                      {sortOrder === "asc" ? "升序" : "降序"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+    <div className="flex h-[80vh] gap-4 p-4 rounded-lg">
+      {/* 左侧过滤器面板 */}
+      <Card className="w-64 dark:bg-gray-800/50 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle>过滤器</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Input
+            type="text"
+            placeholder="搜索目标名称..."
+            value={search_query}
+            onChange={(e) => set_search_query(e.target.value)}
+          />
+          
+          <div className="space-y-2">
+            <Select
+              value={filterMode.tag}
+              onValueChange={(v) => setFilterMode((prev) => ({ ...prev, tag: v }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="标签筛选" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">所有标签</SelectItem>
+                {all_tags.map((tag) => (
+                  <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-              {/* 原有的过滤器保持不变 */}
-              <ScrollArea className="md:col-span-3 overflow-y-auto max-h-[calc(100vh-6rem)]">
-                <div className="flex flex-col space-y-4">
-                  {/* 搜索栏 */}
-                  <Input
-                    type="text"
-                    placeholder="搜索目标名称..."
-                    value={search_query}
-                    onChange={(e) => set_search_query(e.target.value)}
-                    className="w-full"
-                  />
+            <Select
+              value={filterMode.flag}
+              onValueChange={(v) => setFilterMode((prev) => ({ ...prev, flag: v }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="标记筛选" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">所有标记</SelectItem>
+                {all_flags.map((flag) => (
+                  <SelectItem key={flag} value={flag}>{flag}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-                  {/* 过滤选项 */}
-                  <div className="flex flex-wrap gap-2">
-                    <Select
-                      value={filterMode.tag}
-                      onValueChange={(v) =>
-                        setFilterMode((prev) => ({ ...prev, tag: v }))
-                      }
-                    >
-                      <SelectTrigger className="w-40">
-                        <SelectValue placeholder="所有标签" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">所有标签</SelectItem>
-                        {all_tags.map((tag, idx) => (
-                          <SelectItem key={idx} value={tag}>
-                            {tag}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    <Select
-                      value={filterMode.flag}
-                      onValueChange={(v) =>
-                        setFilterMode((prev) => ({ ...prev, flag: v }))
-                      }
-                    >
-                      <SelectTrigger className="w-40">
-                        <SelectValue placeholder="所有标志" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">所有标志</SelectItem>
-                        {all_flags.map((flag, idx) => (
-                          <SelectItem key={idx} value={flag}>
-                            {flag}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    <Select
-                      value={filterMode.type}
-                      onValueChange={(v) =>
-                        setFilterMode((prev) => ({ ...prev, type: v }))
-                      }
-                    >
-                      <SelectTrigger className="w-40">
-                        <SelectValue placeholder="所有类型" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">所有类型</SelectItem>
-                        {/* 假设有预定义的类型列表 */}
-                        <SelectItem value="star">恒星</SelectItem>
-                        <SelectItem value="planet">行星</SelectItem>
-                        <SelectItem value="galaxy">星系</SelectItem>
-                        {/* 更多类型... */}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* 目标列表 */}
-                  {filteredTargets.length === 0 ? (
-                    <Alert
-                      variant="default"
-                      className="dark:bg-gray-800 dark:text-gray-200"
-                    >
-                      拍摄列表中还没有目标
-                    </Alert>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
-                      {filteredTargets.map((one_target_info, index) => (
-                        <motion.div
-                          key={index}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                          className="w-full"
-                        >
-                          <TargetSmallCard
-                            target_info={one_target_info}
-                            on_card_clicked={on_card_checked}
-                            card_index={index}
-                            on_choice_maken={props.on_choice_maken}
-                            in_manage={true}
-                          />
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </div>
-
-            {/* 主要内容区域 */}
-            <div className="lg:col-span-3">
-              <ScrollArea className="h-[calc(100vh-6rem)]">
-                {viewMode === "grid" ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-                    {sortedTargets.map((target, index) => (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="w-full"
-                      >
-                        <TargetSmallCard
-                          target_info={target}
-                          on_card_clicked={on_card_checked}
-                          card_index={index}
-                          on_choice_maken={props.on_choice_maken}
-                          in_manage={true}
-                        />
-                      </motion.div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {sortedTargets.map((target, index) => (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: index * 0.05 }}
-                      >
-                        <Card className="dark:bg-gray-800">
-                          <CardHeader className="p-3">
-                            <div className="flex justify-between items-center">
-                              <CardTitle className="text-sm">
-                                {target.name}
-                              </CardTitle>
-                              <div className="flex gap-2">
-                                {batchMode && (
-                                  <Checkbox
-                                    checked={selectedTargets.includes(index)}
-                                    onCheckedChange={(checked) => {
-                                      if (checked) {
-                                        setSelectedTargets([
-                                          ...selectedTargets,
-                                          index,
-                                        ]);
-                                      } else {
-                                        setSelectedTargets(
-                                          selectedTargets.filter(
-                                            (i) => i !== index
-                                          )
-                                        );
-                                      }
-                                    }}
-                                  />
-                                )}
-                              </div>
-                            </div>
-                          </CardHeader>
-                        </Card>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </div>
+            <Select
+              value={filterMode.type}
+              onValueChange={(v) => setFilterMode((prev) => ({ ...prev, type: v }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="类型筛选" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">所有类型</SelectItem>
+                <SelectItem value="star">恒星</SelectItem>
+                <SelectItem value="planet">行星</SelectItem>
+                <SelectItem value="galaxy">星系</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </motion.div>
+
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setBatchMode(!batchMode)}
+            >
+              {batchMode ? "退出批量" : "批量操作"}
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={exportTargets}
+            >
+              导出列表
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 主要内容区域 */}
+      <div className="flex-1 space-y-4">
+        <Card className="dark:bg-gray-800/50 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle>目标列表</CardTitle>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
+              >
+                {viewMode === "grid" ? "列表视图" : "网格视图"}
+              </Button>
+              <Select
+                value={sortField}
+                onValueChange={(value: any) => setSortField(value)}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="排序方式" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">名称</SelectItem>
+                  <SelectItem value="type">类型</SelectItem>
+                  <SelectItem value="tag">标签</SelectItem>
+                  <SelectItem value="flag">标记</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+              >
+                {sortOrder === "asc" ? "↑" : "↓"}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[calc(80vh-8rem)]">
+              {viewMode === "grid" ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {sortedTargets.map((target, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      <TargetSmallCard
+                        target_info={target}
+                        on_card_clicked={on_card_checked}
+                        card_index={index}
+                        on_choice_maken={props.on_choice_maken}
+                        in_manage={true}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {sortedTargets.map((target, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      <Card className="dark:bg-gray-800">
+                        <CardHeader className="p-3">
+                          <div className="flex justify-between items-center">
+                            <CardTitle className="text-sm">
+                              {target.name}
+                            </CardTitle>
+                            <div className="flex gap-2">
+                              {batchMode && (
+                                <Checkbox
+                                  checked={selectedTargets.includes(index)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setSelectedTargets([
+                                        ...selectedTargets,
+                                        index,
+                                      ]);
+                                    } else {
+                                      setSelectedTargets(
+                                        selectedTargets.filter(
+                                          (i) => i !== index
+                                        )
+                                      );
+                                    }
+                                  }}
+                                />
+                              )}
+                            </div>
+                          </div>
+                        </CardHeader>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </CardContent>
+        </Card>
       </div>
 
       {/* 批量操作的工具栏 */}
@@ -625,7 +576,7 @@ const ObjectManagement: FC<ObjectManagementProps> = (props) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 };
 
