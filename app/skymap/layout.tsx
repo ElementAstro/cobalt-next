@@ -1,43 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useOrientation } from "@/hooks/use-orientation";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const [isLandscape, setIsLandscape] = useState(true);
-  const [isLocking, setIsLocking] = useState(false);
-
-  useEffect(() => {
-    const checkOrientation = () => {
-      const isLandscape = window.innerWidth > window.innerHeight;
-      setIsLandscape(isLandscape);
-    };
-
-    checkOrientation();
-    window.addEventListener("resize", checkOrientation);
-    window.addEventListener("orientationchange", checkOrientation);
-
-    // 添加触摸事件处理
-    const preventZoom = (e: TouchEvent) => {
-      if (e.touches.length > 1) {
-        e.preventDefault();
-      }
-    };
-
-    document.addEventListener("touchstart", preventZoom, { passive: false });
-    document.addEventListener("touchmove", preventZoom, { passive: false });
-
-    return () => {
-      window.removeEventListener("resize", checkOrientation);
-      window.removeEventListener("orientationchange", checkOrientation);
-      document.removeEventListener("touchstart", preventZoom);
-      document.removeEventListener("touchmove", preventZoom);
-    };
-  }, []);
+  const isLandscape = useOrientation();
 
   return (
     <div className="min-h-screen bg-gray-900 text-black w-full h-full">

@@ -272,7 +272,6 @@ const NoVNCClient: React.FC = () => {
           setPassword={setPassword}
         />
 
-        {/* 控制面板 */}
         <ControlPanel
           isConnected={isConnected}
           toggleFullscreen={toggleFullscreen}
@@ -284,14 +283,86 @@ const NoVNCClient: React.FC = () => {
           handleViewOnlyChange={handleViewOnlyChange}
           colorDepth={colorDepth.toString()}
           handleColorDepthChange={handleColorDepthChange}
+          hasPowerCapability={true} // Assuming power capability is always true for this example
+          onShutdown={() => logEvent("Shutdown initiated")}
+          onReboot={() => logEvent("Reboot initiated")}
+          onReset={() => logEvent("Reset initiated")}
+          orientation="vertical"
+          enableAnimation={true}
+          showPerformanceStats={true}
+          onTogglePerformanceStats={(checked) =>
+            logEvent(`Performance stats ${checked ? "enabled" : "disabled"}`)
+          }
+          customKeys={[{ label: "Ctrl+Alt+Del", keys: ["Ctrl", "Alt", "Del"] }]}
+          onSendCustomKeys={(keys) =>
+            logEvent(`Custom keys sent: ${keys.join("+")}`)
+          }
+          layout="full"
+          latency={50} // Example latency value
+          frameRate={60} // Example frame rate value
+          bandwidth={1024 * 1024 * 10} // Example bandwidth value in bytes
+          connectionQuality="good" // Example connection quality
         />
 
-        {/* 额外自定义选项 */}
         <CustomOptions
           keyboardShortcuts={keyboardShortcuts}
           handleKeyboardShortcuts={handleKeyboardShortcuts}
           theme={theme}
           setTheme={setTheme}
+          scaleViewport={true}
+          setScaleViewport={(checked) =>
+            logEvent(`Scale viewport set to ${checked}`)
+          }
+          clipViewport={true}
+          setClipViewport={(checked) =>
+            logEvent(`Clip viewport set to ${checked}`)
+          }
+          dragViewport={true}
+          setDragViewport={(checked) =>
+            logEvent(`Drag viewport set to ${checked}`)
+          }
+          resizeSession={true}
+          setResizeSession={(checked) =>
+            logEvent(`Resize session set to ${checked}`)
+          }
+          showDotCursor={true}
+          setShowDotCursor={(checked) =>
+            logEvent(`Show dot cursor set to ${checked}`)
+          }
+          qualityLevel={6}
+          setQualityLevel={(value) => logEvent(`Quality level set to ${value}`)}
+          compressionLevel={2}
+          setCompressionLevel={(value) =>
+            logEvent(`Compression level set to ${value}`)
+          }
+          background="#000000"
+          setBackground={(value) => logEvent(`Background set to ${value}`)}
+          touchScrolling={true}
+          setTouchScrolling={(checked) =>
+            logEvent(`Touch scrolling set to ${checked}`)
+          }
+          performanceMode="balanced"
+          setPerformanceMode={(value) =>
+            logEvent(`Performance mode set to ${value}`)
+          }
+          inputMode="mouse"
+          setInputMode={(mode) => logEvent(`Input mode set to ${mode}`)}
+          gestureEnabled={true}
+          setGestureEnabled={(enabled) =>
+            logEvent(`Gesture enabled set to ${enabled}`)
+          }
+          touchSensitivity={5}
+          setTouchSensitivity={(value) =>
+            logEvent(`Touch sensitivity set to ${value}`)
+          }
+          autoReconnect={true}
+          setAutoReconnect={(enabled) =>
+            logEvent(`Auto reconnect set to ${enabled}`)
+          }
+          reconnectDelay={5}
+          setReconnectDelay={(value) =>
+            logEvent(`Reconnect delay set to ${value}`)
+          }
         />
 
         {/* 缩放控制 */}

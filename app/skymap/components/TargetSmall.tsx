@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import TargetDetailCard from "./target_detail";
+import TargetDetailCard from "./TargetDetail";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import {

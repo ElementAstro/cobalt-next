@@ -18,11 +18,11 @@ import {
   ChevronRight,
   MoreHorizontal,
 } from "lucide-react";
-import AladinLiteView from "@/components/skymap/aladin";
+import AladinLiteView from "@/app/skymap/components/Aladin";
 import * as AXIOSOF from "@/services/skymap/find-object";
-import FOVSettingDialog from "@/components/skymap/fov_dialog";
-import ObjectManagementDialog from "./components/object_manager_dialog";
-import ObjectSearchDialog from "./components/object_search_dialog";
+import FOVSettingDialog from "@/app/skymap/components/FovDialog";
+import ObjectManagementDialog from "./layout/ObjectManagerDialog";
+import ObjectSearchDialog from "./layout/ObjectSearchDialog";
 import { useGlobalStore } from "@/lib/store/skymap/target";
 import {
   IDSOFramingObjectInfo,
@@ -31,6 +31,8 @@ import {
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import Image from "next/image";
 
 const ImageFraming: React.FC = () => {
   // 状态定义
@@ -212,7 +214,7 @@ const ImageFraming: React.FC = () => {
   };
 
   return (
-    <div className="framing-root relative h-screen w-screen overflow-hidden">
+    <div className="relative h-screen max-h-screen max-w-screen overflow-hidden">
       <div className="absolute inset-0">
         <AladinLiteView
           ra={target_ra}
@@ -224,24 +226,25 @@ const ImageFraming: React.FC = () => {
         />
       </div>
 
-      {/* 左侧控制面板 - 使用固定宽度 */}
+      {/* 右侧工具栏 - 使用固定宽度 */}
       <motion.div
         initial="expanded"
-        animate={leftPanelCollapsed ? "collapsed" : "expanded"}
+        animate={rightPanelCollapsed ? "collapsed" : "expanded"}
         variants={panelVariants}
-        custom={true}
-        className="fixed left-0 top-0 bottom-0 z-40 flex h-full"
+        custom={false}
+        className="fixed right-0 top-0 bottom-0 z-40 flex h-full"
       >
-        <Card className="w-64 bg-black/50 backdrop-blur-md border-r border-white/10">
-          <CardContent className="p-4 h-full flex flex-col">
-            <CardTitle className="text-base text-white mb-4">天体信息</CardTitle>
-            <ScrollArea className="flex-grow">
+        <Card className="w-48 bg-black/50 backdrop-blur-md border-l border-white/10">
+          <CardContent className="p-4 h-full">
+            <ScrollArea className="h-full">
               <div className="space-y-4">
                 {/* 目标信息区域 */}
                 <div className="space-y-2 text-sm">
                   <div className="text-white/90 flex justify-between">
                     <span>当前目标:</span>
-                    <span>{target_store.find((t) => t.checked)?.name || "无"}</span>
+                    <span>
+                      {target_store.find((t) => t.checked)?.name || "无"}
+                    </span>
                   </div>
                   <div className="text-white/90 flex justify-between">
                     <span>Ra:</span>
@@ -254,7 +257,7 @@ const ImageFraming: React.FC = () => {
                 </div>
 
                 {/* 控制按钮组 */}
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <Button
                     variant="outline"
                     size="sm"
@@ -266,7 +269,9 @@ const ImageFraming: React.FC = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => set_open_search_dialog(open_search_dialog + 1)}
+                    onClick={() =>
+                      set_open_search_dialog(open_search_dialog + 1)
+                    }
                     className="w-full"
                   >
                     搜索目标
@@ -274,46 +279,14 @@ const ImageFraming: React.FC = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => set_open_manage_dialog(open_manage_dialog + 1)}
+                    onClick={() =>
+                      set_open_manage_dialog(open_manage_dialog + 1)
+                    }
                     className="w-full"
                   >
                     目标管理
                   </Button>
                 </div>
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
-          className="h-full px-1 bg-black/30 backdrop-blur-sm"
-        >
-          {leftPanelCollapsed ? <ChevronRight /> : <ChevronLeft />}
-        </Button>
-      </motion.div>
-
-      {/* 右侧工具栏 - 使用固定宽度 */}
-      <motion.div
-        initial="expanded"
-        animate={rightPanelCollapsed ? "collapsed" : "expanded"}
-        variants={panelVariants}
-        custom={false}
-        className="fixed right-0 top-0 bottom-0 z-40 flex h-full"
-      >
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setRightPanelCollapsed(!rightPanelCollapsed)}
-          className="h-full px-1 bg-black/30 backdrop-blur-sm"
-        >
-          {rightPanelCollapsed ? <ChevronLeft /> : <ChevronRight />}
-        </Button>
-        <Card className="w-64 bg-black/50 backdrop-blur-md border-l border-white/10">
-          <CardContent className="p-4 h-full">
-            <ScrollArea className="h-full">
-              <div className="space-y-4">
                 {/* 工具按钮组 */}
                 <div className="grid grid-cols-2 gap-2">
                   <Button
@@ -355,35 +328,135 @@ const ImageFraming: React.FC = () => {
               </div>
             </ScrollArea>
           </CardContent>
+          <CardFooter className="flex justify-end p-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setRightPanelCollapsed(!rightPanelCollapsed)}
+              className="text-white/80 hover:text-white"
+            >
+              {rightPanelCollapsed ? <ChevronLeft /> : <ChevronRight />}
+            </Button>
+          </CardFooter>
         </Card>
       </motion.div>
 
-      {/* 底部状态栏 - 横屏优化 */}
-      <motion.div
-        initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="fixed bottom-2 left-1/2 transform -translate-x-1/2 w-[80%] max-w-2xl z-40"
-      >
-        <Alert
-          variant="default"
-          className="bg-black/50 backdrop-blur-md border border-white/10 text-white p-2"
+      <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 w-[80%] max-w-3xl z-40 flex flex-col-2 items-center gap-2">
+        <motion.div
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex-1"
         >
-          <div className="flex justify-between items-center text-xs lg:text-sm">
-            <span>中心坐标:</span>
-            <span>
-              Ra: {screen_ra.toFixed(5)}; Dec: {screen_dec.toFixed(5)}
-            </span>
-          </div>
-        </Alert>
-      </motion.div>
+          <Alert
+            variant="default"
+            className="bg-black/50 backdrop-blur-md border border-white/10 text-white p-2"
+          >
+            <div className="flex justify-between items-center text-xs lg:text-sm">
+              <span>中心坐标:</span>
+              <span>
+                Ra: {screen_ra.toFixed(5)}; Dec: {screen_dec.toFixed(5)}
+              </span>
+            </div>
+          </Alert>
+        </motion.div>
 
-      <div className="fixed left-1 top-1 w-56 h-6 bg-black z-40"></div>
+        <motion.div
+          initial={{ y: -100 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="flex-1"
+        >
+          <div className="flex items-center justify-center gap-2 bg-black/50 backdrop-blur-md rounded-lg p-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleZoom("in")}
+              className="text-white/80 hover:text-white"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </Button>
+            <Slider
+              value={[zoomLevel]}
+              min={0.2}
+              max={5}
+              step={0.1}
+              className="w-24"
+              onValueChange={([value]) => setZoomLevel(value)}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleZoom("out")}
+              className="text-white/80 hover:text-white"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowGrid(!showGrid)}
+              className={`text-white/80 hover:text-white ${
+                showGrid ? "bg-white/20" : ""
+              }`}
+            >
+              <Grid className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowConstellations(!showConstellations)}
+              className={`text-white/80 hover:text-white ${
+                showConstellations ? "bg-white/20" : ""
+              }`}
+            >
+              <Compass className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleNightMode}
+              className="text-white/80 hover:text-white"
+            >
+              {nightMode ? (
+                <Sun className="w-4 h-4" />
+              ) : (
+                <Moon className="w-4 h-4" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowTopTools(false)}
+              className="bg-black/30 backdrop-blur-sm text-white/80 hover:text-white"
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </Button>
+          </div>
+        </motion.div>
+      </div>
+
+      <motion.div
+        className="fixed left-1 top-1 w-6 h-6 bg-black/50 backdrop-blur-md rounded-full z-40"
+        animate={{ rotate: 360 }}
+        transition={{
+          duration: 10,
+          ease: "linear",
+          repeat: Infinity,
+        }}
+      >
+        <Image
+          src="/atom.png"
+          width={24}
+          height={24}
+          alt="logo"
+          className="w-full h-full"
+        />
+      </motion.div>
 
       <FOVSettingDialog
         fov_data={fov_data}
         rotation={camera_rotation}
-        open_dialog={open_fov_dialog}
+        open_dialog={open_fov_dialog % 2 === 1}
         on_fov_change={(new_fov_data) => {
           set_fov_data((prevState) => ({
             ...prevState,
@@ -400,92 +473,6 @@ const ImageFraming: React.FC = () => {
       />
       <ObjectSearchDialog open_dialog={open_search_dialog} />
       <ObjectManagementDialog open_dialog={open_manage_dialog} />
-
-      {/* 中央工具栏 */}
-      <motion.div
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="fixed top-2 left-1/2 transform -translate-x-1/2 z-40 flex gap-2"
-      >
-        <div className="bg-black/50 backdrop-blur-md rounded-lg p-1 flex gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleZoom("in")}
-            className="text-white/80 hover:text-white"
-          >
-            <ZoomIn className="w-4 h-4" />
-          </Button>
-          <Slider
-            value={[zoomLevel]}
-            min={0.2}
-            max={5}
-            step={0.1}
-            className="w-24"
-            onValueChange={([value]) => setZoomLevel(value)}
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleZoom("out")}
-            className="text-white/80 hover:text-white"
-          >
-            <ZoomOut className="w-4 h-4" />
-          </Button>
-        </div>
-
-        <div className="bg-black/50 backdrop-blur-md rounded-lg p-1 flex gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowGrid(!showGrid)}
-            className={`text-white/80 hover:text-white ${
-              showGrid ? "bg-white/20" : ""
-            }`}
-          >
-            <Grid className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowConstellations(!showConstellations)}
-            className={`text-white/80 hover:text-white ${
-              showConstellations ? "bg-white/20" : ""
-            }`}
-          >
-            <Compass className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleNightMode}
-            className="text-white/80 hover:text-white"
-          >
-            {nightMode ? (
-              <Sun className="w-4 h-4" />
-            ) : (
-              <Moon className="w-4 h-4" />
-            )}
-          </Button>
-        </div>
-      </motion.div>
-
-      {/* 顶部工具栏 - 可隐藏 */}
-      <motion.div
-        initial={{ y: -100 }}
-        animate={{ y: showTopTools ? 0 : -100 }}
-        className="fixed top-2 left-1/2 -translate-x-1/2 z-40"
-      >
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowTopTools(!showTopTools)}
-          className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/30 backdrop-blur-sm"
-        >
-          <MoreHorizontal />
-        </Button>
-        {/* ...existing top toolbar content... */}
-      </motion.div>
     </div>
   );
 };

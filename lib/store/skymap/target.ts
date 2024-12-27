@@ -24,6 +24,7 @@ interface TargetListState {
   changeFocusTarget: (target: IDSOFramingObjectInfo) => void;
   loading: boolean;
   error: string | null;
+  selectAll: () => void;
 
   removeTarget: (name: string) => void;
   updateTarget: (target: IDSOFramingObjectInfo) => void;
@@ -55,6 +56,14 @@ export const useGlobalStore = create<TargetListState>()(
           morning_astro_time: new Date(),
         },
       },
+      selectAll: () =>
+        set((state) => {
+          const targets = state.targets.map((target) => ({
+            ...target,
+            checked: true,
+          }));
+          return { targets };
+        }),
       addTarget: (target) =>
         set((state) => ({
           targets: [...state.targets, target],

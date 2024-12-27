@@ -35,6 +35,8 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { useOrientation } from "@/hooks/use-orientation";
 
 interface ControlPanelProps {
   isConnected: boolean;
@@ -52,6 +54,16 @@ interface ControlPanelProps {
   onReboot: () => void;
   onReset: () => void;
   orientation?: "horizontal" | "vertical";
+  enableAnimation: boolean;
+  showPerformanceStats: boolean;
+  onTogglePerformanceStats: (checked: boolean) => void;
+  customKeys: { label: string; keys: string[] }[];
+  onSendCustomKeys: (keys: string[]) => void;
+  layout: "compact" | "full";
+  latency: number;
+  frameRate: number;
+  bandwidth: number;
+  connectionQuality: "good" | "fair" | "poor";
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -70,13 +82,42 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   onReboot,
   onReset,
   orientation = "vertical",
+  enableAnimation = true,
+  showPerformanceStats,
+  onTogglePerformanceStats,
+  customKeys = [],
+  onSendCustomKeys,
+  layout = "full",
+  latency,
+  frameRate,
+  bandwidth,
+  connectionQuality,
 }) => {
+  const isLandscape = useOrientation();
+
+  const panelAnimation = enableAnimation
+    ? {
+        initial: { opacity: 0, y: 20 },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0, y: -20 },
+        transition: { duration: 0.3 },
+      }
+    : {};
+
+  const statsVariants = {
+    hidden: { opacity: 0, height: 0 },
+    visible: { opacity: 1, height: "auto" },
+  };
+
   return (
-    <div
+    <motion.div
+      {...panelAnimation}
       className={cn(
-        "flex gap-4",
+        "control-panel",
+        isLandscape ? "landscape" : "portrait",
         orientation === "horizontal" ? "flex-row" : "flex-col",
-        "w-full"
+        "w-full",
+        layout === "compact" ? "p-2" : "p-4"
       )}
     >
       <div className="flex flex-col space-y-4 min-w-[200px]">
@@ -173,8 +214,33 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               <Activity className="h-4 w-4" />
               <span className="text-sm">性能监控</span>
             </div>
-            <Switch />
+            <Switch
+              checked={showPerformanceStats}
+              onCheckedChange={onTogglePerformanceStats}
+            />
           </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            {customKeys.map((key, index) => (
+              <Button
+                key={index}
+                variant="outline"
+                size="sm"
+                onClick={() => onSendCustomKeys(key.keys)}
+              >
+                <Keyboard className="h-4 w-4 mr-2" />
+                {key.label}
+              </Button>
+            ))}
+          </div>
+
+          <motion.div
+            initial={false}
+            animate={{ height: showPerformanceStats ? "auto" : 0 }}
+            className="overflow-hidden"
+          >
+            {/* 性能监控图表组件 */}
+          </motion.div>
 
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" size="sm">
@@ -186,9 +252,40 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               发送组合键
             </Button>
           </div>
+
+          <motion.div
+            variants={statsVariants}
+            initial="hidden"
+            animate={showPerformanceStats ? "visible" : "hidden"}
+            className="performance-stats"
+          >
+            <div className="stats-grid">
+              <div className="stat-item">
+                <Label>延迟</Label>
+                <p
+                  className={cn(
+                    "stat-value",
+                    latency > 100 ? "text-red-500" : "text-green-500"
+                  )}
+                >
+                  {latency}ms
+                </p>
+              </div>
+              <div className="stat-item">
+                <Label>帧率</Label>
+                <p className="stat-value">{frameRate} FPS</p>
+              </div>
+              <div className="stat-item">
+                <Label>带宽</Label>
+                <p className="stat-value">
+                  {(bandwidth / 1024 / 1024).toFixed(2)} Mbps
+                </p>
+              </div>
+            </div>
+          </motion.div>
         </CollapsibleContent>
       </Collapsible>
-    </div>
+    </motion.div>
   );
 };
 

@@ -1,8 +1,8 @@
 "use client";
 
-import { FC, useState, useMemo, useCallback } from "react";
+import { FC, useState, useMemo } from "react";
 import * as AXIOSOF from "@/services/skymap/find-object";
-import TargetSmallCard from "../../../components/skymap/target_small";
+import TargetSmallCard from "../components/TargetSmall";
 import { motion } from "framer-motion";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -14,11 +14,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { FilterIcon, Download, Search, ChevronDown } from "lucide-react";
 import { IDSOObjectDetailedInfo } from "@/types/skymap/find-object";
 import {
@@ -155,7 +156,6 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
       Type: target.type,
       Magnitude: target.magnitude,
       AngularSize: target.angular_size,
-      // 添加更多字段如果需要
     }));
     const csvContent = `data:text/csv;charset=utf-8,${[
       "Name",
@@ -179,15 +179,15 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="flex flex-col lg:flex-row w-full gap-4 p-4 bg-gradient-to-b from-gray-900 to-gray-800 min-h-[70vh] rounded-lg"
+      className="flex flex-col lg:flex-row w-full gap-2 p-4 bg-gradient-to-b from-gray-900 to-gray-800 min-h-[70vh] rounded-lg"
     >
       {/* 搜索工具栏 */}
-      <div className="w-full lg:w-1/4 space-y-4">
-        <Card className="bg-black/20 backdrop-blur">
+      <div className="w-full lg:w-1/4 space-y-2">
+        <Card className="bg-black/20 backdrop-blur p-2">
           <CardHeader>
-            <CardTitle>搜索工具</CardTitle>
+            <CardTitle className="text-sm">搜索工具</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-2">
             <div className="relative">
               <Input
                 placeholder="输入搜索关键词"
@@ -196,12 +196,12 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSearch();
                 }}
-                className="pr-10"
+                className="pr-8 text-xs"
               />
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             </div>
 
-            <Button onClick={handleSearch} className="w-full">
+            <Button onClick={handleSearch} className="w-full text-xs">
               搜索
             </Button>
 
@@ -209,14 +209,15 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
               <CollapsibleTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full flex justify-between"
+                  size="sm"
+                  className="w-full flex justify-between text-xs"
                 >
                   高级筛选
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-4 mt-4">
-                <Label className="block text-sm text-gray-300">
+              <CollapsibleContent className="space-y-2 mt-2">
+                <Label className="block text-xs text-gray-300">
                   角大小 (度):
                   <Input
                     type="number"
@@ -227,10 +228,10 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
                         angular_size: Number(e.target.value),
                       }))
                     }
-                    className="mt-1 block w-full p-2 bg-gray-800 border border-gray-700 rounded-md text-white"
+                    className="mt-1 block w-full p-1 bg-gray-800 border border-gray-700 rounded-md text-white text-xs"
                   />
                 </Label>
-                <Label className="block text-sm text-gray-300">
+                <Label className="block text-xs text-gray-300">
                   星等限制:
                   <Input
                     type="number"
@@ -241,10 +242,10 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
                         magnitude_limit: Number(e.target.value),
                       }))
                     }
-                    className="mt-1 block w-full p-2 bg-gray-800 border border-gray-700 rounded-md text-white"
+                    className="mt-1 block w-full p-1 bg-gray-800 border border-gray-700 rounded-md text-white text-xs"
                   />
                 </Label>
-                <Label className="block text-sm text-gray-300">
+                <Label className="block text-xs text-gray-300">
                   天体类型:
                   <Select
                     value={filterSettings.type}
@@ -255,7 +256,7 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
                       }))
                     }
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full text-xs">
                       <SelectValue placeholder="选择类型" />
                     </SelectTrigger>
                     <SelectContent>
@@ -266,7 +267,7 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
                     </SelectContent>
                   </Select>
                 </Label>
-                <Label className="block text-sm text-gray-300">
+                <Label className="block text-xs text-gray-300">
                   排序方式:
                   <Select
                     value={filterSettings.sort_by}
@@ -277,7 +278,7 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
                       }))
                     }
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full text-xs">
                       <SelectValue placeholder="选择排序方式" />
                     </SelectTrigger>
                     <SelectContent>
@@ -287,7 +288,7 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
                     </SelectContent>
                   </Select>
                 </Label>
-                <Label className="block text-sm text-gray-300">
+                <Label className="block text-xs text-gray-300">
                   排序顺序:
                   <Select
                     value={filterSettings.sort_order}
@@ -298,7 +299,7 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
                       }))
                     }
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full text-xs">
                       <SelectValue placeholder="选择排序顺序" />
                     </SelectTrigger>
                     <SelectContent>
@@ -313,21 +314,21 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
             <Button
               variant="outline"
               onClick={exportResults}
-              className="w-full flex items-center justify-center gap-2"
+              className="w-full flex items-center justify-center gap-1 text-xs"
             >
-              <Download className="w-4 h-4" />
-              导出结果
+              <Download className="w-3 h-3" />
+              导出
             </Button>
           </CardContent>
         </Card>
 
         {/* 统计图表 */}
-        <Card className="bg-black/20 backdrop-blur">
+        <Card className="bg-black/20 backdrop-blur p-2">
           <CardHeader>
-            <CardTitle>搜索统计</CardTitle>
+            <CardTitle className="text-sm">搜索统计</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <ResponsiveContainer width="100%" height={300}>
+          <CardContent className="space-y-2">
+            <ResponsiveContainer width="100%" height={150}>
               <PieChart>
                 <Pie
                   data={chartData.typeData}
@@ -335,8 +336,7 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  outerRadius={80}
-                  fill="#8884d8"
+                  outerRadius={60}
                   label
                 >
                   {chartData.typeData.map((entry, index) => (
@@ -349,14 +349,14 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
                 <ReTooltip />
               </PieChart>
             </ResponsiveContainer>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={150}>
               <BarChart data={chartData.magData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="magnitude" />
-                <YAxis />
+                <CartesianGrid strokeDasharray="2 2" />
+                <XAxis dataKey="magnitude" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} />
                 <ReTooltip />
-                <Legend />
-                <Bar dataKey="count" fill="#82ca9d" />
+                <Legend fontSize={10} />
+                <Bar dataKey="count" fill="#82ca9d" barSize={20} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -367,16 +367,18 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
       <div className="w-full lg:w-3/4">
         <ScrollArea className="h-[calc(100vh-10rem)]">
           {foundTargetResult.length === 0 ? (
-            <Alert variant={alertVariant}>{alertText}</Alert>
+            <Alert variant={alertVariant} className="text-xs">
+              {alertText}
+            </Alert>
           ) : (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {paginatedResults.map((target, index) => (
                   <motion.div
                     key={target.id || index}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
+                    transition={{ delay: index * 0.02 }}
                   >
                     <TargetSmallCard
                       target_info={target}
@@ -390,27 +392,31 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
 
               {/* 分页控制 */}
               {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-2 py-4">
-                  <Button
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.max(prev - 1, 1))
-                    }
-                    disabled={currentPage === 1}
-                  >
-                    上一页
-                  </Button>
-                  <span className="text-gray-300">
-                    第 {currentPage} 页，共 {totalPages} 页
-                  </span>
-                  <Button
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                    }
-                    disabled={currentPage === totalPages}
-                  >
-                    下一页
-                  </Button>
-                </div>
+                <Pagination className="py-2">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() =>
+                          setCurrentPage((prev) => Math.max(prev - 1, 1))
+                        }
+                      />
+                    </PaginationItem>
+                    <PaginationItem>
+                      <span className="text-gray-400 text-xs">
+                        第 {currentPage} 页，共 {totalPages} 页
+                      </span>
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() =>
+                          setCurrentPage((prev) =>
+                            Math.min(prev + 1, totalPages)
+                          )
+                        }
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
               )}
             </div>
           )}
