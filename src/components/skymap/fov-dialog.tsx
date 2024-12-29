@@ -226,12 +226,20 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = ({
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3 }}
       >
-        <DialogContent className="max-w-2xl landscape:max-h-[90vh] landscape:overflow-auto p-4 bg-gray-800 text-white">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-auto p-4 bg-gray-800 text-white">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-4 landscape:space-y-2"
+            transition={{ delay: 0.1 }}
+            className="space-y-4"
           >
+            {/* Mobile overlay */}
+            <motion.div
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[-1]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-lg">
                 <Calculator className="w-5 h-5 text-yellow-400" />

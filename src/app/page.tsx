@@ -47,6 +47,9 @@ export default function Home() {
     setSites,
     setQuickAccessSites,
     reorderSites,
+    setBackgroundColor,
+    setLayoutMode,
+    setCardStyle,
   } = useSiteStore();
 
   const [previewUrl, setPreviewUrl] = useState("");
@@ -172,33 +175,42 @@ export default function Home() {
       className="min-h-screen bg-gradient-to-br from-indigo-900 to-purple-900 dark:from-gray-900 dark:to-black p-2 sm:p-4 transition-colors duration-300"
       ref={ref}
     >
-      <div className="max-w-6xl mx-auto space-y-4">
-        <Header
-          exportData={exportData}
-          importData={importData}
-          onAddNewSite={handleAddNewSite}
-          onSearch={setSearchTerm}
-          toggleTheme={() => {}}
-          isDark={false}
-        />
-        <QuickAccess quickAccessSites={quickAccessSites} />
-        <CategoryFilter
-          categories={categories}
-          activeCategory={activeCategory}
-          setActiveCategory={setActiveCategory}
-        />
-        <SiteList
-          sites={filteredSites}
-          onDragEnd={onDragEnd}
-          removeSite={removeSite}
-          toggleQuickAccess={toggleQuickAccess}
-          setEditingSite={(site) => {
-            setEditingSite(site);
-            handleEditSite();
-          }}
-          controls={controls}
-          onPreview={openPreview}
-        />
+      <div className="max-w-6xl mx-auto px-2 sm:px-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4">
+          <div className="space-y-4">
+            <QuickAccess quickAccessSites={quickAccessSites} />
+            <CategoryFilter
+              categories={categories}
+              activeCategory={activeCategory}
+              setActiveCategory={setActiveCategory}
+            />
+          </div>
+          <div className="space-y-4">
+            <Header
+              exportData={exportData}
+              importData={importData}
+              onAddNewSite={handleAddNewSite}
+              onSearch={setSearchTerm}
+              toggleTheme={() => {}}
+              isDark={false}
+              setBackgroundColor={setBackgroundColor}
+              setLayoutMode={setLayoutMode}
+              setCardStyle={setCardStyle}
+            />
+            <SiteList
+              sites={filteredSites}
+              onDragEnd={onDragEnd}
+              removeSite={removeSite}
+              toggleQuickAccess={toggleQuickAccess}
+              setEditingSite={(site) => {
+                setEditingSite(site);
+                handleEditSite();
+              }}
+              controls={controls}
+              onPreview={openPreview}
+            />
+          </div>
+        </div>
         <PreviewModal
           isOpen={isPreviewOpen}
           onClose={closePreview}

@@ -22,6 +22,44 @@ const containerVariants = {
   },
 };
 
+const starFieldVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      duration: 2,
+      ease: "easeInOut",
+    },
+  },
+};
+
+const orbitVariants = {
+  hidden: { scale: 0 },
+  visible: (i: number) => ({
+    scale: 1,
+    transition: {
+      delay: i * 0.2,
+      duration: 1,
+      ease: "backOut",
+    },
+  }),
+};
+
+const planetVariants = {
+  hover: {
+    scale: 1.05,
+    y: -5,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 10,
+    },
+  },
+  tap: {
+    scale: 0.95,
+  },
+};
+
 export function SolarSystem() {
   const { data, error, updateData } = useAstroStore();
   const [selectedPlanet, setSelectedPlanet] = useState<PlanetData | null>(null);
@@ -76,11 +114,38 @@ export function SolarSystem() {
   return (
     <>
       <motion.div
-        className="bg-gradient-to-br from-purple-950/90 to-gray-900/95 rounded-xl shadow-xl border border-purple-800/20 backdrop-blur-sm p-4"
+        className="relative bg-gradient-to-br from-purple-950/90 to-gray-900/95 rounded-xl shadow-xl border border-purple-800/20 backdrop-blur-sm p-4 overflow-hidden"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
+        {/* Star field background */}
+        <motion.div
+          className="absolute inset-0 z-0"
+          variants={starFieldVariants}
+        >
+          {[...Array(100)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-0.5 h-0.5 bg-white rounded-full"
+              style={{
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                opacity: Math.random() * 0.5 + 0.2,
+              }}
+              animate={{
+                opacity: [0.2, 0.8, 0.2],
+                scale: [0.8, 1.2, 0.8],
+              }}
+              transition={{
+                duration: Math.random() * 3 + 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: Math.random() * 2,
+              }}
+            />
+          ))}
+        </motion.div>
         <Card className="bg-transparent border-0 shadow-none">
           <CardHeader className="pb-2">
             <CardTitle className="text-2xl font-bold text-purple-100 flex items-center gap-2">
@@ -99,22 +164,49 @@ export function SolarSystem() {
               {data.solarSystem.planets.map((planet, index) => (
                 <motion.div
                   key={planet.name}
-                  variants={{
-                    hidden: { opacity: 0, y: 20 },
-                    visible: {
-                      opacity: 1,
-                      y: 0,
-                      transition: { delay: index * 0.1 },
-                    },
-                  }}
+                  className="relative"
+                  variants={orbitVariants}
+                  custom={index}
                 >
-                  <PlanetCard
-                    planet={planet}
-                    viewMode="grid"
-                    favorite={favoriteList.includes(planet.name)}
-                    onToggleFavorite={handleToggleFavorite}
-                    onShowDetail={() => setSelectedPlanet(planet)}
+                  <motion.div
+                    className="absolute inset-0 border border-purple-800/20 rounded-full"
+                    style={{
+                      width: `${100 + index * 30}%`,
+                      height: `${100 + index * 30}%`,
+                      top: `-${index * 15}%`,
+                      left: `-${index * 15}%`,
+                    }}
+                    animate={{
+                      rotate: 360,
+                    }}
+                    transition={{
+                      duration: 20 + index * 5,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
                   />
+                  <motion.div
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      visible: {
+                        opacity: 1,
+                        y: 0,
+                        transition: { delay: index * 0.1 },
+                      },
+                      hover: planetVariants.hover,
+                      tap: planetVariants.tap,
+                    }}
+                    whileHover="hover"
+                    whileTap="tap"
+                  >
+                    <PlanetCard
+                      planet={planet}
+                      viewMode="grid"
+                      favorite={favoriteList.includes(planet.name)}
+                      onToggleFavorite={handleToggleFavorite}
+                      onShowDetail={() => setSelectedPlanet(planet)}
+                    />
+                  </motion.div>
                 </motion.div>
               ))}
             </div>

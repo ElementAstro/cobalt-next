@@ -1,6 +1,7 @@
 import { IDSOFramingObjectInfo } from "@/types/skymap";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import log from "@/utils/logger"; // Import the logger
 
 interface TwilightData {
   evening: {
@@ -62,50 +63,81 @@ export const useGlobalStore = create<TargetListState>()(
             ...target,
             checked: true,
           }));
+          log.info("All targets selected");
           return { targets };
         }),
       addTarget: (target) =>
-        set((state) => ({
-          targets: [...state.targets, target],
-        })),
+        set((state) => {
+          log.info(`Adding target: ${target.name}`);
+          return {
+            targets: [...state.targets, target],
+          };
+        }),
       setFocusTarget: (id) =>
-        set({
-          focusTargetId: id,
+        set(() => {
+          log.info(`Setting focus target to: ${id}`);
+          return {
+            focusTargetId: id,
+          };
         }),
       addTargetAndFocus: (target) =>
-        set((state) => ({
-          targets: [...state.targets, target],
-          focusTargetId: target.name, // 假设'name'唯一标识目标
-        })),
+        set((state) => {
+          log.info(`Adding and focusing on target: ${target.name}`);
+          return {
+            targets: [...state.targets, target],
+            focusTargetId: target.name,
+          };
+        }),
       saveAllTargets: () => {
-        // 实现保存目标列表的逻辑，例如保存到本地存储或发送到服务器
         const targets = get().targets;
         localStorage.setItem("targets", JSON.stringify(targets));
+        log.info("All targets saved to local storage");
       },
       changeFocusTarget: (target) =>
-        set({
-          focusTargetId: target.name, // 假设'name'唯一标识目标
+        set(() => {
+          log.info(`Changing focus target to: ${target.name}`);
+          return {
+            focusTargetId: target.name,
+          };
         }),
       loading: false,
       error: null,
 
       removeTarget: (name) =>
-        set((state) => ({
-          targets: state.targets.filter((t) => t.name !== name),
-        })),
+        set((state) => {
+          log.info(`Removing target: ${name}`);
+          return {
+            targets: state.targets.filter((t) => t.name !== name),
+          };
+        }),
 
       updateTarget: (target) =>
-        set((state) => ({
-          targets: state.targets.map((t) =>
-            t.name === target.name ? target : t
-          ),
-        })),
+        set((state) => {
+          log.info(`Updating target: ${target.name}`);
+          return {
+            targets: state.targets.map((t) =>
+              t.name === target.name ? target : t
+            ),
+          };
+        }),
 
-      clearTargets: () => set({ targets: [], focusTargetId: null }),
+      clearTargets: () =>
+        set(() => {
+          log.info("Clearing all targets");
+          return { targets: [], focusTargetId: null };
+        }),
 
-      setLoading: (status) => set({ loading: status }),
+      setLoading: (status) =>
+        set(() => {
+          log.info(`Setting loading status to: ${status}`);
+          return { loading: status };
+        }),
 
-      setError: (error) => set({ error }),
+      setError: (error) =>
+        set(() => {
+          log.error(`Setting error: ${error}`);
+          return { error };
+        }),
 
       all_tags: [],
       all_flags: [],
@@ -113,18 +145,25 @@ export const useGlobalStore = create<TargetListState>()(
         set((state) => {
           const targets = [...state.targets];
           targets[index].flag = update_string;
+          log.info(
+            `Setting flag for target at index ${index} to: ${update_string}`
+          );
           return { targets };
         }),
       setTargetTag: ({ index, update_string }) =>
         set((state) => {
           const targets = [...state.targets];
           targets[index].tag = update_string;
+          log.info(
+            `Setting tag for target at index ${index} to: ${update_string}`
+          );
           return { targets };
         }),
       renameTarget: ({ index, update_string }) =>
         set((state) => {
           const targets = [...state.targets];
           targets[index].name = update_string;
+          log.info(`Renaming target at index ${index} to: ${update_string}`);
           return { targets };
         }),
       checkOneTarget: (index) =>
@@ -133,6 +172,7 @@ export const useGlobalStore = create<TargetListState>()(
             ...target,
             checked: i === index,
           }));
+          log.info(`Checking target at index ${index}`);
           return { targets };
         }),
       clearAllChecked: () =>
@@ -141,6 +181,7 @@ export const useGlobalStore = create<TargetListState>()(
             ...target,
             checked: false,
           }));
+          log.info("Clearing all checked targets");
           return { targets };
         }),
     }),

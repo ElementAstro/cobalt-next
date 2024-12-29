@@ -47,6 +47,28 @@ interface LightBoxProps {
   enableFullscreen?: boolean;
   enableDownload?: boolean;
   enableSharing?: boolean;
+  keyboardShortcuts?: {
+    prev?: string;
+    next?: string;
+    close?: string;
+    fullscreen?: string;
+    play?: string;
+    info?: string;
+    rotateLeft?: string;
+    rotateRight?: string;
+    flipHorizontal?: string;
+    flipVertical?: string;
+  };
+  transitionEffects?: {
+    type?: "fade" | "slide" | "zoom";
+    duration?: number;
+    easing?: string;
+  };
+  swipeThreshold?: number;
+  showLoadingIndicator?: boolean;
+  customButtons?: React.ReactNode[];
+  overlayContent?: (currentImage: LightBoxImage) => React.ReactNode;
+  onError?: (error: Error, image: LightBoxImage) => void;
 }
 
 export function LightBox({
@@ -62,6 +84,12 @@ export function LightBox({
   enableFullscreen = true,
   enableDownload = true,
   enableSharing = true,
+  keyboardShortcuts,
+  swipeThreshold,
+  showLoadingIndicator = false,
+  customButtons,
+  overlayContent,
+  onError,
 }: LightBoxProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isOpen, setIsOpen] = useState(false);
@@ -69,20 +97,41 @@ export function LightBox({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  const [rotation, setRotation] = useState(0);
+  const [flipHorizontal, setFlipHorizontal] = useState(false);
+  const [flipVertical, setFlipVertical] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeLightBox();
-      if (e.key === "ArrowLeft") prevImage();
-      if (e.key === "ArrowRight") nextImage();
-      if (e.key === "f") toggleFullscreen();
-      if (e.key === " ") togglePlay();
-      if (e.key === "i") setShowInfo((prev) => !prev);
+      const shortcuts = {
+        prev: keyboardShortcuts?.prev || "ArrowLeft",
+        next: keyboardShortcuts?.next || "ArrowRight",
+        close: keyboardShortcuts?.close || "Escape",
+        fullscreen: keyboardShortcuts?.fullscreen || "f",
+        play: keyboardShortcuts?.play || " ",
+        info: keyboardShortcuts?.info || "i",
+        rotateLeft: keyboardShortcuts?.rotateLeft || "[",
+        rotateRight: keyboardShortcuts?.rotateRight || "]",
+        flipHorizontal: keyboardShortcuts?.flipHorizontal || "{",
+        flipVertical: keyboardShortcuts?.flipVertical || "}",
+      };
+
+      if (e.key === shortcuts.close) closeLightBox();
+      if (e.key === shortcuts.prev) prevImage();
+      if (e.key === shortcuts.next) nextImage();
+      if (e.key === shortcuts.fullscreen) toggleFullscreen();
+      if (e.key === shortcuts.play) togglePlay();
+      if (e.key === shortcuts.info) setShowInfo((prev) => !prev);
+      if (e.key === shortcuts.rotateLeft) handleRotate(-90);
+      if (e.key === shortcuts.rotateRight) handleRotate(90);
+      if (e.key === shortcuts.flipHorizontal) handleFlipHorizontal();
+      if (e.key === shortcuts.flipVertical) handleFlipVertical();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [keyboardShortcuts]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -121,10 +170,41 @@ export function LightBox({
   const handleZoomOut = () =>
     setScale((prevScale) => Math.max(prevScale - 0.1, 0.5));
 
-  const handleSwipe = useCallback((event: any, info: any) => {
-    if (info.offset.x > 100) prevImage();
-    else if (info.offset.x < -100) nextImage();
-  }, []);
+  const handleSwipe = useCallback(
+    (event: any, info: any) => {
+      const threshold = swipeThreshold || 100;
+      if (info.offset.x > threshold) prevImage();
+      else if (info.offset.x < -threshold) nextImage();
+    },
+    [swipeThreshold]
+  );
+
+  const handleRotate = (degrees: number) => {
+    setRotation((prev) => (prev + degrees) % 360);
+  };
+
+  const handleFlipHorizontal = () => {
+    setFlipHorizontal((prev) => !prev);
+  };
+
+  const handleFlipVertical = () => {
+    setFlipVertical((prev) => !prev);
+  };
+
+  useEffect(() => {
+    // Preload next and previous images
+    const preloadImage = (src: string) => {
+      const img = document.createElement("img");
+      img.src = src;
+      return img;
+    };
+
+    const prevIndex = (currentIndex - 1 + images.length) % images.length;
+    const nextIndex = (currentIndex + 1) % images.length;
+
+    preloadImage(images[prevIndex].src);
+    preloadImage(images[nextIndex].src);
+  }, [currentIndex, images]);
 
   const toggleFullscreen = () => {
     if (!isFullscreen) {

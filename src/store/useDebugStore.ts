@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import log from "@/utils/logger"; // Import the logger
 
 // 接口定义
 interface HistoryItem {
@@ -89,49 +90,80 @@ export const useDebugStore = create<DebugState>()(
             timestamp: Date.now(),
           },
         };
+        log.info(`Adding history item: ${JSON.stringify(newHistory)}`);
         set({ history: [newHistory, ...get().history] });
       },
       removeHistory: (id) => {
+        log.info(`Removing history item with ID: ${id}`);
         set({ history: get().history.filter((item) => item.id !== id) });
       },
       clearHistory: () => {
+        log.info("Clearing all history items");
         set({ history: [] });
       },
       selectHistory: (id) => {
+        log.info(`Selecting history item with ID: ${id}`);
         return get().history.find((item) => item.id === id);
       },
 
       // Environment 相关实现
       environment: {},
-      addVariable: (key, value) =>
+      addVariable: (key, value) => {
+        log.info(`Adding environment variable: ${key}=${value}`);
         set((state) => ({
           environment: { ...state.environment, [key]: value },
-        })),
-      updateVariable: (key, value) =>
+        }));
+      },
+      updateVariable: (key, value) => {
+        log.info(`Updating environment variable: ${key}=${value}`);
         set((state) => ({
           environment: { ...state.environment, [key]: value },
-        })),
-      removeVariable: (key) =>
+        }));
+      },
+      removeVariable: (key) => {
+        log.info(`Removing environment variable: ${key}`);
         set((state) => {
           const newEnv = { ...state.environment };
           delete newEnv[key];
           return { environment: newEnv };
-        }),
-      resetEnvironment: () => set({ environment: {} }),
+        });
+      },
+      resetEnvironment: () => {
+        log.info("Resetting environment variables");
+        set({ environment: {} });
+      },
 
       // WebSocket 相关实现
       url: "",
-      setUrl: (url) => set({ url }),
+      setUrl: (url) => {
+        log.info(`Setting WebSocket URL: ${url}`);
+        set({ url });
+      },
       message: "",
-      setMessage: (message) => set({ message }),
+      setMessage: (message) => {
+        log.info(`Setting WebSocket message: ${message}`);
+        set({ message });
+      },
       logs: [],
-      addLog: (log) => set((state) => ({ logs: [...state.logs, log] })),
+      addLog: (logMsg) => {
+        log.info(`Adding WebSocket log: ${logMsg}`);
+        set((state) => ({ logs: [...state.logs, logMsg] }));
+      },
       isConnected: false,
-      setIsConnected: (status) => set({ isConnected: status }),
+      setIsConnected: (status) => {
+        log.info(`Setting WebSocket connection status: ${status}`);
+        set({ isConnected: status });
+      },
       autoReconnect: false,
-      setAutoReconnect: (autoReconnect) => set({ autoReconnect }),
+      setAutoReconnect: (autoReconnect) => {
+        log.info(`Setting WebSocket auto-reconnect: ${autoReconnect}`);
+        set({ autoReconnect });
+      },
       reconnectInterval: 5000,
-      setReconnectInterval: (interval) => set({ reconnectInterval: interval }),
+      setReconnectInterval: (interval) => {
+        log.info(`Setting WebSocket reconnect interval: ${interval}`);
+        set({ reconnectInterval: interval });
+      },
 
       // Request 相关实现
       templates: [
@@ -191,20 +223,26 @@ export const useDebugStore = create<DebugState>()(
           },
         },
       ],
-      addTemplate: (template) =>
+      addTemplate: (template) => {
+        log.info(`Adding template: ${template.name}`);
         set((state) => ({
           templates: [...state.templates, template],
-        })),
-      updateTemplate: (updatedTemplate) =>
+        }));
+      },
+      updateTemplate: (updatedTemplate) => {
+        log.info(`Updating template: ${updatedTemplate.name}`);
         set((state) => ({
           templates: state.templates.map((t) =>
             t.name === updatedTemplate.name ? updatedTemplate : t
           ),
-        })),
-      deleteTemplate: (name) =>
+        }));
+      },
+      deleteTemplate: (name) => {
+        log.info(`Deleting template: ${name}`);
         set((state) => ({
           templates: state.templates.filter((t) => t.name !== name),
-        })),
+        }));
+      },
     }),
     {
       name: "debug-storage",

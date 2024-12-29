@@ -25,6 +25,22 @@ import {
   Settings,
   Download,
   History,
+  Activity,
+  BarChart2,
+  Bell,
+  Clipboard,
+  Cloud,
+  Cpu,
+  Database,
+  HardDrive,
+  Info,
+  Layers,
+  Monitor,
+  Power,
+  Server,
+  Shield,
+  Terminal,
+  Zap,
 } from "lucide-react";
 
 import { ConnectionAlert } from "@/components/connection/connection-alert";
@@ -71,14 +87,14 @@ export default function ConnectionPage({
   const [isPortScanModalOpen, setIsPortScanModalOpen] = useState(false);
   const [isConfigManagerOpen, setIsConfigManagerOpen] = useState(false);
   const [showConfigManager, setShowConfigManager] = React.useState(false);
-  
-    const togglePortScanModal = () => {
-      setIsPortScanModalOpen(!isPortScanModalOpen);
-    };
-  
-    const toggleHistoryVisibility = () => {
-      setShowHistory(!showHistory);
-    };
+
+  const togglePortScanModal = () => {
+    setIsPortScanModalOpen(!isPortScanModalOpen);
+  };
+
+  const toggleHistoryVisibility = () => {
+    setShowHistory(!showHistory);
+  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -188,6 +204,8 @@ export default function ConnectionPage({
   };
 
   const [showHistory, setShowHistory] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showSystemInfo, setShowSystemInfo] = useState(false);
 
   return (
     <div
@@ -198,15 +216,59 @@ export default function ConnectionPage({
       <ConnectionAlert showAlert={showAlert} alertType={alertType} />
 
       {!isMobile ? (
-        <div className="flex-grow grid grid-cols-2 gap-8 p-8 h-full ">
+        <div className="flex-grow grid grid-cols-2 gap-8 p-8 h-full">
+          {/* 添加背景动画 */}
+          <motion.div
+            className="absolute inset-0 -z-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1 }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-900/20 to-purple-900/20"></div>
+            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
+          </motion.div>
           {/* 左侧连接面板 */}
-          <Card className="shadow-lg h-full">
+          <Card className="shadow-lg h-full relative">
             <CardHeader className="flex flex-row items-center justify-between pb-6">
               <CardTitle className="text-2xl font-semibold flex items-center gap-3 text-white">
                 <Plug className="w-7 h-7 text-blue-400" />
                 连接控制面板（桌面）
               </CardTitle>
               <div className="flex items-center gap-3">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowSystemInfo(true)}
+                        className="text-purple-400 hover:text-purple-300"
+                      >
+                        <Info className="h-5 w-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>系统信息</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowNotifications(true)}
+                        className="text-purple-400 hover:text-purple-300"
+                      >
+                        <Bell className="h-5 w-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>通知</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 {isConnected && (
                   <Badge
                     variant={connectionStrength > 50 ? "default" : "secondary"}
@@ -331,6 +393,16 @@ export default function ConnectionPage({
                 <Settings className="w-7 h-7 text-blue-400" />
                 配置管理
               </CardTitle>
+              <div className="flex items-center gap-2 mt-2">
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Server className="w-4 h-4" />
+                  服务器状态
+                </Badge>
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Database className="w-4 h-4" />
+                  数据库连接
+                </Badge>
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
               <AdvancedSettings
@@ -361,7 +433,17 @@ export default function ConnectionPage({
         </div>
       ) : (
         <div className="flex-grow flex flex-col items-center justify-center h-full space-y-4">
-          <Card className="w-full p-4 bg-gray-800 shadow-lg">
+          <Card className="w-full p-4 bg-gray-800/90 backdrop-blur-sm shadow-lg">
+            {/* 移动端添加背景动画 */}
+            <motion.div
+              className="absolute inset-0 -z-10"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1 }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-900/20 to-purple-900/20"></div>
+              <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
+            </motion.div>
             <CardHeader className="flex flex-col items-center">
               <CardTitle className="text-xl font-semibold text-white">
                 移动端连接
@@ -419,18 +501,44 @@ export default function ConnectionPage({
 
                   <div className="flex flex-col space-y-2">
                     <Button
-                      onClick={() => setIsPortScanModalOpen(true)}
-                      className="w-full flex items-center justify-center text-white"
-                      disabled={isConnected}
+                      type="submit"
+                      className="text-lg py-6 relative overflow-hidden"
+                      disabled={isConnected || isLoading}
                     >
+                      {/* 添加按钮动画 */}
+                      {isLoading && (
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500"
+                          initial={{ x: "-100%" }}
+                          animate={{ x: "100%" }}
+                          transition={{
+                            duration: 1.5,
+                            repeat: Infinity,
+                            ease: "linear",
+                          }}
+                        />
+                      )}
                       打开端口扫描
                     </Button>
                     <div className="flex gap-2">
                       <Button
                         type="submit"
-                        className="flex-1 flex items-center justify-center text-white"
+                        className="flex-1 flex items-center justify-center text-white relative overflow-hidden"
                         disabled={isConnected || isLoading}
                       >
+                        {/* 移动端按钮动画 */}
+                        {isLoading && (
+                          <motion.div
+                            className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500"
+                            initial={{ x: "-100%" }}
+                            animate={{ x: "100%" }}
+                            transition={{
+                              duration: 1.5,
+                              repeat: Infinity,
+                              ease: "linear",
+                            }}
+                          />
+                        )}
                         {isLoading ? (
                           <motion.div
                             animate={{ rotate: 360 }}
@@ -498,6 +606,94 @@ export default function ConnectionPage({
         isVisible={showHistory}
         onClose={toggleHistoryVisibility}
       />
+      {/* 系统信息模态框 */}
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        animate={{
+          opacity: showSystemInfo ? 1 : 0,
+          y: showSystemInfo ? 0 : 50,
+        }}
+        transition={{ duration: 0.3 }}
+        className={`fixed inset-0 bg-black/50 flex items-center justify-center ${
+          showSystemInfo ? "pointer-events-auto" : "pointer-events-none"
+        }`}
+      >
+        <Card className="w-[600px]">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Info className="w-6 h-6" />
+              系统信息
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <Cpu className="w-5 h-5" />
+                <span>CPU 使用率: 45%</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <HardDrive className="w-5 h-5" />
+                <span>存储空间: 120GB/500GB</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Monitor className="w-5 h-5" />
+                <span>内存使用: 8GB/16GB</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Cloud className="w-5 h-5" />
+                <span>网络带宽: 100Mbps</span>
+              </div>
+            </div>
+            <Button className="w-full" onClick={() => setShowSystemInfo(false)}>
+              关闭
+            </Button>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* 通知模态框 */}
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        animate={{
+          opacity: showNotifications ? 1 : 0,
+          y: showNotifications ? 0 : 50,
+        }}
+        transition={{ duration: 0.3 }}
+        className={`fixed inset-0 bg-black/50 flex items-center justify-center ${
+          showNotifications ? "pointer-events-auto" : "pointer-events-none"
+        }`}
+      >
+        <Card className="w-[600px]">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="w-6 h-6" />
+              通知
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-green-500" />
+                <span>系统安全状态：正常</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-yellow-500" />
+                <span>新版本可用：v2.3.1</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Terminal className="w-5 h-5 text-blue-500" />
+                <span>后台任务运行中：3个</span>
+              </div>
+            </div>
+            <Button
+              className="w-full"
+              onClick={() => setShowNotifications(false)}
+            >
+              关闭
+            </Button>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 }

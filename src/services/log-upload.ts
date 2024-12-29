@@ -1,5 +1,7 @@
 import { LogEntry } from "@/types/log";
 import { z } from "zod";
+import * as yaml from "yaml";
+import logger from "@/utils/logger";
 
 // 日志数据验证schema
 const logSchema = z.object({
@@ -16,8 +18,10 @@ const logsArraySchema = z.array(logSchema);
 export async function uploadLogs(file: File): Promise<LogEntry[]> {
   try {
     // 1. 验证文件类型
-    if (!file.name.match(/\.(json|csv)$/)) {
-      throw new Error("不支持的文件格式。请上传 .json 或 .csv 文件");
+    if (!file.name.match(/\.(json|csv|xml|yaml|yml)$/)) {
+      throw new Error(
+        "不支持的文件格式。请上传 .json, .csv, .xml, .yaml 或 .yml 文件"
+      );
     }
 
     const fileContent = await file.text();
@@ -26,8 +30,12 @@ export async function uploadLogs(file: File): Promise<LogEntry[]> {
     // 2. 根据文件类型解析内容
     if (file.name.endsWith(".json")) {
       parsedLogs = await parseJsonLogs(fileContent);
-    } else {
+    } else if (file.name.endsWith(".csv")) {
       parsedLogs = await parseCsvLogs(fileContent);
+    } else if (file.name.match(/\.(yaml|yml)$/)) {
+      parsedLogs = await parseYamlLogs(fileContent);
+    } else {
+      throw new Error("不支持的文件格式");
     }
 
     // 3. 验证日志数据
@@ -38,9 +46,14 @@ export async function uploadLogs(file: File): Promise<LogEntry[]> {
     }
 
     // 4. 格式化日期并排序
-    return formatAndSortLogs(validationResult.data);
+    const formattedLogs = formatAndSortLogs(validationResult.data);
+
+    // 5. 记录成功上传日志
+    logger.info(`成功上传 ${formattedLogs.length} 条日志`);
+
+    return formattedLogs;
   } catch (error) {
-    console.error("日志上传失败:", error);
+    logger.error("日志上传失败:", error);
     throw new Error(error instanceof Error ? error.message : "日志上传失败");
   }
 }
@@ -102,6 +115,20 @@ async function parseCsvLogs(content: string): Promise<LogEntry[]> {
   }
 }
 
+async function parseYamlLogs(content: string): Promise<LogEntry[]> {
+  try {
+    const parsed = yaml.parse(content);
+    if (!Array.isArray(parsed)) {
+      throw new Error("YAML 文件必须包含日志数组");
+    }
+    return parsed;
+  } catch (error) {
+    throw new Error(
+      "YAML 解析失败: " + (error instanceof Error ? error.message : "未知错误")
+    );
+  }
+}
+
 function formatAndSortLogs(logs: LogEntry[]): LogEntry[] {
   return logs
     .map((log) => ({
@@ -115,4 +142,55 @@ function formatAndSortLogs(logs: LogEntry[]): LogEntry[] {
       (a, b) =>
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
+}
+
+// 新增功能：日志过滤
+export function filterLogs(
+  logs: LogEntry[],
+  level?: string,
+  source?: string
+): LogEntry[] {
+  return logs.filter((log) => {
+    return (
+      (!level || log.level === level) && (!source || log.source === source)
+    );
+  });
+}
+
+// 新增功能：日志聚合
+export function aggregateLogs(logs: LogEntry[]): Record<string, number> {
+  return logs.reduce((acc, log) => {
+    acc[log.level] = (acc[log.level] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+}
+
+// 新增功能：日志导出
+export function exportLogs(logs: LogEntry[], format: "json" | "csv"): string {
+  if (format === "json") {
+    return JSON.stringify(logs, null, 2);
+  } else if (format === "csv") {
+    const headers = [
+      "id",
+      "timestamp",
+      "level",
+      "message",
+      "source",
+      "details",
+    ];
+    const csvContent = [
+      headers.join(","),
+      ...logs.map((log) =>
+        headers
+          .map((header) => {
+            const value = log[header as keyof LogEntry];
+            return typeof value === "object" ? JSON.stringify(value) : value;
+          })
+          .join(",")
+      ),
+    ].join("\n");
+    return csvContent;
+  } else {
+    throw new Error("不支持的导出格式");
+  }
 }

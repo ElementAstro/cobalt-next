@@ -2,7 +2,13 @@
 
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Download, Upload, Plus, Search, Sun, Moon } from "lucide-react";
+import { Download, Upload, Plus, Search, Sun, Moon, Settings } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -14,6 +20,10 @@ interface HeaderProps {
   onSearch: (query: string) => void;
   toggleTheme: () => void;
   isDark: boolean;
+  // 自定义设置相关
+  setBackgroundColor: (color: string) => void;
+  setLayoutMode: (mode: 'grid' | 'list') => void;
+  setCardStyle: (style: 'default' | 'minimal' | 'detailed') => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -21,6 +31,9 @@ const Header: React.FC<HeaderProps> = ({
   importData,
   onAddNewSite,
   onSearch,
+  setBackgroundColor,
+  setLayoutMode,
+  setCardStyle,
 }) => {
   return (
     <motion.div
@@ -81,6 +94,68 @@ const Header: React.FC<HeaderProps> = ({
             </Button>
           </DialogTrigger>
         </Dialog>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="bg-indigo-700 hover:bg-indigo-600 text-white"
+            >
+              <Settings className="h-4 w-4" />
+              <span className="sr-only">设置</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56 bg-indigo-800 border-indigo-600">
+            <DropdownMenuItem
+              className="hover:bg-indigo-700 focus:bg-indigo-700"
+              onClick={() => setBackgroundColor("from-indigo-900 to-purple-900")}
+            >
+              默认背景
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="hover:bg-indigo-700 focus:bg-indigo-700"
+              onClick={() => setBackgroundColor("from-blue-900 to-cyan-900")}
+            >
+              蓝色背景
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="hover:bg-indigo-700 focus:bg-indigo-700"
+              onClick={() => setBackgroundColor("from-green-900 to-teal-900")}
+            >
+              绿色背景
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="hover:bg-indigo-700 focus:bg-indigo-700"
+              onClick={() => setLayoutMode("grid")}
+            >
+              网格布局
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="hover:bg-indigo-700 focus:bg-indigo-700"
+              onClick={() => setLayoutMode("list")}
+            >
+              列表布局
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="hover:bg-indigo-700 focus:bg-indigo-700"
+              onClick={() => setCardStyle("default")}
+            >
+              默认卡片样式
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="hover:bg-indigo-700 focus:bg-indigo-700"
+              onClick={() => setCardStyle("minimal")}
+            >
+              简约卡片样式
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="hover:bg-indigo-700 focus:bg-indigo-700"
+              onClick={() => setCardStyle("detailed")}
+            >
+              详细卡片样式
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </motion.div>
   );

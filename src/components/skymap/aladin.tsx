@@ -33,7 +33,6 @@ const AladinComponent: React.FC<AladinProps> = ({
   const aladinInstance = useRef<any>(null);
   const isInitialized = useRef(false);
 
-  // 缓存中心点变化回调
   const handleCenterChange = useCallback(
     debounce((newRa: number, newDec: number) => {
       onCenterChange?.(newRa, newDec);
@@ -41,42 +40,44 @@ const AladinComponent: React.FC<AladinProps> = ({
     [onCenterChange]
   );
 
-  // 初始化 Aladin
   useEffect(() => {
-    if (!window.A || isInitialized.current) return;
+    if (isInitialized.current) return;
 
     const initAladin = () => {
-      aladinInstance.current = window.A.aladin(alaRef.current, {
-        fov,
-        projection: "AIT",
-        cooFrame: "equatorial",
-        showCooGridControl: true,
-        showSimbadPointerControl: true,
-        showCooGrid: true,
-        survey: "P/DSS2/color",
-        showProjectionControl: false,
-        showZoomControl: false,
-        showFullscreenControl: false,
-        showLayersControl: false,
-        showGotoControl: false,
-        showFrame: false,
-        cooframe: "equatorial",
-        showSimbadPointrerControl: false,
+      window.A.init().then(() => {
+        aladinInstance.current = window.A.aladin(alaRef.current, {
+          fov,
+          projection: "AIT",
+          cooFrame: "equatorial",
+          showCooGridControl: true,
+          showSimbadPointerControl: true,
+          showCooGrid: true,
+          survey: "P/DSS2/color",
+          showProjectionControl: false,
+          showZoomControl: false,
+          showFullscreenControl: false,
+          showLayersControl: false,
+          showGotoControl: false,
+          showFrame: false,
+          cooframe: "equatorial",
+          showSimbadPointrerControl: false,
+          useWebGL2: true, // Enable WebGL2 rendering
+        });
+
+        if (onCenterChange) {
+          aladinInstance.current.on("zoomChanged", () => {
+            const center = aladinInstance.current.getRaDec();
+            handleCenterChange(center[0], center[1]);
+          });
+
+          aladinInstance.current.on("positionChanged", () => {
+            const center = aladinInstance.current.getRaDec();
+            handleCenterChange(center[0], center[1]);
+          });
+        }
+
+        isInitialized.current = true;
       });
-
-      if (onCenterChange) {
-        aladinInstance.current.on("zoomChanged", () => {
-          const center = aladinInstance.current.getRaDec();
-          handleCenterChange(center[0], center[1]);
-        });
-
-        aladinInstance.current.on("positionChanged", () => {
-          const center = aladinInstance.current.getRaDec();
-          handleCenterChange(center[0], center[1]);
-        });
-      }
-
-      isInitialized.current = true;
     };
 
     initAladin();
@@ -84,14 +85,12 @@ const AladinComponent: React.FC<AladinProps> = ({
     return () => {
       isInitialized.current = false;
       if (aladinInstance.current) {
-        // 清理实例
         aladinInstance.current.destroy?.();
         aladinInstance.current = null;
       }
     };
-  }, []); // 仅在组件挂载时初始化
+  }, []);
 
-  // 更新位置
   useEffect(() => {
     if (!aladinInstance.current) return;
 
@@ -103,7 +102,6 @@ const AladinComponent: React.FC<AladinProps> = ({
     return () => debouncedGoto.cancel();
   }, [ra, dec]);
 
-  // 更新视场
   useEffect(() => {
     if (!aladinInstance.current || !fov_size) return;
 
@@ -115,14 +113,10 @@ const AladinComponent: React.FC<AladinProps> = ({
     return () => debouncedSetFov.cancel();
   }, [fov_size]);
 
-  // 更新 FOV 点
   useEffect(() => {
     if (!aladinInstance.current || !fov_points) return;
 
-    // 清除现有的 footprints
     aladinInstance.current.removeLayers();
-
-    // 添加新的 footprints
     fov_points.forEach((points) => {
       aladinInstance.current.addFootprints(window.A.polygon(points));
     });
@@ -131,7 +125,7 @@ const AladinComponent: React.FC<AladinProps> = ({
   return (
     <>
       <Script
-        src="https://aladin.u-strasbg.fr/AladinLite/api/v3/latest/aladin.js"
+        src="https://aladin.cds.unistra.fr/AladinLite/api/v3/3.2.0/aladin.js"
         strategy="beforeInteractive"
       />
       <div
@@ -143,7 +137,6 @@ const AladinComponent: React.FC<AladinProps> = ({
   );
 };
 
-// 使用 memo 包装组件以避免不必要的重渲染
 const Aladin = memo(AladinComponent);
 
 export default Aladin;

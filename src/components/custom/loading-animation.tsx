@@ -5,24 +5,37 @@ interface LoadingAnimationProps {
 }
 
 export function LoadingAnimation({ progress }: LoadingAnimationProps) {
-  const circleVariants = {
-    start: {
-      y: "0%",
-      opacity: 0.5,
-      scale: 0.8,
-    },
-    end: {
-      y: ["0%", "-80%", "100%"],
-      opacity: [0.5, 1, 0.5],
-      scale: [0.8, 1.4, 1],
+  // 3D Cube Animation
+  const cubeVariants = {
+    hidden: { rotateX: 0, rotateY: 0, opacity: 0 },
+    visible: {
+      rotateX: [0, 180, 360],
+      rotateY: [0, 180, 360],
+      opacity: 1,
       transition: {
-        duration: 1.5,
-        ease: "easeInOut",
-        times: [0, 0.5, 1],
+        duration: 6,
+        repeat: Infinity,
+        ease: "linear",
       },
     },
   };
 
+  // Particle Wave Animation
+  const particleVariants = {
+    hidden: { y: 0, opacity: 0 },
+    visible: (i: number) => ({
+      y: [0, -50, 0],
+      opacity: [0, 1, 0],
+      transition: {
+        delay: i * 0.1,
+        duration: 2,
+        repeat: Infinity,
+        ease: "easeInOut",
+      },
+    }),
+  };
+
+  // Enhanced Progress Ring
   const progressRingVariants = {
     hidden: { pathLength: 0, opacity: 0 },
     visible: {
@@ -30,24 +43,25 @@ export function LoadingAnimation({ progress }: LoadingAnimationProps) {
       opacity: 1,
       transition: {
         duration: 1,
-        ease: [0.34, 1.56, 0.64, 1], // Custom spring curve
+        ease: [0.34, 1.56, 0.64, 1],
       },
     },
   };
 
-  const pulseVariants = {
-    initial: { scale: 1, opacity: 0.3 },
-    animate: {
-      scale: [1, 1.2, 1],
-      opacity: [0.3, 0.1, 0.3],
+  // Glowing Trail Effect
+  const trailVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: [0, 0.8, 0],
       transition: {
+        duration: 1.5,
         repeat: Infinity,
-        duration: 3,
         ease: "easeInOut",
       },
     },
   };
 
+  // Number Animation
   const numberVariants = {
     initial: { opacity: 0, y: 20, scale: 0.8 },
     animate: {
@@ -72,57 +86,43 @@ export function LoadingAnimation({ progress }: LoadingAnimationProps) {
 
   return (
     <div className="relative w-64 h-64 transform-gpu">
-      {/* 星空背景 */}
-      <div className="absolute inset-0 overflow-hidden rounded-full">
-        {[...Array(20)].map((_, i) => (
+      {/* 3D Cube Animation */}
+      <motion.div
+        className="absolute inset-0 flex items-center justify-center"
+        variants={cubeVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <div className="w-20 h-20 perspective-1000">
+          <motion.div
+            className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-600 rounded-lg shadow-2xl shadow-blue-500/50"
+            style={{
+              transformStyle: "preserve-3d",
+            }}
+          />
+        </div>
+      </motion.div>
+
+      {/* Particle Wave Animation */}
+      <div className="absolute inset-0 overflow-hidden">
+        {[...Array(30)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-0.5 h-0.5 bg-blue-400 rounded-full"
-            initial={{
-              opacity: Math.random() * 0.5 + 0.25,
-              scale: Math.random() * 0.5 + 0.5,
-              x: Math.random() * 256,
-              y: Math.random() * 256,
-            }}
-            animate={{
-              opacity: [null, 0.8, 0.2],
-              scale: [null, 1.2, 0.8],
-            }}
-            transition={{
-              duration: 2 + Math.random() * 2,
-              repeat: Infinity,
-              ease: "easeInOut",
+            className="absolute w-1 h-1 bg-blue-400 rounded-full"
+            custom={i}
+            variants={particleVariants}
+            initial="hidden"
+            animate="visible"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
             }}
           />
         ))}
       </div>
 
-      {/* 脉冲动画背景 */}
-      {[0, 1, 2].map((i) => (
-        <motion.div
-          key={i}
-          className="absolute inset-0 rounded-full bg-blue-500/10"
-          variants={pulseVariants}
-          initial="initial"
-          animate="animate"
-          style={{
-            animationDelay: `${i * 0.5}s`,
-          }}
-        />
-      ))}
-
+      {/* Progress Ring */}
       <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-        {/* 背景圆环 */}
-        <circle
-          cx="50"
-          cy="50"
-          r="45"
-          fill="none"
-          className="stroke-gray-700/30"
-          strokeWidth="4"
-        />
-
-        {/* 渐变定义 */}
         <defs>
           <linearGradient
             id="progressGradient"
@@ -146,7 +146,6 @@ export function LoadingAnimation({ progress }: LoadingAnimationProps) {
           </filter>
         </defs>
 
-        {/* 进度圆环 */}
         <motion.circle
           cx="50"
           cy="50"
@@ -162,35 +161,27 @@ export function LoadingAnimation({ progress }: LoadingAnimationProps) {
             filter: "url(#glow)",
           }}
         />
+
+        {/* Glowing Trail */}
+        <motion.circle
+          cx="50"
+          cy="50"
+          r="45"
+          fill="none"
+          stroke="url(#progressGradient)"
+          strokeWidth="8"
+          strokeLinecap="round"
+          variants={trailVariants}
+          initial="hidden"
+          animate="visible"
+          style={{
+            filter: "url(#glow)",
+            strokeDasharray: "10 100",
+          }}
+        />
       </svg>
 
-      {/* 弹跳小球容器 */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative w-20 h-8">
-          {[0, 1, 2].map((index) => (
-            <motion.div
-              key={index}
-              className="absolute w-4 h-4 bg-gradient-to-br from-blue-400 to-blue-600
-                rounded-full shadow-lg shadow-blue-500/50"
-              variants={circleVariants}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: index * 0.25,
-              }}
-              animate="end"
-              initial="start"
-              style={{
-                left: `${index * 32}px`,
-                filter: "drop-shadow(0 0 8px rgba(59, 130, 246, 0.5))",
-              }}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* 进度百分比 */}
+      {/* Progress Percentage */}
       <div className="absolute inset-0 flex items-center justify-center">
         <AnimatePresence mode="wait">
           <motion.div

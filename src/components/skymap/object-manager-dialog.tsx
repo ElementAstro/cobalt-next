@@ -67,7 +67,7 @@ const ObjectManagementDialog: React.FC<ObjectManagementDialogProps> = (
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.2 }}
       >
-        <DialogContent className="fixed top-[2.5vh] left-[2.5vw] w-[95vw] h-[95vh] max-w-[1920px] -translate-x-0 -translate-y-0 bg-gray-800/95 dark:bg-gray-900/95 backdrop-blur-md text-gray-200 rounded-lg shadow-lg p-2 overflow-hidden">
+        <DialogContent className="fixed inset-0 sm:top-[2.5vh] sm:left-[2.5vw] sm:w-[95vw] sm:h-[95vh] max-w-[1920px] bg-gray-800/95 dark:bg-gray-900/95 backdrop-blur-md text-gray-200 rounded-none sm:rounded-lg shadow-lg p-2 overflow-hidden">
           <div className="flex flex-col h-full">
             <DialogHeader className="flex-shrink-0 sticky top-0 z-10 bg-gray-800/95 dark:bg-gray-900/95 backdrop-blur-md px-3 py-2 flex justify-between items-center">
               <div className="flex items-center space-x-2">

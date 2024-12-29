@@ -26,6 +26,19 @@ const spinnerVariants = cva("inline-block rounded-full animate-spin", {
       spin: "animate-spin",
       pulse: "animate-pulse",
       ping: "animate-ping",
+      bounce: "animate-bounce",
+      flash: "animate-flash",
+      rubberBand: "animate-rubberBand",
+      shake: "animate-shake",
+      swing: "animate-swing",
+      tada: "animate-tada",
+      wobble: "animate-wobble",
+      jello: "animate-jello",
+      heartBeat: "animate-heartBeat",
+    },
+    direction: {
+      normal: "",
+      reverse: "reverse-spin",
     },
     thickness: {
       thin: "border-2",
@@ -35,6 +48,9 @@ const spinnerVariants = cva("inline-block rounded-full animate-spin", {
     shape: {
       circle: "rounded-full",
       square: "rounded",
+      triangle: "triangle",
+      diamond: "diamond",
+      star: "star",
     },
   },
   defaultVariants: {
@@ -52,8 +68,13 @@ export interface SpinnerProps
   label?: string;
   duration?: number;
   customColor?: string;
+  gradientColors?: [string, string];
   borderThickness?: "thin" | "medium" | "thick";
-  shape?: "circle" | "square";
+  shape?: "circle" | "square" | "triangle" | "diamond" | "star";
+  direction?: "normal" | "reverse";
+  text?: string;
+  textPosition?: "inside" | "outside";
+  textColor?: string;
 }
 
 const Spinner = forwardRef<HTMLDivElement, SpinnerProps>(
@@ -66,21 +87,31 @@ const Spinner = forwardRef<HTMLDivElement, SpinnerProps>(
       label,
       duration = 1,
       customColor,
+      gradientColors,
       borderThickness = "medium",
       shape = "circle",
+      direction = "normal",
+      text,
+      textPosition = "inside",
+      textColor,
       style,
       ...props
     },
     ref
   ) => {
-    const spinnerStyle = useMemo(
-      () => ({
+    const spinnerStyle = useMemo(() => {
+      let borderColor = customColor || undefined;
+      if (gradientColors) {
+        borderColor = `linear-gradient(90deg, ${gradientColors[0]}, ${gradientColors[1]})`;
+      }
+
+      return {
         ...style,
         animationDuration: `${duration}s`,
-        borderColor: customColor || undefined,
-      }),
-      [style, duration, customColor]
-    );
+        borderColor,
+        backgroundImage: gradientColors ? borderColor : undefined,
+      };
+    }, [style, duration, customColor, gradientColors]);
 
     const appliedVariant =
       variant === "custom" && customColor ? "custom" : variant;
@@ -101,10 +132,23 @@ const Spinner = forwardRef<HTMLDivElement, SpinnerProps>(
               animation,
               thickness: borderThickness,
               shape,
+              direction,
             })
           )}
           style={spinnerStyle}
-        />
+        >
+          {text && (
+            <span
+              className={cn(
+                "absolute inset-0 flex items-center justify-center",
+                textPosition === "outside" && "mt-6",
+                textColor ? `text-${textColor}` : "text-current"
+              )}
+            >
+              {text}
+            </span>
+          )}
+        </div>
         {label && <span className="sr-only">{label}</span>}
       </div>
     );

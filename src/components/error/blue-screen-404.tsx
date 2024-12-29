@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Frown, RefreshCcw, Home } from "lucide-react";
+import { Frown, RefreshCcw, Home, Copy, Camera } from "lucide-react";
+import html2canvas from "html2canvas";
 import Link from "next/link";
 import { useMediaQuery } from "react-responsive";
 import {
@@ -23,6 +24,14 @@ export const config404 = {
   textColor: "text-white",
   errorDetailsText: "查看详细错误信息",
   feedbackText: "提交错误反馈",
+  reportErrorText: "报告错误",
+  copyErrorText: "复制错误信息",
+  copiedText: "已复制",
+  systemInfoText: "系统信息",
+  screenshotText: "截图",
+  screenshotSuccessText: "截图已保存",
+  screenshotErrorText: "截图失败",
+  theme: "light", // light | dark
 };
 
 interface BlueScreen404Props {
@@ -36,9 +45,11 @@ export default function BlueScreen404({
   errorInfo,
   isErrorBoundary = false,
 }: BlueScreen404Props) {
-  const { t } = useTranslation(); // 使用翻译钩子
+  const { t } = useTranslation();
   const [progress, setProgress] = useState(0);
   const [showContent, setShowContent] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [screenshotStatus, setScreenshotStatus] = useState<"idle" | "success" | "error">("idle");
   const isLandscape = useMediaQuery({ query: "(orientation: landscape)" });
 
   useEffect(() => {
@@ -54,6 +65,31 @@ export default function BlueScreen404({
       return () => clearInterval(interval);
     }
   }, [showContent]);
+
+  const handleCopyError = async () => {
+    try {
+      await navigator.clipboard.writeText(errorDetails);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy error details:", err);
+    }
+  };
+
+  const handleTakeScreenshot = async () => {
+    try {
+      setScreenshotStatus("idle");
+      const canvas = await html2canvas(document.body);
+      const link = document.createElement("a");
+      link.download = `error-screenshot-${new Date().toISOString()}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+      setScreenshotStatus("success");
+    } catch (error) {
+      console.error("Failed to take screenshot:", error);
+      setScreenshotStatus("error");
+    }
+  };
 
   const errorDetails = `
     ${t("errorTime")}: ${new Date().toLocaleString()}
@@ -116,9 +152,20 @@ export default function BlueScreen404({
               {t("viewErrorDetails")}
             </AccordionTrigger>
             <AccordionContent>
-              <pre className="whitespace-pre-wrap text-xs sm:text-sm">
-                {errorDetails}
-              </pre>
+              <div className="relative">
+                <pre className="whitespace-pre-wrap text-xs sm:text-sm bg-gray-800 p-4 rounded">
+                  {errorDetails}
+                </pre>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute top-2 right-2"
+                  onClick={handleCopyError}
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  {copied ? t("copiedText") : t("copyErrorText")}
+                </Button>
+              </div>
             </AccordionContent>
           </AccordionItem>
         </Accordion>
@@ -140,6 +187,19 @@ export default function BlueScreen404({
           >
             <RefreshCcw className="mr-2 h-4 w-4" />
             {t("reloadButtonText")}
+          </Button>
+          <Button
+            className="w-full"
+            variant="secondary"
+            onClick={handleTakeScreenshot}
+            disabled={screenshotStatus !== "idle"}
+          >
+            <Camera className="mr-2 h-4 w-4" />
+            {screenshotStatus === "success"
+              ? t("screenshotSuccessText")
+              : screenshotStatus === "error"
+              ? t("screenshotErrorText")
+              : t("screenshotText")}
           </Button>
         </div>
       </div>

@@ -17,9 +17,11 @@ import {
   Filter,
   Search,
   X,
+  Check,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface HistoryPanelProps {
   onSelect: (config: any) => void;
@@ -32,10 +34,24 @@ export default function HistoryPanel({ onSelect }: HistoryPanelProps) {
   const [statusFilter, setStatusFilter] = useState<"all" | "success" | "error">(
     "all"
   );
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   useEffect(() => {
     Prism.highlightAll();
   }, [history]);
+
+  const toggleSelectItem = (id: string) => {
+    setSelectedItems((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const toggleExpandItem = (id: string) => {
+    setExpandedItems((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
 
   const filteredHistory = history.filter((item) => {
     const matchesSearch =
@@ -50,10 +66,27 @@ export default function HistoryPanel({ onSelect }: HistoryPanelProps) {
     return matchesSearch && matchesStatus;
   });
 
+  const isAllSelected = selectedItems.length === filteredHistory.length;
+
   const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: -10 },
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { type: "spring", stiffness: 300, damping: 24 },
+    },
+    exit: { opacity: 0, y: -20, transition: { duration: 0.2 } },
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        when: "beforeChildren",
+      },
+    },
   };
 
   const getBadgeVariant = (method: string) => {
@@ -149,8 +182,26 @@ export default function HistoryPanel({ onSelect }: HistoryPanelProps) {
         )}
       </CardHeader>
       <CardContent>
-        <ul className="space-y-2">
-          <AnimatePresence>
+        <motion.ul
+          className="space-y-2"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {filteredHistory.length === 0 && (
+            <motion.div
+              className="p-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <p className="text-center text-gray-500 dark:text-gray-400">
+                没有匹配的历史记录
+              </p>
+            </motion.div>
+          )}
+
+          <AnimatePresence mode="wait">
             {filteredHistory.map((item) => (
               <motion.li
                 key={item.id}
@@ -164,7 +215,16 @@ export default function HistoryPanel({ onSelect }: HistoryPanelProps) {
                   className="flex items-start justify-between bg-gray-100 dark:bg-gray-700 p-3 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 17 }}
                 >
+                  <div className="flex items-center mr-2">
+                    <Checkbox
+                      checked={selectedItems.includes(item.id)}
+                      onCheckedChange={() => toggleSelectItem(item.id)}
+                      className="mr-2"
+                    />
+                  </div>
+
                   <Button
                     variant="ghost"
                     className="flex-1 text-left dark:text-gray-200 focus:outline-none group"
@@ -184,7 +244,15 @@ export default function HistoryPanel({ onSelect }: HistoryPanelProps) {
                         <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200 transition-colors" />
                       </div>
 
-                      <pre className="language-json bg-gray-200 dark:bg-gray-600 p-2 rounded overflow-auto mt-2">
+                      <motion.pre
+                        className="language-json bg-gray-200 dark:bg-gray-600 p-2 rounded overflow-auto mt-2"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{
+                          opacity: expandedItems.includes(item.id) ? 1 : 0,
+                          height: expandedItems.includes(item.id) ? "auto" : 0,
+                        }}
+                        transition={{ duration: 0.2 }}
+                      >
                         <code
                           dangerouslySetInnerHTML={{
                             __html: Prism.highlight(
@@ -203,7 +271,7 @@ export default function HistoryPanel({ onSelect }: HistoryPanelProps) {
                             ),
                           }}
                         />
-                      </pre>
+                      </motion.pre>
 
                       <div className="flex items-center mt-2 space-x-4">
                         <span className="flex items-center text-xs text-gray-600 dark:text-gray-300">
@@ -240,7 +308,25 @@ export default function HistoryPanel({ onSelect }: HistoryPanelProps) {
               </motion.li>
             ))}
           </AnimatePresence>
-        </ul>
+        </motion.ul>
+
+        {selectedItems.length > 0 && (
+          <div className="fixed bottom-4 right-4">
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                selectedItems.forEach((id) => removeHistory(id));
+                setSelectedItems([]);
+              }}
+              className="flex items-center gap-2 shadow-lg"
+            >
+              <Trash2 className="w-4 h-4" />
+              删除选中项 ({selectedItems.length})
+            </Button>
+          </div>
+        )}
+
         {history.length > 0 && (
           <Button
             variant="destructive"
@@ -252,11 +338,6 @@ export default function HistoryPanel({ onSelect }: HistoryPanelProps) {
             <Trash2 className="w-4 h-4 mr-1" />
             清空所有历史记录
           </Button>
-        )}
-        {history.length === 0 && (
-          <p className="text-center text-gray-500 dark:text-gray-400">
-            暂无历史记录
-          </p>
         )}
       </CardContent>
     </Card>

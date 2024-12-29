@@ -1,8 +1,30 @@
 "use client"
 
-import React, { Component, ErrorInfo, ReactNode } from "react";
+import React, { 
+  Component, 
+  ErrorInfo, 
+  ReactNode, 
+  createContext, 
+  useContext,
+  useState,
+  useCallback
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import BlueScreen404 from "./blue-screen-404";
+
+interface ErrorBoundaryContextType {
+  error: Error | null;
+  errorInfo: ErrorInfo | null;
+  resetError: () => void;
+}
+
+const ErrorBoundaryContext = createContext<ErrorBoundaryContextType>({
+  error: null,
+  errorInfo: null,
+  resetError: () => {},
+});
+
+export const useErrorBoundary = () => useContext(ErrorBoundaryContext);
 
 interface Props {
   children: ReactNode;
@@ -250,3 +272,21 @@ class ErrorBoundary extends Component<Props, State> {
 }
 
 export default ErrorBoundary;
+
+export const ErrorBoundaryProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
+  const [error, setError] = useState<Error | null>(null);
+  const [errorInfo, setErrorInfo] = useState<ErrorInfo | null>(null);
+
+  const resetError = useCallback(() => {
+    setError(null);
+    setErrorInfo(null);
+  }, []);
+
+  return (
+    <ErrorBoundaryContext.Provider value={{ error, errorInfo, resetError }}>
+      <ErrorBoundary>{children}</ErrorBoundary>
+    </ErrorBoundaryContext.Provider>
+  );
+};

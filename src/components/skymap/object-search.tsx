@@ -179,8 +179,21 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="flex flex-col lg:flex-row w-full gap-2 p-4 bg-gradient-to-b from-gray-900 to-gray-800 min-h-[70vh] rounded-lg"
+      className="flex flex-col lg:flex-row w-full gap-2 p-4 bg-gradient-to-b from-gray-900 to-gray-800 min-h-[70vh] rounded-lg relative"
     >
+      {/* Loading overlay */}
+      {alertText === "查询中..." && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center"
+        >
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm text-white">正在搜索...</span>
+          </div>
+        </motion.div>
+      )}
       {/* 搜索工具栏 */}
       <div className="w-full lg:w-1/4 space-y-2">
         <Card className="bg-black/20 backdrop-blur p-2">
@@ -201,113 +214,140 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
               <Search className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             </div>
 
-            <Button onClick={handleSearch} className="w-full text-xs">
-              搜索
-            </Button>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                onClick={handleSearch}
+                className="w-full text-xs relative overflow-hidden"
+              >
+                <span className="relative z-10">搜索</span>
+                <motion.span
+                  initial={{ x: "-100%" }}
+                  animate={{ x: toSearchText ? "0%" : "-100%" }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute inset-0 bg-green-500/10 z-0"
+                />
+              </Button>
+            </motion.div>
 
             <Collapsible>
               <CollapsibleTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full flex justify-between text-xs"
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  高级筛选
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full flex justify-between text-xs"
+                  >
+                    高级筛选
+                    <motion.span
+                      animate={{ rotate: expandFilter ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </motion.span>
+                  </Button>
+                </motion.div>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-2 mt-2">
-                <Label className="block text-xs text-gray-300">
-                  角大小 (度):
-                  <Input
-                    type="number"
-                    value={filterSettings.angular_size}
-                    onChange={(e) =>
-                      updateFilterSettings((prevState) => ({
-                        ...prevState,
-                        angular_size: Number(e.target.value),
-                      }))
-                    }
-                    className="mt-1 block w-full p-1 bg-gray-800 border border-gray-700 rounded-md text-white text-xs"
-                  />
-                </Label>
-                <Label className="block text-xs text-gray-300">
-                  星等限制:
-                  <Input
-                    type="number"
-                    value={filterSettings.magnitude_limit}
-                    onChange={(e) =>
-                      updateFilterSettings((prev) => ({
-                        ...prev,
-                        magnitude_limit: Number(e.target.value),
-                      }))
-                    }
-                    className="mt-1 block w-full p-1 bg-gray-800 border border-gray-700 rounded-md text-white text-xs"
-                  />
-                </Label>
-                <Label className="block text-xs text-gray-300">
-                  天体类型:
-                  <Select
-                    value={filterSettings.type}
-                    onValueChange={(value) =>
-                      updateFilterSettings((prev) => ({
-                        ...prev,
-                        type: value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="w-full text-xs">
-                      <SelectValue placeholder="选择类型" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">全部</SelectItem>
-                      <SelectItem value="galaxy">星系</SelectItem>
-                      <SelectItem value="nebula">星云</SelectItem>
-                      <SelectItem value="cluster">星团</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Label>
-                <Label className="block text-xs text-gray-300">
-                  排序方式:
-                  <Select
-                    value={filterSettings.sort_by}
-                    onValueChange={(value) =>
-                      updateFilterSettings((prev) => ({
-                        ...prev,
-                        sort_by: value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="w-full text-xs">
-                      <SelectValue placeholder="选择排序方式" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="magnitude">按星等</SelectItem>
-                      <SelectItem value="size">按大小</SelectItem>
-                      <SelectItem value="name">按名称</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Label>
-                <Label className="block text-xs text-gray-300">
-                  排序顺序:
-                  <Select
-                    value={filterSettings.sort_order}
-                    onValueChange={(value) =>
-                      updateFilterSettings((prev) => ({
-                        ...prev,
-                        sort_order: value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="w-full text-xs">
-                      <SelectValue placeholder="选择排序顺序" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="asc">升序</SelectItem>
-                      <SelectItem value="desc">降序</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </Label>
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Label className="block text-xs text-gray-300">
+                    角大小 (度):
+                    <Input
+                      type="number"
+                      value={filterSettings.angular_size}
+                      onChange={(e) =>
+                        updateFilterSettings((prevState) => ({
+                          ...prevState,
+                          angular_size: Number(e.target.value),
+                        }))
+                      }
+                      className="mt-1 block w-full p-1 bg-gray-800 border border-gray-700 rounded-md text-white text-xs"
+                    />
+                  </Label>
+                  <Label className="block text-xs text-gray-300">
+                    星等限制:
+                    <Input
+                      type="number"
+                      value={filterSettings.magnitude_limit}
+                      onChange={(e) =>
+                        updateFilterSettings((prev) => ({
+                          ...prev,
+                          magnitude_limit: Number(e.target.value),
+                        }))
+                      }
+                      className="mt-1 block w-full p-1 bg-gray-800 border border-gray-700 rounded-md text-white text-xs"
+                    />
+                  </Label>
+                  <Label className="block text-xs text-gray-300">
+                    天体类型:
+                    <Select
+                      value={filterSettings.type}
+                      onValueChange={(value) =>
+                        updateFilterSettings((prev) => ({
+                          ...prev,
+                          type: value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="w-full text-xs">
+                        <SelectValue placeholder="选择类型" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">全部</SelectItem>
+                        <SelectItem value="galaxy">星系</SelectItem>
+                        <SelectItem value="nebula">星云</SelectItem>
+                        <SelectItem value="cluster">星团</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Label>
+                  <Label className="block text-xs text-gray-300">
+                    排序方式:
+                    <Select
+                      value={filterSettings.sort_by}
+                      onValueChange={(value) =>
+                        updateFilterSettings((prev) => ({
+                          ...prev,
+                          sort_by: value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="w-full text-xs">
+                        <SelectValue placeholder="选择排序方式" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="magnitude">按星等</SelectItem>
+                        <SelectItem value="size">按大小</SelectItem>
+                        <SelectItem value="name">按名称</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Label>
+                  <Label className="block text-xs text-gray-300">
+                    排序顺序:
+                    <Select
+                      value={filterSettings.sort_order}
+                      onValueChange={(value) =>
+                        updateFilterSettings((prev) => ({
+                          ...prev,
+                          sort_order: value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger className="w-full text-xs">
+                        <SelectValue placeholder="选择排序顺序" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="asc">升序</SelectItem>
+                        <SelectItem value="desc">降序</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Label>
+                </motion.div>
               </CollapsibleContent>
             </Collapsible>
 

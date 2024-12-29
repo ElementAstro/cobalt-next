@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 interface FrostedGlassProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   className?: string;
-  blur?: "none" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
+  blur?: "none" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | number;
   intensity?: "none" | "light" | "medium" | "heavy" | "solid";
   bgColor?: string;
   textColor?: string;
@@ -13,6 +13,12 @@ interface FrostedGlassProps extends React.HTMLAttributes<HTMLDivElement> {
   rounded?: "none" | "sm" | "md" | "lg" | "xl" | "full";
   shadow?: "none" | "sm" | "md" | "lg" | "xl";
   hoverEffect?: boolean;
+  opacity?: number;
+  transitionDuration?: number;
+  gradient?: string;
+  clickEffect?: boolean;
+  hoverScale?: number;
+  hoverRotate?: number;
 }
 
 const blurMap = {
@@ -69,12 +75,18 @@ export function FrostedGlass({
   rounded = "lg",
   shadow = "lg",
   hoverEffect = false,
+  opacity = 1,
+  transitionDuration = 300,
+  gradient,
+  clickEffect = false,
+  hoverScale = 1.05,
+  hoverRotate = 0,
   ...props
 }: FrostedGlassProps) {
   return (
     <div
       className={cn(
-        blurMap[blur],
+        typeof blur === 'number' ? '' : blurMap[blur],
         intensityMap[intensity],
         borderWidthMap[borderWidth],
         roundedMap[rounded],
@@ -82,13 +94,15 @@ export function FrostedGlass({
         textColor,
         borderColor,
         bgColor,
-        hoverEffect &&
-          "transition-all duration-300 hover:scale-105 hover:shadow-xl",
+        hoverEffect && `transition-all duration-${transitionDuration} hover:scale-${hoverScale} hover:shadow-xl hover:rotate-${hoverRotate}`,
+        clickEffect && 'active:scale-95',
         className
       )}
       style={{
-        backdropFilter: "blur(8px)",
-        WebkitBackdropFilter: "blur(8px)",
+        backdropFilter: typeof blur === 'number' ? `blur(${blur}px)` : "blur(8px)",
+        WebkitBackdropFilter: typeof blur === 'number' ? `blur(${blur}px)` : "blur(8px)",
+        opacity,
+        background: gradient,
       }}
       {...props}
     >

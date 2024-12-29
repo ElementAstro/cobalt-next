@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { CelestialData, CelestialDataSchema } from "@/types/infomation";
 import SunCalc from "suncalc";
 import api from "@/services/axios";
+import log from "@/utils/logger"; // Import the logger
 
 interface AstroState {
   data: CelestialData;
@@ -96,7 +97,7 @@ const calculateCelestialData = (
 
     return dataPartial;
   } catch (error) {
-    console.error("数据计算或验证失败:", error);
+    log.error("数据计算或验证失败:", error);
     return null;
   }
 };
@@ -118,27 +119,32 @@ export const useAstroStore = create<AstroState & AstroActions>((set, get) => ({
   loadingStates: {},
   errorLogs: [],
 
-  setLocation: (lat, lng, name) =>
+  setLocation: (lat, lng, name) => {
+    log.info(`Setting location to latitude: ${lat}, longitude: ${lng}, name: ${name}`);
     set({
       location: { latitude: lat, longitude: lng, name },
-    }),
+    });
+  },
 
   fetchLocation: () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
+          log.info(`Fetched location: latitude: ${latitude}, longitude: ${longitude}`);
           set({
             location: { latitude, longitude, name: "当前位置" },
           });
           get().updateData();
         },
         (error) => {
+          log.error("Failed to fetch location:", error);
           get().logError(error.message, "error");
           set({ error: "无法获取位置信息。" });
         }
       );
     } else {
+      log.warn("Geolocation is not supported by this browser.");
       set({ error: "Geolocation 不被此浏览器支持。" });
     }
   },
@@ -148,6 +154,7 @@ export const useAstroStore = create<AstroState & AstroActions>((set, get) => ({
     if (!isLive) return;
 
     setLoadingState("data", true);
+    log.info("Updating celestial data...");
     try {
       const celestialDataPartial = calculateCelestialData(
         location.latitude,
@@ -177,10 +184,13 @@ export const useAstroStore = create<AstroState & AstroActions>((set, get) => ({
           lastUpdate: new Date().toISOString(),
           error: null,
         });
+        log.info("Celestial data updated successfully.");
       } else {
+        log.warn("Failed to update data: calculated data is null.");
         set({ error: "更新数据失败，计算的数据为空。" });
       }
     } catch (error: any) {
+      log.error("Failed to update celestial data:", error);
       logError(error?.message || "未知错误发生", "error");
       set({ error: "更新数据失败。" });
     } finally {
@@ -188,12 +198,39 @@ export const useAstroStore = create<AstroState & AstroActions>((set, get) => ({
     }
   },
 
-  setSelectedTab: (tab) => set({ selectedTab: tab }),
-  toggleWeather: () => set((state) => ({ showWeather: !state.showWeather })),
-  toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
-  toggleLive: () => set((state) => ({ isLive: !state.isLive })),
-  setError: (message) => set({ error: message }),
-  logError: (message, severity) =>
+  setSelectedTab: (tab) => {
+    log.info(`Selected tab changed to: ${tab}`);
+    set({ selectedTab: tab });
+  },
+
+  toggleWeather: () => {
+    log.info("Toggling weather display.");
+    set((state) => ({ showWeather: !state.showWeather }));
+  },
+
+  toggleDarkMode: () => {
+    log.info("Toggling dark mode.");
+    set((state) => ({ darkMode: !state.darkMode }));
+  },
+
+  toggleLive: () => {
+    log.info("Toggling live mode.");
+    set((state) => ({ isLive: !state.isLive }));
+  },
+
+  setError: (message) => {
+    log.error(`Setting error: ${message}`);
+    set({ error: message });
+  },
+
+  logError: (message, severity) => {
+    if (severity === "info") {
+      log.info(`Logging error: ${message}`);
+    } else if (severity === "warning") {
+      log.warn(`Logging error: ${message}`);
+    } else if (severity === "error") {
+      log.error(`Logging error: ${message}`);
+    }
     set((state) => ({
       errorLogs: [
         ...state.errorLogs,
@@ -203,12 +240,20 @@ export const useAstroStore = create<AstroState & AstroActions>((set, get) => ({
           severity,
         },
       ],
-    })),
-  clearErrors: () => set({ errorLogs: [] }),
-  setLoadingState: (key, isLoading) =>
+    }));
+  },
+
+  clearErrors: () => {
+    log.info("Clearing all errors.");
+    set({ errorLogs: [] });
+  },
+
+  setLoadingState: (key, isLoading) => {
+    log.info(`Setting loading state for ${key} to ${isLoading}`);
     set((state) => ({
       loadingStates: { ...state.loadingStates, [key]: isLoading },
-    })),
+    }));
+  },
 }));
 
 function getMoonPhaseName(phase: number): string {

@@ -13,13 +13,22 @@ import {
 import {
   LineChart,
   Line,
+  Area,
   ReferenceLine,
   XAxis,
   YAxis,
   Tooltip as RechartsTooltip,
 } from "recharts";
 import { DateTime } from "luxon";
-import { XCircle, CheckCircle, FilePlus } from "lucide-react";
+import {
+  XCircle,
+  CheckCircle,
+  FilePlus,
+  Eye,
+  Type,
+  MoreHorizontal,
+  Info,
+} from "lucide-react";
 import { useGlobalStore } from "@/store/useSkymapStore";
 import * as AXIOSOF from "@/services/find-object";
 import Image from "next/image";
@@ -329,69 +338,112 @@ const TargetSmallCard: React.FC<TargetSmallCardProps> = (props) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="mb-3 hover:shadow-lg transition-all duration-300 dark:bg-gray-800 rounded-lg"
+      className="mb-2 hover:shadow-lg transition-all duration-300 dark:bg-gray-800 rounded-lg"
     >
-      <Card className="p-4 landscape:flex landscape:gap-4">
-        <div className="landscape:w-1/3">
+      <Card className="p-3 landscape:flex landscape:gap-3">
+        <div className="landscape:w-[30%]">
           <CardContent className="flex flex-col md:flex-row">
             <div className="relative w-full md:w-32 group">
-              <Image
-                src={target_icon_link}
-                alt={props.target_info.name}
-                width={130}
-                height={130}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded"
-                priority
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded">
-                <div className="absolute bottom-2 left-2 text-white text-sm">
-                  <p>视角: {real_target_info.size.toFixed(1)}′</p>
-                  <p>
-                    类型: {TranslateTargetType(real_target_info.target_type)}
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="default"
-                size="sm"
-                className="absolute right-0 bottom-1/2 transform translate-y-1/2 rounded-full z-10"
-                onClick={() => set_show_detail(!show_detail)}
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 300 }}
               >
-                {/* 添加图标，例如 <MoreHoriz /> */}
-              </Button>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="absolute left-0 bottom-1/2 transform translate-y-1/2 rounded-full z-10"
-                      onClick={on_add_target_to_list_clicked}
-                    >
-                      {added_flag ? <CheckCircle /> : <FilePlus />}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {add_tooltip_open && (
-                      <span>
-                        已添加到待拍摄列表，如需要删除目标，请到目标管理界面删除
-                      </span>
-                    )}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              {props.on_card_clicked && (
+                <Image
+                  src={target_icon_link}
+                  alt={props.target_info.name}
+                  width={110}
+                  height={110}
+                  className="w-full h-full object-cover rounded"
+                  priority
+                />
+              </motion.div>
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent rounded"
+                initial={{ opacity: 0 }}
+                whileHover={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="absolute bottom-2 left-2 text-white text-sm space-y-1">
+                  <div className="flex items-center gap-1">
+                    <Eye className="w-3 h-3" />
+                    <span>视角: {real_target_info.size.toFixed(1)}′</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Type className="w-3 h-3" />
+                    <span>
+                      类型: {TranslateTargetType(real_target_info.target_type)}
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="absolute right-0 bottom-1/2 transform translate-y-1/2 z-10"
+              >
                 <Button
-                  variant="ghost"
+                  variant="default"
                   size="sm"
-                  className="absolute left-0 top-0 bg-transparent z-10"
-                  onClick={() => {
-                    set_this_checked(!this_checked);
-                    props.on_card_clicked?.(props.card_index, !this_checked);
-                  }}
+                  className="rounded-full p-2"
+                  onClick={() => set_show_detail(!show_detail)}
                 >
-                  {this_checked ? <CheckCircle /> : <XCircle />}
+                  <MoreHorizontal className="w-4 h-4" />
                 </Button>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="absolute left-0 bottom-1/2 transform translate-y-1/2 z-10"
+              >
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="rounded-full p-2"
+                        onClick={on_add_target_to_list_clicked}
+                      >
+                        {added_flag ? (
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                        ) : (
+                          <FilePlus className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {add_tooltip_open && (
+                        <span className="flex items-center gap-1">
+                          <Info className="w-3 h-3" />
+                          已添加到待拍摄列表，如需要删除目标，请到目标管理界面删除
+                        </span>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </motion.div>
+              {props.on_card_clicked && (
+                <motion.div
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="absolute left-0 top-0 z-10"
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="bg-transparent p-2"
+                    onClick={() => {
+                      set_this_checked(!this_checked);
+                      props.on_card_clicked?.(props.card_index, !this_checked);
+                    }}
+                  >
+                    {this_checked ? (
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <XCircle className="w-4 h-4 text-red-500" />
+                    )}
+                  </Button>
+                </motion.div>
               )}
             </div>
             <div
@@ -410,8 +462,8 @@ const TargetSmallCard: React.FC<TargetSmallCardProps> = (props) => {
             </div>
           </CardContent>
         </div>
-        <div id="chart-container" className="landscape:w-2/3">
-          <div className="relative h-32 mt-4">
+        <div id="chart-container" className="landscape:w-[70%]">
+          <div className="relative h-28 mt-2">
             {in_updating ? (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-700 bg-opacity-50 backdrop-blur-sm rounded">
                 <Spinner className="w-8 h-8" />
@@ -429,6 +481,12 @@ const TargetSmallCard: React.FC<TargetSmallCardProps> = (props) => {
                 }))}
                 margin={{ top: 10, right: 5, left: 10, bottom: 20 }}
                 className="transition-all duration-300 hover:opacity-90"
+                onMouseEnter={() =>
+                  setChartDimensions((prev) => ({ ...prev, height: 320 }))
+                }
+                onMouseLeave={() =>
+                  setChartDimensions((prev) => ({ ...prev, height: 280 }))
+                }
               >
                 <XAxis
                   dataKey="time"
@@ -445,6 +503,27 @@ const TargetSmallCard: React.FC<TargetSmallCardProps> = (props) => {
                   stroke="#8884d8"
                   dot={false}
                   strokeWidth={2}
+                  animationDuration={1000}
+                />
+                <defs>
+                  <linearGradient
+                    id="altitudeGradient"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <Area
+                  type="monotone"
+                  dataKey="altitude"
+                  stroke="#8884d8"
+                  fill="url(#altitudeGradient)"
+                  strokeWidth={2}
+                  animationDuration={1000}
                 />
                 {fig_line_data_template.map((line, index) => (
                   <ReferenceLine

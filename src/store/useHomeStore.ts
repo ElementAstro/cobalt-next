@@ -7,6 +7,10 @@ interface SiteState {
   quickAccessSites: Site[];
   searchTerm: string;
   activeCategory: string;
+  // 自定义设置
+  backgroundColor: string;
+  layoutMode: 'grid' | 'list';
+  cardStyle: 'default' | 'minimal' | 'detailed';
   addSite: (site: Site) => void;
   updateSite: (updatedSite: Site) => void;
   removeSite: (site: Site) => void;
@@ -16,6 +20,10 @@ interface SiteState {
   setSites: (sites: Site[]) => void;
   setQuickAccessSites: (sites: Site[]) => void;
   reorderSites: (startIndex: number, endIndex: number) => void;
+  // 自定义设置方法
+  setBackgroundColor: (color: string) => void;
+  setLayoutMode: (mode: 'grid' | 'list') => void;
+  setCardStyle: (style: 'default' | 'minimal' | 'detailed') => void;
 }
 
 const STORAGE_KEY = "homeStore";
@@ -42,6 +50,10 @@ export const useSiteStore = create<SiteState>((set, get) => {
     quickAccessSites: persistedState?.quickAccessSites || [],
     searchTerm: persistedState?.searchTerm || "",
     activeCategory: persistedState?.activeCategory || "All",
+    // 自定义设置默认值
+    backgroundColor: persistedState?.backgroundColor || "from-indigo-900 to-purple-900",
+    layoutMode: persistedState?.layoutMode || "grid",
+    cardStyle: persistedState?.cardStyle || "default",
     addSite: (site) =>
       set((state) => ({
         sites: [...state.sites, site],
@@ -91,6 +103,10 @@ export const useSiteStore = create<SiteState>((set, get) => {
         return { sites };
       });
     },
+    // 自定义设置方法
+    setBackgroundColor: (color: string) => set({ backgroundColor: color }),
+    setLayoutMode: (mode: 'grid' | 'list') => set({ layoutMode: mode }),
+    setCardStyle: (style: 'default' | 'minimal' | 'detailed') => set({ cardStyle: style }),
   };
 });
 
@@ -103,6 +119,10 @@ useSiteStore.subscribe((state) => {
       quickAccessSites: state.quickAccessSites,
       searchTerm: state.searchTerm,
       activeCategory: state.activeCategory,
+      // 持久化自定义设置
+      backgroundColor: state.backgroundColor,
+      layoutMode: state.layoutMode,
+      cardStyle: state.cardStyle,
     }),
     { expires: 365 }
   );
