@@ -11,4 +11,9 @@ export interface App {
 export interface AppGroup {
   title: string;
   apps: App[];
+  onAppChange: (newApps: App[]) => void;
+  onClose?: () => void;
+  columns?: 2 | 3 | 4;
+  className?: string;
+  itemClassName?: string;
 }

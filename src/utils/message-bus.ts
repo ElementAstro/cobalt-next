@@ -1,41 +1,72 @@
 import WebSocketClient from "./websocket-client";
 
-type MessageHandler = (message: any, topic?: string) => void;
+type MessageHandler<T = any> = (message: T, topic?: string) => void;
+type Middleware<T = any> = (message: T, topic: string, next: () => void) => void;
 
-class MessageBus {
+export enum LogLevel {
+  DEBUG = 'debug',
+  INFO = 'info',
+  WARN = 'warn',
+  ERROR = 'error'
+}
+
+class MessageBus<T = any> {
   private wsClient: WebSocketClient;
-  private handlers: Map<string, Set<MessageHandler>> = new Map();
-  private debug: boolean;
+  private handlers: Map<string, Set<MessageHandler<T>>> = new Map();
+  private middlewares: Middleware<T>[] = [];
+  private logLevel: LogLevel = LogLevel.INFO;
+  private maxRetries = 3;
+  private retryDelay = 1000;
 
-  constructor(wsClient: WebSocketClient, debug = false) {
+  constructor(wsClient: WebSocketClient, options: {
+    logLevel?: LogLevel;
+    maxRetries?: number;
+    retryDelay?: number;
+  } = {}) {
     this.wsClient = wsClient;
-    this.debug = debug;
+    this.logLevel = options.logLevel || LogLevel.INFO;
+    this.maxRetries = options.maxRetries || 3;
+    this.retryDelay = options.retryDelay || 1000;
     this.setupMessageHandling();
-
-    if (this.debug) {
-      console.debug("[MessageBus] Initialized with WebSocket client");
-    }
+    this.log(LogLevel.INFO, "Initialized with WebSocket client");
   }
 
   private setupMessageHandling() {
-    this.wsClient.on("message", (message: any) => {
-      if (this.debug) {
-        console.debug("[MessageBus] Received raw message:", message);
-      }
+    this.wsClient.on("message", async (message: any) => {
+      this.log(LogLevel.DEBUG, "Received raw message:", message);
 
-      try {
-        const { topic, data } = this.parseMessage(message);
-        if (this.debug) {
-          console.debug(
-            `[MessageBus] Parsed message for topic "${topic}":`,
-            data
-          );
+      let retries = 0;
+      while (retries <= this.maxRetries) {
+        try {
+          const { topic, data } = this.parseMessage(message);
+          this.log(LogLevel.DEBUG, `Parsed message for topic "${topic}":`, data);
+          
+          // Run middlewares
+          await this.runMiddlewares(data, topic);
+          
+          this.dispatch(topic, data);
+          break;
+        } catch (error) {
+          retries++;
+          if (retries > this.maxRetries) {
+            this.log(LogLevel.ERROR, "Error handling message:", error);
+            break;
+          }
+          await new Promise(resolve => setTimeout(resolve, this.retryDelay));
         }
-        this.dispatch(topic, data);
-      } catch (error) {
-        console.error("[MessageBus] Error handling message:", error);
       }
     });
+  }
+
+  private async runMiddlewares(data: T, topic: string) {
+    const executeMiddleware = (index: number) => {
+      if (index < this.middlewares.length) {
+        const middleware = this.middlewares[index];
+        return middleware(data, topic, () => executeMiddleware(index + 1));
+      }
+      return Promise.resolve();
+    };
+    await executeMiddleware(0);
   }
 
   private parseMessage(message: any): { topic: string; data: any } {
@@ -64,40 +95,54 @@ class MessageBus {
 
   private dispatch(topic: string, data: any) {
     const handlers = this.handlers.get(topic) || new Set();
-    if (this.debug) {
-      console.debug(
-        `[MessageBus] Dispatching message to ${handlers.size} handlers for topic "${topic}":`,
-        data
-      );
-    }
+    this.log(LogLevel.DEBUG,
+      `Dispatching message to ${handlers.size} handlers for topic "${topic}":`,
+      data
+    );
 
     handlers.forEach((handler) => {
       try {
         handler(data, topic);
       } catch (error) {
-        console.error(
-          `[MessageBus] Error in handler for topic "${topic}":`,
+        this.log(LogLevel.ERROR,
+          `Error in handler for topic "${topic}":`,
           error
         );
       }
     });
 
-    if (this.debug) {
-      console.debug(
-        `[MessageBus] Dispatched message to ${handlers.size} handlers for topic "${topic}"`
-      );
+    this.log(LogLevel.DEBUG,
+      `Dispatched message to ${handlers.size} handlers for topic "${topic}"`
+    );
+  }
+
+  public use(middleware: Middleware<T>) {
+    this.middlewares.push(middleware);
+    return this;
+  }
+
+  public setLogLevel(level: LogLevel) {
+    this.logLevel = level;
+  }
+
+  private log(level: LogLevel, ...args: any[]) {
+    if (this.shouldLog(level)) {
+      console[level](`[MessageBus]`, ...args);
     }
   }
 
-  public subscribe(topic: string, handler: MessageHandler) {
+  private shouldLog(level: LogLevel) {
+    const levels = Object.values(LogLevel);
+    return levels.indexOf(level) >= levels.indexOf(this.logLevel);
+  }
+
+  public subscribe(topic: string, handler: MessageHandler<T>) {
     if (!this.handlers.has(topic)) {
       this.handlers.set(topic, new Set());
     }
     this.handlers.get(topic)?.add(handler);
 
-    if (this.debug) {
-      console.debug(`[MessageBus] Subscribed to topic "${topic}"`);
-    }
+    this.log(LogLevel.DEBUG, `Subscribed to topic "${topic}"`);
 
     return () => this.unsubscribe(topic, handler);
   }
@@ -106,17 +151,13 @@ class MessageBus {
     const handlers = this.handlers.get(topic);
     if (handlers) {
       handlers.delete(handler);
-      if (this.debug) {
-        console.debug(`[MessageBus] Unsubscribed from topic "${topic}"`);
-      }
+      this.log(LogLevel.DEBUG, `Unsubscribed from topic "${topic}"`);
 
       if (handlers.size === 0) {
         this.handlers.delete(topic);
-        if (this.debug) {
-          console.debug(
-            `[MessageBus] No more handlers for topic "${topic}", topic removed`
-          );
-        }
+        this.log(LogLevel.DEBUG,
+          `No more handlers for topic "${topic}", topic removed`
+        );
       }
     }
   }
@@ -125,19 +166,15 @@ class MessageBus {
     const payload = JSON.stringify({ topic, data: message });
     this.wsClient.send(payload);
 
-    if (this.debug) {
-      console.debug(
-        `[MessageBus] Published message to topic "${topic}":`,
-        message
-      );
-    }
+    this.log(LogLevel.DEBUG,
+      `Published message to topic "${topic}":`,
+      message
+    );
   }
 
   public getTopics(): string[] {
     const topics = Array.from(this.handlers.keys());
-    if (this.debug) {
-      console.debug("[MessageBus] Retrieved topics:", topics);
-    }
+    this.log(LogLevel.DEBUG, "Retrieved topics:", topics);
     return topics;
   }
 
@@ -145,11 +182,9 @@ class MessageBus {
     const handlers = this.handlers.get(topic);
     if (handlers) {
       this.handlers.delete(topic);
-      if (this.debug) {
-        console.debug(
-          `[MessageBus] Cleared topic "${topic}" with ${handlers.size} handlers`
-        );
-      }
+      this.log(LogLevel.DEBUG,
+        `Cleared topic "${topic}" with ${handlers.size} handlers`
+      );
     }
   }
 }

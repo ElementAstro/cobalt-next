@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { App } from "@/types/extra";
+import { HostapdConfig } from "@/types/extra/hostapd";
 
 export type ViewMode = "grid" | "list";
 export type SortMode = "name" | "date" | "category";
@@ -189,3 +190,315 @@ export const useExtraStore = create<ExtraState>()(
     }
   )
 );
+
+interface XvfbConfig {
+  display: string;
+  resolution: string;
+  colorDepth: string;
+  screen: string;
+  customResolution: string;
+  refreshRate: number;
+  memory: number;
+  security: {
+    xauth: boolean;
+    tcp: boolean;
+    localhostOnly: boolean;
+  };
+  logging: {
+    verbose: boolean;
+    logFile: string;
+    maxLogSize: number;
+  };
+}
+
+interface XvfbLog {
+  timestamp: number;
+  message: string;
+  type: "info" | "error" | "warning";
+}
+
+export interface XvfbInstance {
+  id: string;
+  display: string;
+  config: XvfbConfig;
+  status: string;
+}
+
+interface XvfbStore {
+  instances: XvfbInstance[];
+  config: XvfbConfig;
+  isRunning: boolean;
+  logs: XvfbLog[];
+  savedPresets: { [key: string]: XvfbConfig };
+  lastError: string | null;
+  status: "idle" | "starting" | "running" | "stopping" | "error";
+  setConfig: (config: Partial<XvfbConfig>) => void;
+  toggleRunning: () => void;
+  applyConfig: () => void;
+  loadConfig: (name: string) => void;
+  saveConfig: (name: string) => void;
+  addLog: (message: string, type: XvfbLog["type"]) => void;
+  clearLogs: () => void;
+  setStatus: (status: XvfbStore["status"]) => void;
+  setError: (error: string | null) => void;
+  deletePreset: (name: string) => void;
+  validateConfig: () => boolean;
+  restartServer: () => void;
+}
+
+export const useXvfbStore = create<XvfbStore>()(
+  persist(
+    (set, get) => ({
+      instances: [],
+      config: {
+        display: ":99",
+        resolution: "1024x768",
+        colorDepth: "24",
+        screen: "0",
+        customResolution: "",
+        refreshRate: 60,
+        memory: 128,
+        security: {
+          xauth: true,
+          tcp: false,
+          localhostOnly: true,
+        },
+        logging: {
+          verbose: false,
+          logFile: "/var/log/xvfb.log",
+          maxLogSize: 10,
+        },
+      },
+      isRunning: false,
+      logs: [],
+      savedPresets: {},
+      lastError: null,
+      status: "idle",
+      setConfig: (newConfig) =>
+        set((state) => ({ config: { ...state.config, ...newConfig } })),
+      toggleRunning: () => set((state) => ({ isRunning: !state.isRunning })),
+      applyConfig: () => {
+        const store = get();
+        if (store.validateConfig()) {
+          store.setStatus("starting");
+          store.addLog("Applying new configuration...", "info");
+          store.restartServer();
+        }
+      },
+      loadConfig: (name) => {
+        const preset = get().savedPresets[name];
+        if (preset) {
+          set({ config: preset });
+          get().addLog(`Loaded configuration "${name}"`, "info");
+        } else {
+          get().setError(`Preset "${name}" not found`);
+        }
+      },
+      saveConfig: (name) => {
+        if (!name.trim()) {
+          get().setError("Preset name cannot be empty");
+          return;
+        }
+        set((state) => ({
+          savedPresets: {
+            ...state.savedPresets,
+            [name]: state.config,
+          },
+        }));
+        get().addLog(`Configuration saved as "${name}"`, "info");
+      },
+      addLog: (message, type) =>
+        set((state) => ({
+          logs: [...state.logs, { timestamp: Date.now(), message, type }].slice(
+            -100
+          ),
+        })),
+      clearLogs: () => set({ logs: [] }),
+      setStatus: (status) => set({ status }),
+      setError: (error) => set({ lastError: error }),
+      deletePreset: (name) =>
+        set((state) => ({
+          savedPresets: Object.fromEntries(
+            Object.entries(state.savedPresets).filter(([key]) => key !== name)
+          ),
+        })),
+      validateConfig: () => {
+        const { config } = get();
+        let isValid = true;
+        let error = null;
+
+        if (!config.display.startsWith(":")) {
+          error = 'Display must start with ":"';
+          isValid = false;
+        }
+
+        if (config.resolution === "custom") {
+          const resolution = config.customResolution.match(/^\d+x\d+$/);
+          if (!resolution) {
+            error = "Invalid custom resolution format";
+            isValid = false;
+          }
+        }
+
+        get().setError(error);
+        return isValid;
+      },
+      restartServer: () => {
+        const store = get();
+        if (store.validateConfig()) {
+          store.setStatus("stopping");
+          store.addLog("Stopping Xvfb server...", "info");
+
+          setTimeout(() => {
+            store.setStatus("starting");
+            store.addLog(
+              "Starting Xvfb server with new configuration...",
+              "info"
+            );
+
+            setTimeout(() => {
+              store.setStatus("running");
+              store.addLog("Xvfb server started successfully", "info");
+            }, 1000);
+          }, 1000);
+        }
+      },
+    }),
+    {
+      name: "xvfb-config",
+    }
+  )
+);
+
+export interface DnsmasqConfig {
+  listenAddress: string;
+  port: string;
+  domainNeeded: boolean;
+  bogusPriv: boolean;
+  expandHosts: boolean;
+  noCacheNegative: boolean;
+  strictOrder: boolean;
+  noHosts: boolean;
+  dnsServers: string;
+  cacheSize: string;
+}
+
+interface DnsmasqStore {
+  config: DnsmasqConfig;
+  isAdvancedOpen: boolean;
+  updateConfig: (newConfig: Partial<DnsmasqConfig>) => void;
+  toggleAdvanced: () => void;
+  saveConfig: () => Promise<void>;
+}
+
+export const useDnsmasqStore = create<DnsmasqStore>()(
+  persist(
+    (set, get) => ({
+      config: {
+        listenAddress: "127.0.0.1",
+        port: "53",
+        domainNeeded: true,
+        bogusPriv: true,
+        expandHosts: true,
+        noCacheNegative: false,
+        strictOrder: false,
+        noHosts: false,
+        dnsServers: "8.8.8.8,8.8.4.4",
+        cacheSize: "150",
+      },
+      isAdvancedOpen: false,
+      updateConfig: (newConfig) =>
+        set((state) => ({ config: { ...state.config, ...newConfig } })),
+      toggleAdvanced: () =>
+        set((state) => ({ isAdvancedOpen: !state.isAdvancedOpen })),
+      saveConfig: async () => {
+        const { config } = get();
+        console.log("Saving config:", config);
+        // Here you would typically make an API call to save the config
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulating API call
+      },
+    }),
+    {
+      name: "dnsmasq-storage",
+    }
+  )
+);
+
+interface HostapdState {
+  config: HostapdConfig | null;
+  setConfig: (config: HostapdConfig) => void;
+  updateConfig: (config: Partial<HostapdConfig>) => void;
+}
+
+export const useHostapdStore = create<HostapdState>((set) => ({
+  config: null,
+  setConfig: (config) => set({ config }),
+  updateConfig: (config) =>
+    set((state) => ({
+      config: state.config ? { ...state.config, ...config } : null,
+    })),
+}));
+
+interface X11VNCState {
+  display: string;
+  port: string;
+  viewonly: boolean;
+  shared: boolean;
+  forever: boolean;
+  ssl: boolean;
+  httpPort: string;
+  passwd: string;
+  allowedHosts: string;
+  logFile: string;
+  clipboard: boolean;
+  noxdamage: boolean;
+  scale: string;
+  repeat: boolean;
+  bg: boolean;
+  rfbauth: string;
+  command: string;
+  setConfig: (key: string, value: string | boolean) => void;
+  generateCommand: () => void;
+}
+
+export const useX11VNCStore = create<X11VNCState>((set, get) => ({
+  display: "",
+  port: "5900",
+  viewonly: false,
+  shared: false,
+  forever: false,
+  ssl: false,
+  httpPort: "",
+  passwd: "",
+  allowedHosts: "",
+  logFile: "",
+  clipboard: true,
+  noxdamage: false,
+  scale: "1",
+  repeat: false,
+  bg: false,
+  rfbauth: "",
+  command: "",
+  setConfig: (key, value) => set({ [key]: value }),
+  generateCommand: () => {
+    const state = get();
+    let cmd = "x11vnc";
+    if (state.display) cmd += ` -display ${state.display}`;
+    if (state.port !== "5900") cmd += ` -rfbport ${state.port}`;
+    if (state.viewonly) cmd += " -viewonly";
+    if (state.shared) cmd += " -shared";
+    if (state.forever) cmd += " -forever";
+    if (state.ssl) cmd += " -ssl";
+    if (state.httpPort) cmd += ` -http ${state.httpPort}`;
+    if (state.passwd) cmd += ` -passwd ${state.passwd}`;
+    if (state.allowedHosts) cmd += ` -allow ${state.allowedHosts}`;
+    if (state.logFile) cmd += ` -o ${state.logFile}`;
+    if (!state.clipboard) cmd += " -noclipboard";
+    if (state.noxdamage) cmd += " -noxdamage";
+    if (state.scale !== "1") cmd += ` -scale ${state.scale}`;
+    if (state.repeat) cmd += " -repeat";
+    if (state.bg) cmd += " -bg";
+    if (state.rfbauth) cmd += ` -rfbauth ${state.rfbauth}`;
+    set({ command: cmd });
+  },
+}));
