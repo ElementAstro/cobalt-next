@@ -43,7 +43,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-export function TopBar({ onOpenOffcanvas }: TopBarProps) {
+export default function TopBar({ onOpenOffcanvas }: TopBarProps) {
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [isShowDeviceName, setIsShowDeviceName] = useState(!isMobile);
   const [time, setTime] = useState(new Date());
@@ -75,25 +75,6 @@ export function TopBar({ onOpenOffcanvas }: TopBarProps) {
       name: "Filter Wheel",
       icon: Filter,
       description: "Select and manage filters",
-    },
-    {
-      id: "guider",
-      name: "Guider",
-      icon: Compass,
-      description: "Control guiding system",
-    },
-    { id: "Logs", name: "Logs", icon: Logs, description: "View system logs" },
-    {
-      id: "Settings",
-      name: "Settings",
-      icon: Settings,
-      description: "Access system settings",
-    },
-    {
-      id: "Info",
-      name: "Info",
-      icon: Info,
-      description: "View system information",
     },
   ];
 
@@ -128,11 +109,16 @@ export function TopBar({ onOpenOffcanvas }: TopBarProps) {
           battery.addEventListener("levelchange", () => {
             setBatteryLevel(Math.round(battery.level * 100));
           });
+
+          // Add battery charging status listener
+          battery.addEventListener("chargingchange", () => {
+            if (battery.charging) {
+              setBatteryLevel(Math.round(battery.level * 100));
+            }
+          });
         }
 
-        // Get WiFi status
-        window.addEventListener("online", updateOnlineStatus);
-        window.addEventListener("offline", updateOnlineStatus);
+        // Initial WiFi status
         updateOnlineStatus();
       } catch (error) {
         console.error("Error fetching status:", error);
@@ -141,18 +127,29 @@ export function TopBar({ onOpenOffcanvas }: TopBarProps) {
       }
     };
 
+    // Listen for online/offline events
+    window.addEventListener("online", updateOnlineStatus);
+    window.addEventListener("offline", updateOnlineStatus);
+
     fetchStatus();
 
+    // Cleanup event listeners
     return () => {
       window.removeEventListener("online", updateOnlineStatus);
       window.removeEventListener("offline", updateOnlineStatus);
+      if ((navigator as any).getBattery) {
+        (navigator as any).getBattery().then((battery: any) => {
+          battery.removeEventListener("levelchange", () => {});
+          battery.removeEventListener("chargingchange", () => {});
+        });
+      }
     };
   }, []);
 
   return (
     <TooltipProvider>
       <motion.div
-        className="h-14 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-4"
+        className="h-14 border-b border-gray-700 flex items-center justify-between px-4"
         variants={containerVariants}
         initial="hidden"
         animate="visible"

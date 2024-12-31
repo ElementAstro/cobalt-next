@@ -64,6 +64,7 @@ interface TelescopeState {
   setIsConnected: (connected: boolean) => void;
   toggleNightMode: () => void;
   setTrackingMode: (mode: string) => void;
+  fetchStatus: () => Promise<void>;
 }
 
 export interface TelescopeStatus {

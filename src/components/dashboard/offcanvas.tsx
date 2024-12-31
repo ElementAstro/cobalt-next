@@ -26,7 +26,6 @@ const Offcanvas: React.FC<OffcanvasProps> = ({
   backdrop = true,
   animation = {
     duration: 0.3,
-    easing: "ease-in-out",
     type: "slide",
   },
   scrollBehavior = "inside",

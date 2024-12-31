@@ -16,18 +16,24 @@ import {
   useDeviceSelectorStore,
   DeviceType,
   getDeviceTemplates,
-} from "@/lib/store/device/selector";
+} from "@/store/useDeviceStore";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 
 interface DeviceSelectorProps {
   deviceType: DeviceType;
   onDeviceChange?: (device: string) => void;
+  showAdvancedOptions?: boolean;
+  customClassName?: string;
+  onSettingsClick?: () => void;
 }
 
 export function DeviceSelector({
   deviceType,
   onDeviceChange,
+  showAdvancedOptions,
+  customClassName,
+  onSettingsClick,
 }: DeviceSelectorProps) {
   const { toast } = useToast();
   const {
@@ -47,13 +53,13 @@ export function DeviceSelector({
     setConnectionProgress,
   } = useDeviceSelectorStore();
 
-  // 初始化设备列表
+  // Initialize device list
   useEffect(() => {
     const templates = getDeviceTemplates(deviceType);
     setDevices(templates);
   }, [deviceType, setDevices]);
 
-  // 模拟连接进度
+  // Simulate connection progress
   useEffect(() => {
     if (isConnected) {
       const interval = setInterval(() => {
@@ -69,13 +75,22 @@ export function DeviceSelector({
       toast({
         title: "已断开连接",
         description: `设备 ${selectedDevice?.name} 已断开`,
+        variant: "destructive",
       });
     } else {
-      connect();
-      toast({
-        title: "连接成功",
-        description: `已连接到设备 ${selectedDevice?.name}`,
-      });
+      try {
+        await connect();
+        toast({
+          title: "连接成功",
+          description: `已连接到设备 ${selectedDevice?.name}`,
+        });
+      } catch (err) {
+        toast({
+          title: "连接失败",
+          description: `无法连接到设备 ${selectedDevice?.name}`,
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -108,38 +123,57 @@ export function DeviceSelector({
   return (
     <AnimatePresence>
       <motion.div
-        className="space-y-4"
+        className={`space-y-4 ${customClassName}`}
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          </motion.div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl shadow-xl border border-gray-700 p-4">
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-3 bg-gradient-to-br  rounded-xl shadow-xl border border-white p-4"
+          whileHover={{ scale: 1.01 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
           <div className="col-span-2">
             <Select onValueChange={handleDeviceChange}>
-              <SelectTrigger className="w-full bg-gray-800/50 backdrop-blur-sm border-gray-600 hover:bg-gray-700/50 transition-colors">
+              <SelectTrigger className="w-full bg-gray-800/50 backdrop-blur-sm text-white hover:bg-gray-700/50 transition-colors">
                 <SelectValue placeholder={`选择${deviceType}`} />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-700">
+              <SelectContent className="text-white">
                 {devices.map((device) => (
-                  <SelectItem
+                  <motion.div
                     key={device.id}
-                    value={device.id}
-                    className="hover:bg-gray-700 focus:bg-gray-700"
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ type: "spring", stiffness: 300 }}
                   >
-                    {device.name}
-                  </SelectItem>
+                    <SelectItem
+                      value={device.id}
+                      className="hover:bg-gray-700 focus:bg-gray-700"
+                    >
+                      {device.name}
+                    </SelectItem>
+                  </motion.div>
                 ))}
               </SelectContent>
             </Select>
             {isConnected && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
                 <Progress value={connectionProgress} className="h-1 mt-2" />
               </motion.div>
             )}
@@ -150,19 +184,30 @@ export function DeviceSelector({
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
             <Button
               variant="outline"
               size="icon"
-              className="bg-gray-800/50 backdrop-blur-sm border-gray-600 hover:bg-gray-700/50 transition-all hover:scale-105"
+              className="bg-gray-800/50 backdrop-blur-sm border-white text-white hover:bg-gray-700/50 transition-all hover:scale-105"
               disabled={!selectedDevice}
+              onClick={() => onSettingsClick?.()}
             >
               <Settings className="h-4 w-4" />
+              {showAdvancedOptions && (
+                <motion.span
+                  className="absolute -top-1 -right-1 h-2 w-2 bg-blue-500 rounded-full"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                />
+              )}
             </Button>
             <Button
               variant="outline"
               size="icon"
-              className="bg-gray-800/50 backdrop-blur-sm border-gray-600 hover:bg-gray-700/50 transition-all hover:scale-105"
+              className="bg-gray-800/50 backdrop-blur-sm border-white text-white hover:bg-gray-700/50 transition-all hover:scale-105"
               onClick={handleScan}
               disabled={isScanning}
             >
@@ -173,7 +218,7 @@ export function DeviceSelector({
             <Button
               variant="outline"
               size="icon"
-              className="bg-gray-800/50 backdrop-blur-sm border-gray-600 hover:bg-gray-700/50 transition-all hover:scale-105"
+              className="bg-gray-800/50 backdrop-blur-sm border-white text-white hover:bg-gray-700/50 transition-all hover:scale-105"
               onClick={handleConnect}
               disabled={!selectedDevice}
             >
@@ -184,7 +229,7 @@ export function DeviceSelector({
               />
             </Button>
           </motion.div>
-        </div>
+        </motion.div>
       </motion.div>
     </AnimatePresence>
   );

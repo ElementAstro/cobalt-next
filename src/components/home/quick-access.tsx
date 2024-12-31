@@ -2,20 +2,19 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useSiteStore } from "@/store/useHomeStore";
 import { Site } from "@/types/home";
 
-interface QuickAccessProps {
-  quickAccessSites: Site[];
-}
+const QuickAccess: React.FC = () => {
+  const quickAccessSites = useSiteStore((state) => state.quickAccessSites);
 
-const QuickAccess: React.FC<QuickAccessProps> = ({ quickAccessSites }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
       className="flex flex-wrap gap-4 justify-center my-6 px-4 
-                landscape:flex-col landscape:fixed landscape:right-4 landscape:top-1/2 
+                landscape:flex-col landscape:fixed landscape:left-4 landscape:top-1/2 
                 landscape:-translate-y-1/2 landscape:z-50 
                 landscape:backdrop-blur-sm landscape:bg-indigo-900/30 
                 landscape:p-2 landscape:rounded-lg

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -62,7 +62,7 @@ const SortableItem: React.FC<SortableItemProps & { id: string }> = ({
   };
 
   return (
-    <motion.div style={style} ref={setNodeRef} {...attributes} {...listeners}>
+    <div ref={setNodeRef} {...attributes} {...listeners} style={style}>
       <SiteCard
         site={site}
         removeSite={removeSite}
@@ -70,7 +70,7 @@ const SortableItem: React.FC<SortableItemProps & { id: string }> = ({
         setEditingSite={setEditingSite}
         onPreview={onPreview}
       />
-    </motion.div>
+    </div>
   );
 };
 
@@ -83,6 +83,12 @@ const SiteList: React.FC<SiteListProps> = ({
   controls,
   onPreview,
 }) => {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -101,6 +107,28 @@ const SiteList: React.FC<SiteListProps> = ({
     }
   };
 
+  if (!isMounted) {
+    return (
+      <div
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6 
+        landscape:md:grid-cols-2 landscape:lg:grid-cols-3 landscape:xl:grid-cols-4 
+        gap-2 sm:gap-4"
+      >
+        {sites.map((site) => (
+          <div key={site.id}>
+            <SiteCard
+              site={site}
+              removeSite={removeSite}
+              toggleQuickAccess={toggleQuickAccess}
+              setEditingSite={setEditingSite}
+              onPreview={onPreview}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <DndContext
       sensors={sensors}
@@ -113,12 +141,8 @@ const SiteList: React.FC<SiteListProps> = ({
       >
         <motion.div
           className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6 
-                landscape:md:grid-cols-2 landscape:lg:grid-cols-3 landscape:xl:grid-cols-4 
-                gap-2 sm:gap-4 transition-all duration-300"
-          style={{
-            perspective: "1000px",
-            transformStyle: "preserve-3d",
-          }}
+            landscape:md:grid-cols-2 landscape:lg:grid-cols-3 landscape:xl:grid-cols-4 
+            gap-2 sm:gap-4"
           initial="hidden"
           animate={controls}
           variants={{

@@ -150,7 +150,7 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="flex flex-col items-center justify-center h-full p-4 rounded-lg shadow-lg bg-gray-900 dark:bg-gray-800"
+        className="flex flex-col items-center justify-center h-full p-4 rounded-lg shadow-lg "
       >
         <motion.div
           variants={containerVariants}

@@ -41,13 +41,15 @@ import {
 } from "lucide-react";
 import { Span } from "@/components/custom/span";
 import ImageSettingsPanel from "./image-settings";
-import { DeviceSelector } from "./DeviceSelector";
+import { DeviceSelector } from "./device-selector";
+import { useMediaQuery } from "react-responsive";
 
 export function CameraPage() {
   const camera = useCameraStore();
   const [histogramData, setHistogramData] = useState<
     { x: number; y: number }[]
   >([]);
+  const isDesktop = useMediaQuery({ minWidth: 1024 });
 
   useEffect(() => {
     camera.fetchStatus();
@@ -63,120 +65,412 @@ export function CameraPage() {
   }, []);
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
+    <motion.div
+      className="container mx-auto p-4 space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <DeviceSelector
         deviceType="Camera"
         onDeviceChange={(device) => console.log(`Selected camera: ${device}`)}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Panel */}
-        <Card className="lg:col-span-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CameraIcon className="h-6 w-6" />
-              相机状态
-            </CardTitle>
-          </CardHeader>
+      {isDesktop ? (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* 左侧面板 */}
+          <Card className="lg:col-span-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CameraIcon className="h-6 w-6 animate-pulse" />
+                相机状态
+              </CardTitle>
+            </CardHeader>
             <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-              <Span>连接状态</Span>
-              <Badge variant={camera.isConnected ? "default" : "destructive"}>
-                {camera.isConnected ? "已连接" : "未连接"}
-              </Badge>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Span>连接状态</Span>
+                  <Badge
+                    variant={camera.isConnected ? "default" : "destructive"}
+                  >
+                    {camera.isConnected ? "已连接" : "未连接"}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Span>制冷状态</Span>
+                  <Badge variant={camera.coolerOn ? "default" : "secondary"}>
+                    {camera.coolerOn ? "制冷中" : "关闭"}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Span>当前温度</Span>
+                  <Span className="font-mono">
+                    {camera.temperature.toFixed(1)}°C
+                  </Span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Span>目标温度</Span>
+                  <Span className="font-mono">
+                    {camera.targetTemperature}°C
+                  </Span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Span>制冷功率</Span>
+                  <Span className="font-mono">{camera.power}%</Span>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-              <Span>制冷状态</Span>
-              <Badge variant={camera.coolerOn ? "default" : "secondary"}>
-                {camera.coolerOn ? "制冷中" : "关闭"}
-              </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-              <Span>当前温度</Span>
-              <Span className="font-mono">
-                {camera.temperature.toFixed(1)}°C
-              </Span>
-              </div>
-              <div className="flex items-center justify-between">
-              <Span>目标温度</Span>
-              <Span className="font-mono">{camera.targetTemperature}°C</Span>
-              </div>
-              <div className="flex items-center justify-between">
-              <Span>制冷功率</Span>
-              <Span className="font-mono">{camera.power}%</Span>
-              </div>
-            </div>
 
-            <Separator />
+              <Separator />
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-              <Span>曝光时间</Span>
-              <Span className="font-mono">{camera.exposure}秒</Span>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Span>曝光时间</Span>
+                  <Span className="font-mono">{camera.exposure}秒</Span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Span>增益</Span>
+                  <Span className="font-mono">{camera.gain}</Span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Span>ISO</Span>
+                  <Span className="font-mono">{camera.iso}</Span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Span>偏置</Span>
+                  <Span className="font-mono">{camera.offset}</Span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Span>像素合并</Span>
+                  <Span className="font-mono">
+                    {camera.binning}x{camera.binning}
+                  </Span>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-              <Span>增益</Span>
-              <Span className="font-mono">{camera.gain}</Span>
-              </div>
-              <div className="flex items-center justify-between">
-              <Span>ISO</Span>
-              <Span className="font-mono">{camera.iso}</Span>
-              </div>
-              <div className="flex items-center justify-between">
-              <Span>偏置</Span>
-              <Span className="font-mono">{camera.offset}</Span>
-              </div>
-              <div className="flex items-center justify-between">
-              <Span>像素合并</Span>
-              <Span className="font-mono">
-                {camera.binning}x{camera.binning}
-              </Span>
-              </div>
-            </div>
 
-            <Separator />
+              <Separator />
 
-            <div className="space-y-2">
-              <Button
-              className="w-full"
-              variant="outline"
-              onClick={() => camera.toggleRecording()}
-              disabled={!camera.isConnected}
-              >
-              {camera.isRecording ? (
-                <>
-                <StopCircle className="w-4 h-4 mr-2" />
-                停止曝光
-                </>
-              ) : (
-                <>
-                <PlayCircle className="w-4 h-4 mr-2" />
-                开始曝光
-                </>
-              )}
-              </Button>
-            </div>
+              <div className="space-y-2">
+                <Button
+                  className="w-full flex items-center justify-center gap-2"
+                  variant="outline"
+                  onClick={() => camera.toggleRecording()}
+                  disabled={!camera.isConnected}
+                >
+                  {camera.isRecording ? (
+                    <>
+                      <StopCircle className="w-4 h-4 animate-spin" />
+                      停止曝光
+                    </>
+                  ) : (
+                    <>
+                      <PlayCircle className="w-4 h-4" />
+                      开始曝光
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
-        </Card>
+          </Card>
 
-        {/* Middle Panel */}
-        <Card className="lg:col-span-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <CardHeader>
-            <CardTitle>相机控制</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="exposure" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="exposure">曝光</TabsTrigger>
-                <TabsTrigger value="cooling">制冷</TabsTrigger>
-                <TabsTrigger value="image">图像</TabsTrigger>
-                <TabsTrigger value="advanced">高级</TabsTrigger>
-              </TabsList>
+          {/* 中间面板 */}
+          <Card className="lg:col-span-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings2 className="h-6 w-6" />
+                相机控制
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="exposure" className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="exposure">曝光</TabsTrigger>
+                  <TabsTrigger value="cooling">制冷</TabsTrigger>
+                  <TabsTrigger value="image">图像</TabsTrigger>
+                  <TabsTrigger value="advanced">高级</TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="exposure">
-                <div className="space-y-4">
-                  <div className="grid gap-4">
+                <TabsContent value="exposure">
+                  <div className="space-y-4">
+                    <div className="grid gap-4">
+                      <div className="space-y-2">
+                        <Label>曝光时间 (秒)</Label>
+                        <div className="flex items-center gap-2">
+                          <Slider
+                            value={[camera.exposure]}
+                            onValueChange={([v]) => camera.setExposure(v)}
+                            min={0.001}
+                            max={3600}
+                            step={0.001}
+                            className="flex-1"
+                          />
+                          <Input
+                            type="number"
+                            value={camera.exposure}
+                            onChange={(e) =>
+                              camera.setExposure(parseFloat(e.target.value))
+                            }
+                            className="w-24"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>增益</Label>
+                        <div className="flex items-center gap-2">
+                          <Slider
+                            value={[camera.gain]}
+                            onValueChange={([v]) => camera.setGain(v)}
+                            min={0}
+                            max={100}
+                            className="flex-1"
+                          />
+                          <Input
+                            type="number"
+                            value={camera.gain}
+                            onChange={(e) =>
+                              camera.setGain(parseInt(e.target.value))
+                            }
+                            className="w-24"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>ISO</Label>
+                        <Select
+                          value={camera.iso.toString()}
+                          onValueChange={(v) => camera.setISO(parseInt(v))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="100">ISO 100</SelectItem>
+                            <SelectItem value="200">ISO 200</SelectItem>
+                            <SelectItem value="400">ISO 400</SelectItem>
+                            <SelectItem value="800">ISO 800</SelectItem>
+                            <SelectItem value="1600">ISO 1600</SelectItem>
+                            <SelectItem value="3200">ISO 3200</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>偏置</Label>
+                        <div className="flex items-center gap-2">
+                          <Slider
+                            value={[camera.offset]}
+                            onValueChange={([v]) => camera.setOffset(v)}
+                            min={0}
+                            max={255}
+                            className="flex-1"
+                          />
+                          <Input
+                            type="number"
+                            value={camera.offset}
+                            onChange={(e) =>
+                              camera.setOffset(parseInt(e.target.value))
+                            }
+                            className="w-24"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>像素合并</Label>
+                        <Select
+                          value={camera.binning.toString()}
+                          onValueChange={(v) => camera.setBinning(parseInt(v))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">1x1</SelectItem>
+                            <SelectItem value="2">2x2</SelectItem>
+                            <SelectItem value="3">3x3</SelectItem>
+                            <SelectItem value="4">4x4</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="cooling">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label>制冷开关</Label>
+                      <Switch
+                        checked={camera.coolerOn}
+                        onCheckedChange={() => camera.toggleCooler()}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>目标温度 (°C)</Label>
+                      <div className="flex items-center gap-2">
+                        <Slider
+                          value={[camera.targetTemperature]}
+                          onValueChange={([v]) =>
+                            camera.setTargetTemperature(v)
+                          }
+                          min={-30}
+                          max={20}
+                          step={0.1}
+                          className="flex-1"
+                        />
+                        <Input
+                          type="number"
+                          value={camera.targetTemperature}
+                          onChange={(e) =>
+                            camera.setTargetTemperature(
+                              parseFloat(e.target.value)
+                            )
+                          }
+                          className="w-24"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>制冷功率 (%)</Label>
+                      <div className="flex items-center gap-2">
+                        <Slider
+                          value={[camera.power]}
+                          min={0}
+                          max={100}
+                          onValueChange={([v]) =>
+                            camera.setCurrentCoolingPower(v)
+                          }
+                          className="flex-1"
+                        />
+                        <Input
+                          type="number"
+                          value={camera.power}
+                          onChange={(e) =>
+                            camera.setCurrentCoolingPower(
+                              parseInt(e.target.value)
+                            )
+                          }
+                          className="w-24"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+                <TabsContent value="image">
+                  <ImageSettingsPanel />
+                </TabsContent>
+                <TabsContent value="advanced">
+                  <div className="space-y-4">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Button variant="ghost">
+                            <Settings2 className="w-4 h-4 mr-2" />
+                            高级设置
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <span>调整高级相机设置</span>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    {/* 更多高级功能 */}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* 移动端布局 */}
+          <Card className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CameraIcon className="h-6 w-6 animate-bounce" />
+                相机状态
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Span>连接状态</Span>
+                  <Badge
+                    variant={camera.isConnected ? "default" : "destructive"}
+                  >
+                    {camera.isConnected ? "已连接" : "未连接"}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Span>制冷状态</Span>
+                  <Badge variant={camera.coolerOn ? "default" : "secondary"}>
+                    {camera.coolerOn ? "制冷中" : "关闭"}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Span>当前温度</Span>
+                  <Span className="font-mono">
+                    {camera.temperature.toFixed(1)}°C
+                  </Span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Span>目标温度</Span>
+                  <Span className="font-mono">
+                    {camera.targetTemperature}°C
+                  </Span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Span>制冷功率</Span>
+                  <Span className="font-mono">{camera.power}%</Span>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <Button
+                  className="w-full flex items-center justify-center gap-2"
+                  variant="outline"
+                  onClick={() => camera.toggleRecording()}
+                  disabled={!camera.isConnected}
+                >
+                  {camera.isRecording ? (
+                    <>
+                      <StopCircle className="w-4 h-4 animate-spin" />
+                      停止曝光
+                    </>
+                  ) : (
+                    <>
+                      <PlayCircle className="w-4 h-4" />
+                      开始曝光
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings2 className="h-6 w-6" />
+                相机控制
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="exposure" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="exposure">曝光</TabsTrigger>
+                  <TabsTrigger value="cooling">制冷</TabsTrigger>
+                  <TabsTrigger value="image">图像</TabsTrigger>
+                  <TabsTrigger value="advanced">高级</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="exposure">
+                  <div className="space-y-4">
                     <div className="space-y-2">
                       <Label>曝光时间 (秒)</Label>
                       <div className="flex items-center gap-2">
@@ -194,7 +488,7 @@ export function CameraPage() {
                           onChange={(e) =>
                             camera.setExposure(parseFloat(e.target.value))
                           }
-                          className="w-24"
+                          className="w-20"
                         />
                       </div>
                     </div>
@@ -215,7 +509,7 @@ export function CameraPage() {
                           onChange={(e) =>
                             camera.setGain(parseInt(e.target.value))
                           }
-                          className="w-24"
+                          className="w-20"
                         />
                       </div>
                     </div>
@@ -256,7 +550,7 @@ export function CameraPage() {
                           onChange={(e) =>
                             camera.setOffset(parseInt(e.target.value))
                           }
-                          className="w-24"
+                          className="w-20"
                         />
                       </div>
                     </div>
@@ -279,76 +573,99 @@ export function CameraPage() {
                       </Select>
                     </div>
                   </div>
-                </div>
-              </TabsContent>
+                </TabsContent>
 
-              <TabsContent value="cooling">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label>制冷开关</Label>
-                    <Switch
-                      checked={camera.coolerOn}
-                      onCheckedChange={() => camera.toggleCooler()}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>目标温度 (°C)</Label>
-                    <div className="flex items-center gap-2">
-                      <Slider
-                        value={[camera.targetTemperature]}
-                        onValueChange={([v]) => camera.setTargetTemperature(v)}
-                        min={-30}
-                        max={20}
-                        step={0.1}
-                        className="flex-1"
-                      />
-                      <Input
-                        type="number"
-                        value={camera.targetTemperature}
-                        onChange={(e) =>
-                          camera.setTargetTemperature(
-                            parseFloat(e.target.value)
-                          )
-                        }
-                        className="w-24"
+                <TabsContent value="cooling">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label>制冷开关</Label>
+                      <Switch
+                        checked={camera.coolerOn}
+                        onCheckedChange={() => camera.toggleCooler()}
                       />
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label>制冷功率 (%)</Label>
-                    <div className="flex items-center gap-2">
-                      <Slider
-                        value={[camera.power]}
-                        min={0}
-                        max={100}
-                        onValueChange={([v]) =>
-                          camera.setCurrentCoolingPower(v)
-                        }
-                        className="flex-1"
-                      />
-                      <Input
-                        type="number"
-                        value={camera.power}
-                        onChange={(e) =>
-                          camera.setCurrentCoolingPower(
-                            parseInt(e.target.value)
-                          )
-                        }
-                        className="w-24"
-                      />
+                    <div className="space-y-2">
+                      <Label>目标温度 (°C)</Label>
+                      <div className="flex items-center gap-2">
+                        <Slider
+                          value={[camera.targetTemperature]}
+                          onValueChange={([v]) =>
+                            camera.setTargetTemperature(v)
+                          }
+                          min={-30}
+                          max={20}
+                          step={0.1}
+                          className="flex-1"
+                        />
+                        <Input
+                          type="number"
+                          value={camera.targetTemperature}
+                          onChange={(e) =>
+                            camera.setTargetTemperature(
+                              parseFloat(e.target.value)
+                            )
+                          }
+                          className="w-20"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>制冷功率 (%)</Label>
+                      <div className="flex items-center gap-2">
+                        <Slider
+                          value={[camera.power]}
+                          min={0}
+                          max={100}
+                          onValueChange={([v]) =>
+                            camera.setCurrentCoolingPower(v)
+                          }
+                          className="flex-1"
+                        />
+                        <Input
+                          type="number"
+                          value={camera.power}
+                          onChange={(e) =>
+                            camera.setCurrentCoolingPower(
+                              parseInt(e.target.value)
+                            )
+                          }
+                          className="w-20"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </TabsContent>
-              <TabsContent value="image">
-                <ImageSettingsPanel />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+                </TabsContent>
+                <TabsContent value="image">
+                  <ImageSettingsPanel />
+                </TabsContent>
+                <TabsContent value="advanced">
+                  <div className="space-y-4">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Button
+                            variant="ghost"
+                            className="w-full flex items-center justify-center"
+                          >
+                            <Settings2 className="w-4 h-4 mr-2" />
+                            高级设置
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <span>调整高级相机设置</span>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    {/* 更多高级功能 */}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </motion.div>
   );
 }

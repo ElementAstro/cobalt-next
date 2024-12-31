@@ -57,7 +57,7 @@ const defaultState: Omit<
 > = {
   filePath: "C:/Users/Documents/Images",
   filePattern: "",
-  darkMode: false,
+  darkMode: true,
   autoSave: true,
   compressionLevel: 5,
   tags: [],
@@ -118,23 +118,25 @@ const defaultState: Omit<
 };
 
 // 创建 Zustand store 并实现状态持久化
-export const useImageSettingsStore = create<ImageSettingsState>((set, get) => {
+export const useImageSettingsStore = create<ImageSettingsState>((set) => {
   // 从 localStorage 加载已保存的状态
-  const savedState = localStorage.getItem("imageSettings");
   let initialState = defaultState;
 
-  if (savedState) {
-    try {
-      const parsed = JSON.parse(savedState);
-      const result = ImageSettingsStateSchema.safeParse(parsed);
-      if (result.success) {
-        initialState = { ...defaultState, ...result.data };
-        log.info("Loaded state from localStorage:", initialState);
-      } else {
-        log.error("LocalStorage 中的状态验证失败:", result.error);
+  if (typeof window !== "undefined") {
+    const savedState = localStorage.getItem("imageSettings");
+    if (savedState) {
+      try {
+        const parsed = JSON.parse(savedState);
+        const result = ImageSettingsStateSchema.safeParse(parsed);
+        if (result.success) {
+          initialState = { ...defaultState, ...result.data };
+          log.info("Loaded state from localStorage:", initialState);
+        } else {
+          log.error("LocalStorage 中的状态验证失败:", result.error);
+        }
+      } catch (error) {
+        log.error("解析 LocalStorage 中的状态时出错:", error);
       }
-    } catch (error) {
-      log.error("解析 LocalStorage 中的状态时出错:", error);
     }
   }
 

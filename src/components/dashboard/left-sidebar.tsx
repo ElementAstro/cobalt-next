@@ -44,10 +44,10 @@ const scrollVariants = {
   },
 };
 
-export function Sidebar({ devices, onToggle }: SidebarProps) {
+export default function Sidebar({ devices, onToggle }: SidebarProps) {
   return (
     <motion.div
-      className="p-2 border-r border-gray-700 flex flex-col items-center justify-start space-y-4 bg-gray-800 text-white max-h-screen"
+      className="p-2 border-r border-gray-700 flex flex-col items-center justify-start space-y-4 text-white max-h-screen"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
