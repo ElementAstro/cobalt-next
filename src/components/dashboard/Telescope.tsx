@@ -19,20 +19,11 @@ import {
   ParkingSquare,
   Moon,
   Sun,
-  ArrowUpRight,
-  ArrowDownLeft,
 } from "lucide-react";
 import { useTelescopeStore } from "@/store/useTelescopeStore";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectTrigger,
@@ -103,7 +94,7 @@ export function TelescopePage() {
 
   const handleConnect = async () => {
     try {
-      await fetchStatus(); // 假设 fetchStatus 处理连接逻辑
+      await fetchStatus();
       toast({
         title: "成功",
         description: "设备连接成功",
@@ -122,8 +113,7 @@ export function TelescopePage() {
 
   const handleDisconnect = async () => {
     try {
-      // 假设有 disconnect 函数处理断开逻辑
-      await new Promise((resolve) => setTimeout(resolve, 500)); // 模拟异步操作
+      await new Promise((resolve) => setTimeout(resolve, 500));
       toast({
         title: "成功",
         description: "设备已断开连接",
@@ -174,7 +164,6 @@ export function TelescopePage() {
           setCurrentAz(newAz);
           break;
         case "stop":
-          // 停止移动逻辑
           break;
       }
     } catch (error) {
@@ -202,11 +191,7 @@ export function TelescopePage() {
   return (
     <AnimatePresence>
       <motion.div
-        className={`min-h-screen ${
-          nightMode
-            ? "bg-gradient-to-br from-gray-900 to-gray-950 text-white"
-            : "bg-gradient-to-br from-gray-100 to-gray-200 text-gray-900"
-        }`}
+        className={`min-h-screen text-white`}
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -218,29 +203,14 @@ export function TelescopePage() {
               console.log(`Selected telescope: ${device}`)
             }
           />
-
-          <div className="flex justify-end mb-4">
-            {isConnected ? (
-              <Button variant="destructive" onClick={handleDisconnect}>
-                <Power className="w-4 h-4 mr-2" />
-                断开连接
-              </Button>
-            ) : (
-              <Button onClick={handleConnect}>
-                <Power className="w-4 h-4 mr-2" />
-                连接设备
-              </Button>
-            )}
-          </div>
-
           <motion.div
-            className={`grid ${
+            className={`grid mt-4 ${
               isDesktop ? "grid-cols-2 gap-6" : "grid-cols-1 gap-4"
             }`}
           >
             {/* Control Panels */}
             <motion.div variants={itemVariants}>
-              <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 shadow-xl backdrop-blur-md">
+              <Card className="bg-gradient-to-br border-white shadow-xl backdrop-blur-md">
                 <CardHeader>
                   <CardTitle>移动控制</CardTitle>
                 </CardHeader>
@@ -351,7 +321,7 @@ export function TelescopePage() {
               </Card>
 
               {/* Tracking Settings */}
-              <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 shadow-xl backdrop-blur-md mt-6">
+              <Card className="bg-gradient-to-br border-white shadow-xl backdrop-blur-md mt-6">
                 <CardHeader>
                   <CardTitle>追踪设置</CardTitle>
                 </CardHeader>
@@ -382,21 +352,11 @@ export function TelescopePage() {
                       </SelectContent>
                     </Select>
                   </div>
-
-                  {/* Night Mode Toggle */}
-                  <div className="flex items-center justify-between">
-                    <Label>夜间模式</Label>
-                    <Switch
-                      checked={nightMode}
-                      onCheckedChange={handleToggleNightMode}
-                      aria-label="切换夜间模式"
-                    />
-                  </div>
                 </CardContent>
               </Card>
 
               {/* Advanced Options */}
-              <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 shadow-xl backdrop-blur-md mt-6">
+              <Card className="bg-gradient-to-br border-white shadow-xl backdrop-blur-md mt-6">
                 <CardHeader>
                   <CardTitle>高级选项</CardTitle>
                 </CardHeader>
@@ -421,7 +381,7 @@ export function TelescopePage() {
             {/* Information Panels */}
             <motion.div variants={itemVariants}>
               {/* Current Position */}
-              <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 shadow-xl backdrop-blur-md">
+              <Card className="bg-gradient-to-br border-white shadow-xl backdrop-blur-md">
                 <CardHeader>
                   <CardTitle>当前位置</CardTitle>
                 </CardHeader>
@@ -448,7 +408,7 @@ export function TelescopePage() {
               </Card>
 
               {/* Telescope Info */}
-              <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 shadow-xl backdrop-blur-md mt-6">
+              <Card className="bg-gradient-to-br border-white shadow-xl backdrop-blur-md mt-6">
                 <CardHeader>
                   <CardTitle>望远镜信息</CardTitle>
                 </CardHeader>
@@ -483,7 +443,7 @@ export function TelescopePage() {
               </Card>
 
               {/* Status Info */}
-              <Card className="bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700 shadow-xl backdrop-blur-md mt-6">
+              <Card className="bg-gradient-to-br border-white shadow-xl backdrop-blur-md mt-6">
                 <CardHeader>
                   <CardTitle>状态信息</CardTitle>
                 </CardHeader>
@@ -536,19 +496,6 @@ export function TelescopePage() {
                 </CardContent>
               </Card>
             </motion.div>
-          </motion.div>
-
-          {/* Additional Animations and Enhancements */}
-          <motion.div
-            className="fixed bottom-4 right-4"
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1, duration: 0.5 }}
-          >
-            <Badge className="flex items-center p-2 bg-blue-600 rounded-full shadow-lg">
-              <Compass className="w-4 h-4 mr-1 animate-spin-slow" />
-              方向感应中
-            </Badge>
           </motion.div>
         </div>
       </motion.div>

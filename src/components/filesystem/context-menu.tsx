@@ -14,6 +14,16 @@ import {
   Clipboard,
   Share2,
   Info,
+  Star,
+  Archive,
+  Lock,
+  Unlock,
+  RefreshCw,
+  Plus,
+  Minus,
+  Search,
+  Code,
+  Compass,
 } from "lucide-react";
 import {
   ContextMenu,
@@ -76,6 +86,46 @@ export const CustomContextMenu: React.FC = () => {
       label: "Share",
     },
     {
+      operation: "favorite",
+      icon: <Star className="w-4 h-4" />,
+      label: "Add to Favorites",
+    },
+    {
+      operation: "compress",
+      icon: <Archive className="w-4 h-4" />,
+      label: "Compress",
+    },
+    {
+      operation: "lock",
+      icon: <Lock className="w-4 h-4" />,
+      label: "Lock",
+    },
+    {
+      operation: "unlock",
+      icon: <Unlock className="w-4 h-4" />,
+      label: "Unlock",
+    },
+    {
+      operation: "refresh",
+      icon: <RefreshCw className="w-4 h-4" />,
+      label: "Refresh",
+    },
+    {
+      operation: "new",
+      icon: <Plus className="w-4 h-4" />,
+      label: "New",
+    },
+    {
+      operation: "remove",
+      icon: <Minus className="w-4 h-4" />,
+      label: "Remove",
+    },
+    {
+      operation: "search",
+      icon: <Search className="w-4 h-4" />,
+      label: "Search",
+    },
+    {
       operation: "properties",
       icon: <Info className="w-4 h-4" />,
       label: "Properties",
@@ -100,10 +150,18 @@ export const CustomContextMenu: React.FC = () => {
             style={{ top: y, left: x }}
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.1 }}
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              transition={{
+                duration: 0.15,
+                ease: [0.4, 0, 0.2, 1],
+                scale: {
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 20,
+                },
+              }}
             >
               <ContextMenuLabel className="px-4 py-2 font-semibold">
                 Actions

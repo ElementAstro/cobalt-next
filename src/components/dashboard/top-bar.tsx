@@ -7,7 +7,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useMediaQuery } from "@/hooks/use-mobile";
+import { useMediaQuery } from "react-responsive";
 import {
   Telescope,
   Focus,
@@ -23,6 +23,7 @@ import {
   Info,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import WindowsTaskbarClock from "./topbar-time";
 
 interface TopBarProps {
   onOpenOffcanvas: (device: string) => void;
@@ -44,7 +45,7 @@ const itemVariants = {
 };
 
 export default function TopBar({ onOpenOffcanvas }: TopBarProps) {
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
   const [isShowDeviceName, setIsShowDeviceName] = useState(!isMobile);
   const [time, setTime] = useState(new Date());
   const [batteryLevel, setBatteryLevel] = useState<number | null>(null);
@@ -208,12 +209,8 @@ export default function TopBar({ onOpenOffcanvas }: TopBarProps) {
               )}
             </span>
           </motion.div>
-          <motion.div
-            className="text-white text-center"
-            variants={itemVariants}
-          >
-            <div>{time.toLocaleDateString()}</div>
-            <div>{time.toLocaleTimeString()}</div>
+          <motion.div variants={itemVariants}>
+            <WindowsTaskbarClock />
           </motion.div>
           {devices.map((device) => (
             <motion.div key={device.id} variants={itemVariants}>

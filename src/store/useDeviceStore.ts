@@ -3,31 +3,11 @@
 import { create } from "zustand";
 import MessageBus, { LogLevel } from "@/utils/message-bus";
 import WebSocketClient from "@/utils/websocket-client";
-import { useEffect } from "react";
-
-export type DeviceType =
-  | "Camera"
-  | "Telescope"
-  | "Focuser"
-  | "FilterWheel"
-  | "Guider"
-  | "Dome"
-  | "Rotator";
-
-interface DeviceInfo {
-  id: string;
-  name: string;
-  type: DeviceType;
-  firmware: string;
-  serial: string;
-  lastConnected: string;
-  manufacturer?: string;
-  model?: string;
-  capabilities?: string[];
-}
+import { DeviceInfo, DeviceType } from "@/types/device";
 
 interface DeviceSelectorState {
   devices: DeviceInfo[];
+  remoteDrivers: DeviceInfo[];
   selectedDevice: DeviceInfo | null;
   isConnected: boolean;
   isScanning: boolean;
@@ -36,6 +16,7 @@ interface DeviceSelectorState {
   error: string | null;
 
   setDevices: (devices: DeviceInfo[]) => void;
+  setRemoteDrivers: (drivers: DeviceInfo[]) => void;
   selectDevice: (device: DeviceInfo) => void;
   startScanning: () => void;
   stopScanning: () => void;
@@ -43,6 +24,27 @@ interface DeviceSelectorState {
   disconnect: () => void;
   setError: (error: string | null) => void;
   setConnectionProgress: (progress: number) => void;
+
+  // 新增状态
+  deviceGroups: { [key: string]: string[] };
+  favoriteDevices: string[];
+  deviceNotes: { [key: string]: string };
+  deviceSettings: { [key: string]: any };
+  lastConnectionAttempt: string;
+  connectionHistory: Array<{
+    deviceId: string;
+    timestamp: string;
+    success: boolean;
+    error?: string;
+  }>;
+
+  // 新增方法
+  addDeviceGroup: (name: string, deviceIds: string[]) => void;
+  removeDeviceGroup: (name: string) => void;
+  toggleFavoriteDevice: (deviceId: string) => void;
+  updateDeviceNote: (deviceId: string, note: string) => void;
+  updateDeviceSettings: (deviceId: string, settings: any) => void;
+  clearConnectionHistory: () => void;
 }
 
 // 设备模拟数据
@@ -58,6 +60,7 @@ const deviceTemplates: Record<DeviceType, DeviceInfo[]> = {
       serial: "SN2024001",
       lastConnected: new Date().toISOString(),
       capabilities: ["Cooling", "High Speed", "16bit ADC"],
+      connected: false,
     },
     {
       id: "camera-2",
@@ -69,6 +72,7 @@ const deviceTemplates: Record<DeviceType, DeviceInfo[]> = {
       serial: "SN2024002",
       lastConnected: new Date().toISOString(),
       capabilities: ["Cooling", "High Speed", "16bit ADC"],
+      connected: false,
     },
   ],
   Telescope: [
@@ -82,6 +86,7 @@ const deviceTemplates: Record<DeviceType, DeviceInfo[]> = {
       serial: "SN2024003",
       lastConnected: new Date().toISOString(),
       capabilities: ["Goto", "Tracking", "PEC"],
+      connected: false,
     },
   ],
   Focuser: [
@@ -95,6 +100,7 @@ const deviceTemplates: Record<DeviceType, DeviceInfo[]> = {
       serial: "SN2024004",
       lastConnected: new Date().toISOString(),
       capabilities: ["Temperature Compensation"],
+      connected: false,
     },
   ],
   FilterWheel: [
@@ -108,6 +114,7 @@ const deviceTemplates: Record<DeviceType, DeviceInfo[]> = {
       serial: "SN2024005",
       lastConnected: new Date().toISOString(),
       capabilities: ["7-Position"],
+      connected: false,
     },
   ],
   Guider: [
@@ -121,6 +128,7 @@ const deviceTemplates: Record<DeviceType, DeviceInfo[]> = {
       serial: "SN2024006",
       lastConnected: new Date().toISOString(),
       capabilities: ["High Speed", "Small Pixel"],
+      connected: false,
     },
   ],
   Dome: [
@@ -134,6 +142,7 @@ const deviceTemplates: Record<DeviceType, DeviceInfo[]> = {
       serial: "SN2024007",
       lastConnected: new Date().toISOString(),
       capabilities: ["Automatic", "Remote Control"],
+      connected: false,
     },
   ],
   Rotator: [
@@ -147,6 +156,7 @@ const deviceTemplates: Record<DeviceType, DeviceInfo[]> = {
       serial: "SN2024008",
       lastConnected: new Date().toISOString(),
       capabilities: ["High Precision", "Remote Control"],
+      connected: false,
     },
   ],
 };
@@ -174,7 +184,6 @@ messageBus.use((message, topic, next) => {
 
 export const useDeviceSelectorStore = create<DeviceSelectorState>(
   (set, get) => {
-    // 订阅设备相关主题
     messageBus.subscribe("device/update", (data: DeviceInfo[]) => {
       set({ devices: data });
     });
@@ -241,6 +250,7 @@ export const useDeviceSelectorStore = create<DeviceSelectorState>(
 
     return {
       devices: [],
+      remoteDrivers: [],
       selectedDevice: null,
       isConnected: false,
       isScanning: false,
@@ -249,6 +259,7 @@ export const useDeviceSelectorStore = create<DeviceSelectorState>(
       error: null,
 
       setDevices: (devices) => set({ devices }),
+      setRemoteDrivers: (drivers) => set({ remoteDrivers: drivers }),
       selectDevice: (device) => set({ selectedDevice: device }),
       startScanning,
       stopScanning,
@@ -257,8 +268,102 @@ export const useDeviceSelectorStore = create<DeviceSelectorState>(
       setError: (error) => set({ error }),
       setConnectionProgress: (progress) =>
         set({ connectionProgress: progress }),
+
+      deviceGroups: {},
+      favoriteDevices: [],
+      deviceNotes: {},
+      deviceSettings: {},
+      lastConnectionAttempt: "",
+      connectionHistory: [],
+
+      addDeviceGroup: (name, deviceIds) =>
+        set((state) => ({
+          deviceGroups: {
+            ...state.deviceGroups,
+            [name]: deviceIds,
+          },
+        })),
+
+      removeDeviceGroup: (name) =>
+        set((state) => {
+          const { [name]: removed, ...rest } = state.deviceGroups;
+          return { deviceGroups: rest };
+        }),
+
+      toggleFavoriteDevice: (deviceId) =>
+        set((state) => ({
+          favoriteDevices: state.favoriteDevices.includes(deviceId)
+            ? state.favoriteDevices.filter((id) => id !== deviceId)
+            : [...state.favoriteDevices, deviceId],
+        })),
+
+      updateDeviceNote: (deviceId, note) =>
+        set((state) => ({
+          deviceNotes: {
+            ...state.deviceNotes,
+            [deviceId]: note,
+          },
+        })),
+
+      updateDeviceSettings: (deviceId, settings) =>
+        set((state) => ({
+          deviceSettings: {
+            ...state.deviceSettings,
+            [deviceId]: settings,
+          },
+        })),
+
+      clearConnectionHistory: () => set({ connectionHistory: [] }),
     };
   }
 );
 
 export const getDeviceTemplates = (type: DeviceType) => deviceTemplates[type];
+
+import { ProfileData } from "@/types/device";
+
+interface ProfileState {
+  profile: ProfileData;
+  setProfile: (profile: ProfileData) => void;
+  updateProfileField: (field: keyof ProfileData, value: any) => void;
+  isUpdating: boolean;
+  error: string | null;
+}
+
+export const useProfileStore = create<ProfileState>((set, get) => {
+  // 订阅与Profile相关的消息主题
+  messageBus.subscribe("profile/update", (data: Partial<ProfileData>) => {
+    set((state) => ({
+      profile: { ...state.profile, ...data },
+      isUpdating: false,
+    }));
+  });
+
+  messageBus.subscribe("profile/error", (error: string) => {
+    set({ error, isUpdating: false });
+  });
+
+  // 更新Profile字段
+  const updateProfileField = (field: keyof ProfileData, value: any) => {
+    set({ isUpdating: true, error: null });
+    messageBus.publish("profile/updateField", { field, value });
+  };
+
+  return {
+    profile: {
+      name: "",
+      autoConnect: false,
+      mode: "remote",
+      host: "",
+      port: "",
+      guiding: "internal",
+      indiWebManager: false,
+      protocol: "tcp",
+      retry: 3,
+    },
+    setProfile: (profile) => set({ profile }),
+    updateProfileField,
+    isUpdating: false,
+    error: null,
+  };
+});

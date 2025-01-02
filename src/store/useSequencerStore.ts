@@ -7,6 +7,8 @@ export interface TargetSettings {
   startTime: string;
   endTime: string;
   duration: string;
+  retryCount?: number;
+  timeout?: number;
 }
 
 interface TargetState {
@@ -23,6 +25,8 @@ const DEFAULT_SETTINGS: TargetSettings = {
   startTime: "15:39",
   endTime: "15:39",
   duration: "01s",
+  retryCount: 0,
+  timeout: 0,
 };
 
 export const useTargetStore = create<TargetState>((set) => ({

@@ -43,6 +43,11 @@ export interface Task {
   id: string;
   name: string;
   duration: number;
+  type: string;
+  filter: string;
+  binning: string;
+  count: number;
+  category: string;
 }
 
 export interface Target {

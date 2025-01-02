@@ -28,11 +28,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, Search, Filter, Trash2, Edit, Plus } from "lucide-react";
-import { useMediaQuery } from "@/hooks/use-media-query";
+import {
+  Settings,
+  Search,
+  Filter,
+  Trash2,
+  Edit,
+  Plus,
+  Download,
+  Upload,
+} from "lucide-react";
+import { useMediaQuery } from "react-responsive";
 import { Card, CardContent } from "@/components/ui/card";
-import { ConfirmDialog } from "../modal/ConfirmDialog";
-import { useSessionStorageStore } from "@/lib/store/storage/session";
+import { ConfirmDialog } from "@/components/custom/confirm-dialog";
+import { useSessionStorageStore } from "@/store/useStorageStore";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -58,13 +67,13 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
+          <DialogTitle>设置</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-2 py-2">
             <div className="grid grid-cols-4 items-center gap-2">
               <Label htmlFor="theme" className="text-right text-sm">
-                Theme
+                主题
               </Label>
               <Select
                 value={localSettings.theme}
@@ -73,17 +82,17 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 }
               >
                 <SelectTrigger className="col-span-3 h-8">
-                  <SelectValue placeholder="Select a theme" />
+                  <SelectValue placeholder="选择主题" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="light">Light</SelectItem>
-                  <SelectItem value="dark">Dark</SelectItem>
+                  <SelectItem value="light">浅色</SelectItem>
+                  <SelectItem value="dark">深色</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-2">
               <Label htmlFor="itemsPerPage" className="text-right text-sm">
-                Items Per Page
+                每页条目数
               </Label>
               <Input
                 id="itemsPerPage"
@@ -96,11 +105,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   })
                 }
                 className="col-span-3 h-8"
+                min={1}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-2">
               <Label htmlFor="showValuePreview" className="text-right text-sm">
-                Show Preview
+                显示预览
               </Label>
               <Switch
                 id="showValuePreview"
@@ -116,7 +126,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </div>
           <DialogFooter>
             <Button type="submit" size="sm">
-              Save changes
+              保存更改
             </Button>
           </DialogFooter>
         </form>
@@ -165,14 +175,15 @@ export function StorageItemModal({
         </DialogHeader>
         <motion.form
           onSubmit={handleSubmit}
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.9 }}
           transition={{ duration: 0.3 }}
         >
           <div className="grid gap-2 py-2">
             <div className="grid grid-cols-4 items-center gap-2">
               <Label htmlFor="key" className="text-right text-sm">
-                Key
+                键
               </Label>
               <Input
                 id="key"
@@ -184,7 +195,7 @@ export function StorageItemModal({
             </div>
             <div className="grid grid-cols-4 items-center gap-2">
               <Label htmlFor="value" className="text-right text-sm">
-                Value
+                值
               </Label>
               <Input
                 id="value"
@@ -197,7 +208,7 @@ export function StorageItemModal({
           </div>
           <DialogFooter>
             <Button type="submit" size="sm">
-              Save
+              保存
             </Button>
           </DialogFooter>
         </motion.form>
@@ -227,17 +238,21 @@ export function SessionStorageEditor() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "recent" | "oldest">("all");
 
-  const isMobile = useMediaQuery("(max-width: 640px)");
+  const isMobile = useMediaQuery({ query: "(max-width: 640px)" });
 
   const filteredItems = useMemo(() => {
-    let filtered = items.filter((item: StorageItem) => 
+    let filtered = items.filter((item: StorageItem) =>
       item.key.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     if (filter === "recent") {
-      filtered.sort((a: StorageItem, b: StorageItem) => b.key.localeCompare(a.key));
+      filtered.sort((a: StorageItem, b: StorageItem) =>
+        b.key.localeCompare(a.key)
+      );
     } else if (filter === "oldest") {
-      filtered.sort((a: StorageItem, b: StorageItem) => a.key.localeCompare(b.key));
+      filtered.sort((a: StorageItem, b: StorageItem) =>
+        a.key.localeCompare(b.key)
+      );
     }
 
     return filtered;
@@ -261,6 +276,37 @@ export function SessionStorageEditor() {
 
   const totalPages = Math.ceil(filteredItems.length / settings.itemsPerPage);
 
+  const handleExport = () => {
+    const dataStr = JSON.stringify(items, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "sessionStorage.json";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const importedItems: StorageItem[] = JSON.parse(
+          event.target?.result as string
+        );
+        importedItems.forEach(({ key, value }) => {
+          sessionStorage.setItem(key, value);
+        });
+        setItems(importedItems);
+      } catch (error) {
+        // Handle error
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <div
       className={`container mx-auto p-2 ${
@@ -272,31 +318,31 @@ export function SessionStorageEditor() {
           <span className="bg-primary/10 p-2 rounded-lg">
             <Settings className="w-5 h-5" />
           </span>
-          SessionStorage Editor
+          SessionStorage 编辑器
         </h1>
-        
+
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <div className="relative w-full sm:w-64">
-              <Input
-                placeholder="Search items..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-              <Search className="absolute left-2 top-2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="搜索条目..."
+              className="pl-8"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+            <Search className="absolute left-2 top-2 w-4 h-4 text-muted-foreground" />
           </div>
-          
+
           <div className="flex gap-2">
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               onClick={() => setIsAddModalOpen(true)}
               className="gap-1"
             >
               <Plus className="w-4 h-4" />
-              Add Item
+              添加条目
             </Button>
             <Button
               size="sm"
@@ -305,8 +351,27 @@ export function SessionStorageEditor() {
               className="gap-1"
             >
               <Settings className="w-4 h-4" />
-              Settings
+              设置
             </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleExport}
+              className="gap-1"
+            >
+              <Download className="w-4 h-4" />
+              导出
+            </Button>
+            <label className="flex items-center gap-1 cursor-pointer">
+              <Upload className="w-4 h-4" />
+              <span className="text-sm">导入</span>
+              <input
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={handleImport}
+              />
+            </label>
           </div>
         </div>
       </div>
@@ -318,7 +383,7 @@ export function SessionStorageEditor() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.5 }}
             >
               <Card className="mb-2">
                 <CardContent className="p-2">
@@ -340,7 +405,7 @@ export function SessionStorageEditor() {
                       className="gap-1"
                     >
                       <Edit className="w-4 h-4" />
-                      Edit
+                      编辑
                     </Button>
                     <Button
                       variant="destructive"
@@ -352,7 +417,7 @@ export function SessionStorageEditor() {
                       className="gap-1"
                     >
                       <Trash2 className="w-4 h-4" />
-                      Delete
+                      删除
                     </Button>
                   </div>
                 </CardContent>
@@ -364,11 +429,9 @@ export function SessionStorageEditor() {
         <Table className="w-full">
           <TableHeader>
             <TableRow>
-              <TableHead>Key</TableHead>
-              {settings.showValuePreview && (
-                <TableHead>Value Preview</TableHead>
-              )}
-              <TableHead>Actions</TableHead>
+              <TableHead>键</TableHead>
+              {settings.showValuePreview && <TableHead>值预览</TableHead>}
+              <TableHead>操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -379,7 +442,7 @@ export function SessionStorageEditor() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ 0.5: 0.8 }}
                 >
                   <TableCell>{key}</TableCell>
                   {settings.showValuePreview && (
@@ -397,7 +460,7 @@ export function SessionStorageEditor() {
                         setIsEditModalOpen(true);
                       }}
                     >
-                      Edit
+                      编辑
                     </Button>
                     <Button
                       variant="destructive"
@@ -406,7 +469,7 @@ export function SessionStorageEditor() {
                         setIsDeleteModalOpen(true);
                       }}
                     >
-                      Delete
+                      删除
                     </Button>
                   </TableCell>
                 </motion.tr>
@@ -415,56 +478,58 @@ export function SessionStorageEditor() {
           </TableBody>
         </Table>
       )}
-          <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {items.length} items
-              </span>
-              <Select
-                value={filter}
-                onValueChange={(value: "all" | "recent" | "oldest") => {
-                  setFilter(value);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Filter" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="recent">Recent</SelectItem>
-                  <SelectItem value="oldest">Oldest</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-              <span className="py-1 px-2 bg-secondary text-secondary-foreground rounded text-sm">
-                Page {currentPage} of {totalPages}
-              </span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+      <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">
+            {items.length} 条目
+          </span>
+          <Select
+            value={filter}
+            onValueChange={(value: "all" | "recent" | "oldest") => {
+              setFilter(value);
+              setCurrentPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="筛选" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部</SelectItem>
+              <SelectItem value="recent">最近</SelectItem>
+              <SelectItem value="oldest">最早</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            上一页
+          </Button>
+          <span className="py-1 px-2 bg-secondary text-secondary-foreground rounded text-sm">
+            第 {currentPage} 页，共 {totalPages} 页
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              setCurrentPage(Math.min(currentPage + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+          >
+            下一页
+          </Button>
+        </div>
+      </div>
       <StorageItemModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSubmit={addItem}
-        title="Add Item"
+        title="添加条目"
       />
       <StorageItemModal
         isOpen={isEditModalOpen}
@@ -475,7 +540,7 @@ export function SessionStorageEditor() {
           }
           setIsEditModalOpen(false);
         }}
-        title="Edit Item"
+        title="编辑条目"
         initialKey={currentItem?.key}
         initialValue={currentItem?.value}
       />
@@ -488,8 +553,8 @@ export function SessionStorageEditor() {
           }
           setIsDeleteModalOpen(false);
         }}
-        title="Delete Item"
-        message="Are you sure you want to delete this item?"
+        title="删除条目"
+        message="确定要删除此条目吗？"
       />
       <SettingsModal
         isOpen={isSettingsModalOpen}

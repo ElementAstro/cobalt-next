@@ -105,6 +105,14 @@ interface SearchState {
   setSearchResults: (results: string[]) => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
+  minSize: number;
+  setMinSize: (size: number) => void;
+  maxSize: number;
+  setMaxSize: (size: number) => void;
+  owner: string;
+  setOwner: (owner: string) => void;
+  searchTags: string;
+  setSearchTags: (tags: string) => void;
   reset: () => void;
 }
 
@@ -242,6 +250,14 @@ export const useFilesystemStore = create<AppState>((set, get) => ({
   setSearchResults: (results) => set({ searchResults: results }),
   isLoading: false,
   setIsLoading: (loading) => set({ isLoading: loading }),
+  minSize: 0,
+  setMinSize: (size) => set({ minSize: size }),
+  maxSize: 0,
+  setMaxSize: (size) => set({ maxSize: size }),
+  owner: "",
+  setOwner: (owner) => set({ owner }),
+  searchTags: "",
+  setSearchTags: (tags) => set({ searchTags: tags }),
   reset: () =>
     set({
       searchTerm: "",
@@ -250,5 +266,9 @@ export const useFilesystemStore = create<AppState>((set, get) => ({
       includeArchived: false,
       searchResults: [],
       isLoading: false,
+      minSize: 0,
+      maxSize: 0,
+      owner: "",
+      searchTags: "",
     }),
 }));

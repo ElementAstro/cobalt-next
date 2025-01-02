@@ -14,13 +14,27 @@ import {
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, X, Clock, Download, Play, StopCircle } from "lucide-react";
-import { useMediaQuery } from "@/hooks/use-mobile";
+import { useMediaQuery } from "react-responsive";
 import { TargetSettings } from "@/store/useSequencerStore";
+
+interface AdvancedSettings {
+  retryCount: number;
+  timeout: number;
+  priority: "low" | "medium" | "high";
+  colorTheme: string;
+}
 
 export function TargetControls() {
   const { settings, setSetting, saveSettings, resetSettings } =
     useTargetStore();
-  const isMobile = useMediaQuery("(max-width: 768px)");
+  const [advancedSettings, setAdvancedSettings] =
+    React.useState<AdvancedSettings>({
+      retryCount: 3,
+      timeout: 60,
+      priority: "medium",
+      colorTheme: "default",
+    });
+  const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
   const [errors, setErrors] = React.useState<{
     [key in keyof TargetSettings]?: string;
   }>({});
@@ -41,9 +55,39 @@ export function TargetControls() {
           setErrors((prev) => ({ ...prev, delayStart: undefined }));
         }
         break;
+      case "retryCount":
+        if (isNaN(Number(value)) || Number(value) < 0 || Number(value) > 10) {
+          setErrors((prev) => ({
+            ...prev,
+            retryCount: "重试次数必须是0到10之间的数字",
+          }));
+        } else {
+          setErrors((prev) => ({ ...prev, retryCount: undefined }));
+        }
+        break;
+      case "timeout":
+        if (isNaN(Number(value)) || Number(value) < 0 || Number(value) > 600) {
+          setErrors((prev) => ({
+            ...prev,
+            timeout: "超时时间必须是0到600之间的数字",
+          }));
+        } else {
+          setErrors((prev) => ({ ...prev, timeout: undefined }));
+        }
+        break;
       default:
         setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
+  };
+
+  const handleAdvancedChange = (
+    field: keyof AdvancedSettings,
+    value: string
+  ) => {
+    setAdvancedSettings((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
   const toggleExpansion = () => {
@@ -98,7 +142,8 @@ export function TargetControls() {
                 hidden: {},
                 visible: {
                   transition: {
-                    staggerChildren: 0.2,
+                    staggerChildren: 0.1,
+                    delayChildren: 0.2,
                   },
                 },
               }}
@@ -171,6 +216,126 @@ export function TargetControls() {
                   {settings.estimatedDownload}
                 </div>
               </motion.div>
+
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 },
+                }}
+              >
+                <Label htmlFor="retry-count" className="text-sm text-gray-400">
+                  重试次数
+                </Label>
+                <Input
+                  id="retry-count"
+                  type="number"
+                  value={settings.retryCount || 0}
+                  onChange={(e) => handleChange("retryCount", e.target.value)}
+                  className={`w-20 bg-gray-800 border ${
+                    errors.retryCount ? "border-red-500" : "border-gray-700"
+                  } text-white mt-1`}
+                />
+                {errors.retryCount && (
+                  <span className="text-red-500 text-sm">
+                    {errors.retryCount}
+                  </span>
+                )}
+              </motion.div>
+
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 },
+                }}
+              >
+                <Label htmlFor="timeout" className="text-sm text-gray-400">
+                  超时时间
+                </Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input
+                    id="timeout"
+                    type="number"
+                    value={settings.timeout || 0}
+                    onChange={(e) => handleChange("timeout", e.target.value)}
+                    className={`w-20 bg-gray-800 border ${
+                      errors.timeout ? "border-red-500" : "border-gray-700"
+                    } text-white`}
+                  />
+                  <span className="text-gray-400">秒</span>
+                </div>
+                {errors.timeout && (
+                  <span className="text-red-500 text-sm">{errors.timeout}</span>
+                )}
+              </motion.div>
+            </motion.div>
+
+            <motion.div
+              className="mt-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <div className="text-lg font-medium text-gray-400 mb-4">
+                高级设置
+              </div>
+              <div className="grid gap-6 md:grid-cols-3">
+                <motion.div
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { opacity: 1, y: 0 },
+                  }}
+                >
+                  <Label htmlFor="priority" className="text-sm text-gray-400">
+                    任务优先级
+                  </Label>
+                  <Select
+                    value={advancedSettings.priority}
+                    onValueChange={(value) =>
+                      handleAdvancedChange("priority", value)
+                    }
+                  >
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                      <SelectItem value="low">低</SelectItem>
+                      <SelectItem value="medium">中</SelectItem>
+                      <SelectItem value="high">高</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </motion.div>
+
+                <motion.div
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { opacity: 1, y: 0 },
+                  }}
+                >
+                  <Label
+                    htmlFor="color-theme"
+                    className="text-sm text-gray-400"
+                  >
+                    颜色主题
+                  </Label>
+                  <Select
+                    value={advancedSettings.colorTheme}
+                    onValueChange={(value) =>
+                      handleAdvancedChange("colorTheme", value)
+                    }
+                  >
+                    <SelectTrigger className="bg-gray-800 border-gray-700 text-white mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                      <SelectItem value="default">默认</SelectItem>
+                      <SelectItem value="dark">暗黑</SelectItem>
+                      <SelectItem value="light">明亮</SelectItem>
+                      <SelectItem value="blue">蓝色</SelectItem>
+                      <SelectItem value="green">绿色</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </motion.div>
+              </div>
             </motion.div>
 
             <motion.div

@@ -20,30 +20,57 @@ import {
 } from "lucide-react";
 import { useMediaQuery } from "react-responsive";
 
+interface ResponseData {
+  status: number;
+  statusText: string;
+  headers: Record<string, string>;
+  data: any;
+  timing?: {
+    start: number;
+    end: number;
+  };
+}
+
 interface ResponseDisplayProps {
-  response: {
-    status: number;
-    statusText: string;
-    headers: Record<string, string>;
-    data: any;
-    timing?: {
-      start: number;
-      end: number;
-    };
-  } | null;
+  response: ResponseData | null;
   loading: boolean;
+  className?: string;
+  maxWidth?: string | number;
+  showCopyButtons?: boolean;
+  showDownloadButton?: boolean;
+  showSearch?: boolean;
+  defaultExpanded?: boolean;
+  theme?: "light" | "dark";
+  animationDuration?: number;
+  onCopy?: (type: "headers" | "body" | "status", content: string) => void;
+  onDownload?: (response: ResponseData) => void;
 }
 
 export default function ResponseDisplay({
   response,
   loading,
+  className = "",
+  maxWidth = "4xl",
+  showCopyButtons = true,
+  showDownloadButton = true,
+  showSearch = true,
+  defaultExpanded = false,
+  theme = "dark",
+  animationDuration = 0.3,
+  onCopy,
+  onDownload,
 }: ResponseDisplayProps) {
   const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
-  const [showHeaders, setShowHeaders] = useState(!isMobile);
-  const [showBody, setShowBody] = useState(!isMobile);
+  const [showHeaders, setShowHeaders] = useState(defaultExpanded || !isMobile);
+  const [showBody, setShowBody] = useState(defaultExpanded || !isMobile);
   const [searchTerm, setSearchTerm] = useState("");
   const [isRegexSearch, setIsRegexSearch] = useState(false);
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [isCopied, setIsCopied] = useState({
+    headers: false,
+    body: false,
+    status: false,
+  });
 
   if (loading) {
     return (
@@ -109,11 +136,27 @@ export default function ResponseDisplay({
     return Prism.highlight(code, Prism.languages.json, "json");
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+  const copyToClipboard = (
+    text: string,
+    type: "headers" | "body" | "status"
+  ) => {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        setIsCopied((prev) => ({ ...prev, [type]: true }));
+        setTimeout(
+          () => setIsCopied((prev) => ({ ...prev, [type]: false })),
+          2000
+        );
+        onCopy?.(type, text);
+      })
+      .catch(() => {
+        // Handle copy error
+      });
   };
 
   const downloadResponse = () => {
+    if (!response) return;
     const blob = new Blob([JSON.stringify(response, null, 2)], {
       type: "application/json",
     });
@@ -125,6 +168,7 @@ export default function ResponseDisplay({
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    onDownload?.(response);
   };
 
   const highlightSearchTerm = (content: string) => {
@@ -133,7 +177,11 @@ export default function ResponseDisplay({
       const regex = isRegexSearch
         ? new RegExp(searchTerm, "gi")
         : new RegExp(`(${searchTerm})`, "gi");
-      return content.replace(regex, "<mark>$1</mark>");
+      return content.replace(
+        regex,
+        (match) =>
+          `<mark class="bg-yellow-200 dark:bg-yellow-800">${match}</mark>`
+      );
     } catch (error) {
       return content;
     }
@@ -150,15 +198,32 @@ export default function ResponseDisplay({
     return null;
   };
 
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -20 },
+  };
+
+  const sectionVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: 20 },
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
-      className="w-full max-w-4xl mx-auto mt-6"
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      variants={cardVariants}
+      transition={{ duration: animationDuration }}
+      className={`w-full max-w-${maxWidth} mx-auto mt-6 ${className}`}
     >
-      <Card className="backdrop-blur-md bg-white/90 dark:bg-gray-800/90 shadow-xl overflow-hidden">
+      <Card
+        className={`backdrop-blur-md ${
+          theme === "light" ? "bg-white/90" : "bg-gray-800/90"
+        } shadow-xl overflow-hidden`}
+      >
         <CardHeader className="border-b border-gray-200 dark:border-gray-700">
           <CardTitle className="text-xl font-semibold flex items-center">
             <div className="flex-1">响应结果</div>
@@ -181,26 +246,60 @@ export default function ResponseDisplay({
             transition={{ duration: 0.5, staggerChildren: 0.2 }}
             className="space-y-6"
           >
-            <Input
-              placeholder="搜索响应内容..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="mb-4"
-            />
+            {showSearch && (
+              <motion.div
+                variants={sectionVariants}
+                className="flex gap-2 mb-4"
+              >
+                <Input
+                  placeholder="搜索响应内容..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="flex-1"
+                />
+                <button
+                  onClick={() => setIsRegexSearch(!isRegexSearch)}
+                  className={`p-2 rounded ${
+                    isRegexSearch
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-200 dark:bg-gray-700"
+                  }`}
+                  title="切换正则表达式搜索"
+                >
+                  /.*/
+                </button>
+              </motion.div>
+            )}
 
             <motion.div
               variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
             >
               <div className="flex justify-between items-center">
                 <h3 className="font-semibold text-lg">状态:</h3>
-                <button
-                  onClick={() =>
-                    copyToClipboard(`${response.status} ${response.statusText}`)
-                  }
-                  className="text-gray-400 hover:text-gray-200"
-                >
-                  <ClipboardCopyIcon className="h-5 w-5" />
-                </button>
+                {showCopyButtons && (
+                  <button
+                    onClick={() => {
+                      copyToClipboard(
+                        `${response.status} ${response.statusText}`,
+                        "status"
+                      );
+                    }}
+                    className="text-gray-400 hover:text-gray-200 relative"
+                    disabled={isCopied.status}
+                  >
+                    <ClipboardCopyIcon className="h-5 w-5" />
+                    {isCopied.status && (
+                      <motion.span
+                        className="absolute -top-2 -right-2 text-xs bg-green-500 text-white px-1 rounded"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                      >
+                        已复制
+                      </motion.span>
+                    )}
+                  </button>
+                )}
               </div>
               <p className="text-gray-300">
                 {response.status} {response.statusText}
@@ -218,14 +317,41 @@ export default function ResponseDisplay({
                 >
                   {showHeaders ? "隐藏" : "显示"}
                 </button>
-                <button
-                  onClick={() =>
-                    copyToClipboard(JSON.stringify(response.headers, null, 2))
-                  }
-                  className="ml-2 text-gray-400 hover:text-gray-200"
-                >
-                  <ClipboardCopyIcon className="h-5 w-5" />
-                </button>
+                <div className="flex gap-2">
+                  {showCopyButtons && (
+                    <button
+                      onClick={() => {
+                        copyToClipboard(
+                          JSON.stringify(response.headers, null, 2),
+                          "headers"
+                        );
+                      }}
+                      className="text-gray-400 hover:text-gray-200 relative"
+                      disabled={isCopied.headers}
+                    >
+                      <ClipboardCopyIcon className="h-5 w-5" />
+                      {isCopied.headers && (
+                        <motion.span
+                          className="absolute -top-2 -right-2 text-xs bg-green-500 text-white px-1 rounded"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          exit={{ scale: 0 }}
+                        >
+                          已复制
+                        </motion.span>
+                      )}
+                    </button>
+                  )}
+                  {showDownloadButton && (
+                    <button
+                      onClick={downloadResponse}
+                      className="text-gray-400 hover:text-gray-200"
+                      title="下载响应"
+                    >
+                      <DownloadIcon className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
               </div>
               <AnimatePresence>
                 {showHeaders && (
@@ -263,14 +389,41 @@ export default function ResponseDisplay({
                 >
                   {showBody ? "隐藏" : "显示"}
                 </button>
-                <button
-                  onClick={() =>
-                    copyToClipboard(JSON.stringify(response.data, null, 2))
-                  }
-                  className="ml-2 text-gray-400 hover:text-gray-200"
-                >
-                  <ClipboardCopyIcon className="h-5 w-5" />
-                </button>
+                <div className="flex gap-2">
+                  {showCopyButtons && (
+                    <button
+                      onClick={() => {
+                        copyToClipboard(
+                          JSON.stringify(response.data, null, 2),
+                          "body"
+                        );
+                      }}
+                      className="text-gray-400 hover:text-gray-200 relative"
+                      disabled={isCopied.body}
+                    >
+                      <ClipboardCopyIcon className="h-5 w-5" />
+                      {isCopied.body && (
+                        <motion.span
+                          className="absolute -top-2 -right-2 text-xs bg-green-500 text-white px-1 rounded"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          exit={{ scale: 0 }}
+                        >
+                          已复制
+                        </motion.span>
+                      )}
+                    </button>
+                  )}
+                  {showDownloadButton && (
+                    <button
+                      onClick={downloadResponse}
+                      className="text-gray-400 hover:text-gray-200"
+                      title="下载响应"
+                    >
+                      <DownloadIcon className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
               </div>
               <AnimatePresence>
                 {showBody && (

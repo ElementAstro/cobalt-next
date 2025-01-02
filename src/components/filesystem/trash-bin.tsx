@@ -10,6 +10,10 @@ import {
   List,
   Grid,
   Search,
+  FileText,
+  Image,
+  Video,
+  File as FileIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -42,8 +46,7 @@ export const TrashBin: React.FC<{
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredFiles = deletedFiles.filter((file) => {
-    const matchesType =
-      filterType === "all" || (file as unknown as File).type === filterType;
+    const matchesType = filterType === "all" || file.type === filterType;
     const matchesSearch = file.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
@@ -137,12 +140,22 @@ export const TrashBin: React.FC<{
                                   className="relative group p-4 rounded-lg bg-gray-700 hover:bg-gray-600"
                                 >
                                   <div className="flex flex-col items-center">
-                                    <div className="w-16 h-16 mb-2">
-                                      {/* File type icon */}
+                                    <div className="w-16 h-16 mb-2 flex items-center justify-center">
+                                      {file.type === "document" ? (
+                                        <FileText className="w-8 h-8 text-gray-400" />
+                                      ) : file.type === "image" ? (
+                                        <Image className="w-8 h-8 text-gray-400" />
+                                      ) : file.type === "video" ? (
+                                        <Video className="w-8 h-8 text-gray-400" />
+                                      ) : (
+                                        <FileIcon className="w-8 h-8 text-gray-400" />
+                                      )}
                                     </div>
-                                    <p className="text-sm font-medium truncate w-full text-center">
-                                      {file.name}
-                                    </p>
+                                    <div className="text-center">
+                                      <p className="text-sm font-medium truncate w-full">
+                                        {file.name}
+                                      </p>
+                                    </div>
                                   </div>
                                   <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                     <Button

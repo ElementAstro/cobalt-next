@@ -118,6 +118,7 @@ interface CameraState extends ViewerSettings {
   setWhiteBalance: (whiteBalance: string) => void;
   setFocusPoint: (focusPoint: { x: number; y: number }) => void;
   resetSettings: (settings: Partial<ViewerSettings>) => void;
+  images: string[];
 }
 
 export const useViewerStore = create<CameraState>((set) => ({
@@ -130,6 +131,7 @@ export const useViewerStore = create<CameraState>((set) => ({
   iso: 100,
   whiteBalance: "Auto",
   focusPoint: { x: 50, y: 50 },
+  images: [],
   setZoom: (zoom) => set({ zoom }),
   setBrightness: (brightness) => set({ brightness }),
   setContrast: (contrast) => set({ contrast }),

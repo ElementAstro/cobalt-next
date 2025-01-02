@@ -72,6 +72,14 @@ export function AutofocusSettings() {
     temperature: 2,
     filterChange: true,
     beforeImaging: true,
+    method: "HFD", // HFD, FWHM, or Contrast
+    stepSize: 10,
+    tolerance: 0.5,
+    maxIterations: 10,
+    retryOnFail: true,
+    useVCurve: false,
+    saveResults: true,
+    alertOnComplete: true,
   });
 
   const [batchProcess, setBatchProcess] = useState({
@@ -309,7 +317,114 @@ export function AutofocusSettings() {
                     }
                   />
                 </div>
-                {/* 添加其他自动聚焦设置项 */}
+                <div className="flex items-center justify-between">
+                  <Label>聚焦方法</Label>
+                  <select
+                    value={autofocusSettings.method}
+                    onChange={(e) =>
+                      setAutofocusSettings((prev) => ({
+                        ...prev,
+                        method: e.target.value,
+                      }))
+                    }
+                    className="bg-gray-700 text-white rounded px-2 py-1"
+                  >
+                    <option value="HFD">HFD</option>
+                    <option value="FWHM">FWHM</option>
+                    <option value="Contrast">Contrast</option>
+                  </select>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>步长</Label>
+                  <Input
+                    type="number"
+                    value={autofocusSettings.stepSize}
+                    onChange={(e) =>
+                      setAutofocusSettings((prev) => ({
+                        ...prev,
+                        stepSize: Number(e.target.value),
+                      }))
+                    }
+                    className="w-20 bg-gray-700 text-white"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>容差</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={autofocusSettings.tolerance}
+                    onChange={(e) =>
+                      setAutofocusSettings((prev) => ({
+                        ...prev,
+                        tolerance: Number(e.target.value),
+                      }))
+                    }
+                    className="w-20 bg-gray-700 text-white"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>最大迭代次数</Label>
+                  <Input
+                    type="number"
+                    value={autofocusSettings.maxIterations}
+                    onChange={(e) =>
+                      setAutofocusSettings((prev) => ({
+                        ...prev,
+                        maxIterations: Number(e.target.value),
+                      }))
+                    }
+                    className="w-20 bg-gray-700 text-white"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>失败重试</Label>
+                  <Switch
+                    checked={autofocusSettings.retryOnFail}
+                    onCheckedChange={(checked) =>
+                      setAutofocusSettings((prev) => ({
+                        ...prev,
+                        retryOnFail: checked,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>使用V曲线</Label>
+                  <Switch
+                    checked={autofocusSettings.useVCurve}
+                    onCheckedChange={(checked) =>
+                      setAutofocusSettings((prev) => ({
+                        ...prev,
+                        useVCurve: checked,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>保存结果</Label>
+                  <Switch
+                    checked={autofocusSettings.saveResults}
+                    onCheckedChange={(checked) =>
+                      setAutofocusSettings((prev) => ({
+                        ...prev,
+                        saveResults: checked,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>完成时提醒</Label>
+                  <Switch
+                    checked={autofocusSettings.alertOnComplete}
+                    onCheckedChange={(checked) =>
+                      setAutofocusSettings((prev) => ({
+                        ...prev,
+                        alertOnComplete: checked,
+                      }))
+                    }
+                  />
+                </div>
               </div>
             </div>
 

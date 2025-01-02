@@ -27,6 +27,14 @@ interface HistoryPanelProps {
   onSelect: (config: any) => void;
 }
 
+const convertToCSV = (data: any[]) => {
+  const headers = Object.keys(data[0].config);
+  const rows = data.map((item) =>
+    headers.map((header) => JSON.stringify(item.config[header])).join(",")
+  );
+  return [headers.join(","), ...rows].join("\n");
+};
+
 export default function HistoryPanel({ onSelect }: HistoryPanelProps) {
   const { history, removeHistory, clearHistory } = useDebugStore();
   const [search, setSearch] = useState<string>("");
@@ -36,6 +44,7 @@ export default function HistoryPanel({ onSelect }: HistoryPanelProps) {
   );
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [exportFormat, setExportFormat] = useState<"json" | "csv">("json");
 
   useEffect(() => {
     Prism.highlightAll();
@@ -142,16 +151,58 @@ export default function HistoryPanel({ onSelect }: HistoryPanelProps) {
           </Button>
 
           {history.length > 0 && (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={clearHistory}
-              className="whitespace-nowrap flex items-center gap-2"
-              aria-label="清空所有历史记录"
-            >
-              <Trash2 className="w-4 h-4" />
-              清空
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (history.length === 0) {
+                    alert("没有可导出的历史记录");
+                    return;
+                  }
+
+                  try {
+                    const data =
+                      exportFormat === "json"
+                        ? JSON.stringify(history, null, 2)
+                        : convertToCSV(history);
+
+                    const blob = new Blob([data], {
+                      type:
+                        exportFormat === "json"
+                          ? "application/json"
+                          : "text/csv",
+                    });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = `history_export_${new Date()
+                      .toISOString()
+                      .slice(0, 10)}.${exportFormat}`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                  } catch (error) {
+                    console.error("导出失败:", error);
+                    alert("导出失败，请重试");
+                  }
+                }}
+                className="whitespace-nowrap flex items-center gap-2"
+                aria-label="导出历史记录"
+              >
+                <FileText className="w-4 h-4" />
+                导出
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={clearHistory}
+                className="whitespace-nowrap flex items-center gap-2"
+                aria-label="清空所有历史记录"
+              >
+                <Trash2 className="w-4 h-4" />
+                清空
+              </Button>
+            </>
           )}
         </div>
 
@@ -323,6 +374,17 @@ export default function HistoryPanel({ onSelect }: HistoryPanelProps) {
             >
               <Trash2 className="w-4 h-4" />
               删除选中项 ({selectedItems.length})
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                // Export selected items logic here
+              }}
+              className="flex items-center gap-2 shadow-lg"
+            >
+              <FileText className="w-4 h-4" />
+              导出选中项
             </Button>
           </div>
         )}

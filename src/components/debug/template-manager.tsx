@@ -18,7 +18,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, Edit2, Save, X, RefreshCw, Search, Plus } from "lucide-react";
 import { useDebugStore } from "@/store/useDebugStore";
 
-const METHOD_OPTIONS = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD"];
+const METHOD_OPTIONS = [
+  "GET",
+  "POST",
+  "PUT",
+  "DELETE",
+  "PATCH",
+  "HEAD",
+  "OPTIONS",
+];
+const AUTH_TYPES = ["None", "Basic", "Bearer", "API Key"];
 
 const BUILT_IN_TEMPLATES = [
   {
@@ -85,6 +94,9 @@ export default function TemplateManager() {
   const [url, setUrl] = useState("");
   const [headers, setHeaders] = useState("");
   const [data, setData] = useState("");
+  const [queryParams, setQueryParams] = useState("");
+  const [authType, setAuthType] = useState("None");
+  const [authCredentials, setAuthCredentials] = useState("");
   const [timeout, setTimeoutValue] = useState(5000);
   const [retries, setRetries] = useState(3);
   const [retryDelay, setRetryDelay] = useState(1000);
@@ -97,6 +109,9 @@ export default function TemplateManager() {
     url: "",
     headers: "",
     data: "",
+    queryParams: "",
+    authType: "None",
+    authCredentials: "",
     timeout: 5000,
     retries: 3,
     retryDelay: 1000,
@@ -115,6 +130,22 @@ export default function TemplateManager() {
       try {
         const parsedHeaders = headers ? JSON.parse(headers) : {};
         const parsedData = data ? JSON.parse(data) : {};
+        const parsedQueryParams = queryParams ? JSON.parse(queryParams) : {};
+
+        // Handle authentication
+        if (authType !== "None" && authCredentials) {
+          switch (authType) {
+            case "Basic":
+              parsedHeaders["Authorization"] = `Basic ${btoa(authCredentials)}`;
+              break;
+            case "Bearer":
+              parsedHeaders["Authorization"] = `Bearer ${authCredentials}`;
+              break;
+            case "API Key":
+              parsedHeaders["X-API-Key"] = authCredentials;
+              break;
+          }
+        }
         const newTemplate = {
           name: name.trim(),
           config: {
@@ -151,6 +182,28 @@ export default function TemplateManager() {
           ? JSON.parse(editValues.headers)
           : {};
         const parsedData = editValues.data ? JSON.parse(editValues.data) : {};
+        const parsedQueryParams = editValues.queryParams
+          ? JSON.parse(editValues.queryParams)
+          : {};
+
+        // Handle authentication
+        if (editValues.authType !== "None" && editValues.authCredentials) {
+          switch (editValues.authType) {
+            case "Basic":
+              parsedHeaders["Authorization"] = `Basic ${btoa(
+                editValues.authCredentials
+              )}`;
+              break;
+            case "Bearer":
+              parsedHeaders[
+                "Authorization"
+              ] = `Bearer ${editValues.authCredentials}`;
+              break;
+            case "API Key":
+              parsedHeaders["X-API-Key"] = editValues.authCredentials;
+              break;
+          }
+        }
         const updatedTemplate = {
           name: editValues.name.trim(),
           config: {
@@ -184,6 +237,9 @@ export default function TemplateManager() {
       url: template.config.url,
       headers: JSON.stringify(template.config.headers, null, 2),
       data: JSON.stringify(template.config.data || {}, null, 2),
+      queryParams: JSON.stringify(template.config.queryParams || {}, null, 2),
+      authType: template.config.authType || "None",
+      authCredentials: template.config.authCredentials || "",
       timeout: template.config.timeout,
       retries: template.config.retries,
       retryDelay: template.config.retryDelay,
@@ -309,6 +365,50 @@ export default function TemplateManager() {
                         rows={4}
                         className="w-full bg-gray-700 text-white"
                       />
+                    </div>
+                    <div>
+                      <Textarea
+                        placeholder='查询参数 (JSON 格式，例如: {"page": 1, "limit": 10} )'
+                        value={queryParams}
+                        onChange={(e) => setQueryParams(e.target.value)}
+                        rows={3}
+                        className="w-full bg-gray-700 text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Select
+                        value={authType}
+                        onValueChange={(value) => setAuthType(value)}
+                      >
+                        <SelectTrigger className="w-full bg-gray-700 text-white">
+                          <SelectValue placeholder="选择认证类型" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-800 border-gray-700">
+                          {AUTH_TYPES.map((type) => (
+                            <SelectItem
+                              key={type}
+                              value={type}
+                              className="hover:bg-gray-700"
+                            >
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {authType !== "None" && (
+                        <Input
+                          placeholder={
+                            authType === "Basic"
+                              ? "用户名:密码"
+                              : authType === "Bearer"
+                              ? "Bearer Token"
+                              : "API Key"
+                          }
+                          value={authCredentials}
+                          onChange={(e) => setAuthCredentials(e.target.value)}
+                          className="w-full bg-gray-700 text-white"
+                        />
+                      )}
                     </div>
                   </div>
                 </div>

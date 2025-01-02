@@ -14,6 +14,7 @@ import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
 import AddEditSiteDialog from "@/components/home/add-edit-site-dialog";
 import { useSiteStore } from "@/store/useHomeStore";
 import CookieConsent from "@/components/home/cookie-consent";
+import { UserAgreementMask } from "@/components/home/user-agreement-mask";
 import { Github } from "lucide-react";
 
 const defaultSites: Site[] = [
@@ -74,6 +75,20 @@ export default function Home() {
 
   const controls = useAnimation();
   const [ref, inView] = useInView();
+
+  const [agreed, setAgreed] = useState(false);
+  const [language, setLanguage] = useState("en");
+
+  const handleAgree = () => {
+    setAgreed(true);
+  };
+
+  const handleDisagree = () => {
+    toast({
+      title: "Error",
+      description: "You must agree to the user agreement to continue.",
+    });
+  };
 
   const agreementText = {
     en: `
@@ -378,6 +393,16 @@ export default function Home() {
           </DialogContent>
         </Dialog>
       </div>
+      <UserAgreementMask
+        agreementText={agreementText}
+        privacyPolicyText={privacyPolicyText}
+        onAgree={handleAgree}
+        onDisagree={handleDisagree}
+        language={language}
+        version="1.0"
+        requireReadConfirmation={true}
+        allowPrint={true}
+      />
       <CookieConsent />
     </motion.main>
   );

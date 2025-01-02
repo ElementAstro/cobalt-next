@@ -10,6 +10,16 @@ import { useDebugStore } from "@/store/useDebugStore";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -97,22 +107,55 @@ export default function WebSocketTester() {
 
   const [messageType, setMessageType] = useState("text");
   const [error, setError] = useState<string | null>(null);
+  const [protocol, setProtocol] = useState("ws");
+  const [headers, setHeaders] = useState<[string, string][]>([["", ""]]);
+  const [pingInterval, setPingInterval] = useState(0);
+  const [lastPingTime, setLastPingTime] = useState<number | null>(null);
+  const [lastPongTime, setLastPongTime] = useState<number | null>(null);
+  const [messageHistory, setMessageHistory] = useState<string[]>([]);
+  const [filterQuery, setFilterQuery] = useState("");
+  const [showTimestamps, setShowTimestamps] = useState(true);
 
   const validateUrl = (url: string) => {
     try {
-      new URL(url);
-      return true;
+      const parsed = new URL(url);
+      return parsed.protocol === "ws:" || parsed.protocol === "wss:";
     } catch {
       return false;
     }
   };
 
+  const handleAddHeader = () => {
+    setHeaders([...headers, ["", ""]]);
+  };
+
+  const handleRemoveHeader = (index: number) => {
+    setHeaders(headers.filter((_, i) => i !== index));
+  };
+
+  const handleHeaderChange = (index: number, key: string, value: string) => {
+    const newHeaders = [...headers];
+    newHeaders[index] = [key, value];
+    setHeaders(newHeaders);
+  };
+
+  const handlePing = () => {
+    if (socketRef.current) {
+      setLastPingTime(Date.now());
+      socketRef.current.send("ping");
+    }
+  };
+
+  const filteredLogs = logs.filter((log) =>
+    filterQuery ? log.toLowerCase().includes(filterQuery.toLowerCase()) : true
+  );
+
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.5, ease: "easeInOut" }}
       className="min-h-screen bg-gray-900 text-white flex items-center justify-center p-4"
     >
       <Card className="w-full max-w-2xl">
@@ -138,27 +181,144 @@ export default function WebSocketTester() {
             transition={{ duration: 0.5, staggerChildren: 0.2 }}
             className="space-y-4"
           >
-            <motion.div
-              variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
-              className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2"
-            >
-              <Input
-                placeholder="WebSocket URL"
-                value={url}
-                onChange={(e) => {
-                  setUrl(e.target.value);
-                  setError(null);
-                }}
-                className="flex-1 bg-gray-800 text-white"
-              />
-              <Button
-                onClick={isConnected ? disconnect : connect}
-                className="mt-2 md:mt-0"
-                disabled={!url || !validateUrl(url)}
-              >
-                {isConnected ? "Disconnect" : "Connect"}
-              </Button>
-            </motion.div>
+            <Tabs defaultValue="connection" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="connection">Connection</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+              </TabsList>
+              <TabsContent value="connection">
+                <motion.div
+                  variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
+                  className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2"
+                >
+                  <div className="flex-1 flex flex-col space-y-2">
+                    <div className="flex gap-2">
+                      <Select value={protocol} onValueChange={setProtocol}>
+                        <SelectTrigger className="w-[100px] bg-gray-800">
+                          <SelectValue placeholder="Protocol" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-gray-800">
+                          <SelectItem value="ws">ws://</SelectItem>
+                          <SelectItem value="wss">wss://</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        placeholder="WebSocket URL"
+                        value={url}
+                        onChange={(e) => {
+                          setUrl(e.target.value);
+                          setError(null);
+                        }}
+                        className="flex-1 bg-gray-800 text-white"
+                      />
+                    </div>
+                    {headers.map(([key, value], index) => (
+                      <div key={index} className="flex gap-2">
+                        <Input
+                          placeholder="Header Key"
+                          value={key}
+                          onChange={(e) =>
+                            handleHeaderChange(index, e.target.value, value)
+                          }
+                          className="flex-1 bg-gray-800 text-white"
+                        />
+                        <Input
+                          placeholder="Header Value"
+                          value={value}
+                          onChange={(e) =>
+                            handleHeaderChange(index, key, e.target.value)
+                          }
+                          className="flex-1 bg-gray-800 text-white"
+                        />
+                        <Button
+                          variant="destructive"
+                          onClick={() => handleRemoveHeader(index)}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      variant="secondary"
+                      onClick={handleAddHeader}
+                      className="w-full"
+                    >
+                      Add Header
+                    </Button>
+                  </div>
+                  <Button
+                    onClick={isConnected ? disconnect : connect}
+                    className="mt-2 md:mt-0"
+                    disabled={!url || !validateUrl(url)}
+                  >
+                    {isConnected ? "Disconnect" : "Connect"}
+                  </Button>
+                </motion.div>
+              </TabsContent>
+              <TabsContent value="settings">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex flex-col space-y-4 p-3 rounded-lg bg-gray-800/50">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="show-timestamps"
+                        checked={showTimestamps}
+                        onCheckedChange={setShowTimestamps}
+                      />
+                      <Label htmlFor="show-timestamps">Show Timestamps</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="auto-reconnect"
+                        checked={autoReconnect}
+                        onCheckedChange={setAutoReconnect}
+                      />
+                      <Label htmlFor="auto-reconnect">Auto Reconnect</Label>
+                    </div>
+                    {autoReconnect && (
+                      <div className="space-y-2">
+                        <Label>Reconnect Interval (ms)</Label>
+                        <Slider
+                          value={[reconnectInterval]}
+                          onValueChange={([value]) =>
+                            setReconnectInterval(value)
+                          }
+                          min={1000}
+                          max={10000}
+                          step={100}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col space-y-4 p-3 rounded-lg bg-gray-800/50">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="format-messages"
+                        checked={showFormatted}
+                        onCheckedChange={setShowFormatted}
+                      />
+                      <Label htmlFor="format-messages">Format Messages</Label>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Ping Interval (ms)</Label>
+                      <Slider
+                        value={[pingInterval]}
+                        onValueChange={([value]) => setPingInterval(value)}
+                        min={0}
+                        max={10000}
+                        step={100}
+                      />
+                    </div>
+                    <Button
+                      onClick={handlePing}
+                      disabled={!isConnected}
+                      variant="secondary"
+                    >
+                      Send Ping
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
             <AnimatePresence>
               {error && (
                 <motion.div
@@ -215,13 +375,30 @@ export default function WebSocketTester() {
             </motion.div>
             <motion.div
               variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
+              className="space-y-4"
             >
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Filter logs..."
+                  value={filterQuery}
+                  onChange={(e) => setFilterQuery(e.target.value)}
+                  className="flex-1 bg-gray-800 text-white"
+                />
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="w-4 h-4 text-gray-400" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Filter logs by keyword</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <ScrollArea className="h-[300px] rounded-md border border-gray-700">
                 <Textarea
                   value={
                     showFormatted
-                      ? logs.map(formatMessage).join("\n")
-                      : logs.join("\n")
+                      ? filteredLogs.map(formatMessage).join("\n")
+                      : filteredLogs.join("\n")
                   }
                   readOnly
                   className={cn(
@@ -230,6 +407,11 @@ export default function WebSocketTester() {
                   )}
                 />
               </ScrollArea>
+              {lastPingTime && lastPongTime && (
+                <div className="text-sm text-gray-400">
+                  Ping: {lastPongTime - lastPingTime}ms
+                </div>
+              )}
             </motion.div>
             <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center space-x-4 p-3 rounded-lg bg-gray-800/50">

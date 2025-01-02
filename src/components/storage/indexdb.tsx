@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface ImageMetadata {
   name: string;
@@ -24,12 +25,25 @@ interface ImageMetadata {
 }
 
 export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
-  const { isDBOpen, openDB, addImage, deleteImage, clearDB, getAllImages, updateImage } =
-    useIndexedDBStore();
+  const {
+    isDBOpen,
+    openDB,
+    addImage,
+    deleteImage,
+    clearDB,
+    getAllImages,
+    updateImage,
+  } = useIndexedDBStore();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedImages, setSelectedImages] = useState<number[]>([]);
   const [metadata, setMetadata] = useState<ImageMetadata | null>(null);
+  const [selectedStore, setSelectedStore] = useState<string>("images");
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showMetadata, setShowMetadata] = useState(false);
+  const [sortOrder, setSortOrder] = useState<string>("latest");
+  const [filterType, setFilterType] = useState<string>("all");
 
   useEffect(() => {
     openDB();
@@ -42,7 +56,7 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
       const image = { url: "test" };
       await addImage(image, isLandscape ? "landscape" : "portrait");
     } catch (err) {
-      setError("Failed to add image");
+      setError("添加图片失败");
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -55,9 +69,9 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
     try {
       const imageId = id || 1;
       await deleteImage(imageId, isLandscape ? "landscape" : "portrait");
-      setSelectedImages(prev => prev.filter(i => i !== imageId));
+      setSelectedImages((prev) => prev.filter((i) => i !== imageId));
     } catch (err) {
-      setError("Failed to delete image");
+      setError("删除图片失败");
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -70,13 +84,13 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
     setError(null);
     try {
       await Promise.all(
-        selectedImages.map(id => 
+        selectedImages.map((id) =>
           deleteImage(id, isLandscape ? "landscape" : "portrait")
         )
       );
       setSelectedImages([]);
     } catch (err) {
-      setError("Failed to delete images");
+      setError("批量删除图片失败");
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -92,7 +106,7 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
       setPreviewUrl(null);
       setMetadata(null);
     } catch (err) {
-      setError("Failed to clear database");
+      setError("清空数据库失败");
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -104,9 +118,9 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
     setError(null);
     try {
       const images = await getAllImages(isLandscape ? "landscape" : "portrait");
-      console.log("Fetched Images:", images);
+      console.log("获取的图片:", images);
     } catch (err) {
-      setError("Failed to fetch images");
+      setError("获取图片失败");
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -114,10 +128,8 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
   };
 
   const handleImageSelect = (id: number) => {
-    setSelectedImages(prev => 
-      prev.includes(id) 
-        ? prev.filter(i => i !== id) 
-        : [...prev, id]
+    setSelectedImages((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
 
@@ -125,19 +137,18 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
     setIsLoading(true);
     setError(null);
     try {
-      await updateImage(id, { url: newUrl }, isLandscape ? "landscape" : "portrait");
+      await updateImage(
+        id,
+        { url: newUrl },
+        isLandscape ? "landscape" : "portrait"
+      );
     } catch (err) {
-      setError("Failed to update image");
+      setError("更新图片失败");
       console.error(err);
     } finally {
       setIsLoading(false);
     }
   };
-
-  const [selectedStore, setSelectedStore] = useState<string>("images");
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [showMetadata, setShowMetadata] = useState(false);
 
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -147,7 +158,7 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
 
     setIsLoading(true);
     setError(null);
-    
+
     const reader = new FileReader();
     reader.onloadstart = () => setUploadProgress(0);
     reader.onprogress = (e) => {
@@ -163,12 +174,12 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
           name: file.name,
           size: file.size,
           type: file.type,
-          lastModified: file.lastModified
+          lastModified: file.lastModified,
         });
         await addImage({ url: imageUrl }, selectedStore);
         setUploadProgress(100);
       } catch (err) {
-        setError("Failed to upload image");
+        setError("上传图片失败");
         console.error(err);
       } finally {
         setIsLoading(false);
@@ -177,11 +188,18 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
     reader.readAsDataURL(file);
   };
 
+  const sortedAndFilteredImages = () => {
+    // 假设有 getAllImages 返回的 images 数组
+    // 这里需要根据 sortOrder 和 filterType 进行排序和过滤
+    // 由于无法修改 store，这里仅做示例
+    return [];
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className={`dark bg-gray-900 min-h-screen ${
+      className={`dark:bg-gray-900 min-h-screen p-4 ${
         isLandscape ? "p-2" : "p-4"
       }`}
     >
@@ -191,7 +209,7 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
           </div>
         )}
-        
+
         {error && (
           <motion.div
             initial={{ y: -20, opacity: 0 }}
@@ -211,7 +229,7 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
                 isLandscape ? "text-xl" : "text-2xl"
               } text-white font-bold`}
             >
-              IndexedDB Manager
+              IndexedDB 管理器
             </motion.h1>
 
             <div className="flex flex-col md:flex-row gap-2">
@@ -232,15 +250,39 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
               </Button>
             </div>
 
-            <Select value={selectedStore} onValueChange={setSelectedStore}>
-              <SelectTrigger>
-                <SelectValue placeholder="选择存储类型" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="images">图片存储</SelectItem>
-                <SelectItem value="documents">文档存储</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col md:flex-row gap-2">
+              <Select value={selectedStore} onValueChange={setSelectedStore}>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择存储类型" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="images">图片存储</SelectItem>
+                  <SelectItem value="documents">文档存储</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={sortOrder} onValueChange={setSortOrder}>
+                <SelectTrigger>
+                  <SelectValue placeholder="排序方式" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="latest">最新</SelectItem>
+                  <SelectItem value="oldest">最旧</SelectItem>
+                  <SelectItem value="name">名称</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="过滤类型" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部</SelectItem>
+                  <SelectItem value="image/png">PNG</SelectItem>
+                  <SelectItem value="image/jpeg">JPEG</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             <Input
               type="file"
@@ -256,23 +298,33 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
 
           <div className="space-y-4">
             {previewUrl && (
-              <div className="relative">
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="relative"
+              >
                 <img
                   src={previewUrl}
-                  alt="Preview"
-                  className="max-w-full h-auto rounded-lg"
+                  alt="预览"
+                  className="max-w-full h-auto rounded-lg shadow-lg"
                 />
                 {showMetadata && metadata && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/75 p-2 text-white text-sm rounded-b-lg">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="absolute bottom-0 left-0 right-0 bg-black/75 p-2 text-white text-sm rounded-b-lg"
+                  >
                     <div>文件名: {metadata.name}</div>
                     <div>大小: {(metadata.size / 1024).toFixed(2)} KB</div>
                     <div>类型: {metadata.type}</div>
                     <div>
-                      修改时间: {new Date(metadata.lastModified).toLocaleString()}
+                      修改时间:{" "}
+                      {new Date(metadata.lastModified).toLocaleString()}
                     </div>
-                  </div>
+                  </motion.div>
                 )}
-              </div>
+              </motion.div>
             )}
           </div>
         </motion.div>
@@ -349,11 +401,11 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
             </svg>
             添加图片
           </Button>
-            <Button
-              onClick={() => handleDeleteImage()}
-              variant="destructive"
-              className="flex items-center gap-2"
-            >
+          <Button
+            onClick={() => handleDeleteImage()}
+            variant="destructive"
+            className="flex items-center gap-2"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="16"

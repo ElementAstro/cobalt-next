@@ -19,8 +19,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Trash, Edit, Search } from "lucide-react";
-import { motion } from "framer-motion";
+import { Trash, Edit, Search, Plus, Settings } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   DndContext,
   closestCenter,
@@ -37,6 +37,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { SortableItem } from "./sortable-item";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface TargetListProps {}
 
@@ -46,6 +47,8 @@ export function TargetList({}: TargetListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingTarget, setEditingTarget] = useState<Target | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -76,19 +79,18 @@ export function TargetList({}: TargetListProps) {
   };
 
   const addTask = (targetId: string) => {
-    setTargets(
-      targets.map((target) => {
-        if (target.id === targetId) {
-          const newTask: Task = {
-            id: Date.now().toString(),
-            name: `任务 ${target.tasks.length + 1}`,
-            duration: 60, // 默认持续时间为60秒
-          };
-          return { ...target, tasks: [...target.tasks, newTask] };
-        }
-        return target;
-      })
-    );
+    const newTask: Task = {
+      id: Date.now().toString(),
+      name: `任务 ${targets.find(t => t.id === targetId)?.tasks.length || 0 + 1}`,
+      duration: 60,
+      type: "imaging",
+      filter: "L",
+      binning: "1x1",
+      count: 1,
+      category: "imaging"
+    };
+    setEditingTask(newTask);
+    setIsTaskDialogOpen(true);
   };
 
   const updateCoordinates = (targetId: string, coordinates: CoordinateData) => {
@@ -303,6 +305,83 @@ export function TargetList({}: TargetListProps) {
               />
               <Button
                 onClick={() => updateTarget(editingTarget)}
+                className="bg-teal-500 text-white"
+              >
+                保存
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* 编辑任务对话框 */}
+      <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
+        <DialogContent className="bg-dark-800 text-dark-200">
+          <DialogHeader>
+            <DialogTitle>编辑任务</DialogTitle>
+          </DialogHeader>
+          {editingTask && (
+            <div className="space-y-4">
+              <Input
+                value={editingTask.name}
+                onChange={(e) =>
+                  setEditingTask({ ...editingTask, name: e.target.value })
+                }
+                placeholder="任务名称"
+                className="bg-dark-700 text-dark-200"
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>类型</Label>
+                  <Select
+                    value={editingTask.type}
+                    onValueChange={(value) =>
+                      setEditingTask({ ...editingTask, type: value })
+                    }
+                  >
+                    <SelectTrigger className="bg-dark-700 text-dark-200">
+                      <SelectValue placeholder="选择类型" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="imaging">成像</SelectItem>
+                      <SelectItem value="calibration">校准</SelectItem>
+                      <SelectItem value="focus">对焦</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>滤镜</Label>
+                  <Select
+                    value={editingTask.filter}
+                    onValueChange={(value) =>
+                      setEditingTask({ ...editingTask, filter: value })
+                    }
+                  >
+                    <SelectTrigger className="bg-dark-700 text-dark-200">
+                      <SelectValue placeholder="选择滤镜" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="L">L</SelectItem>
+                      <SelectItem value="R">R</SelectItem>
+                      <SelectItem value="G">G</SelectItem>
+                      <SelectItem value="B">B</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <Button
+                onClick={() => {
+                  if (editingTask) {
+                    const target = targets.find(t => t.id === editingTarget?.id);
+                    if (target) {
+                      setTargets(targets.map(t => 
+                        t.id === target.id ? 
+                        { ...t, tasks: [...t.tasks, editingTask] } : t
+                      ));
+                    }
+                  }
+                  setIsTaskDialogOpen(false);
+                }}
                 className="bg-teal-500 text-white"
               >
                 保存

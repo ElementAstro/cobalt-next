@@ -10,24 +10,22 @@ import {
 } from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { motion, AnimatePresence } from "framer-motion";
-
 import CameraViewfinder from "@/components/dashboard/camera-view";
 import ExposureControls from "@/components/dashboard/right-sidebar";
 import Sidebar from "@/components/dashboard/left-sidebar";
 import TopBar from "@/components/dashboard/top-bar";
 import Offcanvas from "@/components/dashboard/offcanvas";
-
 import { CameraPage } from "@/components/dashboard/camera";
 import { FocuserPage } from "@/components/dashboard/focuser";
 import { FilterWheelPage } from "@/components/dashboard/filter-wheel";
 import { TelescopePage } from "@/components/dashboard/telescope";
-
 import SplashScreen from "@/components/custom/splash-screen";
 import ErrorBoundary from "@/components/error/error-boundary";
 import { toast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
+import { useMediaQuery } from "react-responsive";
 
-export default function CameraInterface() {
+export default function Dashboard() {
   type DeviceParams = {
     focalLength?: number;
     aperture?: number;
@@ -136,6 +134,7 @@ export default function CameraInterface() {
   const [offcanvasDevice, setOffcanvasDevice] = useState<string | null>(null);
   const [capturedImages, setCapturedImages] = useState<string[]>([]);
   const [isServerConnected, setIsServerConnected] = useState(false);
+  const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -279,27 +278,10 @@ export default function CameraInterface() {
     }
   };
 
-  const [agreed, setAgreed] = useState(false);
-  const [language, setLanguage] = useState("en");
-
-
-  const handleAgree = () => {
-    setAgreed(true);
-    // 这里可以添加用户同意后的其他逻辑
-  };
-
-  const handleDisagree = () => {
-    // 这里可以添加用户不同意时的逻辑，比如显示一个提示或重定向到其他页面
-    console.log("用户不同意协议");
-  };
-
-  const handleConnect = () => {
-    setIsServerConnected(true);
-  };
-
   return (
     <>
       <ErrorBoundary>
+        <SplashScreen />
         <DndContext
           sensors={sensors}
           modifiers={[restrictToWindowEdges]}
@@ -343,21 +325,21 @@ export default function CameraInterface() {
               </motion.div>
             </div>
           </div>
-          <Offcanvas
+            <Offcanvas
             isOpen={offcanvasOpen}
             onClose={handleCloseOffcanvas}
             position="right"
-            size="xl"
-            backdrop={true}
+            size={isMobile ? "md" : "lg"}
+            backdrop={true} 
             animation={{
               duration: 0.3,
               type: "slide",
             }}
             scrollBehavior="inside"
-            className="p-4"
-          >
+            className={`p-4 ${isMobile ? "w-full" : "w-[480px]"}`}
+            >
             {offcanvasDevice && renderOffcanvasContent()}
-          </Offcanvas>
+            </Offcanvas>
           <Toaster />
         </DndContext>
       </ErrorBoundary>

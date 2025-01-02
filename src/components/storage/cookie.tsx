@@ -30,7 +30,16 @@ import {
   Edit,
   Download,
   Plus,
+  Check,
+  X,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function CookieManager({ isLandscape }: { isLandscape: boolean }) {
   const {
@@ -48,7 +57,14 @@ export function CookieManager({ isLandscape }: { isLandscape: boolean }) {
     loadCookies();
   }, [loadCookies]);
 
-  const [newCookie, setNewCookie] = useState({ name: "", value: "" });
+  const [newCookie, setNewCookie] = useState<CookieData>({
+    name: "",
+    value: "",
+    path: "/",
+    sameSite: "strict",
+    secure: false,
+    httpOnly: false,
+  });
   const [editCookie, setEditCookie] = useState<{
     name: string;
     value: string;
@@ -165,22 +181,70 @@ export function CookieManager({ isLandscape }: { isLandscape: boolean }) {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.1 }}
       >
-        <Input
-          placeholder="Cookie 名称"
-          value={newCookie.name}
-          onChange={(e) => setNewCookie({ ...newCookie, name: e.target.value })}
-          aria-label="Cookie 名称"
-          className="flex-1"
-        />
-        <Input
-          placeholder="Cookie 值"
-          value={newCookie.value}
-          onChange={(e) =>
-            setNewCookie({ ...newCookie, value: e.target.value })
-          }
-          aria-label="Cookie 值"
-          className="flex-1"
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 w-full">
+          <Input
+            placeholder="Cookie 名称"
+            value={newCookie.name}
+            onChange={(e) =>
+              setNewCookie({ ...newCookie, name: e.target.value })
+            }
+            aria-label="Cookie 名称"
+          />
+          <Input
+            placeholder="Cookie 值"
+            value={newCookie.value}
+            onChange={(e) =>
+              setNewCookie({ ...newCookie, value: e.target.value })
+            }
+            aria-label="Cookie 值"
+          />
+          <Input
+            placeholder="路径"
+            value={newCookie.path || ""}
+            onChange={(e) =>
+              setNewCookie({ ...newCookie, path: e.target.value })
+            }
+            aria-label="路径"
+          />
+          <Select
+            value={newCookie.sameSite || "strict"}
+            onValueChange={(value) =>
+              setNewCookie({
+                ...newCookie,
+                sameSite: value as "strict" | "lax" | "none",
+              })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="SameSite" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="strict">Strict</SelectItem>
+              <SelectItem value="lax">Lax</SelectItem>
+              <SelectItem value="none">None</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="secure"
+              checked={newCookie.secure || false}
+              onCheckedChange={(checked) =>
+                setNewCookie({ ...newCookie, secure: !!checked })
+              }
+            />
+            <Label htmlFor="secure">Secure</Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="httpOnly"
+              checked={newCookie.httpOnly || false}
+              onCheckedChange={(checked) =>
+                setNewCookie({ ...newCookie, httpOnly: !!checked })
+              }
+            />
+            <Label htmlFor="httpOnly">HttpOnly</Label>
+          </div>
+        </div>
         <Button onClick={handleAddCookie} className="gap-2">
           <Plus className="w-4 h-4" />
           添加 Cookie
@@ -239,6 +303,10 @@ export function CookieManager({ isLandscape }: { isLandscape: boolean }) {
               <TableHead className="w-[50px]">选择</TableHead>
               <TableHead>名称</TableHead>
               <TableHead>值</TableHead>
+              <TableHead>路径</TableHead>
+              <TableHead>SameSite</TableHead>
+              <TableHead>Secure</TableHead>
+              <TableHead>HttpOnly</TableHead>
               <TableHead className="w-[200px]">操作</TableHead>
             </TableRow>
           </TableHeader>
@@ -280,6 +348,26 @@ export function CookieManager({ isLandscape }: { isLandscape: boolean }) {
                         )}
                       </button>
                     </div>
+                  </TableCell>
+                  <TableCell className="dark:text-gray-200">
+                    {cookie.path || "/"}
+                  </TableCell>
+                  <TableCell className="dark:text-gray-200 capitalize">
+                    {cookie.sameSite || "strict"}
+                  </TableCell>
+                  <TableCell className="dark:text-gray-200">
+                    {cookie.secure ? (
+                      <Check className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <X className="w-4 h-4 text-red-500" />
+                    )}
+                  </TableCell>
+                  <TableCell className="dark:text-gray-200">
+                    {cookie.httpOnly ? (
+                      <Check className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <X className="w-4 h-4 text-red-500" />
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">

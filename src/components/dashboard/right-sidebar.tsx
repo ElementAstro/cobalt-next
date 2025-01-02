@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -167,129 +167,140 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
               </PopoverTrigger>
               <PopoverContent
                 side="left"
-                className="w-80 p-4 bg-gray-800 text-white rounded-md shadow-lg"
+                className="w-80 p-4 bg-gray-800 text-white rounded-md shadow-lg mr-4"
               >
                 <motion.div
                   variants={containerVariants}
                   initial="hidden"
                   animate="visible"
-                  className="space-y-4"
+                  className="grid grid-cols-2 gap-4"
                 >
-                  <motion.div
-                    variants={itemVariants}
-                    className="flex items-center justify-between"
-                  >
-                    <Label htmlFor="burstMode">连拍模式</Label>
-                    <Switch
-                      id="burstMode"
-                      checked={burstMode}
-                      onCheckedChange={(checked) => toggleBurstMode(checked)}
-                      className="bg-gray-600"
-                    />
-                  </motion.div>
-                  {burstMode && (
+                  {/* Left Column */}
+                  <div className="space-y-4">
                     <motion.div
                       variants={itemVariants}
-                      className="flex flex-col"
+                      className="flex items-center justify-between"
                     >
-                      <Label htmlFor="burstCount">连拍次数</Label>
-                      <Input
-                        id="burstCount"
-                        type="number"
-                        min="2"
-                        max="10"
-                        value={burstCount}
-                        onChange={(e) => setBurstCount(Number(e.target.value))}
-                        className="mt-1 bg-gray-700 text-white"
+                      <Label htmlFor="burstMode">连拍模式</Label>
+                      <Checkbox
+                        id="burstMode"
+                        checked={burstMode}
+                        onCheckedChange={(checked) => toggleBurstMode(checked as boolean)}
+                        className=""
                       />
                     </motion.div>
-                  )}
-                  <motion.div variants={itemVariants} className="flex flex-col">
-                    <Label htmlFor="exposureTime">曝光时间 (秒)</Label>
-                    <Slider
-                      id="exposureTime"
-                      min={1}
-                      max={3600}
-                      step={1}
-                      value={[exposureTime]}
-                      onValueChange={(value) => setExposureTime(value[0])}
-                      className="mt-2"
-                    />
-                    <div className="text-sm text-right text-gray-400">
-                      {exposureTime} 秒
-                    </div>
-                  </motion.div>
-                  <motion.div variants={itemVariants} className="flex flex-col">
-                    <Label htmlFor="filterType">滤镜类型</Label>
-                    <Select
-                      value={filterType}
-                      onValueChange={(value) => setFilterType(value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="选择滤镜类型" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="None">无</SelectItem>
-                        <SelectItem value="Black and White">黑白</SelectItem>
-                        <SelectItem value="Sepia">棕褐色</SelectItem>
-                        <SelectItem value="Vivid">鲜艳</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </motion.div>
-                  <motion.div variants={itemVariants} className="flex flex-col">
-                    <Label htmlFor="gain">增益</Label>
-                    <Slider
-                      id="gain"
-                      min={0}
-                      max={100}
-                      step={1}
-                      value={[gain]}
-                      onValueChange={(value) => setGain(value[0])}
-                      className="mt-2"
-                    />
-                    <div className="text-sm text-right text-gray-400">
-                      {gain}
-                    </div>
-                  </motion.div>
-                  <motion.div variants={itemVariants} className="flex flex-col">
-                    <Label htmlFor="offset">偏置</Label>
-                    <Slider
-                      id="offset"
-                      min={0}
-                      max={100}
-                      step={1}
-                      value={[offset]}
-                      onValueChange={(value) => setOffset(value[0])}
-                      className="mt-2"
-                    />
-                    <div className="text-sm text-right text-gray-400">
-                      {offset}
-                    </div>
-                  </motion.div>
-                  <motion.div variants={itemVariants} className="flex flex-col">
-                    <Label htmlFor="binning">像素合并</Label>
-                    <Select
-                      value={binning}
-                      onValueChange={(value) => setBinning(value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="选择像素合并" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1x1">1x1</SelectItem>
-                        <SelectItem value="2x2">2x2</SelectItem>
-                        <SelectItem value="3x3">3x3</SelectItem>
-                        <SelectItem value="4x4">4x4</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </motion.div>
-                  <motion.div variants={itemVariants}>
+
+                    {burstMode && (
+                      <motion.div variants={itemVariants}>
+                        <Label htmlFor="burstCount">连拍次数</Label>
+                        <Input
+                          id="burstCount"
+                          type="number"
+                          min="2"
+                          max="10"
+                          value={burstCount}
+                          onChange={(e) => setBurstCount(Number(e.target.value))}
+                          className="mt-1 bg-gray-700 text-white w-full"
+                        />
+                      </motion.div>
+                    )}
+
+                    <motion.div variants={itemVariants}>
+                      <Label htmlFor="exposureTime">曝光时间 (秒)</Label>
+                      <Slider
+                        id="exposureTime"
+                        min={1}
+                        max={3600}
+                        step={1}
+                        value={[exposureTime]}
+                        onValueChange={(value) => setExposureTime(value[0])}
+                        className="mt-2"
+                      />
+                      <div className="text-sm text-right text-gray-400">
+                        {exposureTime} 秒
+                      </div>
+                    </motion.div>
+
+                    <motion.div variants={itemVariants}>
+                      <Label htmlFor="filterType">滤镜类型</Label>
+                      <Select
+                        value={filterType}
+                        onValueChange={(value) => setFilterType(value)}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="选择滤镜类型" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="None">无</SelectItem>
+                          <SelectItem value="Black and White">黑白</SelectItem>
+                          <SelectItem value="Sepia">棕褐色</SelectItem>
+                          <SelectItem value="Vivid">鲜艳</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </motion.div>
+                  </div>
+
+                  {/* Right Column */}
+                  <div className="space-y-4">
+                    <motion.div variants={itemVariants}>
+                      <Label htmlFor="gain">增益</Label>
+                      <Slider
+                        id="gain"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[gain]}
+                        onValueChange={(value) => setGain(value[0])}
+                        className="mt-2"
+                      />
+                      <div className="text-sm text-right text-gray-400">
+                        {gain}
+                      </div>
+                    </motion.div>
+
+                    <motion.div variants={itemVariants}>
+                      <Label htmlFor="offset">偏置</Label>
+                      <Slider
+                        id="offset"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[offset]}
+                        onValueChange={(value) => setOffset(value[0])}
+                        className="mt-2"
+                      />
+                      <div className="text-sm text-right text-gray-400">
+                        {offset}
+                      </div>
+                    </motion.div>
+
+                    <motion.div variants={itemVariants}>
+                      <Label htmlFor="binning">像素合并</Label>
+                      <Select
+                        value={binning}
+                        onValueChange={(value) => setBinning(value)}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="选择像素合并" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1x1">1x1</SelectItem>
+                          <SelectItem value="2x2">2x2</SelectItem>
+                          <SelectItem value="3x3">3x3</SelectItem>
+                          <SelectItem value="4x4">4x4</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </motion.div>
+                  </div>
+
+                  {/* Full Width Reset Button */}
+                  <motion.div variants={itemVariants} className="col-span-2">
                     <Button
                       variant="secondary"
                       className="w-full flex items-center justify-center space-x-2 bg-gray-700 hover:bg-gray-600"
                       onClick={handleReset}
                     >
-                      <RefreshCw />
+                      <RefreshCw className="h-4 w-4" />
                       <span>重置</span>
                     </Button>
                   </motion.div>

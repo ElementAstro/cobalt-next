@@ -10,6 +10,8 @@ import {
   YAxis,
   Tooltip,
   ReferenceLine,
+  CartesianGrid,
+  Legend,
 } from "recharts";
 import { TimelineData } from "@/types/sequencer";
 import { motion } from "framer-motion";
@@ -19,6 +21,25 @@ interface TimelineGraphProps {
   height: number;
   showLineChart?: boolean;
   colors?: string[];
+  showGrid?: boolean;
+  gridStroke?: string;
+  gridStrokeDasharray?: string;
+  showLegend?: boolean;
+  legendPosition?: "top" | "bottom";
+  axisLabels?: {
+    x?: string;
+    y?: string;
+  };
+  showMarkers?: boolean;
+  markerSize?: number;
+  markerStroke?: string;
+  markerFill?: string;
+  zoomable?: boolean;
+  panable?: boolean;
+  animationDuration?: number;
+  animationEasing?: "ease" | "ease-in" | "ease-out" | "ease-in-out" | "linear";
+  hoverAnimation?: boolean;
+  hoverAnimationDuration?: number;
 }
 
 export function TimelineGraph({
@@ -26,6 +47,22 @@ export function TimelineGraph({
   height,
   showLineChart,
   colors,
+  showGrid = true,
+  gridStroke = "#444",
+  gridStrokeDasharray = "3 3",
+  showLegend = true,
+  legendPosition = "bottom",
+  axisLabels = {},
+  showMarkers = false,
+  markerSize = 5,
+  markerStroke = "#fff",
+  markerFill = "#888",
+  zoomable = false,
+  panable = false,
+  animationDuration = 1000,
+  animationEasing = "ease-in-out",
+  hoverAnimation = true,
+  hoverAnimationDuration = 300,
 }: TimelineGraphProps) {
   const formattedData = data.map((item, index) => {
     const dataPoint: any = { hour: `${index}:00` };
@@ -37,6 +74,28 @@ export function TimelineGraph({
       dataPoint.value = item.value;
     }
     return dataPoint;
+  });
+
+  const getAnimationProps = (index: number) => ({
+    isAnimationActive: true,
+    animationDuration,
+    animationEasing,
+    ...(hoverAnimation && {
+      onMouseEnter: () => {
+        const element = document.getElementById(`chart-element-${index}`);
+        if (element) {
+          element.style.transition = `all ${hoverAnimationDuration}ms ease`;
+          element.style.transform = "scale(1.05)";
+        }
+      },
+      onMouseLeave: () => {
+        const element = document.getElementById(`chart-element-${index}`);
+        if (element) {
+          element.style.transition = `all ${hoverAnimationDuration}ms ease`;
+          element.style.transform = "scale(1)";
+        }
+      },
+    }),
   });
 
   const now = new Date();
@@ -52,18 +111,42 @@ export function TimelineGraph({
     >
       <ResponsiveContainer width="100%" height={height}>
         {showLineChart ? (
-          <LineChart data={formattedData}>
-            <XAxis dataKey="hour" stroke="#ccc" />
-            <YAxis stroke="#ccc" />
+          <LineChart
+            data={formattedData}
+            {...(zoomable && { zoomable: true })}
+            {...(panable && { panable: true })}
+          >
+            {showGrid && (
+              <CartesianGrid
+                stroke={gridStroke}
+                strokeDasharray={gridStrokeDasharray}
+              />
+            )}
+            <XAxis
+              dataKey="hour"
+              stroke="#ccc"
+              label={{ value: axisLabels.x, position: "insideBottom", offset: -10 }}
+            />
+            <YAxis
+              stroke="#ccc"
+              label={{
+                value: axisLabels.y,
+                angle: -90,
+                position: "insideLeft",
+                offset: 10,
+              }}
+            />
             <Tooltip
               contentStyle={{ backgroundColor: "#1f2937", border: "none" }}
               itemStyle={{ color: "#fff" }}
               cursor={{ fill: "rgba(255,255,255,0.1)" }}
             />
+            {showLegend && <Legend verticalAlign={legendPosition} />}
             {Array.isArray(data[0]?.value) ? (
               data[0].value.map((_, i) => (
                 <Line
                   key={i}
+                  id={`chart-element-${i}`}
                   type="monotone"
                   dataKey={`value${i}`}
                   stroke={
@@ -74,20 +157,19 @@ export function TimelineGraph({
                     }, 70%, 50%)`
                   }
                   strokeWidth={2}
-                  dot={false}
-                  animationDuration={1000}
-                  animationBegin={0}
+                  dot={showMarkers ? { stroke: markerStroke, fill: markerFill, r: markerSize } : false}
+                  {...getAnimationProps(i)}
                 />
               ))
             ) : (
               <Line
+                id="chart-element-single"
                 type="monotone"
                 dataKey="value"
                 stroke={colors?.[0] || "#82ca9d"}
                 strokeWidth={2}
-                dot={false}
-                animationDuration={1000}
-                animationBegin={0}
+                dot={showMarkers ? { stroke: markerStroke, fill: markerFill, r: markerSize } : false}
+                {...getAnimationProps(0)}
               />
             )}
             <ReferenceLine
@@ -102,18 +184,42 @@ export function TimelineGraph({
             />
           </LineChart>
         ) : (
-          <BarChart data={formattedData}>
-            <XAxis dataKey="hour" stroke="#ccc" />
-            <YAxis stroke="#ccc" />
+          <BarChart
+            data={formattedData}
+            {...(zoomable && { zoomable: true })}
+            {...(panable && { panable: true })}
+          >
+            {showGrid && (
+              <CartesianGrid
+                stroke={gridStroke}
+                strokeDasharray={gridStrokeDasharray}
+              />
+            )}
+            <XAxis
+              dataKey="hour"
+              stroke="#ccc"
+              label={{ value: axisLabels.x, position: "insideBottom", offset: -10 }}
+            />
+            <YAxis
+              stroke="#ccc"
+              label={{
+                value: axisLabels.y,
+                angle: -90,
+                position: "insideLeft",
+                offset: 10,
+              }}
+            />
             <Tooltip
               contentStyle={{ backgroundColor: "#1f2937", border: "none" }}
               itemStyle={{ color: "#fff" }}
               cursor={{ fill: "rgba(255,255,255,0.1)" }}
             />
+            {showLegend && <Legend verticalAlign={legendPosition} />}
             {Array.isArray(data[0]?.value) ? (
               data[0].value.map((_, i) => (
                 <Bar
                   key={i}
+                  id={`chart-element-${i}`}
                   dataKey={`value${i}`}
                   fill={
                     colors?.[i] ||
@@ -122,22 +228,15 @@ export function TimelineGraph({
                       (Array.isArray(data[0]?.value) ? data[0].value.length : 1)
                     }, 70%, 50%)`
                   }
-                  animationDuration={1000}
-                  animationBegin={0}
-                  onMouseEnter={(data, index) => {
-                    console.log(`Hovering bar at index ${index}`);
-                  }}
+                  {...getAnimationProps(i)}
                 />
               ))
             ) : (
               <Bar
+                id="chart-element-single"
                 dataKey="value"
                 fill="#82ca9d"
-                animationDuration={1000}
-                animationBegin={0}
-                onMouseEnter={(data, index) => {
-                  console.log(`Hovering bar at index ${index}`);
-                }}
+                {...getAnimationProps(0)}
               />
             )}
             <ReferenceLine

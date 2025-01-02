@@ -27,6 +27,11 @@ import { useFilesystemStore } from "@/store/useFilesystemStore";
 interface AdvancedSearchProps {
   isOpen: boolean;
   onClose: () => void;
+  customFilters?: {
+    sizeRange?: boolean;
+    ownerFilter?: boolean;
+    tagFilter?: boolean;
+  };
 }
 
 export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
@@ -46,6 +51,14 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
     setSearchResults,
     isLoading,
     setIsLoading,
+    minSize,
+    setMinSize,
+    maxSize,
+    setMaxSize,
+    owner,
+    setOwner,
+    searchTags,
+    setSearchTags,
   } = useFilesystemStore();
 
   const handleSearch = async () => {
@@ -102,6 +115,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
+                  className="space-y-2"
                 >
                   <Label
                     htmlFor="searchTerm"
@@ -190,7 +204,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
+                  transition={{ delay: 0.55 }}
                 >
                   <Button
                     type="submit"
@@ -205,27 +219,47 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
 
               {/* Search Results */}
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: searchResults.length > 0 ? 1 : 0 }}
-                transition={{ duration: 0.3, delay: 0.6 }}
-                className="mt-6"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{
+                  opacity: searchResults.length > 0 ? 1 : 0,
+                  scale: searchResults.length > 0 ? 1 : 0.95,
+                }}
+                transition={{
+                  duration: 0.3,
+                  delay: 0.6,
+                  type: "spring",
+                  stiffness: 100,
+                }}
+                className="mt-6 bg-gray-700/50 p-4 rounded-lg"
               >
                 {searchResults.length > 0 && (
                   <div>
                     <h3 className="text-xl font-semibold mb-2">
                       Search Results:
                     </h3>
-                    <ul className="list-disc list-inside space-y-1">
+                    <ul className="grid grid-cols-1 gap-2">
                       {searchResults.map((result, index) => (
-                        <motion.li
+                        <motion.div
                           key={index}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.1 * index }}
-                          className="text-gray-300"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{
+                            delay: 0.1 * index,
+                            type: "spring",
+                            stiffness: 100,
+                          }}
+                          className="p-3 bg-gray-600/50 rounded-lg hover:bg-gray-600/70 transition-colors duration-200"
                         >
-                          {result}
-                        </motion.li>
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-100">{result}</span>
+                            <button className="p-1 rounded-full hover:bg-gray-500/50 transition-colors duration-200">
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <div className="text-sm text-gray-400 mt-1">
+                            File details...
+                          </div>
+                        </motion.div>
                       ))}
                     </ul>
                   </div>
