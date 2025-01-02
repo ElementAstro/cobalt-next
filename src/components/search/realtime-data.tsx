@@ -22,10 +22,31 @@ interface RealTimeData {
     cloudCover: number;
     temperature: number;
     humidity: number;
+    windSpeed: number;
+    pressure: number;
+    visibility: number;
+  };
+  astronomical: {
+    sunAltitude: number;
+    moonAltitude: number;
+    twilight: string;
+    seeing: number;
   };
 }
 
-export function RealTimeData() {
+interface RealTimeDataProps {
+  showAdvanced?: boolean;
+  animationLevel?: 'basic' | 'advanced';
+  refreshInterval?: number;
+  theme?: 'default' | 'compact';
+}
+
+export function RealTimeData({
+  showAdvanced = true,
+  animationLevel = 'advanced',
+  refreshInterval = 60000,
+  theme = 'default',
+}: RealTimeDataProps) {
   const { realTimeData, fetchRealTimeData } = useSearchStore();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -38,7 +59,7 @@ export function RealTimeData() {
 
   useEffect(() => {
     fetchRealTimeData();
-    const interval = setInterval(fetchRealTimeData, 60000); // Update every minute
+    const interval = setInterval(fetchRealTimeData, refreshInterval);
 
     return () => clearInterval(interval);
   }, [fetchRealTimeData]);
@@ -59,7 +80,7 @@ export function RealTimeData() {
       whileHover={{ scale: 1.02 }}
       className="w-full p-2"
     >
-      <Card className="w-full md:w-auto bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+      <Card className={`w-full ${theme === 'compact' ? '' : 'md:w-auto'} bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden`}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium text-gray-900 dark:text-white">
             实时天文数据
@@ -110,12 +131,36 @@ export function RealTimeData() {
               <p className="text-sm text-gray-900 dark:text-white">
                 湿度: {realTimeData.weather.humidity}%
               </p>
+              {showAdvanced && (
+                <>
+                  <p className="text-sm text-gray-900 dark:text-white">
+                    风速: {realTimeData.weather.windSpeed} m/s
+                  </p>
+                  <p className="text-sm text-gray-900 dark:text-white">
+                    气压: {realTimeData.weather.pressure} hPa
+                  </p>
+                  <p className="text-sm text-gray-900 dark:text-white">
+                    能见度: {realTimeData.weather.visibility} km
+                  </p>
+                  <p className="text-sm text-gray-900 dark:text-white">
+                    太阳高度: {Math.round(realTimeData.astronomical.sunAltitude)}°
+                  </p>
+                  <p className="text-sm text-gray-900 dark:text-white">
+                    月亮高度: {Math.round(realTimeData.astronomical.moonAltitude)}°
+                  </p>
+                  <p className="text-sm text-gray-900 dark:text-white">
+                    视宁度: {realTimeData.astronomical.seeing.toFixed(2)}"
+                  </p>
+                </>
+              )}
               <TooltipProvider>
                 {[
                   { label: "云量", value: realTimeData.weather.cloudCover },
                   { label: "月相", value: realTimeData.moonPhase },
                   { label: "能见度", value: 0.8 }, // 新增数据
-                  { label: "大气稳定性", value: 0.7 }, // 新增数据
+                  { label: "大气稳定性", value: realTimeData.astronomical.seeing / 5 }, // 0-5 arcsec scale
+                  { label: "风速", value: Math.min(realTimeData.weather.windSpeed / 20, 1) }, // 0-20 m/s scale
+                  { label: "能见度", value: Math.min(realTimeData.weather.visibility / 50, 1) }, // 0-50 km scale
                 ].map(({ label, value }) => (
                   <Tooltip key={label}>
                     <TooltipTrigger className="w-full">

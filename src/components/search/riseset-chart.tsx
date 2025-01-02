@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -6,6 +7,8 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  ReferenceLine,
+  Brush,
 } from "recharts";
 import { motion } from "framer-motion";
 
@@ -14,6 +17,14 @@ interface RiseSetChartProps {
   setTime: string;
   transitTime: string;
   transitAltitude: number;
+  chartHeight?: number;
+  lineColor?: string;
+  gridColor?: string;
+  axisColor?: string;
+  backgroundColor?: string;
+  showReferenceLines?: boolean;
+  enableZoom?: boolean;
+  animationDuration?: number;
 }
 
 export function RiseSetChart({
@@ -21,6 +32,14 @@ export function RiseSetChart({
   setTime,
   transitTime,
   transitAltitude,
+  chartHeight = 300,
+  lineColor = "#3b82f6",
+  gridColor = "#374151",
+  axisColor = "#9ca3af",
+  backgroundColor = "rgba(255, 255, 255, 0.05)",
+  showReferenceLines = true,
+  enableZoom = false,
+  animationDuration = 0.5,
 }: RiseSetChartProps) {
   // Generate more detailed data points for smoother curve
   const generateDataPoints = () => {
@@ -85,31 +104,86 @@ export function RiseSetChart({
     return maxAlt * Math.sin((position * Math.PI) / 2);
   };
 
+  const [zoom, setZoom] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (enableZoom) {
+      const delta = e.deltaY * -0.01;
+      const newZoom = Math.min(Math.max(0.5, zoom + delta), 3);
+      setZoom(newZoom);
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (enableZoom && e.buttons === 1) {
+      setOffset({
+        x: offset.x + e.movementX,
+        y: offset.y + e.movementY,
+      });
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5 }}
-      className="w-full p-2 bg-background/50 backdrop-blur-sm rounded-lg"
+      transition={{ duration: animationDuration }}
+      className="w-full p-2 rounded-lg"
+      style={{ backgroundColor }}
     >
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%" height={chartHeight}>
         <LineChart
           data={generateDataPoints()}
           margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
         >
           <defs>
             <linearGradient id="altitudeGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.2} />
+              <stop offset="5%" stopColor={lineColor} stopOpacity={0.8} />
+              <stop offset="95%" stopColor={lineColor} stopOpacity={0.2} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-          <XAxis dataKey="time" stroke="#9ca3af" tick={{ fill: "#9ca3af" }} />
-          <YAxis domain={[0, 90]} stroke="#9ca3af" tick={{ fill: "#9ca3af" }} />
+          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+          <XAxis
+            dataKey="time"
+            stroke={axisColor}
+            tick={{ fill: axisColor }}
+            allowDataOverflow={enableZoom}
+          />
+          <YAxis
+            domain={[0, 90]}
+            stroke={axisColor}
+            tick={{ fill: axisColor }}
+            allowDataOverflow={enableZoom}
+          />
+          {showReferenceLines && (
+            <>
+              <ReferenceLine
+                y={transitAltitude}
+                stroke={axisColor}
+                strokeDasharray="5 5"
+                label={{
+                  value: "Transit",
+                  position: "insideTopRight",
+                  fill: axisColor,
+                }}
+              />
+              <ReferenceLine
+                y={0}
+                stroke={axisColor}
+                strokeDasharray="5 5"
+                label={{
+                  value: "Horizon",
+                  position: "insideBottomRight",
+                  fill: axisColor,
+                }}
+              />
+            </>
+          )}
           <Tooltip
             contentStyle={{
-              backgroundColor: "#1f2937",
-              border: "1px solid #374151",
+              backgroundColor: backgroundColor,
+              border: `1px solid ${gridColor}`,
               borderRadius: "0.375rem",
             }}
           />
@@ -119,7 +193,17 @@ export function RiseSetChart({
             stroke="url(#altitudeGradient)"
             strokeWidth={2}
             dot={false}
+            animationDuration={animationDuration * 1000}
           />
+          {enableZoom && (
+            <Brush
+              dataKey="time"
+              height={30}
+              stroke={axisColor}
+              fill={backgroundColor}
+              travellerWidth={10}
+            />
+          )}
         </LineChart>
       </ResponsiveContainer>
     </motion.div>

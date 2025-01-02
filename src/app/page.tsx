@@ -16,6 +16,7 @@ import { useSiteStore } from "@/store/useHomeStore";
 import CookieConsent from "@/components/home/cookie-consent";
 import { UserAgreementMask } from "@/components/home/user-agreement-mask";
 import { Github } from "lucide-react";
+import MouseFollower from "@/components/home/mouse-follower";
 
 const defaultSites: Site[] = [
   {
@@ -334,6 +335,21 @@ export default function Home() {
     setSelectedSite(null);
   };
 
+  const [color, setColor] = useState("#3b82f6");
+  const [size, setSize] = useState(24);
+  const [blur, setBlur] = useState(0);
+  const [trail, setTrail] = useState(5);
+  const [trailColor, setTrailColor] = useState("rgba(59, 130, 246, 0.5)");
+  const [trailBlur, setTrailBlur] = useState(5);
+  const [animationDuration, setAnimationDuration] = useState(0.2);
+  const [animationType, setAnimationType] = useState<"spring" | "tween">(
+    "spring"
+  );
+  const [springStiffness, setSpringStiffness] = useState(500);
+  const [springDamping, setSpringDamping] = useState(28);
+  const [scaleOnTouch, setScaleOnTouch] = useState(true);
+  const [rotateOnMove, setRotateOnMove] = useState(true);
+
   return (
     <motion.main
       initial={{ opacity: 0 }}
@@ -342,6 +358,20 @@ export default function Home() {
       className="min-h-screen bg-gradient-to-br from-indigo-900 to-purple-900 dark:from-gray-900 dark:to-black p-2 sm:p-4 transition-colors duration-300"
       ref={ref}
     >
+      <MouseFollower
+        color={color}
+        size={size}
+        blur={blur}
+        trail={trail}
+        trailColor={trailColor}
+        trailBlur={trailBlur}
+        animationDuration={animationDuration}
+        animationType={animationType}
+        springStiffness={springStiffness}
+        springDamping={springDamping}
+        scaleOnTouch={scaleOnTouch}
+        rotateOnMove={rotateOnMove}
+      />
       <div className=" mx-auto px-2 sm:px-4">
         <div className=" gap-4">
           <div className="flex flex-wrap gap-4">

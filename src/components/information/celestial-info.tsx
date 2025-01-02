@@ -13,7 +13,20 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, JSX } from "react";
 import { useAstroStore } from "@/store/useInformationStore";
 import { CelestialData } from "@/types/infomation";
-import { Sun, Moon, Cloud, Thermometer, Droplet, Wind } from "lucide-react";
+import {
+  Sun,
+  Moon,
+  Cloud,
+  Thermometer,
+  Droplet,
+  Wind,
+  Sunrise,
+  Sunset,
+  Calendar,
+  Clock,
+  Compass,
+  Star,
+} from "lucide-react";
 
 interface CelestialInfoProps {
   data: CelestialData;
@@ -24,8 +37,17 @@ const tableVariants = {
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.05 },
+    transition: {
+      delay: i * 0.05,
+      type: "spring",
+      stiffness: 100,
+      damping: 10,
+    },
   }),
+  hover: {
+    scale: 1.02,
+    transition: { duration: 0.2 },
+  },
 };
 
 export function CelestialInfo() {
@@ -77,31 +99,37 @@ export function CelestialInfo() {
     label: string;
     value: string | number;
     icon: JSX.Element;
+    tooltip?: string;
   }[] = [
     {
       label: "当前时间",
       value: celestialData.current_time || "N/A",
-      icon: <Sun className="w-5 h-5 text-yellow-500" />,
+      icon: <Clock className="w-5 h-5 text-blue-400" />,
+      tooltip: "本地时间",
     },
     {
       label: "温度",
-      value: celestialData.weather.temperature || "N/A",
+      value: `${celestialData.weather.temperature || "N/A"}°C`,
       icon: <Thermometer className="w-5 h-5 text-red-500" />,
+      tooltip: "当前温度",
     },
     {
       label: "湿度",
-      value: celestialData.weather.humidity || "N/A",
+      value: `${celestialData.weather.humidity || "N/A"}%`,
       icon: <Droplet className="w-5 h-5 text-blue-500" />,
+      tooltip: "相对湿度",
     },
     {
       label: "气压",
-      value: celestialData.weather.pressure || "N/A",
+      value: `${celestialData.weather.pressure || "N/A"} hPa`,
       icon: <Wind className="w-5 h-5 text-gray-500" />,
+      tooltip: "大气压力",
     },
     {
       label: "云量",
-      value: celestialData.weather.cloud_cover || "N/A",
+      value: `${celestialData.weather.cloud_cover || "N/A"}%`,
       icon: <Cloud className="w-5 h-5 text-gray-500" />,
+      tooltip: "云层覆盖率",
     },
   ];
 
@@ -141,6 +169,7 @@ export function CelestialInfo() {
                         initial="hidden"
                         animate="visible"
                         exit="hidden"
+                        whileHover="hover"
                         className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
                       >
                         <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 flex items-center">

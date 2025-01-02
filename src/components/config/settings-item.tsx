@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Icons from "lucide-react";
 import { Label } from "@/components/ui/label";
@@ -15,19 +15,57 @@ import {
 } from "@/components/ui/select";
 import { ColorPicker } from "./color-picker";
 import { Slider as RangeSlider } from "@/components/ui/slider";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Setting, SettingValue } from "@/types/config";
 import { useSettingsStore } from "@/store/useConfigStore";
+
+interface FileInputProps {
+  onChange: (files: FileList | null) => void;
+  accept?: string;
+  disabled?: boolean;
+  ariaLabel?: string;
+}
+
+const FileInput: React.FC<FileInputProps> = ({
+  onChange,
+  accept,
+  disabled,
+  ariaLabel,
+}) => {
+  return (
+    <input
+      type="file"
+      onChange={(e) => onChange(e.target.files)}
+      accept={accept}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
+    />
+  );
+};
 
 interface SettingItemProps {
   item: Setting;
   path: string[];
+  className?: string;
+  style?: React.CSSProperties;
 }
 
-const SettingItem: React.FC<SettingItemProps> = ({ item, path }) => {
+const SettingItem: React.FC<SettingItemProps> = ({
+  item,
+  path,
+  className,
+  style,
+}) => {
   const [isFocused, setIsFocused] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const { updateSetting, isLoading } = useSettingsStore();
   const [error, setError] = useState<string | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
 
   const validateSetting = (
     setting: Setting,
@@ -38,36 +76,36 @@ const SettingItem: React.FC<SettingItemProps> = ({ item, path }) => {
     for (const rule of setting.validation) {
       switch (rule.type) {
         case "required":
-          if (!value) return rule.message;
+          if (!value) return rule.message || "This field is required";
           break;
         case "minLength":
           if (
             typeof value === "string" &&
             value.length < (rule.value as number)
           )
-            return rule.message;
+            return rule.message || `Minimum length is ${rule.value}`;
           break;
         case "maxLength":
           if (
             typeof value === "string" &&
             value.length > (rule.value as number)
           )
-            return rule.message;
+            return rule.message || `Maximum length is ${rule.value}`;
           break;
         case "pattern":
           if (
             typeof value === "string" &&
             !new RegExp(rule.value as string).test(value)
           )
-            return rule.message;
+            return rule.message || "Invalid format";
           break;
         case "min":
           if (typeof value === "number" && value < (rule.value as number))
-            return rule.message;
+            return rule.message || `Minimum value is ${rule.value}`;
           break;
         case "max":
           if (typeof value === "number" && value > (rule.value as number))
-            return rule.message;
+            return rule.message || `Maximum value is ${rule.value}`;
           break;
         default:
           return null;
@@ -87,7 +125,13 @@ const SettingItem: React.FC<SettingItemProps> = ({ item, path }) => {
     setIsValidating(false);
 
     if (!validationError) {
-      await updateSetting(path, value);
+      try {
+        await updateSetting(path, value);
+      } catch (error) {
+        setError(
+          typeof error === "string" ? error : "Failed to update setting"
+        );
+      }
     }
   };
 
@@ -95,7 +139,11 @@ const SettingItem: React.FC<SettingItemProps> = ({ item, path }) => {
     switch (item.type) {
       case "text":
         return (
-          <>
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.2 }}
+          >
             <Input
               type="text"
               value={item.value as string}
@@ -103,13 +151,18 @@ const SettingItem: React.FC<SettingItemProps> = ({ item, path }) => {
               className={error ? "border-red-500" : ""}
               disabled={isLoading}
               aria-label={item.label}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
             />
-            {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-          </>
+          </motion.div>
         );
       case "number":
         return (
-          <>
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.2 }}
+          >
             <Input
               type="number"
               value={item.value as number}
@@ -117,59 +170,83 @@ const SettingItem: React.FC<SettingItemProps> = ({ item, path }) => {
               className={error ? "border-red-500" : ""}
               disabled={isLoading}
               aria-label={item.label}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
             />
-            {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-          </>
+          </motion.div>
         );
       case "checkbox":
         return (
-          <Checkbox
-            checked={item.value as boolean}
-            onCheckedChange={(checked) => handleChange(checked)}
-            disabled={isLoading}
-            aria-label={item.label}
-          />
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            <Checkbox
+              checked={item.value as boolean}
+              onCheckedChange={(checked) => handleChange(checked)}
+              disabled={isLoading}
+              aria-label={item.label}
+            />
+          </motion.div>
         );
       case "select":
         return (
-          <Select
-            value={item.value as string}
-            onValueChange={(value) => handleChange(value)}
-            disabled={isLoading}
-            aria-label={item.label}
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.2 }}
           >
-            <SelectTrigger>
-              <SelectValue placeholder={item.label} />
-            </SelectTrigger>
-            <SelectContent>
-              {item.options?.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select
+              value={item.value as string}
+              onValueChange={(value) => handleChange(value)}
+              disabled={isLoading}
+              aria-label={item.label}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={item.label} />
+              </SelectTrigger>
+              <SelectContent>
+                {item.options?.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </motion.div>
         );
       case "color":
         return (
-          <ColorPicker
-            color={item.value as string}
-            onChange={(color) => handleChange(color)}
-            disabled={isLoading}
-            ariaLabel={item.label}
-          />
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            <ColorPicker
+              color={item.value as string}
+              onChange={(color) => handleChange(color)}
+              disabled={isLoading}
+              ariaLabel={item.label}
+            />
+          </motion.div>
         );
       case "range":
         return (
-          <RangeSlider
-            min={item.min}
-            max={item.max}
-            step={item.step}
-            value={[item.value as number]}
-            onValueChange={([value]) => handleChange(value)}
-            disabled={isLoading}
-            aria-label={item.label}
-          />
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <RangeSlider
+              min={item.min}
+              max={item.max}
+              step={item.step}
+              value={[item.value as number]}
+              onValueChange={([value]) => handleChange(value)}
+              disabled={isLoading}
+              aria-label={item.label}
+            />
+          </motion.div>
         );
       default:
         return null;
@@ -178,24 +255,35 @@ const SettingItem: React.FC<SettingItemProps> = ({ item, path }) => {
 
   return (
     <motion.div
-      className="space-y-2"
+      className={`space-y-2 ${className}`}
+      style={style}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.2 }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
     >
       <div className="flex items-center justify-between">
         <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {item.label}
         </Label>
         {item.description && (
-          <Icons.HelpCircle className="h-4 w-4 text-muted-foreground" />
+          <Tooltip>
+            <TooltipTrigger>
+              <Icons.HelpCircle className="h-4 w-4 text-muted-foreground" />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{item.description}</p>
+            </TooltipContent>
+          </Tooltip>
         )}
       </div>
 
       <motion.div
         className="relative"
-        whileHover={{ scale: 1.01 }}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
         transition={{ type: "spring", stiffness: 300 }}
       >
         {renderInput()}

@@ -17,6 +17,10 @@ interface SearchState {
   favorites: string[];
   realTimeData: RealTimeData | null;
   isLoading: boolean;
+  showAdvanced: boolean;
+  showSuggestions: boolean;
+  suggestions: CelestialObject[];
+  searchHistory: string[];
 
   // Actions
   setSearchTerm: (term: string) => void;
@@ -25,8 +29,14 @@ interface SearchState {
   setSortOrder: (order: "asc" | "desc") => void;
   setCurrentPage: (page: number) => void;
   toggleFavorite: (objectId: string) => void;
+  setObjects: (objects: CelestialObject[]) => void;
   fetchObjects: () => Promise<void>;
   fetchRealTimeData: () => Promise<void>;
+  setShowAdvanced: (show: boolean) => void;
+  setShowSuggestions: (show: boolean) => void;
+  setSuggestions: (suggestions: CelestialObject[]) => void;
+  addToHistory: (term: string) => void;
+  clearHistory: () => void;
 }
 
 const useSearchStore = create<SearchState>()(
@@ -49,6 +59,10 @@ const useSearchStore = create<SearchState>()(
       favorites: [],
       realTimeData: null,
       isLoading: false,
+      showAdvanced: false,
+      showSuggestions: false,
+      suggestions: [],
+      searchHistory: [],
 
       setSearchTerm: (term) => set({ searchTerm: term, currentPage: 1 }),
 
@@ -69,6 +83,16 @@ const useSearchStore = create<SearchState>()(
         });
       },
 
+      setObjects: (objects) =>
+        set({
+          objects: objects.map((obj) => ({
+            ...obj,
+            riseTime: obj.riseTime || "N/A",
+            setTime: obj.setTime || "N/A",
+            transitTime: obj.transitTime || "N/A",
+          })),
+        }),
+
       fetchObjects: async () => {
         set({ isLoading: true });
         try {
@@ -86,15 +110,53 @@ const useSearchStore = create<SearchState>()(
         try {
           const response = await fetch("/api/real-time-data");
           const data = await response.json();
-          set({ realTimeData: data });
+          // Ensure the response matches the expected structure
+          const realTimeData = {
+            ...data,
+            weather: {
+              cloudCover: data.weather?.cloudCover || 0,
+              temperature: data.weather?.temperature || 0,
+              humidity: data.weather?.humidity || 0,
+              windSpeed: data.weather?.windSpeed || 0,
+              pressure: data.weather?.pressure || 1013,
+              visibility: data.weather?.visibility || 10,
+            },
+            astronomical: {
+              sunAltitude: data.astronomical?.sunAltitude || 0,
+              moonAltitude: data.astronomical?.moonAltitude || 0,
+              twilight: data.astronomical?.twilight || 'none',
+              seeing: data.astronomical?.seeing || 1.0,
+            }
+          };
+          set({ realTimeData });
         } catch (error) {
           console.error("Failed to fetch real-time data:", error);
         }
       },
+
+      setShowAdvanced: (show) => set({ showAdvanced: show }),
+      setShowSuggestions: (show) => set({ showSuggestions: show }),
+      setSuggestions: (suggestions) => set({ suggestions }),
+
+      addToHistory: (term) => {
+        if (!term.trim()) return;
+        set((state) => {
+          const newHistory = [
+            term,
+            ...state.searchHistory.filter((h) => h !== term),
+          ].slice(0, 5);
+          return { searchHistory: newHistory };
+        });
+      },
+
+      clearHistory: () => set({ searchHistory: [] }),
     }),
     {
       name: "search-store",
-      partialize: (state) => ({ favorites: state.favorites }),
+      partialize: (state) => ({
+        favorites: state.favorites,
+        searchHistory: state.searchHistory,
+      }),
     }
   )
 );

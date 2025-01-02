@@ -32,5 +32,14 @@ export interface RealTimeData {
     cloudCover: number;
     temperature: number;
     humidity: number;
+    windSpeed: number;
+    pressure: number;
+    visibility: number;
+  };
+  astronomical: {
+    sunAltitude: number;
+    moonAltitude: number;
+    twilight: string;
+    seeing: number;
   };
 }

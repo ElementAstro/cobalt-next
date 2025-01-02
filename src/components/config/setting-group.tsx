@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   AccordionItem,
   AccordionTrigger,
@@ -11,35 +11,97 @@ import * as Icons from "lucide-react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import type { SettingGroup } from "@/types/config";
 import SettingItem from "./settings-item";
+import { cn } from "@/lib/utils";
+
+interface AnimationConfig {
+  iconRotation?: number;
+  hoverScale?: number;
+  transitionDuration?: number;
+  staggerDelay?: number;
+}
 
 interface SettingGroupProps {
   group: SettingGroup;
   path: string[];
+  className?: string;
+  animationConfig?: AnimationConfig;
 }
 
-const SettingGroup: React.FC<SettingGroupProps> = ({ group, path }) => {
+const defaultAnimationConfig: AnimationConfig = {
+  iconRotation: 180,
+  hoverScale: 1.02,
+  transitionDuration: 0.3,
+  staggerDelay: 0.05,
+};
+
+const SettingGroup: React.FC<SettingGroupProps> = ({
+  group,
+  path,
+  className,
+  animationConfig = defaultAnimationConfig,
+}) => {
   const controls = useAnimation();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleAccordionChange = async (value: string) => {
-    if (value === group.id) {
+  const mergedConfig = { ...defaultAnimationConfig, ...animationConfig };
+
+  useEffect(() => {
+    const handleAnimation = async (isOpen: boolean) => {
       await controls.start({
-        rotate: 180,
-        transition: { duration: 0.2 },
+        rotate: isOpen ? mergedConfig.iconRotation : 0,
+        transition: { duration: mergedConfig.transitionDuration },
       });
-    } else {
-      await controls.start({
-        rotate: 0,
-        transition: { duration: 0.2 },
+    };
+
+    const accordion = document.querySelector(`[data-value="${group.id}"]`);
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === "data-state") {
+          const isOpen =
+            (mutation.target as HTMLElement).getAttribute("data-state") ===
+            "open";
+          handleAnimation(isOpen);
+        }
       });
+    });
+
+    if (accordion) {
+      observer.observe(accordion, { attributes: true });
     }
+
+    return () => observer.disconnect();
+  }, [
+    controls,
+    group.id,
+    mergedConfig.iconRotation,
+    mergedConfig.transitionDuration,
+  ]);
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: mergedConfig.staggerDelay,
+      },
+    },
   };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: -10 },
+    visible: { opacity: 1, y: 0 },
+  };
+
   return (
-    <AccordionItem value={group.id}>
+    <AccordionItem
+      value={group.id}
+      className={cn("border-b border-muted/20", className)}
+      data-value={group.id}
+    >
       <AccordionTrigger className="hover:no-underline group">
         <motion.div
           className="flex items-center w-full"
-          whileHover={{ scale: 1.02 }}
+          whileHover={{ scale: mergedConfig.hoverScale }}
           transition={{ type: "spring", stiffness: 300 }}
         >
           {group.icon &&
@@ -70,26 +132,36 @@ const SettingGroup: React.FC<SettingGroupProps> = ({ group, path }) => {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
+            transition={{
+              duration: mergedConfig.transitionDuration,
+              ease: "easeInOut",
+            }}
           >
-            {group.settings.map((item, index) =>
-              "settings" in item ? (
-                <Accordion key={item.id} type="single" collapsible>
-                  <SettingGroup group={item} path={[...path, group.id]} />
-                </Accordion>
-              ) : (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="mb-4"
-                >
-                  <SettingItem item={item} path={[...path, group.id]} />
-                </motion.div>
-              )
-            )}
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {group.settings.map((item, index) =>
+                "settings" in item ? (
+                  <Accordion key={item.id} type="single" collapsible>
+                    <SettingGroup
+                      group={item}
+                      path={[...path, group.id]}
+                      animationConfig={mergedConfig}
+                    />
+                  </Accordion>
+                ) : (
+                  <motion.div
+                    key={item.id}
+                    variants={itemVariants}
+                    className="mb-4"
+                  >
+                    <SettingItem item={item} path={[...path, group.id]} />
+                  </motion.div>
+                )
+              )}
+            </motion.div>
           </motion.div>
         </AnimatePresence>
       </AccordionContent>

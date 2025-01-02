@@ -28,9 +28,10 @@ import { CelestialObjectCard } from "@/components/search/celestial-object-card";
 import { SearchBar } from "@/components/search/search-bar";
 import { FilterPanel } from "@/components/search/filter-panel";
 import useSearchStore from "@/store/useSearchStore";
+import { CelestialObject } from "@/types/search";
 
 // 假设我们有一个更大的模拟数据集
-const mockObjects = Array.from({ length: 1000 }, (_, i) => ({
+const mockObjects: CelestialObject[] = Array.from({ length: 1000 }, (_, i) => ({
   id: (i + 1).toString(),
   name: `Celestial Object ${i + 1}`,
   type: ["OPNCL", "DRKNB", "BRTNB", "GALXY", "PLNTN", "STAR"][
@@ -58,6 +59,7 @@ const mockObjects = Array.from({ length: 1000 }, (_, i) => ({
     Math.random() * 60
   )}`,
   transitAltitude: Math.floor(Math.random() * 90),
+  thumbnail: null,
 }));
 
 const ITEMS_PER_PAGE = 10;

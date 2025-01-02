@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import {
-  fetchGPL3License,
-  parseGPL3License,
+  fetchLicense,
+  parseLicense,
   searchLicense,
+  SUPPORTED_LICENSES,
+  type License,
 } from "@/utils/license-parser";
 import {
   Accordion,
@@ -25,18 +27,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Sun, Moon } from "lucide-react";
+import { Search, Sun, Moon, Copy } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-interface License {
-  id: string;
-  name: string;
-  sections: Array<{ id: string; title: string; content: string }>;
-}
+import { toast } from "@/hooks/use-toast";
 
 export function LicenseDisplay() {
   const [licenses, setLicenses] = useState<License[]>([]);
-  const [selectedLicense, setSelectedLicense] = useState<string>("GPL3");
+  const [selectedLicense, setSelectedLicense] = useState<string>("gpl-3.0");
   const [licenseSections, setLicenseSections] = useState<
     Array<{ id: string; title: string; content: string }>
   >([]);
@@ -50,23 +47,57 @@ export function LicenseDisplay() {
   const [isLandscape, setIsLandscape] = useState(false);
   const [isComparing, setIsComparing] = useState(false);
   const [compareLicense, setCompareLicense] = useState<string | null>(null);
+  const [compareSections, setCompareSections] = useState<
+    Array<{ id: string; title: string; content: string }>
+  >([]);
 
   useEffect(() => {
-    async function loadLicense() {
+    async function loadLicenses() {
       try {
-        const licenseText = await fetchGPL3License();
-        const parsedSections = parseGPL3License(licenseText);
-        setLicenseSections(parsedSections);
-        setDisplayedSections(parsedSections);
+        const licensePromises = SUPPORTED_LICENSES.map(async (license) => {
+          const licenseText = await fetchLicense(license.id);
+          return parseLicense(licenseText, license.id, license.name);
+        });
+
+        const loadedLicenses = await Promise.all(licensePromises);
+        setLicenses(loadedLicenses);
+        loadLicense("gpl-3.0");
       } catch (err) {
-        setError("无法加载 GPL3 许可证。请稍后再试。");
+        setError("无法加载许可证。请稍后再试。");
       } finally {
         setIsLoading(false);
       }
     }
 
-    loadLicense();
+    loadLicenses();
   }, []);
+
+  async function loadLicense(licenseId: string) {
+    try {
+      const license = licenses.find((l) => l.id === licenseId);
+      if (license) {
+        setLicenseSections(license.sections);
+        setDisplayedSections(license.sections);
+      }
+    } catch (err) {
+      setError(`无法加载 ${licenseId} 许可证。`);
+    }
+  }
+
+  useEffect(() => {
+    if (selectedLicense) {
+      loadLicense(selectedLicense);
+    }
+  }, [selectedLicense]);
+
+  useEffect(() => {
+    if (isComparing && compareLicense) {
+      const license = licenses.find((l) => l.id === compareLicense);
+      if (license) {
+        setCompareSections(license.sections);
+      }
+    }
+  }, [isComparing, compareLicense, licenses]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -92,11 +123,17 @@ export function LicenseDisplay() {
     document.body.classList.toggle("dark", isDarkMode);
   }, [isDarkMode]);
 
+  const handleCopySection = (content: string) => {
+    navigator.clipboard.writeText(content);
+    toast({
+      title: "已复制",
+      description: "许可证部分已复制到剪贴板",
+    });
+  };
+
   if (isLoading) {
     return (
-      <div className="text-center p-4 dark:text-gray-200">
-        加载 GPL3 许可证中...
-      </div>
+      <div className="text-center p-4 dark:text-gray-200">加载许可证中...</div>
     );
   }
 
@@ -150,64 +187,165 @@ export function LicenseDisplay() {
         </motion.div>
 
         <motion.div
-          className="flex items-center gap-2"
+          className="flex items-center gap-4"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Switch
-            id="dark-mode"
-            checked={isDarkMode}
-            onCheckedChange={setIsDarkMode}
-            className="data-[state=checked]:bg-blue-500"
-          />
-          <Label htmlFor="dark-mode" className="flex items-center gap-2">
-            {isDarkMode ? (
-              <Moon className="h-5 w-5 text-yellow-400" />
-            ) : (
-              <Sun className="h-5 w-5 text-orange-400" />
-            )}
-          </Label>
+          <Button
+            variant={isComparing ? "default" : "outline"}
+            onClick={() => setIsComparing(!isComparing)}
+          >
+            {isComparing ? "停止比较" : "比较许可证"}
+          </Button>
+
+          <div className="flex items-center gap-2">
+            <Switch
+              id="dark-mode"
+              checked={isDarkMode}
+              onCheckedChange={setIsDarkMode}
+              className="data-[state=checked]:bg-blue-500"
+            />
+            <Label htmlFor="dark-mode" className="flex items-center gap-2">
+              {isDarkMode ? (
+                <Moon className="h-5 w-5 text-yellow-400" />
+              ) : (
+                <Sun className="h-5 w-5 text-orange-400" />
+              )}
+            </Label>
+          </div>
         </motion.div>
       </div>
+
+      {isComparing && (
+        <motion.div
+          className="mb-6"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Select
+            value={compareLicense || ""}
+            onValueChange={setCompareLicense}
+          >
+            <SelectTrigger className="w-[280px]">
+              <SelectValue placeholder="选择要比较的许可证" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>比较许可证</SelectLabel>
+                {licenses
+                  .filter((l) => l.id !== selectedLicense)
+                  .map((license) => (
+                    <SelectItem key={license.id} value={license.id}>
+                      {license.name}
+                    </SelectItem>
+                  ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </motion.div>
+      )}
+
       <AnimatePresence mode="wait">
         <motion.div
-          key={searchQuery}
+          key={selectedLicense + (compareLicense || "")}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
         >
-          <Accordion type="single" collapsible className="w-full">
-            {displayedSections.map((section, index) => (
-              <motion.div
-                key={section.id}
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <AccordionItem
-                  value={section.id}
-                  className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                >
-                  <AccordionTrigger className="text-lg font-medium text-gray-800 dark:text-gray-200 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
-                    {section.title}
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <motion.pre
-                      className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 p-4 bg-gray-50 dark:bg-gray-700/20 rounded-lg"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3 }}
+          <div
+            className="grid gap-6"
+            style={{ gridTemplateColumns: isComparing ? "1fr 1fr" : "1fr" }}
+          >
+            <div>
+              <Accordion type="single" collapsible className="w-full">
+                {displayedSections.map((section, index) => (
+                  <motion.div
+                    key={section.id}
+                    initial={{ opacity: 0, x: -50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <AccordionItem
+                      value={section.id}
+                      className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                     >
-                      {section.content}
-                    </motion.pre>
-                  </AccordionContent>
-                </AccordionItem>
-              </motion.div>
-            ))}
-          </Accordion>
+                      <AccordionTrigger className="text-lg font-medium text-gray-800 dark:text-gray-200 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
+                        {section.title}
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <motion.div
+                          className="relative"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <pre className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 p-4 bg-gray-50 dark:bg-gray-700/20 rounded-lg">
+                            {section.content}
+                          </pre>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-2 right-2"
+                            onClick={() => handleCopySection(section.content)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </motion.div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </motion.div>
+                ))}
+              </Accordion>
+            </div>
+
+            {isComparing && compareLicense && (
+              <div>
+                <Accordion type="single" collapsible className="w-full">
+                  {compareSections.map((section, index) => (
+                    <motion.div
+                      key={section.id}
+                      initial={{ opacity: 0, x: 50 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <AccordionItem
+                        value={section.id}
+                        className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      >
+                        <AccordionTrigger className="text-lg font-medium text-gray-800 dark:text-gray-200 hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
+                          {section.title}
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <motion.div
+                            className="relative"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <pre className="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 p-4 bg-gray-50 dark:bg-gray-700/20 rounded-lg">
+                              {section.content}
+                            </pre>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="absolute top-2 right-2"
+                              onClick={() => handleCopySection(section.content)}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </motion.div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </motion.div>
+                  ))}
+                </Accordion>
+              </div>
+            )}
+          </div>
         </motion.div>
       </AnimatePresence>
     </motion.div>
