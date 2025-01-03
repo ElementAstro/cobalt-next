@@ -7,7 +7,29 @@ type ConnectionStatus =
   | "connected"
   | "reconnecting"
   | "disconnected"
-  | "error";
+  | "error"
+  | "offline";
+
+type ConnectionQuality =
+  | "excellent"
+  | "good"
+  | "fair"
+  | "poor"
+  | "disconnected";
+
+interface ConnectionMetrics {
+  latency: number | null;
+  packetLoss: number;
+  jitter: number;
+  quality: ConnectionQuality;
+}
+
+interface QueuedMessage {
+  event: string;
+  data: unknown;
+  timestamp: number;
+  attempts: number;
+}
 
 interface SocketIOClientProps {
   serverUrl: string;
@@ -16,9 +38,13 @@ interface SocketIOClientProps {
   onError?: (error: Error) => void;
   onMessage?: (event: string, data: unknown) => void;
   onStatusChange?: (status: ConnectionStatus) => void;
+  onMetricsChange?: (metrics: ConnectionMetrics) => void;
   retryAttempts?: number;
   retryInterval?: number;
   connectionTimeout?: number;
+  maxQueueSize?: number;
+  queueRetryInterval?: number;
+  enableOfflineQueue?: boolean;
 }
 
 const SocketIOClient: React.FC<SocketIOClientProps> = ({
@@ -28,15 +54,24 @@ const SocketIOClient: React.FC<SocketIOClientProps> = ({
   onError,
   onMessage,
   onStatusChange,
+  onMetricsChange,
   retryAttempts = 3,
   retryInterval = 5000,
   connectionTimeout = 10000,
+  maxQueueSize = 100,
+  queueRetryInterval = 5000,
+  enableOfflineQueue = false,
 }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("disconnected");
   const [retryCount, setRetryCount] = useState(0);
   const [latency, setLatency] = useState<number | null>(null);
+  const [packetLoss, setPacketLoss] = useState(0);
+  const [jitter, setJitter] = useState(0);
+  const [quality, setQuality] = useState<ConnectionQuality>("disconnected");
+  const [messageQueue, setMessageQueue] = useState<QueuedMessage[]>([]);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   const updateStatus = useCallback(
     (status: ConnectionStatus) => {
@@ -64,9 +99,31 @@ const SocketIOClient: React.FC<SocketIOClientProps> = ({
   const handlePing = useCallback(() => {
     const start = Date.now();
     socket?.once("pong", () => {
-      setLatency(Date.now() - start);
+      const newLatency = Date.now() - start;
+      setLatency(newLatency);
+
+      // Calculate jitter
+      setJitter((prev) => {
+        const newJitter = prev ? Math.abs(prev - newLatency) : 0;
+        return Math.min(newJitter, 1000); // Cap jitter at 1000ms
+      });
+
+      // Update connection quality
+      let newQuality: ConnectionQuality = "excellent";
+      if (newLatency > 300) newQuality = "good";
+      if (newLatency > 600) newQuality = "fair";
+      if (newLatency > 1000) newQuality = "poor";
+      if (newLatency === null) newQuality = "disconnected";
+
+      setQuality(newQuality);
+      onMetricsChange?.({
+        latency: newLatency,
+        packetLoss,
+        jitter,
+        quality: newQuality,
+      });
     });
-  }, [socket]);
+  }, [socket, packetLoss, jitter, onMetricsChange]);
 
   useEffect(() => {
     const newSocket = io(serverUrl, {
@@ -134,12 +191,57 @@ const SocketIOClient: React.FC<SocketIOClientProps> = ({
   const emitEvent = useCallback(
     (event: string, data?: unknown) => {
       if (!socket) {
+        if (enableOfflineQueue && isOnline) {
+          // Add to queue if offline mode is enabled
+          setMessageQueue((prev) => {
+            const newQueue = [...prev];
+            if (maxQueueSize && newQueue.length >= maxQueueSize) {
+              newQueue.shift(); // Remove oldest message if queue is full
+            }
+            newQueue.push({
+              event,
+              data,
+              timestamp: Date.now(),
+              attempts: 0,
+            });
+            return newQueue;
+          });
+          return;
+        }
         throw new Error("Socket is not connected");
       }
       socket.emit(event, data);
     },
-    [socket]
+    [socket, enableOfflineQueue, isOnline, maxQueueSize]
   );
+
+  // Process message queue when connection is restored
+  useEffect(() => {
+    if (connectionStatus === "connected" && messageQueue.length > 0) {
+      const processQueue = async () => {
+        const successfulMessages: QueuedMessage[] = [];
+        const failedMessages: QueuedMessage[] = [];
+
+        for (const message of messageQueue) {
+          try {
+            socket?.emit(message.event, message.data);
+            successfulMessages.push(message);
+          } catch (error) {
+            if (message.attempts < (retryAttempts || 3)) {
+              failedMessages.push({
+                ...message,
+                attempts: message.attempts + 1,
+              });
+            }
+          }
+        }
+
+        setMessageQueue(failedMessages);
+      };
+
+      processQueue();
+    }
+  }, [connectionStatus, messageQueue, socket, retryAttempts]);
 
   const addEventListener = useCallback(
     (event: string, handler: (data: unknown) => void) => {
@@ -150,6 +252,28 @@ const SocketIOClient: React.FC<SocketIOClientProps> = ({
     },
     [socket]
   );
+
+  // Handle network connectivity changes
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      updateStatus("connecting");
+      socket?.connect();
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      updateStatus("offline");
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [socket, updateStatus]);
 
   return null;
 };

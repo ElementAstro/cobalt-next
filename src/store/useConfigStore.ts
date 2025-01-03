@@ -1,7 +1,51 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { SettingsState, SettingValue } from "@/types/config";
+import { z } from "zod";
+import { HistoryEntry, SettingValue } from "@/types/config";
 import { getSettingByPath } from "@/utils/config-utils";
+import MessageBus, { LogLevel } from "@/utils/message-bus";
+import WebSocketClient from "@/utils/websocket-client";
+import log from "@/utils/logger";
+
+// 定义zod模式
+const updateSettingSchema = z.object({
+  path: z.array(z.string()).min(1),
+  value: z.any(),
+});
+
+const importSettingsSchema = z.object({
+  data: z.any(),
+});
+
+export interface SettingsState {
+  settings: any[];
+  isLoading: boolean;
+  error: string | null;
+  history: HistoryEntry[];
+  tags: string[];
+  searchQuery: string;
+  activeCategory: string | null;
+  activeTags: string[];
+
+  fetchSettings: () => Promise<void>;
+  updateSetting: (path: string[], value: SettingValue) => Promise<void>;
+  resetSettings: () => Promise<void>;
+  addHistoryEntry: (entry: HistoryEntry) => void;
+  clearHistory: () => void;
+  setSearchQuery: (query: string) => void;
+  setActiveCategory: (category: string | null) => void;
+  setActiveTags: (tags: string[]) => void;
+  exportSettings: () => Promise<void>;
+  importSettings: (data: any) => Promise<void>;
+}
+
+const wsClient = new WebSocketClient({
+  url: "ws://localhost:8080/config",
+  reconnectInterval: 3000,
+  maxReconnectAttempts: 5,
+  debug: true,
+});
+const messageBus = new MessageBus(wsClient, { logLevel: LogLevel.DEBUG });
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
@@ -17,31 +61,50 @@ export const useSettingsStore = create<SettingsState>()(
 
       fetchSettings: async () => {
         set({ isLoading: true, error: null });
+        log.info("开始获取设置");
         try {
           const response = await fetch("/api/settings");
-          if (!response.ok) throw new Error("Failed to fetch settings");
+          if (!response.ok) {
+            log.error("获取设置失败", response.statusText);
+            throw new Error("Failed to fetch settings");
+          }
           const data = await response.json();
           set({ settings: data, isLoading: false });
+          log.info("设置获取成功");
         } catch (error) {
           set({ error: (error as Error).message, isLoading: false });
+          log.error("获取设置时出错", error);
         }
       },
 
       updateSetting: async (path: string[], value: SettingValue) => {
+        const parsed = updateSettingSchema.safeParse({ path, value });
+        if (!parsed.success) {
+          log.error("参数验证失败", parsed.error.flatten());
+          set({ error: "Invalid parameters", isLoading: false });
+          return;
+        }
+
         const state = get();
         const oldValue = getSettingByPath(state.settings, path)?.value ?? null;
         set({ isLoading: true, error: null });
+        log.info(`更新设置: ${path.join(".")}`, { newValue: value });
         try {
           const response = await fetch("/api/settings", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ path, value }),
           });
-          if (!response.ok) throw new Error("Failed to update setting");
+          if (!response.ok) {
+            log.error("更新设置失败", response.statusText);
+            throw new Error("Failed to update setting");
+          }
           const data = await response.json();
           set({ settings: data, isLoading: false });
+          log.info("设置更新成功");
         } catch (error) {
           set({ error: (error as Error).message, isLoading: false });
+          log.error("更新设置时出错", error);
         }
         state.addHistoryEntry({
           timestamp: Date.now(),
@@ -49,35 +112,61 @@ export const useSettingsStore = create<SettingsState>()(
           oldValue,
           newValue: value,
         });
+
+        // Publish update to MessageBus
+        messageBus.publish("settingUpdated", { path, newValue: value });
       },
 
       resetSettings: async () => {
         set({ isLoading: true, error: null });
+        log.info("重置设置");
         try {
           const response = await fetch("/api/settings", { method: "PUT" });
-          if (!response.ok) throw new Error("Failed to reset settings");
+          if (!response.ok) {
+            log.error("重置设置失败", response.statusText);
+            throw new Error("Failed to reset settings");
+          }
           const data = await response.json();
           set({ settings: data, isLoading: false });
+          log.info("设置重置成功");
         } catch (error) {
           set({ error: (error as Error).message, isLoading: false });
+          log.error("重置设置时出错", error);
         }
+
+        // Publish reset event to MessageBus
+        messageBus.publish("settingsReset", {});
       },
 
       addHistoryEntry: (entry) => {
+        log.info("添加历史记录条目", entry);
         set((state) => ({
           history: [...state.history.slice(-99), entry],
         }));
       },
 
-      clearHistory: () => set({ history: [] }),
+      clearHistory: () => {
+        log.info("清除历史记录");
+        set({ history: [] });
+      },
 
-      setSearchQuery: (query) => set({ searchQuery: query }),
+      setSearchQuery: (query) => {
+        log.info("设置搜索查询", { query });
+        set({ searchQuery: query });
+      },
 
-      setActiveCategory: (category) => set({ activeCategory: category }),
+      setActiveCategory: (category) => {
+        log.info("设置活动类别", { category });
+        set({ activeCategory: category });
+      },
 
-      setActiveTags: (tags) => set({ activeTags: tags }),
+      setActiveTags: (tags) => {
+        log.info("设置活动标签", { tags });
+        set({ activeTags: tags });
+      },
 
       exportSettings: async () => {
+        log.info("导出设置");
         const settings = get().settings;
         const blob = new Blob([JSON.stringify(settings, null, 2)], {
           type: "application/json",
@@ -88,10 +177,19 @@ export const useSettingsStore = create<SettingsState>()(
         a.download = "settings.json";
         a.click();
         URL.revokeObjectURL(url);
+        log.info("设置导出完成");
       },
 
       importSettings: async (data) => {
+        const parsed = importSettingsSchema.safeParse({ data });
+        if (!parsed.success) {
+          log.error("导入设置参数验证失败", parsed.error.flatten());
+          set({ error: "Invalid import data", isLoading: false });
+          return;
+        }
+
         set({ isLoading: true, error: null });
+        log.info("导入设置", { data });
         try {
           await fetch("/api/settings/import", {
             method: "POST",
@@ -99,8 +197,10 @@ export const useSettingsStore = create<SettingsState>()(
             body: JSON.stringify(data),
           });
           await get().fetchSettings();
+          log.info("设置导入成功");
         } catch (error) {
           set({ error: (error as Error).message, isLoading: false });
+          log.error("导入设置时出错", error);
         }
       },
     }),
@@ -114,3 +214,15 @@ export const useSettingsStore = create<SettingsState>()(
     }
   )
 );
+
+// Setup MessageBus subscriptions
+messageBus.subscribe("externalSettingChange", (message) => {
+  log.info("接收到外部设置更改", message);
+  const { path, newValue } = message;
+  useSettingsStore.getState().updateSetting(path, newValue);
+});
+
+messageBus.subscribe("externalSettingsReset", () => {
+  log.info("接收到外部设置重置");
+  useSettingsStore.getState().resetSettings();
+});

@@ -3,6 +3,7 @@ import MessageBus, { LogLevel } from "@/utils/message-bus";
 import WebSocketClient from "@/utils/websocket-client";
 import { z } from "zod";
 import { create } from "zustand";
+import wsClient from "@/utils/ws-client";
 
 // Zod schemas for Telescope
 const TelescopeStatusSchema = z.object({
@@ -105,12 +106,9 @@ interface TelescopeSettingMessage {
 }
 
 export const useTelescopeStore = create<TelescopeState>((set, get) => {
-  const wsClient = new WebSocketClient({
-    url: "ws://localhost:8081", // Different port for telescope
-    reconnectInterval: 3000,
-    maxReconnectAttempts: 5,
-    debug: true,
-  });
+  if (!wsClient) {
+    throw new Error("WebSocket client is not initialized");
+  }
 
   const messageBus = new MessageBus<TelescopeMessage>(wsClient, {
     logLevel: LogLevel.INFO,
@@ -159,7 +157,9 @@ export const useTelescopeStore = create<TelescopeState>((set, get) => {
     messageBus.getTopics().forEach((topic) => {
       messageBus.clearTopic(topic);
     });
-    wsClient.close();
+    if (wsClient) {
+      wsClient.close();
+    }
   };
 
   if (typeof window !== "undefined") {

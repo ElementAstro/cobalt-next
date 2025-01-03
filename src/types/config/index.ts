@@ -6,6 +6,13 @@ export type ValidationRule = {
   message: string;
 };
 
+export interface HistoryEntry {
+  timestamp: number;
+  path: string[];
+  oldValue: SettingValue | null;
+  newValue: SettingValue;
+}
+
 export interface Setting {
   id: string;
   label: string;

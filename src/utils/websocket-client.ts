@@ -1,4 +1,10 @@
-type WebSocketEvent = "open" | "message" | "error" | "close" | "reconnect" | "statechange";
+type WebSocketEvent =
+  | "open"
+  | "message"
+  | "error"
+  | "close"
+  | "reconnect"
+  | "statechange";
 
 interface WebSocketClientOptions {
   url: string;
@@ -32,7 +38,7 @@ class WebSocketClient {
     messagesReceived: 0,
     connectionAttempts: 0,
     lastConnectedAt: null as Date | null,
-    lastDisconnectedAt: null as Date | null
+    lastDisconnectedAt: null as Date | null,
   };
 
   constructor(options: WebSocketClientOptions) {
@@ -61,12 +67,13 @@ class WebSocketClient {
     };
 
     this.ws.binaryType = this.binaryType;
-    
+
     this.ws.onmessage = (event) => {
-      const message = typeof event.data === 'string' 
-        ? this.handleMessage(event.data)
-        : event.data;
-        
+      const message =
+        typeof event.data === "string"
+          ? this.handleMessage(event.data)
+          : event.data;
+
       if (message !== null) {
         this.emit("message", message);
         this.resetHeartbeat();
@@ -87,6 +94,12 @@ class WebSocketClient {
         this.handleReconnect();
       }
     };
+  }
+
+  public initiateConnection() {
+    if (this.ws?.readyState === WebSocket.CLOSED) {
+      this.connect();
+    }
   }
 
   private handleReconnect() {
@@ -133,9 +146,9 @@ class WebSocketClient {
 
   public send(message: any) {
     const serialized = this.messageSerializer(message);
-    
+
     if (this.debug) {
-      console.debug('[WebSocket] Sending message:', serialized);
+      console.debug("[WebSocket] Sending message:", serialized);
     }
 
     if (this.ws?.readyState === WebSocket.OPEN) {
@@ -150,14 +163,14 @@ class WebSocketClient {
     try {
       const deserialized = this.messageDeserializer(data);
       this.stats.messagesReceived++;
-      
+
       if (this.debug) {
-        console.debug('[WebSocket] Received message:', deserialized);
+        console.debug("[WebSocket] Received message:", deserialized);
       }
-      
+
       return deserialized;
     } catch (error) {
-      console.error('[WebSocket] Message deserialization error:', error);
+      console.error("[WebSocket] Message deserialization error:", error);
       return null;
     }
   }

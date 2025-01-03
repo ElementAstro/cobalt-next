@@ -2,6 +2,7 @@ import { create } from "zustand";
 import WebSocketClient from "@/utils/websocket-client";
 import MessageBus, { LogLevel } from "@/utils/message-bus";
 import { z } from "zod";
+import wsClient from "@/utils/ws-client";
 
 // Zod schemas for FilterWheel
 const FilterWheelStatusSchema = z.object({
@@ -58,12 +59,9 @@ interface FilterWheelState {
 }
 
 export const useFilterWheelStore = create<FilterWheelState>((set, get) => {
-  const wsClient = new WebSocketClient({
-    url: "ws://localhost:8082", // FilterWheel WebSocket URL
-    reconnectInterval: 3000,
-    maxReconnectAttempts: 5,
-    debug: true,
-  });
+  if (!wsClient) {
+    throw new Error("WebSocket client is not initialized");
+  }
 
   const messageBus = new MessageBus(wsClient, {
     logLevel: LogLevel.INFO,
@@ -110,7 +108,9 @@ export const useFilterWheelStore = create<FilterWheelState>((set, get) => {
     messageBus.getTopics().forEach((topic) => {
       messageBus.clearTopic(topic);
     });
-    wsClient.close();
+    if (wsClient) {
+      wsClient.close();
+    }
   };
 
   if (typeof window !== "undefined") {

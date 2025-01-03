@@ -3,6 +3,7 @@ import logger from "@/utils/logger";
 import MessageBus, { LogLevel } from "@/utils/message-bus";
 import WebSocketClient from "@/utils/websocket-client";
 import { z } from "zod";
+import wsClient from "@/utils/ws-client";
 
 // Zod schemas for Camera
 const CameraStatusSchema = z.object({
@@ -56,6 +57,10 @@ interface CameraState {
   isRecording: boolean;
   whiteBalance?: string;
   focus?: number;
+  darkFrameEnabled: boolean;
+  autoWBEnabled: boolean;
+  readoutMode: string;
+  usbBandwidth: number;
   setExposure: (value: number) => void;
   setGain: (value: number) => void;
   setISO: (value: number) => void;
@@ -72,6 +77,10 @@ interface CameraState {
   setConnected: (connected: boolean) => void;
   toggleRecording: () => void;
   fetchStatus: () => Promise<void>;
+  toggleDarkFrame: () => void;
+  toggleAutoWB: () => void;
+  setReadoutMode: (value: string) => void;
+  setUSBBandwidth: (value: number) => void;
 }
 
 export interface CameraStatus {
@@ -113,12 +122,9 @@ interface CameraSettingMessage {
 }
 
 export const useCameraStore = create<CameraState>((set, get) => {
-  const wsClient = new WebSocketClient({
-    url: "ws://localhost:8080",
-    reconnectInterval: 3000,
-    maxReconnectAttempts: 5,
-    debug: true,
-  });
+  if (!wsClient) {
+    throw new Error("WebSocket client is not initialized");
+  }
 
   const messageBus = new MessageBus<CameraMessage>(wsClient, {
     logLevel: LogLevel.INFO,
@@ -175,7 +181,9 @@ export const useCameraStore = create<CameraState>((set, get) => {
     messageBus.getTopics().forEach((topic) => {
       messageBus.clearTopic(topic);
     });
-    wsClient.close();
+    if (wsClient) {
+      wsClient.close();
+    }
   };
 
   if (typeof window !== "undefined") {
@@ -198,6 +206,10 @@ export const useCameraStore = create<CameraState>((set, get) => {
     isRecording: false,
     whiteBalance: "auto",
     focus: 0,
+    darkFrameEnabled: false,
+    autoWBEnabled: false,
+    readoutMode: "normal",
+    usbBandwidth: 40,
     setExposure: (value) => {
       try {
         CameraSettingMessageSchema.parse({
@@ -448,6 +460,44 @@ export const useCameraStore = create<CameraState>((set, get) => {
           error,
           message: "Failed to fetch camera status",
         });
+      }
+    },
+    toggleDarkFrame: () => {
+      try {
+        const newState = !get().darkFrameEnabled;
+        messageBus.publish("camera/darkFrame", { enabled: newState });
+        logger.info(`Toggling dark frame to ${newState}`);
+        set({ darkFrameEnabled: newState });
+      } catch (error) {
+        logger.error("Error toggling dark frame:", error);
+      }
+    },
+    toggleAutoWB: () => {
+      try {
+        const newState = !get().autoWBEnabled;
+        messageBus.publish("camera/autoWB", { enabled: newState });
+        logger.info(`Toggling auto white balance to ${newState}`);
+        set({ autoWBEnabled: newState });
+      } catch (error) {
+        logger.error("Error toggling auto white balance:", error);
+      }
+    },
+    setReadoutMode: (value) => {
+      try {
+        z.string().parse(value);
+        logger.info(`Setting readout mode to ${value}`);
+        set({ readoutMode: value });
+      } catch (error) {
+        logger.error("Invalid readout mode value:", error);
+      }
+    },
+    setUSBBandwidth: (value) => {
+      try {
+        z.number().parse(value);
+        logger.info(`Setting USB bandwidth to ${value}`);
+        set({ usbBandwidth: value });
+      } catch (error) {
+        logger.error("Invalid USB bandwidth value:", error);
       }
     },
   };

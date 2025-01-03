@@ -101,8 +101,6 @@ export interface ViewerSettings {
   contrast: number;
   saturation: number;
   rotation: number;
-  exposure: number;
-  iso: number;
   whiteBalance: string;
   focusPoint: { x: number; y: number };
 }
@@ -113,8 +111,6 @@ interface CameraState extends ViewerSettings {
   setContrast: (contrast: number) => void;
   setSaturation: (saturation: number) => void;
   setRotation: (rotation: number) => void;
-  setExposure: (exposure: number) => void;
-  setISO: (iso: number) => void;
   setWhiteBalance: (whiteBalance: string) => void;
   setFocusPoint: (focusPoint: { x: number; y: number }) => void;
   resetSettings: (settings: Partial<ViewerSettings>) => void;
@@ -127,8 +123,6 @@ export const useViewerStore = create<CameraState>((set) => ({
   contrast: 100,
   saturation: 100,
   rotation: 0,
-  exposure: 50,
-  iso: 100,
   whiteBalance: "Auto",
   focusPoint: { x: 50, y: 50 },
   images: [],
@@ -137,8 +131,6 @@ export const useViewerStore = create<CameraState>((set) => ({
   setContrast: (contrast) => set({ contrast }),
   setSaturation: (saturation) => set({ saturation }),
   setRotation: (rotation) => set({ rotation }),
-  setExposure: (exposure) => set({ exposure }),
-  setISO: (iso) => set({ iso }),
   setWhiteBalance: (whiteBalance) => set({ whiteBalance }),
   setFocusPoint: (focusPoint) => set({ focusPoint }),
   resetSettings: (settings) => set((state) => ({ ...state, ...settings })),

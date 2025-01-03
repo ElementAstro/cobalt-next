@@ -28,8 +28,7 @@ import {
 } from "@/components/ui/collapsible";
 import { useViewerStore } from "@/store/useDashboardStore";
 import domtoimage from "dom-to-image";
-import { LightBox } from "@/components/custom/lightbox"; // 引入LightBox组件
-import Image from "next/image"; // 确保next/image已正确引入
+import { LightBox } from "@/components/custom/lightbox";
 
 interface CameraViewfinderProps {
   isShooting: boolean;
@@ -51,12 +50,11 @@ export default function CameraViewfinder({
     setSaturation,
     setRotation,
     setFocusPoint,
-    images, // 假设有images数组
+    images,
   } = useViewerStore();
 
   const viewfinderRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
-  const [isDarkMode, setIsDarkMode] = useState(true);
   const [showGrid, setShowGrid] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isLightBoxOpen, setIsLightBoxOpen] = useState(false);
@@ -107,7 +105,7 @@ export default function CameraViewfinder({
 
       const imgSrc = await domtoimage.toPng(viewfinderRef.current, {
         quality: 0.95,
-        bgcolor: isDarkMode ? "#000000" : "#ffffff",
+        bgcolor: "#000000",
         style: {
           transform: `scale(${zoom}) rotate(${rotation}deg)`,
           filter: `
@@ -168,44 +166,42 @@ export default function CameraViewfinder({
   };
 
   return (
-    <TooltipProvider>
+    <div className={`relative h-full`}>
+      {/* Viewfinder Area */}
       <div
-        className={`relative h-full ${isDarkMode ? "bg-black" : "bg-white"}`}
+        ref={viewfinderRef}
+        className="relative w-full h-[calc(100%-64px)] cursor-crosshair"
+        onClick={handleViewfinderClick}
+        style={{
+          transform: `scale(${zoom}) rotate(${rotation}deg)`,
+          filter: `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`,
+        }}
       >
-        {/* Viewfinder Area */}
+        {/* Grid Overlay */}
+        {showGrid && (
+          <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 border border-white/20">
+            {[...Array(9)].map((_, i) => (
+              <div key={i} className="border border-white/20" />
+            ))}
+          </div>
+        )}
+
+        {/* Focus Point Indicator */}
         <div
-          ref={viewfinderRef}
-          className="relative w-full h-[calc(100%-64px)] cursor-crosshair"
-          onClick={handleViewfinderClick}
+          className="absolute w-4 h-4 border-2 border-red-500 rounded-full"
           style={{
-            transform: `scale(${zoom}) rotate(${rotation}deg)`,
-            filter: `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`,
+            left: `${focusPoint.x}%`,
+            top: `${focusPoint.y}%`,
+            transform: "translate(-50%, -50%)",
           }}
-        >
-          {/* Grid Overlay */}
-          {showGrid && (
-            <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 border border-white/20">
-              {[...Array(9)].map((_, i) => (
-                <div key={i} className="border border-white/20" />
-              ))}
-            </div>
-          )}
+        />
+      </div>
 
-          {/* Focus Point Indicator */}
-          <div
-            className="absolute w-4 h-4 border-2 border-red-500 rounded-full"
-            style={{
-              left: `${focusPoint.x}%`,
-              top: `${focusPoint.y}%`,
-              transform: "translate(-50%, -50%)",
-            }}
-          />
-        </div>
-
-        {/* Controls Toolbar */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-black/50 backdrop-blur-sm flex items-center justify-center gap-4 p-2">
-          {/* Zoom Controls */}
-          <div className="flex items-center gap-2">
+      {/* Controls Toolbar */}
+      <div className="absolute bottom-0 left-0 right-0 h-16 bg-black/50 backdrop-blur-sm flex items-center justify-center gap-4 p-2">
+        {/* Zoom Controls */}
+        <div className="flex items-center gap-2">
+          <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -219,7 +215,9 @@ export default function CameraViewfinder({
               </TooltipTrigger>
               <TooltipContent>缩小</TooltipContent>
             </Tooltip>
+          </TooltipProvider>
 
+          <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -233,10 +231,12 @@ export default function CameraViewfinder({
               </TooltipTrigger>
               <TooltipContent>放大</TooltipContent>
             </Tooltip>
-          </div>
+          </TooltipProvider>
+        </div>
 
-          {/* Settings Controls */}
-          <div className="flex items-center gap-2">
+        {/* Settings Controls */}
+        <div className="flex items-center gap-2">
+          <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -249,7 +249,9 @@ export default function CameraViewfinder({
               </TooltipTrigger>
               <TooltipContent>切换网格</TooltipContent>
             </Tooltip>
+          </TooltipProvider>
 
+          <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button size="icon" variant="ghost" onClick={handleRotate}>
@@ -258,10 +260,12 @@ export default function CameraViewfinder({
               </TooltipTrigger>
               <TooltipContent>旋转90°</TooltipContent>
             </Tooltip>
-          </div>
+          </TooltipProvider>
+        </div>
 
-          {/* Save Image Button */}
-          <div className="flex items-center gap-2">
+        {/* Save Image Button */}
+        <div className="flex items-center gap-2">
+          <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -275,10 +279,12 @@ export default function CameraViewfinder({
               </TooltipTrigger>
               <TooltipContent>保存图像</TooltipContent>
             </Tooltip>
-          </div>
+          </TooltipProvider>
+        </div>
 
-          {/* LightBox Button */}
-          <div className="flex items-center gap-2">
+        {/* LightBox Button */}
+        <div className="flex items-center gap-2">
+          <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button size="icon" variant="ghost" onClick={openLightBox}>
@@ -287,111 +293,111 @@ export default function CameraViewfinder({
               </TooltipTrigger>
               <TooltipContent>查看相册</TooltipContent>
             </Tooltip>
-          </div>
+          </TooltipProvider>
         </div>
-
-        {/* Settings Panel */}
-        <Collapsible open={showSettings} onOpenChange={setShowSettings}>
-          <div ref={settingsRef}>
-            <CollapsibleTrigger className="absolute top-0 right-0 bg-black/50 backdrop-blur-sm p-2">
-              设置
-            </CollapsibleTrigger>
-            <AnimatePresence>
-              {showSettings && (
-                <motion.div
-                  initial={{ opacity: 0, x: 50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 50 }}
-                  transition={{ duration: 0.3 }}
-                  className="absolute top-0 right-0 bg-black/50 backdrop-blur-sm p-4 space-y-4"
-                >
-                  <CollapsibleContent>
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="brightness"
-                        className="text-sm font-medium text-white"
-                      >
-                        亮度
-                      </Label>
-                      <Slider
-                        id="brightness"
-                        min={0}
-                        max={200}
-                        step={1}
-                        value={[brightness]}
-                        onValueChange={([value]) => setBrightness(value)}
-                        className="w-48"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="contrast"
-                        className="text-sm font-medium text-white"
-                      >
-                        对比度
-                      </Label>
-                      <Slider
-                        id="contrast"
-                        min={0}
-                        max={200}
-                        step={1}
-                        value={[contrast]}
-                        onValueChange={([value]) => setContrast(value)}
-                        className="w-48"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="saturation"
-                        className="text-sm font-medium text-white"
-                      >
-                        饱和度
-                      </Label>
-                      <Slider
-                        id="saturation"
-                        min={0}
-                        max={200}
-                        step={1}
-                        value={[saturation]}
-                        onValueChange={([value]) => setSaturation(value)}
-                        className="w-48"
-                      />
-                    </div>
-                  </CollapsibleContent>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </Collapsible>
-
-        {/* LightBox Component */}
-        <AnimatePresence>
-          {isLightBoxOpen && (
-            <LightBox
-              images={images.map((src) => ({
-                src,
-                alt: "Captured image",
-                width: 800,
-                height: 600,
-              }))}
-              initialIndex={0}
-              onClose={closeLightBox}
-              showThumbnails={true}
-              enableZoom={true}
-              enableSwipe={true}
-              backgroundColor="rgba(0, 0, 0, 0.9)"
-              closeOnClickOutside={true}
-              autoPlayInterval={0}
-              enableFullscreen={true}
-              enableDownload={true}
-              enableSharing={true}
-              showLoadingIndicator={true}
-            />
-          )}
-        </AnimatePresence>
       </div>
-    </TooltipProvider>
+
+      {/* Settings Panel */}
+      <Collapsible open={showSettings} onOpenChange={setShowSettings}>
+        <div ref={settingsRef}>
+          <CollapsibleTrigger className="absolute top-0 right-0 bg-black/50 backdrop-blur-sm p-2">
+            设置
+          </CollapsibleTrigger>
+          <AnimatePresence>
+            {showSettings && (
+              <motion.div
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 50 }}
+                transition={{ duration: 0.3 }}
+                className="absolute top-0 right-0 bg-black/50 backdrop-blur-sm p-4 space-y-4"
+              >
+                <CollapsibleContent>
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="brightness"
+                      className="text-sm font-medium text-white"
+                    >
+                      亮度
+                    </Label>
+                    <Slider
+                      id="brightness"
+                      min={0}
+                      max={200}
+                      step={1}
+                      value={[brightness]}
+                      onValueChange={([value]) => setBrightness(value)}
+                      className="w-48"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="contrast"
+                      className="text-sm font-medium text-white"
+                    >
+                      对比度
+                    </Label>
+                    <Slider
+                      id="contrast"
+                      min={0}
+                      max={200}
+                      step={1}
+                      value={[contrast]}
+                      onValueChange={([value]) => setContrast(value)}
+                      className="w-48"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="saturation"
+                      className="text-sm font-medium text-white"
+                    >
+                      饱和度
+                    </Label>
+                    <Slider
+                      id="saturation"
+                      min={0}
+                      max={200}
+                      step={1}
+                      value={[saturation]}
+                      onValueChange={([value]) => setSaturation(value)}
+                      className="w-48"
+                    />
+                  </div>
+                </CollapsibleContent>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </Collapsible>
+
+      {/* LightBox Component */}
+      <AnimatePresence>
+        {isLightBoxOpen && (
+          <LightBox
+            images={images.map((src) => ({
+              src,
+              alt: "Captured image",
+              width: 800,
+              height: 600,
+            }))}
+            initialIndex={0}
+            onClose={closeLightBox}
+            showThumbnails={true}
+            enableZoom={true}
+            enableSwipe={true}
+            backgroundColor="rgba(0, 0, 0, 0.9)"
+            closeOnClickOutside={true}
+            autoPlayInterval={0}
+            enableFullscreen={true}
+            enableDownload={true}
+            enableSharing={true}
+            showLoadingIndicator={true}
+          />
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

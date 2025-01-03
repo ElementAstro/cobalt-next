@@ -18,6 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -43,6 +44,19 @@ import { Span } from "@/components/custom/span";
 import ImageSettingsPanel from "./image-settings";
 import { DeviceSelector } from "./device-selector";
 import { useMediaQuery } from "react-responsive";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useInView } from "react-intersection-observer";
+import { toast } from "@/hooks/use-toast";
 
 export function CameraPage() {
   const camera = useCameraStore();
@@ -50,6 +64,12 @@ export function CameraPage() {
     { x: number; y: number }[]
   >([]);
   const isDesktop = useMediaQuery({ minWidth: 1024 });
+  const [showAdvancedDialog, setShowAdvancedDialog] = useState(false);
+  const [isCalibrating, setIsCalibrating] = useState(false);
+  const [calibrationProgress, setCalibrationProgress] = useState(0);
+  const { ref, inView } = useInView({
+    threshold: 0.1,
+  });
 
   useEffect(() => {
     camera.fetchStatus();
@@ -63,6 +83,32 @@ export function CameraPage() {
     }, 2000);
     return () => clearInterval(interval);
   }, []);
+
+  // 新增相机校准功能
+  const handleCalibration = async () => {
+    setIsCalibrating(true);
+    setCalibrationProgress(0);
+
+    try {
+      for (let i = 0; i <= 100; i += 10) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        setCalibrationProgress(i);
+      }
+
+      toast({
+        title: "校准完成",
+        description: "相机参数已成功校准",
+      });
+    } catch (error) {
+      toast({
+        title: "校准失败",
+        description: "请检查相机连接并重试",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCalibrating(false);
+    }
+  };
 
   return (
     <motion.div
@@ -363,22 +409,126 @@ export function CameraPage() {
                   <ImageSettingsPanel />
                 </TabsContent>
                 <TabsContent value="advanced">
-                  <div className="space-y-4">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Button variant="ghost">
-                            <Settings2 className="w-4 h-4 mr-2" />
-                            高级设置
+                  <motion.div
+                    className="space-y-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>校准设置</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <Label>自动校准</Label>
+                            <Button
+                              onClick={handleCalibration}
+                              disabled={isCalibrating || !camera.isConnected}
+                            >
+                              {isCalibrating ? (
+                                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                              ) : (
+                                <Settings2 className="w-4 h-4 mr-2" />
+                              )}
+                              {isCalibrating ? "校准中..." : "开始校准"}
+                            </Button>
+                          </div>
+                          {isCalibrating && (
+                            <Progress
+                              value={calibrationProgress}
+                              className="w-full"
+                            />
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>高级参数</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <Label>暗场校正</Label>
+                            <Switch
+                              checked={camera.darkFrameEnabled}
+                              onCheckedChange={camera.toggleDarkFrame}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <Label>自动白平衡</Label>
+                            <Switch
+                              checked={camera.autoWBEnabled}
+                              onCheckedChange={camera.toggleAutoWB}
+                            />
+                          </div>
+                          <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => setShowAdvancedDialog(true)}
+                          >
+                            更多设置
+                            <ChevronRight className="w-4 h-4 ml-2" />
                           </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <span>调整高级相机设置</span>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    {/* 更多高级功能 */}
-                  </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <AlertDialog
+                      open={showAdvancedDialog}
+                      onOpenChange={setShowAdvancedDialog}
+                    >
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>高级相机设置</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            请谨慎调整以下参数，不当的设置可能会影响图像质量。
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="py-4">
+                          <ScrollArea className="h-[300px] rounded-md border p-4">
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Label>读出模式</Label>
+                                <Select
+                                  value={camera.readoutMode}
+                                  onValueChange={camera.setReadoutMode}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="normal">普通</SelectItem>
+                                    <SelectItem value="fast">高速</SelectItem>
+                                    <SelectItem value="lowNoise">
+                                      低噪声
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-2">
+                                <Label>USB 带宽</Label>
+                                <Slider
+                                  value={[camera.usbBandwidth]}
+                                  onValueChange={([v]) =>
+                                    camera.setUSBBandwidth(v)
+                                  }
+                                  min={0}
+                                  max={100}
+                                  step={1}
+                                />
+                              </div>
+                            </div>
+                          </ScrollArea>
+                        </div>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>取消</AlertDialogCancel>
+                          <AlertDialogAction>保存设置</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </motion.div>
                 </TabsContent>
               </Tabs>
             </CardContent>
@@ -641,25 +791,126 @@ export function CameraPage() {
                   <ImageSettingsPanel />
                 </TabsContent>
                 <TabsContent value="advanced">
-                  <div className="space-y-4">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
+                  <motion.div
+                    className="space-y-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>校准设置</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <Label>自动校准</Label>
+                            <Button
+                              onClick={handleCalibration}
+                              disabled={isCalibrating || !camera.isConnected}
+                            >
+                              {isCalibrating ? (
+                                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                              ) : (
+                                <Settings2 className="w-4 h-4 mr-2" />
+                              )}
+                              {isCalibrating ? "校准中..." : "开始校准"}
+                            </Button>
+                          </div>
+                          {isCalibrating && (
+                            <Progress
+                              value={calibrationProgress}
+                              className="w-full"
+                            />
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>高级参数</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <Label>暗场校正</Label>
+                            <Switch
+                              checked={camera.darkFrameEnabled}
+                              onCheckedChange={camera.toggleDarkFrame}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <Label>自动白平衡</Label>
+                            <Switch
+                              checked={camera.autoWBEnabled}
+                              onCheckedChange={camera.toggleAutoWB}
+                            />
+                          </div>
                           <Button
-                            variant="ghost"
-                            className="w-full flex items-center justify-center"
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => setShowAdvancedDialog(true)}
                           >
-                            <Settings2 className="w-4 h-4 mr-2" />
-                            高级设置
+                            更多设置
+                            <ChevronRight className="w-4 h-4 ml-2" />
                           </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <span>调整高级相机设置</span>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    {/* 更多高级功能 */}
-                  </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <AlertDialog
+                      open={showAdvancedDialog}
+                      onOpenChange={setShowAdvancedDialog}
+                    >
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>高级相机设置</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            请谨慎调整以下参数，不当的设置可能会影响图像质量。
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="py-4">
+                          <ScrollArea className="h-[300px] rounded-md border p-4">
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Label>读出模式</Label>
+                                <Select
+                                  value={camera.readoutMode}
+                                  onValueChange={camera.setReadoutMode}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="normal">普通</SelectItem>
+                                    <SelectItem value="fast">高速</SelectItem>
+                                    <SelectItem value="lowNoise">
+                                      低噪声
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-2">
+                                <Label>USB 带宽</Label>
+                                <Slider
+                                  value={[camera.usbBandwidth]}
+                                  onValueChange={([v]) =>
+                                    camera.setUSBBandwidth(v)
+                                  }
+                                  min={0}
+                                  max={100}
+                                  step={1}
+                                />
+                              </div>
+                            </div>
+                          </ScrollArea>
+                        </div>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>取消</AlertDialogCancel>
+                          <AlertDialogAction>保存设置</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </motion.div>
                 </TabsContent>
               </Tabs>
             </CardContent>

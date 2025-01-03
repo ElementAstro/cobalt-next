@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -19,6 +19,7 @@ import {
   ParkingSquare,
   Moon,
   Sun,
+  RefreshCw,
 } from "lucide-react";
 import { useTelescopeStore } from "@/store/useTelescopeStore";
 import { Button } from "@/components/ui/button";
@@ -87,6 +88,22 @@ export function TelescopePage() {
   } = useTelescopeStore();
 
   const isDesktop = useMediaQuery({ minWidth: 1024 });
+
+  const [showCalibration, setShowCalibration] = useState(false);
+  const [calibrationProgress, setCalibrationProgress] = useState(0);
+  interface TrackingPoint {
+    time: string;
+    ra: number;
+    dec: number;
+  }
+
+  const [trackingData, setTrackingData] = useState<TrackingPoint[]>([]);
+  const [autoGuideStatus, setAutoGuideStatus] = useState(false);
+  const [guidingStats, setGuidingStats] = useState({
+    rms: 0,
+    peak: 0,
+    corrections: 0,
+  });
 
   useEffect(() => {
     fetchStatus();
@@ -187,6 +204,62 @@ export function TelescopePage() {
   const handleToggleIdle = () => {
     setIsIdle(!isIdle);
   };
+
+  const handleCalibration = async () => {
+    setShowCalibration(true);
+    setCalibrationProgress(0);
+
+    try {
+      for (let i = 0; i <= 100; i += 10) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        setCalibrationProgress(i);
+      }
+
+      toast({
+        title: "校准完成",
+        description: "望远镜参数已成功校准",
+      });
+    } catch (error) {
+      toast({
+        title: "校准失败",
+        description: "请检查望远镜连接并重试",
+        variant: "destructive",
+      });
+    } finally {
+      setShowCalibration(false);
+    }
+  };
+
+  const toggleAutoGuide = () => {
+    setAutoGuideStatus(!autoGuideStatus);
+    toast({
+      title: autoGuideStatus ? "自动导星已停止" : "自动导星已启动",
+      description: autoGuideStatus
+        ? "已关闭自动导星功能"
+        : "系统将自动进行导星校正",
+    });
+  };
+
+  useEffect(() => {
+    if (autoGuideStatus) {
+      const interval = setInterval(() => {
+        const newPoint = {
+          time: new Date().toISOString(),
+          ra: Math.random() * 2 - 1,
+          dec: Math.random() * 2 - 1,
+        };
+        setTrackingData((prev) => [...prev.slice(-30), newPoint]);
+
+        setGuidingStats({
+          rms: Math.random() * 0.5,
+          peak: Math.random() * 1.2,
+          corrections: Math.floor(Math.random() * 100),
+        });
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [autoGuideStatus]);
 
   return (
     <AnimatePresence>
