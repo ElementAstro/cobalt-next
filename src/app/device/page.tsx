@@ -72,81 +72,71 @@ export default function DeviceConnection() {
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardContent className="p-6 space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">设备连接</h2>
-        </div>
+    <div className="flex flex-col h-screen bg-gray-900 text-white overflow-hidden dark">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full bg-gray-900">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="profile">配置文件</TabsTrigger>
+          <TabsTrigger value="devices">设备</TabsTrigger>
+          <TabsTrigger value="advanced">
+            高级
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="profile" className="mt-6">
+          <ProfileTab toast={toast} />
+        </TabsContent>
+        <TabsContent value="devices" className="mt-6">
+          <DevicesTab />
+        </TabsContent>
+        <TabsContent value="advanced" className="mt-6">
+          <AdvancedTab />
+        </TabsContent>
+      </Tabs>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="profile">配置文件</TabsTrigger>
-            <TabsTrigger value="devices">设备</TabsTrigger>
-            <TabsTrigger value="advanced" className="hidden lg:block">
-              高级
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="profile" className="mt-6">
-            <ProfileTab toast={toast} />
-          </TabsContent>
-          <TabsContent value="devices" className="mt-6">
-            <DevicesTab />
-          </TabsContent>
-          <TabsContent value="advanced" className="mt-6">
-            <AdvancedTab />
-          </TabsContent>
-        </Tabs>
-
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-6 border-t">
-          <div className="flex items-center space-x-2">
-            <div
-              className={`w-3 h-3 rounded-full ${
-                isConnected ? "bg-green-500" : "bg-red-500"
-              }`}
-            />
-            <span className="text-sm font-medium">
-              {isConnected ? "已连接" : "未连接"}
-            </span>
-          </div>
-          <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                toast({
-                  title: "设置已保存",
-                  description: "您的设备连接设置已更新。",
-                })
-              }
-            >
-              <Save className="w-4 h-4 mr-2" />
-              保存
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setActiveTab("profile")}
-            >
-              <X className="w-4 h-4 mr-2" />
-              关闭
-            </Button>
-            {isConnected ? (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleDisconnect}
-              >
-                断开连接
-              </Button>
-            ) : (
-              <Button variant="default" size="sm" onClick={handleConnect}>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                连接
-              </Button>
-            )}
-          </div>
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-6 border-t p-4">
+        <div className="flex items-center space-x-2">
+          <div
+            className={`w-3 h-3 rounded-full ${
+              isConnected ? "bg-green-500" : "bg-red-500"
+            }`}
+          />
+          <span className="text-sm font-medium">
+            {isConnected ? "已连接" : "未连接"}
+          </span>
         </div>
-      </CardContent>
-    </Card>
+        <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              toast({
+                title: "设置已保存",
+                description: "您的设备连接设置已更新。",
+              })
+            }
+          >
+            <Save className="w-4 h-4 mr-2" />
+            保存
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setActiveTab("profile")}
+          >
+            <X className="w-4 h-4 mr-2" />
+            关闭
+          </Button>
+          {isConnected ? (
+            <Button variant="destructive" size="sm" onClick={handleDisconnect}>
+              断开连接
+            </Button>
+          ) : (
+            <Button variant="default" size="sm" onClick={handleConnect}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              连接
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

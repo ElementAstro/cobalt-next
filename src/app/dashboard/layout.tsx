@@ -4,7 +4,7 @@ import { Inter } from "next/font/google";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Astronomy Camera Interface",
+  title: "Cobalt Dashboard",
   description:
     "An advanced astronomy camera interface with draggable device windows",
 };

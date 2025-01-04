@@ -10,12 +10,22 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, MapPin, Navigation, Copy, CheckCircle2 } from "lucide-react";
+import {
+  Loader2,
+  MapPin,
+  Navigation,
+  Copy,
+  CheckCircle2,
+  Search,
+  History,
+} from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Toggle } from "@/components/ui/toggle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
+import StaticMap from "@/components/information/static-map";
+import { Location, useDashboardStore } from "@/store/useDashboardStore";
 
 interface GeocodingResult {
   status: string;
@@ -41,7 +51,13 @@ interface GeocodingResult {
   };
 }
 
-export default function GeocodingComponent() {
+interface GeocodingComponentProps {
+  onLocationSelect?: (location: Location) => void;
+}
+
+export default function GeocodingComponent({
+  onLocationSelect,
+}: GeocodingComponentProps) {
   const [input, setInput] = useState("");
   const [result, setResult] = useState<GeocodingResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -55,6 +71,8 @@ export default function GeocodingComponent() {
   const API_KEY = process.env.NEXT_PUBLIC_AMAP_KEY;
   const BASE_URL = "https://restapi.amap.com/v3/geocode";
 
+  const setDashboardLocation = useDashboardStore((state) => state.setLocation);
+
   async function geocode(address: string) {
     const url = `${BASE_URL}/geo?key=${API_KEY}&address=${encodeURIComponent(
       address
@@ -67,15 +85,6 @@ export default function GeocodingComponent() {
     const url = `${BASE_URL}/regeo?key=${API_KEY}&location=${location}&extensions=all`;
     const response = await fetch(url);
     return response.json();
-  }
-
-  function getStaticMapUrl(
-    location: string,
-    zoom: number = 14,
-    width: number = 400,
-    height: number = 200
-  ) {
-    return `https://restapi.amap.com/v3/staticmap?location=${location}&zoom=${zoom}&size=${width}*${height}&markers=mid,,A:${location}&key=${API_KEY}`;
   }
 
   useEffect(() => {
@@ -151,18 +160,15 @@ export default function GeocodingComponent() {
     });
   };
 
-  const renderMapPreview = (location: string) => {
-    const [lng, lat] = location.split(",");
-    const mapUrl = `https://restapi.amap.com/v3/staticmap?location=${lng},${lat}&zoom=14&size=400*200&markers=mid,,A:${lng},${lat}&key=${process.env.NEXT_PUBLIC_AMAP_KEY}`;
-    return (
-      <div className="mt-4">
-        <img
-          src={mapUrl}
-          alt="Location Map"
-          className="w-full rounded-md shadow-md"
-        />
-      </div>
-    );
+  const handleLocationSelect = (coords: string) => {
+    const [longitude, latitude] = coords.split(",").map(Number);
+    const location = { longitude, latitude };
+
+    setDashboardLocation(location);
+    onLocationSelect?.(location);
+
+    // 保存到最近搜索
+    saveRecentSearch(coords);
   };
 
   const renderResult = () => {
@@ -197,6 +203,7 @@ export default function GeocodingComponent() {
                     variant="outline"
                     size="icon"
                     onClick={() => copyToClipboard(item.location)}
+                    aria-label="复制坐标"
                   >
                     {copiedCoordinates === item.location ? (
                       <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -224,7 +231,6 @@ export default function GeocodingComponent() {
                   {item.township}
                 </div>
               </div>
-              {renderMapPreview(item.location)}
             </CardContent>
           </Card>
         </motion.div>
@@ -269,7 +275,6 @@ export default function GeocodingComponent() {
                   {result.regeocode.addressComponent.township}
                 </div>
               </div>
-              {renderMapPreview(input)}
             </CardContent>
           </Card>
         </motion.div>
@@ -294,8 +299,14 @@ export default function GeocodingComponent() {
         <CardContent>
           <Tabs defaultValue="search" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="search">搜索</TabsTrigger>
-              <TabsTrigger value="history">历史记录</TabsTrigger>
+              <TabsTrigger value="search">
+                <Search className="mr-2 h-4 w-4" />
+                搜索
+              </TabsTrigger>
+              <TabsTrigger value="history">
+                <History className="mr-2 h-4 w-4" />
+                历史记录
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="search">
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -308,6 +319,7 @@ export default function GeocodingComponent() {
                   <Toggle
                     pressed={isReverseGeocoding}
                     onPressedChange={setIsReverseGeocoding}
+                    aria-label="切换地理编码模式"
                   >
                     {isReverseGeocoding ? "逆地理编码" : "地理编码"}
                   </Toggle>
@@ -319,6 +331,7 @@ export default function GeocodingComponent() {
                       isReverseGeocoding ? "输入坐标 (经度,纬度)" : "输入地址"
                     }
                     className="flex-grow bg-gray-800 text-white"
+                    aria-label={isReverseGeocoding ? "输入坐标" : "输入地址"}
                   />
                 </motion.div>
                 <motion.div
@@ -330,6 +343,7 @@ export default function GeocodingComponent() {
                     type="submit"
                     disabled={isLoading}
                     className="w-full bg-blue-600 hover:bg-blue-700"
+                    aria-label="提交查询"
                   >
                     {isLoading ? (
                       <>
@@ -349,14 +363,16 @@ export default function GeocodingComponent() {
                   <Button
                     key={index}
                     variant="ghost"
-                    className="w-full justify-start text-white"
+                    className="w-full justify-start text-white flex items-center"
                     onClick={() => {
                       setInput(search);
                       setIsReverseGeocoding(
                         validateAndFormatCoordinates(search) !== null
                       );
                     }}
+                    aria-label={`加载历史搜索 ${search}`}
                   >
+                    <Search className="mr-2 h-4 w-4" />
                     {search}
                   </Button>
                 ))}

@@ -196,7 +196,7 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
       )}
       {/* 搜索工具栏 */}
       <div className="w-full lg:w-1/4 space-y-2">
-        <Card className="bg-black/20 backdrop-blur p-2">
+        <Card className="bg-black/20 p-2">
           <CardHeader>
             <CardTitle className="text-sm">搜索工具</CardTitle>
           </CardHeader>
@@ -363,7 +363,7 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
         </Card>
 
         {/* 统计图表 */}
-        <Card className="bg-black/20 backdrop-blur p-2">
+        <Card className="bg-black/20 p-2">
           <CardHeader>
             <CardTitle className="text-sm">搜索统计</CardTitle>
           </CardHeader>

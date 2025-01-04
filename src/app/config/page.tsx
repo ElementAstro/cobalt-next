@@ -13,12 +13,31 @@ import {
   Upload,
   Sun,
   Moon,
+  Power,
+  RefreshCw,
+  Activity,
 } from "lucide-react";
 import { useMediaQuery } from "react-responsive";
 import { useSettingsStore } from "@/store/useConfigStore";
 import { getSettingByPath } from "@/utils/config-utils";
-import SettingGroup from "@/components/config/setting-group";
+import { SettingGroup } from "@/components/config/setting-group";
 import { motion } from "framer-motion";
+import { Setting } from "@/types/config";
+import { toast } from "@/hooks/use-toast";
+import WebSocketConfig from "@/components/config/websocket-config"; // 导入 WebSocketConfig 组件
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const SettingsInterface: React.FC = () => {
   const {
@@ -39,7 +58,7 @@ const SettingsInterface: React.FC = () => {
   const filteredSettings = settings.filter(
     (group) =>
       group.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      group.settings.some((setting) =>
+      group.settings.some((setting: Setting) =>
         setting.label.toLowerCase().includes(searchQuery.toLowerCase())
       )
   );
@@ -47,23 +66,27 @@ const SettingsInterface: React.FC = () => {
   const handleSave = useCallback(async () => {
     try {
       await exportSettings();
-      alert("设置已成功导出为JSON文件");
+      toast({ title: "成功", description: "设置已成功导出为JSON文件" });
     } catch (error) {
-      alert("导出设置时出错");
+      toast({
+        title: "错误",
+        description: "导出设置时出错",
+        variant: "destructive",
+      });
     }
   }, [exportSettings]);
 
   const handleUndo = () => {
     if (historyIndex > 0) {
       setHistoryIndex((prev) => prev - 1);
-      // Apply previous state
+      // Apply previous state logic here
     }
   };
 
   const handleRedo = () => {
     if (historyIndex < history.length - 1) {
       setHistoryIndex((prev) => prev + 1);
-      // Apply next state
+      // Apply next state logic here
     }
   };
 
@@ -73,7 +96,15 @@ const SettingsInterface: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchSettings();
+    try {
+      fetchSettings();
+    } catch (error: unknown) {
+      toast({
+        title: "错误",
+        description: "获取设置时出错",
+        variant: "destructive",
+      });
+    }
   }, [fetchSettings]);
 
   useEffect(() => {
@@ -97,11 +128,7 @@ const SettingsInterface: React.FC = () => {
   }
 
   if (error) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <p className="text-red-500">错误: {error}</p>
-      </div>
-    );
+    return <WebSocketConfig />; // 显示 WebSocket 配置界面
   }
 
   return (
@@ -132,6 +159,7 @@ const SettingsInterface: React.FC = () => {
               size="icon"
               onClick={toggleDarkMode}
               className="hover:bg-accent"
+              aria-label="切换暗黑模式"
             >
               {darkMode ? (
                 <Sun className="h-5 w-5" />
@@ -163,6 +191,7 @@ const SettingsInterface: React.FC = () => {
               variant="outline"
               onClick={handleUndo}
               disabled={historyIndex <= 0}
+              aria-label="撤销"
             >
               <Undo2 className="mr-2 h-4 w-4" />
               撤销
@@ -171,6 +200,7 @@ const SettingsInterface: React.FC = () => {
               variant="outline"
               onClick={handleRedo}
               disabled={historyIndex >= history.length - 1}
+              aria-label="重做"
             >
               <Redo2 className="mr-2 h-4 w-4" />
               重做
@@ -182,6 +212,7 @@ const SettingsInterface: React.FC = () => {
               variant="outline"
               onClick={exportSettings}
               disabled={isLoading}
+              aria-label="导出设置"
             >
               <Download className="mr-2 h-4 w-4" />
               导出
@@ -190,8 +221,14 @@ const SettingsInterface: React.FC = () => {
               variant="outline"
               onClick={() => {
                 // Implement import functionality
+                toast({
+                  title: "功能未实现",
+                  description: "导入功能正在开发中。",
+                  variant: "destructive",
+                });
               }}
               disabled={isLoading}
+              aria-label="导入设置"
             >
               <Upload className="mr-2 h-4 w-4" />
               导入
@@ -203,6 +240,7 @@ const SettingsInterface: React.FC = () => {
               onClick={resetSettings}
               disabled={isLoading}
               variant="destructive"
+              aria-label="恢复默认设置"
             >
               {isLoading ? (
                 <>
@@ -213,7 +251,7 @@ const SettingsInterface: React.FC = () => {
                 "恢复默认设置"
               )}
             </Button>
-            <Button onClick={handleSave} disabled={isLoading}>
+            <Button onClick={handleSave} disabled={isLoading} aria-label="保存更改">
               保存更改
             </Button>
           </div>

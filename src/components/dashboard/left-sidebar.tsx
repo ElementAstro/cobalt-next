@@ -1,13 +1,26 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import SideBarToggle from "./left-sidebar-toggle";
+import * as Icons from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+
+export interface SidebarItem {
+  id: string;
+  name: string;
+  icon: string;
+  route: string;
+  active: boolean;
+}
 
 interface SidebarProps {
-  devices: Array<{
-    id: string;
-    name: string;
-    icon: string;
-    active: boolean;
-  }>;
+  devices: SidebarItem [];
   onToggle: (id: string) => void;
 }
 
@@ -44,31 +57,86 @@ const scrollVariants = {
   },
 };
 
+const getIconComponent = (iconName: string) => {
+  const pascalCase = iconName
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join("");
+  return (Icons[pascalCase as keyof typeof Icons] ||
+    Icons.HelpCircle) as React.FC<{ className?: string }>;
+};
+
 export default function Sidebar({ devices, onToggle }: SidebarProps) {
+  const router = useRouter();
+
   return (
-    <motion.div
-      className="p-2 border-r border-gray-700 flex flex-col items-center justify-start space-y-4 text-white max-h-screen"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      whileHover={{ width: "5rem" }}
-      transition={{ type: "spring", stiffness: 300 }}
-    >
+    <TooltipProvider>
       <motion.div
-        className="flex-1 w-full overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800"
-        variants={scrollVariants}
+        className="p-2 border-r border-gray-700 flex flex-col items-center justify-start space-y-4 text-white max-h-screen bg-gray-900"
+        variants={containerVariants}
         initial="hidden"
         animate="visible"
+        whileHover={{ width: "5rem" }}
+        transition={{ type: "spring", stiffness: 300 }}
       >
-        {devices.map((device) => (
-          <motion.div key={device.id} variants={itemVariants}>
-            <SideBarToggle
-              device={device}
-              onToggle={() => onToggle(device.id)}
-            />
-          </motion.div>
-        ))}
+        <motion.div
+          className="flex-1 w-full overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800"
+          variants={scrollVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {devices.map((device) => {
+            const Icon = getIconComponent(device.icon.toLowerCase());
+            return (
+              <motion.div key={device.id} variants={itemVariants}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <motion.div
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                    >
+                      <Button
+                        variant={device.active ? "default" : "secondary"}
+                        size="icon"
+                        onClick={() => {
+                          onToggle(device.id);
+                          router.push(device.route);
+                        }}
+                        className={`w-12 h-12 relative ${
+                          device.active ? "bg-primary text-primary-foreground" : ""
+                        }`}
+                        aria-label={device.name}
+                      >
+                        <Icon className="h-6 w-6" />
+                        {device.active && (
+                          <motion.span
+                            className="absolute -bottom-1 w-2 h-2 bg-green-500 rounded-full"
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: "spring", stiffness: 300 }}
+                          />
+                        )}
+                        <span className="sr-only">{device.name}</span>
+                      </Button>
+                    </motion.div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" sideOffset={10}>
+                    <motion.p
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="text-sm"
+                    >
+                      {device.name}
+                    </motion.p>
+                  </TooltipContent>
+                </Tooltip>
+              </motion.div>
+            );
+          })}
+        </motion.div>
       </motion.div>
-    </motion.div>
+    </TooltipProvider>
   );
 }

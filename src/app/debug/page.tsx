@@ -88,19 +88,19 @@ export default function HttpTester() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="mx-auto dark h-full p-2">
       <h1 className="text-3xl font-bold mb-8">HTTP Tester</h1>
-      <div className="flex flex-col lg:flex-row gap-8">
-        <div className="flex-1 space-y-8">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <div className="flex flex-col lg:flex-row gap-4">
+        <div className="flex-1 ">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
             <RequestForm onSubmit={handleRequest} settings={settings} />
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
             <TemplateManager />
           </div>
         </div>
 
-        <div className="flex-1 space-y-8">
+        <div className="flex-1 ">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <ResponseDisplay response={response} loading={loading} />
           </div>

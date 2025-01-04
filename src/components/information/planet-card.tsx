@@ -15,6 +15,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+const planetOrbitVariants = {
+  animate: (index: number) => ({
+    rotate: 360,
+    transition: {
+      duration: 20 + index * 5,
+      repeat: Infinity,
+      ease: "linear",
+    },
+  }),
+};
+
 interface PlanetCardProps {
   planet: PlanetData;
   onToggleFavorite?: (name: string) => void;
@@ -63,12 +74,21 @@ export function PlanetCard({
   return viewMode === "grid" ? (
     <motion.div
       layout
-      className="relative p-4 rounded-lg bg-gray-900/50 backdrop-blur transition-all duration-300 ease-in-out hover:bg-gray-800/50"
+      className="relative p-4 rounded-lg bg-gray-900/50 transition-all duration-300 ease-in-out hover:bg-gray-800/50"
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
+      whileHover={{ y: -5 }}
       transition={{ duration: 0.3 }}
     >
+      {/* Add orbit effect */}
+      <motion.div
+        className="absolute inset-0 rounded-lg border border-gray-500/10"
+        variants={planetOrbitVariants}
+        animate="animate"
+        custom={Math.floor(Math.random() * 5)}
+      />
+
       <div className="flex flex-col sm:flex-row items-start gap-4 landscape:flex-row">
         <motion.div
           className="relative w-16 h-16 sm:w-20 sm:h-20 landscape:w-24 landscape:h-24"
@@ -182,7 +202,7 @@ export function PlanetCard({
   ) : (
     <motion.div
       layout
-      className="flex items-center p-2 rounded-lg bg-gray-900/50 backdrop-blur hover:bg-gray-800/50"
+      className="flex items-center p-2 rounded-lg bg-gray-900/50 hover:bg-gray-800/50"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}

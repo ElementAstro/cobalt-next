@@ -12,7 +12,7 @@ import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import { motion, AnimatePresence } from "framer-motion";
 import CameraViewfinder from "@/components/dashboard/camera-view";
 import ExposureControls from "@/components/dashboard/right-sidebar";
-import Sidebar from "@/components/dashboard/left-sidebar";
+import Sidebar, { SidebarItem } from "@/components/dashboard/left-sidebar";
 import TopBar from "@/components/dashboard/top-bar";
 import Offcanvas from "@/components/dashboard/offcanvas";
 import { CameraPage } from "@/components/dashboard/camera";
@@ -26,84 +26,28 @@ import { Toaster } from "@/components/ui/toaster";
 import { useMediaQuery } from "react-responsive";
 
 export default function Dashboard() {
-  type DeviceParams = {
-    focalLength?: number;
-    aperture?: number;
-    tracking?: boolean;
-    position?: number;
-    speed?: number;
-    rightAscension?: string;
-    declination?: string;
-    currentFilter?: string;
-    availableFilters?: string[];
-    [key: string]: any;
-  };
-
-  type Device = {
-    id: string;
-    name: string;
-    icon: string;
-    active: boolean;
-    params: DeviceParams;
-  };
-
-  const [devices, setDevices] = useState<Device[]>([
+  const [devices, setDevices] = useState<SidebarItem[]>([
     {
       id: "device",
       name: "Device Connection",
       icon: "wifi",
       active: false,
-      params: {},
+      route: "/device",
     },
     {
-      id: "plugin",
-      name: "Plugin",
-      icon: "plug",
+      id: "debug",
+      name: "Debug",
+      icon: "terminal",
       active: false,
-      params: {},
+      route: "/debug",
     },
     {
-      id: "starChart",
-      name: "Star Chart",
-      icon: "star",
+      id: "config",
+      name: "Configuration",
+      icon: "settings",
       active: false,
-      params: {},
-    },
-    {
-      id: "focusAssistant",
-      name: "Focus Assistant",
-      icon: "crosshair",
-      active: false,
-      params: {},
-    },
-    {
-      id: "polarAlignment",
-      name: "Polar Alignment",
-      icon: "target",
-      active: false,
-      params: {},
-    },
-    {
-      id: "sequenceEditor",
-      name: "Sequence Editor",
-      icon: "list",
-      active: false,
-      params: {},
-    },
-    {
-      id: "liveStacking",
-      name: "Live Stacking",
-      icon: "layers",
-      active: false,
-      params: {},
-    },
-    {
-      id: "tools",
-      name: "Tools",
-      icon: "tool",
-      active: false,
-      params: {},
-    },
+      route: "/config",
+    }
   ]);
 
   const [exposureSettings, setExposureSettings] = useState({

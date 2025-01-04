@@ -112,7 +112,7 @@ export function CameraPage() {
 
   return (
     <motion.div
-      className="container mx-auto p-4 space-y-6"
+      className="container mx-auto space-y-3"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
@@ -125,7 +125,7 @@ export function CameraPage() {
       {isDesktop ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* 左侧面板 */}
-          <Card className="lg:col-span-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <Card className="lg:col-span-6 bg-background/95 supports-[backdrop-filter]:bg-background/60">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CameraIcon className="h-6 w-6 animate-pulse" />
@@ -219,7 +219,7 @@ export function CameraPage() {
           </Card>
 
           {/* 中间面板 */}
-          <Card className="lg:col-span-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <Card className="lg:col-span-6 bg-background/95 supports-[backdrop-filter]:bg-background/60">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings2 className="h-6 w-6" />
@@ -535,9 +535,9 @@ export function CameraPage() {
           </Card>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-3">
           {/* 移动端布局 */}
-          <Card className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <Card className="bg-background/95 supports-[backdrop-filter]:bg-background/60">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CameraIcon className="h-6 w-6 animate-bounce" />
@@ -603,7 +603,7 @@ export function CameraPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <Card className="bg-background/95 supports-[backdrop-filter]:bg-background/60">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings2 className="h-6 w-6" />

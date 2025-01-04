@@ -112,15 +112,6 @@ export function FilterWheelPage() {
     }
   };
 
-  const handleToggleNightMode = () => {
-    setNightMode(!nightMode);
-    toast({
-      title: nightMode ? "已切换到日间模式" : "已切换到夜间模式",
-      description: nightMode ? "界面已切换到日间模式" : "界面已切换到夜间模式",
-      variant: "default",
-    });
-  };
-
   const handleFilterChange = async () => {
     if (!isConnected) {
       toast({
@@ -155,12 +146,12 @@ export function FilterWheelPage() {
   return (
     <AnimatePresence>
       <motion.div
-        className={`min-h-screen p-4`}
+        className={`min-h-screen`}
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        <div className="max-w-7xl mx-auto space-y-6">
+        <div className="max-w-7xl mx-auto space-y-3">
           <DeviceSelector
             deviceType="FilterWheel"
             onDeviceChange={(device) =>
@@ -387,9 +378,9 @@ export function FilterWheelPage() {
               </motion.div>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-3 text-white">
               {/* 移动端布局 */}
-              <Card className="border-white shadow-xl rounded-2xl p-4">
+              <Card className="border-white shadow-xl rounded-2xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Compass className="h-6 w-6 animate-pulse" />
@@ -433,46 +424,6 @@ export function FilterWheelPage() {
                         </Button>
                       </div>
                     </div>
-
-                    {/* 夜间模式开关 */}
-                    <div className="flex items-center justify-between">
-                      <Label>夜间模式</Label>
-                      <Switch
-                        checked={nightMode}
-                        onCheckedChange={handleToggleNightMode}
-                      />
-                    </div>
-
-                    {/* 连接/断开按钮 */}
-                    <div className="flex items-center justify-between">
-                      {isConnected ? (
-                        <Button
-                          onClick={handleDisconnect}
-                          disabled={isLoading}
-                          variant="destructive"
-                        >
-                          {isLoading ? (
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          ) : (
-                            <Power className="w-4 h-4 mr-2" />
-                          )}
-                          断开连接
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={handleConnect}
-                          disabled={isLoading}
-                          variant="default"
-                        >
-                          {isLoading ? (
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          ) : (
-                            <Power className="w-4 h-4 mr-2" />
-                          )}
-                          连接设备
-                        </Button>
-                      )}
-                    </div>
                   </div>
 
                   {/* 移动进度条 */}
@@ -488,85 +439,65 @@ export function FilterWheelPage() {
                 </CardContent>
               </Card>
 
+              {/* 滤镜轮信息 */}
               <Card className="border-white shadow-xl rounded-2xl p-4">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings2 className="h-6 w-6" />
-                    滤镜控制
-                  </CardTitle>
+                  <CardTitle>滤镜轮信息</CardTitle>
                 </CardHeader>
                 <CardContent>
+                  <motion.div
+                    className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                  >
+                    <motion.div variants={itemVariants} className="space-y-2">
+                      <Label>名称</Label>
+                      <div className="text-sm">{filterWheelInfo.name}</div>
+                    </motion.div>
+                    <motion.div variants={itemVariants} className="space-y-2">
+                      <Label>驱动信息</Label>
+                      <div className="text-sm">
+                        {filterWheelInfo.driverInfo}
+                      </div>
+                    </motion.div>
+                    <motion.div variants={itemVariants} className="space-y-2">
+                      <Label>驱动版本</Label>
+                      <div className="text-sm">
+                        {filterWheelInfo.driverVersion}
+                      </div>
+                    </motion.div>
+                    <motion.div variants={itemVariants} className="space-y-2">
+                      <Label>当前滤镜</Label>
+                      <div className="text-sm">
+                        {filterWheelInfo.currentFilter}
+                      </div>
+                    </motion.div>
+                    <motion.div variants={itemVariants} className="space-y-2">
+                      <Label>描述</Label>
+                      <div className="text-sm">
+                        {filterWheelInfo.description}
+                      </div>
+                    </motion.div>
+                    <motion.div variants={itemVariants} className="space-y-2">
+                      <Label>当前位置</Label>
+                      <div className="text-sm">
+                        {filterWheelInfo.position} /{" "}
+                        {filterWheelInfo.maxPosition}
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-white shadow-xl rounded-2xl">
+                <CardContent>
                   <Tabs defaultValue="control" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="control">控制</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-3">
                       <TabsTrigger value="settings">设置</TabsTrigger>
                       <TabsTrigger value="history">历史</TabsTrigger>
                       <TabsTrigger value="advanced">高级</TabsTrigger>
                     </TabsList>
-
-                    <TabsContent value="control">
-                      <div className="space-y-4">
-                        {/* 移动到滤镜 */}
-                        <div className="flex flex-col space-y-4">
-                          <Label htmlFor="target-filter">目标滤镜</Label>
-                          <div className="flex space-x-4">
-                            <Select
-                              value={selectedFilter}
-                              onValueChange={setSelectedFilter}
-                              disabled={!isConnected || isLoading}
-                            >
-                              <SelectTrigger id="target-filter">
-                                <SelectValue placeholder="请选择滤镜" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {filterWheelInfo.filters.map(
-                                  (filter, index) => (
-                                    <SelectItem
-                                      key={index}
-                                      value={(index + 1).toString()}
-                                    >
-                                      {filter}
-                                    </SelectItem>
-                                  )
-                                )}
-                              </SelectContent>
-                            </Select>
-                            <Button
-                              onClick={handleFilterChange}
-                              disabled={!isConnected || isLoading}
-                              className="whitespace-nowrap"
-                            >
-                              {isLoading && (
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              )}
-                              更换滤镜
-                            </Button>
-                          </div>
-                        </div>
-
-                        {/* 滤镜方向控制 */}
-                        <div className="flex justify-center gap-4">
-                          <Button
-                            variant="secondary"
-                            onClick={() => handleFilterChange()}
-                            className="min-w-[48px] h-[48px]"
-                            disabled={!isConnected || isLoading}
-                            aria-label="向左移动滤镜"
-                          >
-                            <ChevronLeft className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            onClick={() => handleFilterChange()}
-                            className="min-w-[48px] h-[48px]"
-                            disabled={!isConnected || isLoading}
-                            aria-label="向右移动滤镜"
-                          >
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </TabsContent>
 
                     <TabsContent value="settings">
                       <div className="space-y-4">

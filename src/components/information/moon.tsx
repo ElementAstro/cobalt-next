@@ -18,6 +18,29 @@ import {
   SunDim,
 } from "lucide-react";
 
+const moonGlowVariants = {
+  animate: {
+    scale: [1, 1.2, 1],
+    opacity: [0.3, 0.5, 0.3],
+    transition: {
+      duration: 3,
+      repeat: Infinity,
+      ease: "easeInOut",
+    },
+  },
+};
+
+const moonRotateVariants = {
+  animate: {
+    rotate: 360,
+    transition: {
+      duration: 40,
+      repeat: Infinity,
+      ease: "linear",
+    },
+  },
+};
+
 interface MoonProps {
   data: MoonData;
 }
@@ -30,8 +53,31 @@ export function Moon({ data }: MoonProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-gradient-to-br from-indigo-950/90 to-gray-900/95 p-4 rounded-xl shadow-xl border border-indigo-800/20 backdrop-blur-sm"
+      className="bg-gradient-to-br from-indigo-950/90 to-gray-900/95 p-4 rounded-xl shadow-xl border border-indigo-800/20 backdrop-blur-sm relative overflow-hidden"
     >
+      {/* Add stars background */}
+      <div className="absolute inset-0 pointer-events-none">
+        {[...Array(50)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-1 bg-white rounded-full"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              opacity: [0.2, 0.8, 0.2],
+              scale: [0.8, 1.2, 0.8],
+            }}
+            transition={{
+              duration: Math.random() * 3 + 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+        ))}
+      </div>
+
       <Card className="bg-transparent border-0 shadow-none">
         <CardHeader className="pb-2">
           <motion.div
@@ -41,14 +87,24 @@ export function Moon({ data }: MoonProps) {
             transition={{ duration: 0.5 }}
           >
             <div className="relative w-28 h-28">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 blur-lg opacity-20" />
-              <Image
-                src={`/assets/img/moon_${data.phase}.png`}
-                alt="Moon"
-                layout="fill"
-                objectFit="contain"
-                className="relative z-10 drop-shadow-2xl"
+              <motion.div
+                className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 blur-lg opacity-20"
+                variants={moonGlowVariants}
+                animate="animate"
               />
+              <motion.div
+                className="absolute inset-0 rounded-full"
+                variants={moonRotateVariants}
+                animate="animate"
+              >
+                <Image
+                  src={`/assets/img/moon_${data.phase}.png`}
+                  alt="Moon"
+                  layout="fill"
+                  objectFit="contain"
+                  className="relative z-10 drop-shadow-2xl"
+                />
+              </motion.div>
             </div>
             <div className="flex-1">
               <CardTitle className="text-2xl font-bold text-indigo-100 mb-2 flex items-center gap-2">
@@ -175,13 +231,18 @@ function InfoCard({
 }) {
   return (
     <motion.div
-      whileHover={{ scale: 1.02 }}
+      whileHover={{ scale: 1.02, y: -2 }}
+      whileTap={{ scale: 0.98 }}
       className={`p-3 rounded-lg bg-gradient-to-br ${className} border border-indigo-800/10 backdrop-blur-sm`}
     >
-      <div className="flex items-center gap-2 mb-1">
+      <motion.div
+        whileHover={{ rotate: 360 }}
+        transition={{ duration: 0.5 }}
+        className="flex items-center gap-2 mb-1"
+      >
         {icon}
         <div className="text-indigo-200/80 text-xs">{label}</div>
-      </div>
+      </motion.div>
       <div className="text-white font-medium ml-6">{value}</div>
     </motion.div>
   );

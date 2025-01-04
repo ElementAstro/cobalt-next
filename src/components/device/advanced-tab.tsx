@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -14,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function AdvancedTab() {
   const { fetchAdvancedSettings, updateAdvancedSettings } = useApiService();
@@ -62,122 +64,149 @@ export function AdvancedTab() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="space-y-6"
+      className="space-y-6 bg-gray-900 text-white p-4 rounded-lg shadow-lg"
     >
       <div className="grid md:grid-cols-2 gap-6">
-        <Card>
+        <Card className="bg-gray-800">
           <CardHeader>
-            <CardTitle>Connection Settings</CardTitle>
+            <CardTitle>连接设置</CardTitle>
           </CardHeader>
-          <div>
-            <Label htmlFor="updateInterval">Update Interval (ms)</Label>
-            <Input
-              id="updateInterval"
-              type="number"
-              value={settings.updateInterval}
-              onChange={(e) =>
-                handleChange("updateInterval", parseInt(e.target.value))
-              }
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label htmlFor="timeout">Connection Timeout (s)</Label>
-            <Input
-              id="timeout"
-              type="number"
-              value={settings.connectionTimeout}
-              onChange={(e) =>
-                handleChange("connectionTimeout", parseInt(e.target.value))
-              }
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label htmlFor="logLevel">Log Level</Label>
-            <Input
-              id="logLevel"
-              type="text"
-              value={settings.logLevel}
-              onChange={(e) => handleChange("logLevel", e.target.value)}
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label htmlFor="maxRetries">Max Retries</Label>
-            <Input
-              id="maxRetries"
-              type="number"
-              value={settings.maxRetries}
-              onChange={(e) =>
-                handleChange("maxRetries", parseInt(e.target.value))
-              }
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label htmlFor="connectionBuffer">Connection Buffer (bytes)</Label>
-            <Input
-              id="connectionBuffer"
-              type="number"
-              value={settings.connectionBuffer}
-              onChange={(e) =>
-                handleChange("connectionBuffer", parseInt(e.target.value))
-              }
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label htmlFor="keepAliveInterval">Keep Alive Interval (s)</Label>
-            <Input
-              id="keepAliveInterval"
-              type="number"
-              value={settings.keepAliveInterval}
-              onChange={(e) =>
-                handleChange("keepAliveInterval", parseInt(e.target.value))
-              }
-              className="mt-1"
-            />
-          </div>
+          <CardContent>
+            <div className="mt-4\">
+              <Label htmlFor="updateInterval" className="text-gray-300">
+                更新间隔 (毫秒)
+              </Label>
+              <Input
+                id="updateInterval"
+                type="number"
+                value={settings.updateInterval}
+                onChange={(e) =>
+                  handleChange("updateInterval", parseInt(e.target.value))
+                }
+                className="mt-1 bg-gray-700 text-white"
+              />
+            </div>
+            <div className="mt-4">
+              <Label htmlFor="timeout" className="text-gray-300">
+                连接超时 (秒)
+              </Label>
+              <Input
+                id="timeout"
+                type="number"
+                value={settings.connectionTimeout}
+                onChange={(e) =>
+                  handleChange("connectionTimeout", parseInt(e.target.value))
+                }
+                className="mt-1 bg-gray-700 text-white"
+              />
+            </div>
+            <div className="mt-4">
+              <Label htmlFor="logLevel" className="text-gray-300">
+                日志级别
+              </Label>
+              <Input
+                id="logLevel"
+                type="text"
+                value={settings.logLevel}
+                onChange={(e) => handleChange("logLevel", e.target.value)}
+                className="mt-1 bg-gray-700 text-white"
+              />
+            </div>
+            <div className="mt-4">
+              <Label htmlFor="maxRetries" className="text-gray-300">
+                最大重试次数
+              </Label>
+              <Input
+                id="maxRetries"
+                type="number"
+                value={settings.maxRetries}
+                onChange={(e) =>
+                  handleChange("maxRetries", parseInt(e.target.value))
+                }
+                className="mt-1 bg-gray-700 text-white"
+              />
+            </div>
+            <div className="mt-4">
+              <Label htmlFor="connectionBuffer" className="text-gray-300">
+                连接缓冲区 (字节)
+              </Label>
+              <Input
+                id="connectionBuffer"
+                type="number"
+                value={settings.connectionBuffer}
+                onChange={(e) =>
+                  handleChange("connectionBuffer", parseInt(e.target.value))
+                }
+                className="mt-1 bg-gray-700 text-white"
+              />
+            </div>
+            <div className="mt-4">
+              <Label htmlFor="keepAliveInterval" className="text-gray-300">
+                保持活动间隔 (秒)
+              </Label>
+              <Input
+                id="keepAliveInterval"
+                type="number"
+                value={settings.keepAliveInterval}
+                onChange={(e) =>
+                  handleChange("keepAliveInterval", parseInt(e.target.value))
+                }
+                className="mt-1 bg-gray-700 text-white"
+              />
+            </div>
+          </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gray-800">
           <CardHeader>
-            <CardTitle>Debug Settings</CardTitle>
+            <CardTitle>调试设置</CardTitle>
           </CardHeader>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="debugMode"
-              checked={settings.debugMode}
-              onCheckedChange={(checked) => handleChange("debugMode", checked)}
-            />
-            <Label htmlFor="debugMode">Enable Debug Mode</Label>
-          </div>
+          <CardContent>
+            <div className="flex items-center mt-4">
+              <Switch
+                id="debugMode"
+                checked={settings.debugMode}
+                onCheckedChange={(checked) =>
+                  handleChange("debugMode", checked)
+                }
+                className="bg-gray-600"
+              />
+              <Label htmlFor="debugMode" className="ml-2 text-gray-300">
+                启用调试模式
+              </Label>
+            </div>
+          </CardContent>
         </Card>
       </div>
-      <Card>
+      <Card className="bg-gray-800">
         <CardHeader>
-          <CardTitle>Logs</CardTitle>
+          <CardTitle>日志</CardTitle>
         </CardHeader>
-        <ScrollArea className="h-64">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Timestamp</TableHead>
-                <TableHead>Level</TableHead>
-                <TableHead>Message</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {logs.map((log, index) => (
-                <TableRow key={index}>
-                  <TableCell>{log.timestamp}</TableCell>
-                  <TableCell>{log.level}</TableCell>
-                  <TableCell>{log.message}</TableCell>
+        <CardContent>
+          <ScrollArea className="h-64 mt-4 bg-gray-700 rounded-md p-2">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-gray-400">时间戳</TableHead>
+                  <TableHead className="text-gray-400">级别</TableHead>
+                  <TableHead className="text-gray-400">消息</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </ScrollArea>
+              </TableHeader>
+              <TableBody>
+                {logs.map((log, index) => (
+                  <TableRow key={index} className="hover:bg-gray-600">
+                    <TableCell className="text-gray-200">
+                      {log.timestamp}
+                    </TableCell>
+                    <TableCell className="text-gray-200">{log.level}</TableCell>
+                    <TableCell className="text-gray-200">
+                      {log.message}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        </CardContent>
       </Card>
     </motion.div>
   );

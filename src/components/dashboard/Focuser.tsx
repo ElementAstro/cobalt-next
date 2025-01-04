@@ -201,13 +201,13 @@ export function FocuserPage() {
   return (
     <AnimatePresence>
       <motion.div
-        className="min-h-screen text-white p-4"
+        className="min-h-screen text-white"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
         exit="hidden"
       >
-        <div className="max-w-7xl mx-auto space-y-6">
+        <div className="max-w-7xl mx-auto space-y-3">
           <DeviceSelector
             deviceType="Focuser"
             onDeviceChange={handleDeviceChange}
@@ -216,7 +216,7 @@ export function FocuserPage() {
           {isDesktop ? (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* 左侧面板 */}
-              <Card className="lg:col-span-6 bg-background/95 backdrop-blur rounded-2xl shadow-xl border-white transition-transform duration-200 hover:-translate-y-1">
+              <Card className="lg:col-span-6 bg-background/95 rounded-2xl shadow-xl border-white transition-transform duration-200 hover:-translate-y-1">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Compass className="h-6 w-6 animate-pulse" />
@@ -293,7 +293,7 @@ export function FocuserPage() {
               </Card>
 
               {/* 右侧面板 */}
-              <Card className="lg:col-span-6 bg-background/95 backdrop-blur rounded-2xl shadow-xl border-white transition-transform duration-200 hover:-translate-y-1">
+              <Card className="lg:col-span-6 bg-background/95 rounded-2xl shadow-xl border-white transition-transform duration-200 hover:-translate-y-1">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Settings2 className="h-6 w-6" />
@@ -446,9 +446,9 @@ export function FocuserPage() {
               </Card>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-3">
               {/* 移动端布局 */}
-              <Card className="bg-background/95 backdrop-blur rounded-2xl shadow-xl border-white transition-transform duration-200 hover:-translate-y-1">
+              <Card className="bg-background/95 rounded-2xl shadow-xl border-white transition-transform duration-200 hover:-translate-y-1">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Compass className="h-6 w-6 animate-bounce" />
@@ -500,7 +500,7 @@ export function FocuserPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-background/95 backdrop-blur rounded-2xl shadow-xl border-white transition-transform duration-200 hover:-translate-y-1">
+              <Card className="bg-background/95 rounded-2xl shadow-xl border-white transition-transform duration-200 hover:-translate-y-1">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Settings2 className="h-6 w-6" />
@@ -646,7 +646,7 @@ export function FocuserPage() {
           {/* 自动对焦和温度补偿 */}
           <div className="grid gap-6 md:grid-cols-2">
             {/* 自动对焦 */}
-            <Card className="bg-background/95 backdrop-blur rounded-2xl shadow-xl border-white transition-transform duration-200 hover:-translate-y-1">
+            <Card className="bg-background/95 rounded-2xl shadow-xl border-white transition-transform duration-200 hover:-translate-y-1">
               <CardHeader>
                 <CardTitle>自动对焦</CardTitle>
               </CardHeader>
@@ -686,7 +686,7 @@ export function FocuserPage() {
             </Card>
 
             {/* 移动历史记录 */}
-            <Card className="bg-background/95 backdrop-blur rounded-2xl shadow-xl border-white transition-transform duration-200 hover:-translate-y-1">
+            <Card className="bg-background/95 rounded-2xl shadow-xl border-white transition-transform duration-200 hover:-translate-y-1">
               <CardHeader>
                 <CardTitle>移动历史记录</CardTitle>
               </CardHeader>
@@ -709,7 +709,7 @@ export function FocuserPage() {
           {/* 设备和温度信息 */}
           <div className="grid gap-6 md:grid-cols-2">
             {/* 设备状态 */}
-            <Card className="bg-background/95 backdrop-blur rounded-2xl shadow-xl border-white transition-transform duration-200 hover:-translate-y-1">
+            <Card className="bg-background/95 rounded-2xl shadow-xl border-white transition-transform duration-200 hover:-translate-y-1">
               <CardHeader>
                 <CardTitle>设备状态</CardTitle>
               </CardHeader>
@@ -736,7 +736,7 @@ export function FocuserPage() {
             </Card>
 
             {/* 温度信息 */}
-            <Card className="bg-background/95 backdrop-blur rounded-2xl shadow-xl border-white transition-transform duration-200 hover:-translate-y-1">
+            <Card className="bg-background/95 rounded-2xl shadow-xl border-white transition-transform duration-200 hover:-translate-y-1">
               <CardHeader>
                 <CardTitle>温度信息</CardTitle>
               </CardHeader>

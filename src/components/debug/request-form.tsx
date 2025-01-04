@@ -237,7 +237,7 @@ export default function RequestForm({ onSubmit, settings }: RequestFormProps) {
       exit="exit"
       variants={animationVariants}
       transition={cardTransition}
-      className="w-full max-w-4xl mx-auto p-4 lg:p-6"
+      className="w-full max-w-4xl mx-auto"
     >
       <motion.div whileHover={{ scale: 1.005 }} whileTap={{ scale: 0.995 }}>
         <Card className="backdrop-blur-md bg-white/90 dark:bg-gray-800/90 shadow-xl">

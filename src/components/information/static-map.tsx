@@ -9,15 +9,15 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import { Location } from "@/store/useDashboardStore";
 
 interface StaticMapProps {
-  location: string;
-  zoom: number;
+  key: string;
+  location?: Location;
+  zoom?: number;
   size?: string;
   scale?: number;
   markers?: string;
@@ -32,17 +32,19 @@ interface StaticMapProps {
   allowFullscreen?: boolean;
   showScale?: boolean;
   onMapClick?: (coordinates: string) => void;
+  onLocationChange?: (location: Location) => void;
 }
 
 export default function StaticMap({
+  key,
   location,
-  zoom,
+  zoom = 10,
   size = "400*300",
-  scale,
+  scale = 1,
   markers,
   labels,
   paths,
-  traffic,
+  traffic = 0,
   theme = "normal",
   features = ["bg", "road", "building", "point"],
   opacity = 1,
@@ -51,15 +53,19 @@ export default function StaticMap({
   allowFullscreen = true,
   showScale = true,
   onMapClick,
+  onLocationChange,
 }: StaticMapProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isLandscape, setIsLandscape] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(zoom);
+  const [currentLocation, setCurrentLocation] = useState<Location | undefined>(
+    location
+  );
 
-  const handleZoomIn = () => setCurrentZoom(Math.min(currentZoom + 1, 18));
-  const handleZoomOut = () => setCurrentZoom(Math.max(currentZoom - 1, 3));
+  const handleZoomIn = () => setCurrentZoom((prev) => Math.min(prev + 1, 17));
+  const handleZoomOut = () => setCurrentZoom((prev) => Math.max(prev - 1, 1));
 
   useEffect(() => {
     const checkOrientation = () => {
@@ -71,9 +77,21 @@ export default function StaticMap({
     return () => window.removeEventListener("resize", checkOrientation);
   }, []);
 
+  useEffect(() => {
+    if (scale === 2) {
+      setCurrentZoom((prev) => Math.min(prev + 1, 17));
+    } else {
+      setCurrentZoom(zoom);
+    }
+  }, [scale, zoom]);
+
   const mapUrl = constructMapUrl({
-    key: process.env.NEXT_PUBLIC_AMAP_KEY!,
-    location,
+    key: key,
+    location: decodeURIComponent(
+      currentLocation
+        ? `${currentLocation.longitude},${currentLocation.latitude}`
+        : ""
+    ), // Keep location not encoded
     zoom: currentZoom,
     size: isLandscape ? "600*300" : size,
     scale,
@@ -88,10 +106,23 @@ export default function StaticMap({
     .split("*")
     .map(Number);
 
-  const handleImageClick = () => {
-    if (onMapClick) {
-      onMapClick(location);
-    }
+  const handleMapClick = (event: React.MouseEvent) => {
+    if (!currentLocation || !onMapClick || !onLocationChange) return;
+
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    // 计算点击位置对应的经纬度
+    const newLocation = {
+      longitude:
+        currentLocation.longitude + ((x - width / 2) * 0.01) / currentZoom,
+      latitude:
+        currentLocation.latitude - ((y - height / 2) * 0.01) / currentZoom,
+    };
+
+    onLocationChange(newLocation);
+    onMapClick(`${newLocation.longitude},${newLocation.latitude}`);
   };
 
   return (
@@ -136,7 +167,7 @@ export default function StaticMap({
           </motion.div>
         )}
       </AnimatePresence>
-      <div onClick={handleImageClick}>
+      <div onClick={handleMapClick}>
         <Image
           src={mapUrl}
           alt="Static Map"

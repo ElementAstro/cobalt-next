@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/accordion";
 import * as Icons from "lucide-react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
-import type { SettingGroup } from "@/types/config";
+import type { SettingGroup as SettingGroupType } from "@/types/config";
 import SettingItem from "./settings-item";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +21,7 @@ interface AnimationConfig {
 }
 
 interface SettingGroupProps {
-  group: SettingGroup;
+  group: SettingGroupType;
   path: string[];
   className?: string;
   animationConfig?: AnimationConfig;
@@ -34,7 +34,7 @@ const defaultAnimationConfig: AnimationConfig = {
   staggerDelay: 0.05,
 };
 
-const SettingGroup: React.FC<SettingGroupProps> = ({
+export const SettingGroup: React.FC<SettingGroupProps> = ({
   group,
   path,
   className,
@@ -168,5 +168,3 @@ const SettingGroup: React.FC<SettingGroupProps> = ({
     </AccordionItem>
   );
 };
-
-export default SettingGroup;

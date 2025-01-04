@@ -135,3 +135,18 @@ export const useViewerStore = create<CameraState>((set) => ({
   setFocusPoint: (focusPoint) => set({ focusPoint }),
   resetSettings: (settings) => set((state) => ({ ...state, ...settings })),
 }));
+
+export interface Location {
+  latitude: number;
+  longitude: number;
+}
+
+interface DashboardState {
+  location: Location | null;
+  setLocation: (location: Location) => void;
+}
+
+export const useDashboardStore = create<DashboardState>((set) => ({
+  location: null,
+  setLocation: (location) => set({ location }),
+}));

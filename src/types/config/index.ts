@@ -27,6 +27,7 @@ export interface Setting {
   description?: string;
   preview?: boolean;
   category?: string;
+  filter: (setting: Setting) => boolean;
 }
 
 export interface SettingGroup {
@@ -39,7 +40,7 @@ export interface SettingGroup {
 
 export type SettingsData = SettingGroup[];
 
-export interface SettingGroup extends Setting {
+export interface SettingGroupG extends Setting {
   settings: Array<Setting | SettingGroup>;
 }
 

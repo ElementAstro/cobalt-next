@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import WindowsTaskbarClock from "./topbar-time";
+import TopbarLocation from "./topbar-location";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface TopBarProps {
   onOpenOffcanvas: (device: string) => void;
@@ -45,8 +47,7 @@ const itemVariants = {
 };
 
 export default function TopBar({ onOpenOffcanvas }: TopBarProps) {
-  const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
-  const [isShowDeviceName, setIsShowDeviceName] = useState(!isMobile);
+  const [isShowDeviceName, setIsShowDeviceName] = useState(!useIsMobile);
   const [time, setTime] = useState(new Date());
   const [batteryLevel, setBatteryLevel] = useState<number | null>(null);
   const [wifiStatus, setWifiStatus] = useState<boolean | null>(null);
@@ -89,12 +90,12 @@ export default function TopBar({ onOpenOffcanvas }: TopBarProps) {
 
   useEffect(() => {
     const handleResize = () => {
-      setIsShowDeviceName(!isMobile);
+      setIsShowDeviceName(!useIsMobile);
     };
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [isMobile]);
+  }, [useIsMobile]);
 
   const updateOnlineStatus = () => {
     setWifiStatus(navigator.onLine);
@@ -150,7 +151,7 @@ export default function TopBar({ onOpenOffcanvas }: TopBarProps) {
   return (
     <TooltipProvider>
       <motion.div
-        className="h-14 border-b border-gray-700 flex items-center justify-between px-4"
+        className="h-14 border-b border-gray-700 flex items-center justify-between px-2"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -211,6 +212,9 @@ export default function TopBar({ onOpenOffcanvas }: TopBarProps) {
           </motion.div>
           <motion.div variants={itemVariants}>
             <WindowsTaskbarClock />
+          </motion.div>
+          <motion.div>
+            <TopbarLocation />
           </motion.div>
           {devices.map((device) => (
             <motion.div key={device.id} variants={itemVariants}>

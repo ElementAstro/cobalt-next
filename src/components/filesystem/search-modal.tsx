@@ -75,7 +75,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="w-full max-w-lg bg-gray-900/95 backdrop-blur text-white p-4 rounded-lg shadow-xl border border-gray-800"
+              className="w-full max-w-lg bg-gray-900/95 text-white p-4 rounded-lg shadow-xl border border-gray-800"
             >
               <DialogContent className="bg-transparent border-none shadow-none">
                 <DialogHeader className="flex justify-between pb-2">

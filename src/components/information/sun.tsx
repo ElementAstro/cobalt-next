@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useAstroStore } from "@/store/useInformationStore";
@@ -19,6 +14,7 @@ const sunInfoVariants = {
     transition: {
       type: "spring",
       stiffness: 100,
+      damping: 15,
     },
   },
 };
@@ -32,6 +28,31 @@ const glowVariants = {
       duration: 2,
       repeat: Infinity,
       ease: "easeInOut",
+    },
+  },
+};
+
+const sunRaysVariant = {
+  animate: {
+    rotate: 360,
+    scale: [1, 1.1, 1],
+    opacity: [0.6, 0.8, 0.6],
+    transition: {
+      rotate: {
+        duration: 20,
+        repeat: Infinity,
+        ease: "linear",
+      },
+      scale: {
+        duration: 2,
+        repeat: Infinity,
+        ease: "easeInOut",
+      },
+      opacity: {
+        duration: 2,
+        repeat: Infinity,
+        ease: "easeInOut",
+      },
     },
   },
 };
@@ -54,8 +75,25 @@ export function Sun() {
       variants={sunInfoVariants}
       initial="hidden"
       animate="visible"
-      className="bg-gradient-to-br from-amber-950/90 to-gray-900/95 p-4 rounded-xl shadow-xl border border-amber-800/20 backdrop-blur-sm"
+      className="bg-gradient-to-br from-amber-950/90 to-gray-900/95 p-4 rounded-xl shadow-xl border border-amber-800/20 backdrop-blur-sm relative overflow-hidden"
     >
+      <motion.div
+        className="absolute inset-0 pointer-events-none"
+        variants={sunRaysVariant}
+        animate="animate"
+      >
+        <div className="absolute inset-0 bg-gradient-radial from-amber-500/20 to-transparent opacity-30" />
+        {[...Array(12)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute top-1/2 left-1/2 w-full h-2 bg-gradient-to-r from-amber-500/20 to-transparent origin-left"
+            style={{
+              transform: `rotate(${i * 30}deg) translateX(-50%)`,
+            }}
+          />
+        ))}
+      </motion.div>
+
       <Card className="bg-transparent border-0 shadow-none">
         <CardHeader className="pb-2">
           <motion.div className="relative">
@@ -166,11 +204,13 @@ function TimeCard({
   };
 
   return (
-    <div
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
       className={`p-2 rounded-lg bg-gradient-to-br ${getBgColor()} border border-amber-800/10 backdrop-blur-sm`}
     >
       <div className="text-amber-200/80 text-xs mb-1">{label}</div>
       <div className="text-white font-medium">{time}</div>
-    </div>
+    </motion.div>
   );
 }
