@@ -1,8 +1,11 @@
-import React, { useState } from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { Power, RefreshCw, Activity } from "lucide-react";
+import { Power, RefreshCw, Activity, Check, X } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { motion } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,7 +53,6 @@ import { useToast } from "@/hooks/use-toast";
 import useWebSocketStore from "@/store/useWebSocketStore";
 import wsClient from "@/utils/ws-client";
 
-// 验证schema
 const formSchema = z.object({
   url: z.string().url({ message: "请输入有效的WebSocket URL" }),
   reconnectInterval: z.number().min(1000).max(60000),
@@ -60,18 +62,26 @@ const formSchema = z.object({
   binaryType: z.enum(["blob", "arraybuffer"]),
 });
 
+interface WebSocketStats {
+  messagesSent: number;
+  messagesReceived: number;
+  connectionAttempts: number;
+  lastConnectedAt: Date | null;
+  lastDisconnectedAt: Date | null;
+}
+
 export default function WebSocketConfig() {
   const { config, setConfig } = useWebSocketStore();
   const { toast } = useToast();
   const [connectionStatus, setConnectionStatus] = useState<
     "closed" | "connecting" | "open" | "closing"
   >("closed");
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<WebSocketStats>({
     messagesSent: 0,
     messagesReceived: 0,
     connectionAttempts: 0,
-    lastConnectedAt: null as Date | null,
-    lastDisconnectedAt: null as Date | null,
+    lastConnectedAt: null,
+    lastDisconnectedAt: null,
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -79,6 +89,83 @@ export default function WebSocketConfig() {
     resolver: zodResolver(formSchema),
     defaultValues: config,
   });
+
+  useEffect(() => {
+    if (wsClient) {
+      wsClient.on("open", () => {
+        setConnectionStatus("open");
+        setStats((prev) => ({
+          ...prev,
+          lastConnectedAt: new Date(),
+          connectionAttempts: prev.connectionAttempts + 1,
+        }));
+        toast({
+          title: "连接成功",
+          description: "WebSocket 连接已建立。",
+          variant: "default",
+        });
+      });
+
+      wsClient.on("close", () => {
+        setConnectionStatus("closed");
+        setStats((prev) => ({
+          ...prev,
+          lastDisconnectedAt: new Date(),
+        }));
+        toast({
+          title: "连接关闭",
+          description: "WebSocket 连接已关闭。",
+          variant: "default",
+        });
+      });
+
+      wsClient.on("message", (message: string) => {
+        setStats((prev) => ({
+          ...prev,
+          messagesReceived: prev.messagesReceived + 1,
+        }));
+        if (config.debug) {
+          console.log("Received message:", message);
+        }
+      });
+    }
+
+    return () => {
+      if (wsClient) {
+        wsClient.off("open", () => {
+          setConnectionStatus("open");
+          setStats((prev) => ({
+            ...prev,
+            lastConnectedAt: new Date(),
+            connectionAttempts: prev.connectionAttempts + 1,
+          }));
+          toast({
+            title: "连接成功",
+            description: "WebSocket 连接已建立。",
+            variant: "default",
+          });
+        });
+        wsClient.off("close", () => {
+          setConnectionStatus("closed");
+          setStats((prev) => ({
+            ...prev,
+            lastDisconnectedAt: new Date(),
+          }));
+          toast({
+            title: "连接关闭",
+            description: "WebSocket 连接已关闭。",
+            variant: "default",
+          });
+        });
+        wsClient.off("message", (message: string) => {
+          setStats((prev) => ({
+            ...prev,
+            messagesReceived: prev.messagesReceived + 1,
+          }));
+        });
+      }
+    };
+  }, [config.debug]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     setIsDialogOpen(true);
@@ -126,25 +213,48 @@ export default function WebSocketConfig() {
     }
   };
 
+  const lineData = [
+    {
+      id: "发送消息数",
+      color: "hsl(205, 70%, 50%)",
+      data: [
+        { x: "1", y: stats.messagesSent },
+        { x: "2", y: stats.messagesSent + 10 },
+        { x: "3", y: stats.messagesSent + 20 },
+        { x: "4", y: stats.messagesSent + 30 },
+      ],
+    },
+    {
+      id: "接收消息数",
+      color: "hsl(120, 70%, 50%)",
+      data: [
+        { x: "1", y: stats.messagesReceived },
+        { x: "2", y: stats.messagesReceived + 5 },
+        { x: "3", y: stats.messagesReceived + 15 },
+        { x: "4", y: stats.messagesReceived + 25 },
+      ],
+    },
+  ];
+
   return (
     <TooltipProvider>
-      <div className="container max-w-4xl mx-auto p-4 space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-white">WebSocket 配置</h2>
-          <div className="flex items-center space-x-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="container mx-auto p-4 space-y-6 bg-gray-900 min-h-screen"
+      >
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-center">
+          <h2 className="text-3xl font-bold text-white">WebSocket 配置</h2>
+          <div className="flex items-center space-x-4 mt-4 md:mt-0">
             <Tooltip>
               <TooltipTrigger>
                 <div className="flex items-center space-x-2">
-                  <div
-                    className={`w-3 h-3 rounded-full ${
-                      connectionStatus === "open"
-                        ? "animate-ping"
-                        : "animate-pulse"
-                    } ${getStatusColor()}`}
+                  <span
+                    className={`w-3 h-3 rounded-full ${connectionStatus === "open" ? "animate-ping" : "animate-pulse"} ${getStatusColor()}`}
                   />
-                  <span className="text-sm text-white capitalize">
-                    {connectionStatus}
-                  </span>
+                  <span className="text-sm text-white capitalize">{connectionStatus}</span>
                 </div>
               </TooltipTrigger>
               <TooltipContent>
@@ -154,7 +264,7 @@ export default function WebSocketConfig() {
             <Button
               variant="outline"
               size="sm"
-              className="border-green-500 text-green-500 hover:bg-green-500/10 transition-all duration-300 hover:scale-105"
+              className="border-green-500 text-green-500 hover:bg-green-500/10 transition-all duration-300 flex items-center"
               onClick={() => {
                 if (connectionStatus === "open") {
                   toast({
@@ -191,17 +301,16 @@ export default function WebSocketConfig() {
                 }
               }}
             >
-              <Power className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:rotate-90" />
-              <span className="group-hover:translate-x-1 transition-transform duration-300">
-                {connectionStatus === "open" ? "断开" : "连接"}
-              </span>
+              <Power className="w-4 h-4 mr-2 transition-transform duration-300" />
+              <span>{connectionStatus === "open" ? "断开" : "连接"}</span>
             </Button>
           </div>
         </div>
 
+        {/* Form */}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <Card className="bg-black/20 border-gray-800 hover:border-gray-700 transition-all duration-300 hover:shadow-lg">
+            <Card className="bg-gray-800 border-gray-700 hover:border-gray-600 transition-all duration-300">
               <CardHeader>
                 <CardTitle className="text-white">基本设置</CardTitle>
               </CardHeader>
@@ -211,9 +320,9 @@ export default function WebSocketConfig() {
                   name="url"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>WebSocket URL</FormLabel>
+                      <FormLabel className="text-gray-300">WebSocket URL</FormLabel>
                       <FormControl>
-                        <Input placeholder="ws://localhost:8080" {...field} />
+                        <Input placeholder="ws://localhost:8080" {...field} className="bg-gray-700 text-white" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -226,9 +335,9 @@ export default function WebSocketConfig() {
                     name="reconnectInterval"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>重连间隔 (ms)</FormLabel>
+                        <FormLabel className="text-gray-300">重连间隔 (ms)</FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} />
+                          <Input type="number" {...field} className="bg-gray-700 text-white" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -240,9 +349,9 @@ export default function WebSocketConfig() {
                     name="maxReconnectAttempts"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>最大重连次数</FormLabel>
+                        <FormLabel className="text-gray-300">最大重连次数</FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} />
+                          <Input type="number" {...field} className="bg-gray-700 text-white" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -256,9 +365,9 @@ export default function WebSocketConfig() {
                     name="heartbeatInterval"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>心跳间隔 (ms)</FormLabel>
+                        <FormLabel className="text-gray-300">心跳间隔 (ms)</FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} />
+                          <Input type="number" {...field} className="bg-gray-700 text-white" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -270,19 +379,14 @@ export default function WebSocketConfig() {
                     name="binaryType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>二进制类型</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <SelectTrigger>
+                        <FormLabel className="text-gray-300">二进制类型</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <SelectTrigger className="bg-gray-700 text-white">
                             <SelectValue placeholder="选择二进制类型" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-gray-800 text-white">
                             <SelectItem value="blob">Blob</SelectItem>
-                            <SelectItem value="arraybuffer">
-                              ArrayBuffer
-                            </SelectItem>
+                            <SelectItem value="arraybuffer">ArrayBuffer</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -295,10 +399,10 @@ export default function WebSocketConfig() {
                   control={form.control}
                   name="debug"
                   render={({ field }) => (
-                    <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                    <FormItem className="flex items-center justify-between bg-gray-700 p-4 rounded-lg">
                       <div className="space-y-0.5">
-                        <FormLabel>调试模式</FormLabel>
-                        <FormDescription>
+                        <FormLabel className="text-gray-300">调试模式</FormLabel>
+                        <FormDescription className="text-gray-400">
                           启用后将在控制台输出详细日志
                         </FormDescription>
                       </div>
@@ -306,6 +410,7 @@ export default function WebSocketConfig() {
                         <Switch
                           checked={field.value}
                           onCheckedChange={field.onChange}
+                          className="bg-green-500"
                         />
                       </FormControl>
                     </FormItem>
@@ -314,33 +419,34 @@ export default function WebSocketConfig() {
               </CardContent>
             </Card>
 
-            <Card className="bg-black/20 border-gray-800 hover:border-gray-700 transition-all duration-300 hover:shadow-lg">
+            {/* Connection Stats */}
+            <Card className="bg-gray-800 border-gray-700 hover:border-gray-600 transition-all duration-300">
               <CardHeader>
                 <CardTitle className="text-white">连接统计</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="space-y-2">
-                    <Label>发送消息数</Label>
-                    <div className="text-2xl font-bold text-green-500 animate-fade-in">
+                    <Label className="text-gray-400">发送消息数</Label>
+                    <div className="text-2xl font-bold text-green-500">
                       {stats.messagesSent}
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>接收消息数</Label>
-                    <div className="text-2xl font-bold text-blue-500 animate-fade-in">
+                    <Label className="text-gray-400">接收消息数</Label>
+                    <div className="text-2xl font-bold text-blue-500">
                       {stats.messagesReceived}
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>连接尝试次数</Label>
-                    <div className="text-2xl font-bold text-yellow-500 animate-fade-in">
+                    <Label className="text-gray-400">连接尝试次数</Label>
+                    <div className="text-2xl font-bold text-yellow-500">
                       {stats.connectionAttempts}
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>最后连接时间</Label>
-                    <div className="text-sm">
+                    <Label className="text-gray-400">最后连接时间</Label>
+                    <div className="text-sm text-gray-300">
                       {stats.lastConnectedAt
                         ? new Date(stats.lastConnectedAt).toLocaleString()
                         : "未连接"}
@@ -350,13 +456,14 @@ export default function WebSocketConfig() {
               </CardContent>
             </Card>
 
-            <div className="flex justify-end space-x-4">
+            {/* Action Buttons */}
+            <div className="flex flex-col md:flex-row gap-4 justify-end">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="outline"
                     type="button"
-                    className="transition-all duration-300 hover:scale-105"
+                    className="flex items-center space-x-2 border-blue-500 text-blue-500 hover:bg-blue-500/10 transition-all duration-300"
                     onClick={() => {
                       if (wsClient) {
                         wsClient.send({ type: "test" });
@@ -374,8 +481,8 @@ export default function WebSocketConfig() {
                       }
                     }}
                   >
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin-on-hover" />
-                    测试连接
+                    <RefreshCw className="w-4 h-4 animate-spin-on-hover" />
+                    <span>发送测试</span>
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -387,9 +494,11 @@ export default function WebSocketConfig() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel onClick={handleCancel}>
+                      <X className="w-4 h-4 mr-2" />
                       取消
                     </AlertDialogCancel>
                     <AlertDialogAction onClick={handleConfirm}>
+                      <Check className="w-4 h-4 mr-2" />
                       确认
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -397,15 +506,15 @@ export default function WebSocketConfig() {
               </AlertDialog>
               <Button
                 type="submit"
-                className="transition-all duration-300 hover:scale-105"
+                className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 transition-all duration-300"
               >
-                <Activity className="w-4 h-4 mr-2 animate-pulse" />
-                保存配置
+                <Activity className="w-4 h-4 animate-pulse" />
+                <span>保存配置</span>
               </Button>
             </div>
           </form>
         </Form>
-      </div>
+      </motion.div>
     </TooltipProvider>
   );
 }
