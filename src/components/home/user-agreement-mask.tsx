@@ -1,25 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useMediaQuery } from "react-responsive";
-import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { create } from "zustand";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import {
-  X,
-  ChevronUp,
-  ChevronDown,
   Check,
-  ArrowRight,
+  X,
   Printer,
+  Info,
+  Settings,
+  HelpCircle,
+  ArrowRight,
 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { create } from "zustand";
+import { useMediaQuery } from "react-responsive";
 
-// Zustand store
 interface AgreementStore {
   isVisible: boolean;
   showAgreement: () => void;
@@ -151,12 +156,23 @@ export function UserAgreementMask({
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             key="modal"
           >
-            <div className="p-6 flex flex-col flex-grow space-y-6">
+            <div className="p-6 relative flex flex-col flex-grow space-y-6">
+              <Button
+                onClick={() => hideAgreement()}
+                variant="ghost"
+                size="icon"
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-300"
+                aria-label="关闭用户协议"
+              >
+                <X size={20} />
+              </Button>
               <CardHeader>
-                <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
+                <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center space-x-2">
+                  <Info className="w-6 h-6 text-blue-500" />
                   {language === "en" ? title : "用户协议与隐私政策"}
                 </CardTitle>
-                <CardDescription className="text-sm text-gray-500 dark:text-gray-400">
+                <CardDescription className="text-sm text-gray-500 dark:text-gray-400 flex items-center space-x-1">
+                  <Settings className="w-4 h-4" />
                   {language === "en"
                     ? `Version: ${version}`
                     : `版本: ${version}`}
@@ -186,7 +202,9 @@ export function UserAgreementMask({
                 >
                   <ScrollArea className="flex-grow mb-4">
                     <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                      {agreementText[language]}
+                      {language === "en"
+                        ? agreementText["en"]
+                        : agreementText["zh"]}
                     </p>
                   </ScrollArea>
                   {requireReadConfirmation && (
@@ -204,7 +222,7 @@ export function UserAgreementMask({
                         className="text-sm text-gray-700 dark:text-gray-300"
                       >
                         {language === "en"
-                          ? "I have read and understood the User Agreement"
+                          ? "I have read and understood the Agreement"
                           : "我已阅读并理解用户协议"}
                       </Label>
                     </div>
@@ -216,7 +234,9 @@ export function UserAgreementMask({
                 >
                   <ScrollArea className="flex-grow mb-4">
                     <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                      {privacyPolicyText[language]}
+                      {language === "en"
+                        ? privacyPolicyText["en"]
+                        : privacyPolicyText["zh"]}
                     </p>
                   </ScrollArea>
                   {requireReadConfirmation && (
@@ -295,15 +315,6 @@ export function UserAgreementMask({
                     : "您必须同意用户协议和隐私政策才能继续使用我们的服务。"}
                 </motion.p>
               )}
-              <Button
-                onClick={() => hideAgreement()}
-                variant="ghost"
-                size="icon"
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-300"
-                aria-label="关闭用户协议"
-              >
-                <X size={20} />
-              </Button>
             </div>
           </motion.div>
         </motion.div>

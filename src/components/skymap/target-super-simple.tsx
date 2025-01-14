@@ -12,7 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import * as AXIOSOF from "@/services/find-object";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, Info, Check, Edit3 } from "lucide-react";
+import {
+  Star, Info, Check, Edit3, Eye, Settings, Download, ChevronRight, ChevronDown, ChevronUp, ChevronLeft, X,
+  Share2, Copy, Heart, MapPin, Clock, Calendar, Compass, Layers, Target, Globe, Maximize, Minimize, RotateCw
+} from "lucide-react";
 import { FC, memo, useEffect, useState } from "react";
 
 interface TargetSuperSimpleCardProps {
@@ -126,20 +129,115 @@ const TargetSuperSimpleCard: FC<TargetSuperSimpleCardProps> = (props) => {
 
   // 添加新的动画变体
   const cardVariants = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    hover: { 
-      scale: 1.02,
-      boxShadow: "0px 5px 15px rgba(0,0,0,0.2)",
-      transition: { duration: 0.2 }
+    initial: { opacity: 0, y: 20, scale: 0.95, rotate: -1 },
+    animate: {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      rotate: 0,
+      transition: {
+        type: "spring",
+        stiffness: 120,
+        damping: 12,
+        delay: props.index * 0.05,
+        mass: 0.5
+      }
     },
-    tap: { scale: 0.98 }
+    hover: {
+      scale: 1.03,
+      rotate: 0.5,
+      boxShadow: "0px 8px 20px rgba(0,0,0,0.25)",
+      transition: {
+        type: "spring",
+        stiffness: 250,
+        damping: 12,
+        mass: 0.8
+      }
+    },
+    tap: {
+      scale: 0.96,
+      rotate: -0.5,
+      transition: {
+        type: "spring",
+        stiffness: 350,
+        damping: 12,
+        mass: 0.5
+      }
+    }
   };
 
-  // 添加快速操作菜单动画
+  // 优化快速操作菜单动画
   const quickMenuVariants = {
-    hidden: { opacity: 0, x: 20 },
-    visible: { opacity: 1, x: 0 }
+    hidden: { opacity: 0, x: 20, scale: 0.9 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 150,
+        damping: 10,
+        delay: 0.1
+      }
+    },
+    exit: {
+      opacity: 0,
+      x: 20,
+      scale: 0.9,
+      transition: {
+        duration: 0.15
+      }
+    }
+  };
+
+  const getBestSeason = (dec: number): string => {
+    if (dec >= 0) {
+      if (dec > 60) return '夏季';
+      if (dec > 30) return '春末/夏初';
+      return '春季';
+    } else {
+      if (dec < -60) return '冬季';
+      if (dec < -30) return '秋末/冬初';
+      return '秋季';
+    }
+  };
+
+  const getVisibilityScore = (alt: number): string => {
+    if (alt > 60) return '极佳';
+    if (alt > 30) return '良好';
+    if (alt > 15) return '一般';
+    return '较差';
+  };
+
+  const detailsVariants = {
+    hidden: {
+      height: 0,
+      opacity: 0,
+      y: 10,
+      scale: 0.98
+    },
+    visible: {
+      height: "auto",
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        type: "spring",
+        stiffness: 120,
+        damping: 12,
+        mass: 0.5
+      }
+    },
+    exit: {
+      height: 0,
+      opacity: 0,
+      y: 10,
+      scale: 0.98,
+      transition: {
+        duration: 0.18,
+        ease: "easeInOut"
+      }
+    }
   };
 
   return (
@@ -182,19 +280,41 @@ const TargetSuperSimpleCard: FC<TargetSuperSimpleCardProps> = (props) => {
             )}
           </motion.div>
           <div className="flex-1">
-            <CardDescription className="text-muted-foreground dark:text-gray-400">
-              {displayType}
-            </CardDescription>
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-muted-foreground" />
+              <CardDescription className="text-muted-foreground dark:text-gray-400">
+                {displayType}
+              </CardDescription>
+            </div>
             {isEditing ? (
-              <input
-                type="text"
-                value={editedName}
-                onChange={(e) => setEditedName(e.target.value)}
-                className="mt-1 p-1 bg-gray-700 text-white rounded"
-              />
+              <div className="mt-1 flex items-center gap-2">
+                <input
+                  type="text"
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
+                  className="flex-1 p-1 bg-gray-700 text-white rounded"
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleSave}
+                  className="h-8 w-8"
+                >
+                  <Check className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCancel}
+                  className="h-8 w-8"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
             ) : (
-              <CardTitle className="dark:text-white">
-                {props.target_name}
+              <CardTitle className="dark:text-white flex items-center gap-2">
+                <Target className="w-5 h-5 text-primary" />
+                <span>{props.target_name}</span>
               </CardTitle>
             )}
           </div>
@@ -270,12 +390,31 @@ const TargetSuperSimpleCard: FC<TargetSuperSimpleCardProps> = (props) => {
         </CardContent>
         <CardFooter className="bg-muted/50 backdrop-blur-sm p-4 rounded-b-lg landscape:w-1/3 landscape:rounded-r-lg landscape:rounded-bl-none">
           {updated ? (
-            <div className="flex flex-col sm:flex-row justify-between text-sm text-muted-foreground dark:text-gray-300">
-              <span>当前: {currentAlt.toFixed(0)}°</span>
-              <span className="sm:border-x sm:px-2">
-                最高: {highestAlt.toFixed(0)}°
-              </span>
-              <span>可拍: {availableTime.toFixed(1)}h</span>
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between text-sm text-muted-foreground dark:text-gray-300">
+                <div className="flex items-center gap-1">
+                  <Compass className="w-4 h-4" />
+                  <span>当前: {currentAlt.toFixed(0)}°</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Globe className="w-4 h-4" />
+                  <span>最高: {highestAlt.toFixed(0)}°</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  <span>可拍: {availableTime.toFixed(1)}h</span>
+                </div>
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground/80 dark:text-gray-400">
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  <span>最佳季节: {getBestSeason(props.dec)}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Layers className="w-3 h-3" />
+                  <span>可见性: {getVisibilityScore(currentAlt)}</span>
+                </div>
+              </div>
             </div>
           ) : (
             <Skeleton className="h-4 w-full" />
@@ -285,9 +424,10 @@ const TargetSuperSimpleCard: FC<TargetSuperSimpleCardProps> = (props) => {
             animate={{
               backgroundColor: updated ? "rgb(34 197 94 / 0.2)" : "transparent",
             }}
-            className="p-2 rounded-full"
+            className="p-2 rounded-full flex items-center gap-1"
           >
-            {updated ? "✓ 已更新" : "更新中..."}
+            <RotateCw className="w-4 h-4" />
+            <span>{updated ? "✓ 已更新" : "更新中..."}</span>
           </motion.div>
         </CardFooter>
         <AnimatePresence>

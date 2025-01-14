@@ -1,14 +1,4 @@
-import {
-  X,
-  Star,
-  Download,
-  Settings,
-  Info,
-  ExternalLink,
-  Edit,
-  Delete,
-  Share2,
-} from "lucide-react";
+import { X, Download, Share2, Heart, CheckCircle } from "lucide-react";
 import { Software } from "@/types/software";
 import { Button } from "@/components/ui/button";
 import {
@@ -77,7 +67,16 @@ export function SoftwareDetail({
   };
 
   const handleShare = () => {
-    setShowShareOptions(!showShareOptions);
+    setShowShareOptions(true);
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      // Show success feedback
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
   };
 
   return (
@@ -115,13 +114,38 @@ export function SoftwareDetail({
                         onClick={handleFavorite}
                         className="hover:bg-gray-700"
                       >
-                        <Star
-                          className={`h-5 w-5 ${
-                            isFavorite
-                              ? "text-yellow-400 fill-yellow-400"
-                              : "text-gray-400"
-                          }`}
-                        />
+                        <motion.div
+                          animate={{
+                            scale: isFavorite ? [1, 1.2, 1] : 1,
+                            transition: isFavorite
+                              ? {
+                                  duration: 0.5,
+                                  ease: "easeInOut",
+                                  times: [0, 0.5, 1],
+                                }
+                              : {},
+                          }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          <Heart
+                            className={`h-5 w-5 ${
+                              isFavorite
+                                ? "text-red-500 fill-red-500"
+                                : "text-gray-400"
+                            }`}
+                            fill={isFavorite ? "currentColor" : "none"}
+                          />
+                          {isFavorite && (
+                            <motion.span
+                              className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1"
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ type: "spring", stiffness: 200 }}
+                            >
+                              1
+                            </motion.span>
+                          )}
+                        </motion.div>
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>收藏</TooltipContent>
@@ -193,10 +217,40 @@ export function SoftwareDetail({
                           下载
                         </Button>
                         {downloadProgress > 0 && downloadProgress < 100 && (
-                          <Progress
-                            value={downloadProgress}
-                            className="w-[120px]"
-                          />
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <Progress
+                              value={downloadProgress}
+                              className="w-[120px] h-2 bg-gradient-to-r from-blue-500 to-purple-500"
+                              style={{
+                                backgroundImage: `
+                                  linear-gradient(
+                                    -45deg,
+                                    rgba(255,255,255,0.2) 25%,
+                                    transparent 25%,
+                                    transparent 50%,
+                                    rgba(255,255,255,0.2) 50%,
+                                    rgba(255,255,255,0.2) 75%,
+                                    transparent 75%,
+                                    transparent
+                                  )`,
+                                backgroundSize: "20px 20px",
+                                animation: "progress-wave 1s linear infinite",
+                              }}
+                            />
+                          </motion.div>
+                        )}
+                        {downloadProgress === 100 && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: "spring", stiffness: 200 }}
+                          >
+                            <CheckCircle className="h-5 w-5 text-green-500" />
+                          </motion.div>
                         )}
                       </div>
                     </div>

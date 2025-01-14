@@ -35,6 +35,7 @@ import {
   LineChart as LineChartIcon,
   Radar,
 } from "lucide-react";
+import saveAs from "file-saver";
 
 interface LogChartProps {
   logs: LogEntry[];
@@ -116,13 +117,52 @@ export const LogChart: React.FC<LogChartProps> = ({
   );
 
   const renderLineChart = () => (
-    <LineChart data={processData}>
-      <CartesianGrid strokeDasharray="3 3" />
-      <XAxis dataKey="name" />
-      <YAxis />
-      <RechartsTooltip />
-      <RechartsLegend />
-      <Line type="monotone" dataKey="value" stroke="#8884d8" />
+    <LineChart
+      data={processData}
+      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+    >
+      <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
+      <XAxis
+        dataKey="name"
+        tick={{ fill: "#666", fontSize: 12 }}
+        interval="preserveStartEnd"
+      />
+      <YAxis tick={{ fill: "#666", fontSize: 12 }} allowDecimals={false} />
+      <RechartsTooltip
+        contentStyle={{
+          background: "rgba(255, 255, 255, 0.96)",
+          border: "1px solid rgba(0, 0, 0, 0.1)",
+          borderRadius: 8,
+          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+        }}
+        formatter={(value) => [value, "Count"]}
+        labelFormatter={(label) => `Time: ${label}`}
+      />
+      <RechartsLegend
+        wrapperStyle={{ paddingTop: 20 }}
+        formatter={(value) => <span style={{ color: "#666" }}>{value}</span>}
+      />
+      <Line
+        type="monotone"
+        dataKey="value"
+        stroke="#8884d8"
+        strokeWidth={3}
+        dot={{
+          stroke: "#8884d8",
+          strokeWidth: 2,
+          fill: "#fff",
+          r: 5,
+        }}
+        activeDot={{
+          r: 8,
+          stroke: "#fff",
+          strokeWidth: 2,
+          fill: "#8884d8",
+        }}
+        animationDuration={800}
+        animationEasing="ease-in-out"
+        isAnimationActive={true}
+      />
     </LineChart>
   );
 
@@ -135,27 +175,105 @@ export const LogChart: React.FC<LogChartProps> = ({
         labelLine={false}
         label={({ name, value }) => `${name}: ${value}`}
         outerRadius={80}
+        innerRadius={40}
+        paddingAngle={2}
         dataKey="value"
+        animationDuration={800}
+        animationEasing="ease-in-out"
+        isAnimationActive={true}
       >
-        {processData.map((entry, index) => (
-          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-        ))}
+        {processData.map((entry, index) => {
+          const gradientId = `pieGradient${index}`;
+          return (
+            <>
+              <defs key={gradientId}>
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="5%"
+                    stopColor={gradientId[index % gradientId.length]}
+                    stopOpacity={0.8}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor={gradientId[index % gradientId.length]}
+                    stopOpacity={0.8}
+                  />
+                </linearGradient>
+              </defs>
+              <Cell
+                key={`cell-${index}`}
+                fill={`url(#${gradientId})`}
+                stroke="#fff"
+                strokeWidth={2}
+              />
+            </>
+          );
+        })}
       </Pie>
-      <RechartsTooltip />
-      <RechartsLegend />
+      <RechartsTooltip
+        contentStyle={{
+          background: "rgba(255, 255, 255, 0.96)",
+          border: "1px solid rgba(0, 0, 0, 0.1)",
+          borderRadius: 8,
+          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+        }}
+        formatter={(value) => [value, "Count"]}
+        labelFormatter={(label) => `Category: ${label}`}
+      />
+      <RechartsLegend
+        wrapperStyle={{ paddingTop: 20 }}
+        formatter={(value) => <span style={{ color: "#666" }}>{value}</span>}
+      />
     </PieChart>
   );
 
   const renderRadarChart = () => (
-    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={processData}>
-      <PolarGrid />
-      <PolarAngleAxis dataKey="name" />
-      <PolarRadiusAxis />
+    <RadarChart
+      cx="50%"
+      cy="50%"
+      outerRadius="80%"
+      data={processData}
+      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+    >
+      <PolarGrid strokeOpacity={0.2} />
+      <PolarAngleAxis dataKey="name" tick={{ fill: "#666", fontSize: 12 }} />
+      <PolarRadiusAxis tick={{ fill: "#666", fontSize: 12 }} angle={30} />
       <RechartsRadar
         dataKey="value"
         stroke="#8884d8"
-        fill="#8884d8"
+        strokeWidth={2}
+        fill="url(#radarGradient)"
         fillOpacity={0.6}
+        animationDuration={800}
+        animationEasing="ease-in-out"
+        isAnimationActive={true}
+      />
+      <defs>
+        <radialGradient
+          id="radarGradient"
+          cx="50%"
+          cy="50%"
+          r="50%"
+          fx="50%"
+          fy="50%"
+        >
+          <stop offset="0%" stopColor="#8884d8" stopOpacity={0.8} />
+          <stop offset="100%" stopColor="#82ca9d" stopOpacity={0.4} />
+        </radialGradient>
+      </defs>
+      <RechartsTooltip
+        contentStyle={{
+          background: "rgba(255, 255, 255, 0.96)",
+          border: "1px solid rgba(0, 0, 0, 0.1)",
+          borderRadius: 8,
+          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+        }}
+        formatter={(value) => [value, "Count"]}
+        labelFormatter={(label) => `Category: ${label}`}
+      />
+      <RechartsLegend
+        wrapperStyle={{ paddingTop: 20 }}
+        formatter={(value) => <span style={{ color: "#666" }}>{value}</span>}
       />
     </RadarChart>
   );
@@ -225,11 +343,27 @@ export const LogChart: React.FC<LogChartProps> = ({
     </div>
   );
 
+  const handleExport = () => {
+    const svg = document.querySelector(".recharts-surface") as SVGElement;
+    if (svg) {
+      const serializer = new XMLSerializer();
+      const source = serializer.serializeToString(svg);
+      const blob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
+      saveAs(blob, `log-chart-${new Date().toISOString()}.svg`);
+    }
+  };
+
   return (
     <div className="space-y-2">
       {renderControls()}
-      <div className="h-[400px] w-full">
+      <div className="h-[400px] w-full relative">
         <ResponsiveContainer>{renderChart()}</ResponsiveContainer>
+        <button
+          onClick={handleExport}
+          className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-white transition-colors border border-gray-200"
+        >
+          Export Chart
+        </button>
       </div>
     </div>
   );

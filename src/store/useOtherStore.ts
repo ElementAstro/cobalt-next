@@ -7,6 +7,8 @@ export type Dependency = {
   latestVersion?: string;
   license: string;
   description: string;
+  status?: "up-to-date" | "update-available" | "outdated";
+  dependencies?: string[];
 };
 
 type DependencyStore = {

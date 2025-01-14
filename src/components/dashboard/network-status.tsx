@@ -10,6 +10,10 @@ import {
   Activity,
   Database,
   RefreshCw,
+  Signal,
+  Clock,
+  HardDrive,
+  Globe,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
@@ -26,11 +30,37 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  AreaChart,
+  Area,
 } from "recharts";
+import { cn } from "@/lib/utils";
+
+const statusColors = {
+  online: "text-green-500",
+  offline: "text-red-500",
+  slow: "text-yellow-500",
+};
 
 export function NetworkStatus() {
   const networkStatus = useNetworkStatus();
-  const [status, setStatus] = useState("online");
+  const [status, setStatus] = useState<"online" | "offline" | "slow">("online");
+  const [currentSpeed, setCurrentSpeed] = useState({ download: 0, upload: 0 });
+  const [speedHistory, setSpeedHistory] = useState<SpeedData[]>([]);
+  const [networkInfo, setNetworkInfo] = useState({
+    type: "Unknown",
+    latency: -1,
+    signalStrength: "N/A",
+    ipAddress: "N/A",
+    dataUsage: {
+      download: 0,
+      upload: 0,
+    },
+    dns: "N/A",
+    packetLoss: 0,
+    jitter: 0,
+  });
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!networkStatus.online) {
@@ -44,23 +74,6 @@ export function NetworkStatus() {
       setStatus("online");
     }
   }, [networkStatus]);
-  const [currentSpeed, setCurrentSpeed] = useState({ download: 0, upload: 0 });
-  interface SpeedData {
-    timestamp: number;
-    download: number;
-    upload: number;
-  }
-  const [speedHistory, setSpeedHistory] = useState<SpeedData[]>([]);
-  const [networkInfo, setNetworkInfo] = useState({
-    type: "Unknown",
-    latency: -1,
-    signalStrength: "N/A",
-    ipAddress: "N/A",
-    dataUsage: {
-      download: 0,
-      upload: 0,
-    },
-  });
 
   const refreshNetworkStatus = async () => {
     try {
@@ -68,7 +81,7 @@ export function NetworkStatus() {
       const data = await response.json();
       setCurrentSpeed(data.speed);
       setSpeedHistory((prev) => [
-        ...prev,
+        ...prev.slice(-29), // Keep last 30 entries
         {
           timestamp: Date.now(),
           download: data.speed.download,
@@ -80,8 +93,6 @@ export function NetworkStatus() {
       console.error("Failed to fetch network status:", error);
     }
   };
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleRefresh = async () => {
     try {
@@ -98,11 +109,11 @@ export function NetworkStatus() {
   const getStatusIcon = () => {
     switch (status) {
       case "online":
-        return <Wifi className="h-5 w-5 text-green-500" />;
+        return <Wifi className="h-5 w-5" />;
       case "offline":
-        return <WifiOff className="h-5 w-5 text-red-500" />;
+        return <WifiOff className="h-5 w-5" />;
       case "slow":
-        return <AlertCircle className="h-5 w-5 text-yellow-500" />;
+        return <AlertCircle className="h-5 w-5" />;
     }
   };
 
@@ -125,30 +136,48 @@ export function NetworkStatus() {
       .padStart(2, "0")}:${date.getSeconds().toString().padStart(2, "0")}`;
   };
 
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+        <motion.div
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          className="relative"
+        >
           <Button
-            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group relative"
+            className={cn(
+              "p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group relative",
+              statusColors[status]
+            )}
             aria-label="Network Status"
             disabled={isRefreshing}
           >
-            <AnimatePresence>
+            <AnimatePresence mode="wait">
               {isRefreshing ? (
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
+                  key="loading"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
                   className="absolute inset-0 flex items-center justify-center"
                 >
-                  <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                 </motion.div>
               ) : (
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
+                  key="icon"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="flex items-center"
                 >
                   {getStatusIcon()}
                   <RefreshCw
@@ -168,25 +197,82 @@ export function NetworkStatus() {
             <TabsTrigger value="info">Info</TabsTrigger>
             <TabsTrigger value="usage">Usage</TabsTrigger>
           </TabsList>
+
           <TabsContent value="speed">
-            <div className="space-y-2">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-4"
+            >
               <div className="flex items-center space-x-2">
                 {getStatusIcon()}
                 <span className="font-medium">{getStatusText()}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <div className="flex items-center space-x-1">
-                  <ArrowDown className="h-4 w-4 text-green-500" />
-                  <span>{currentSpeed.download.toFixed(2)} Mbps</span>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
+                  <div className="flex items-center space-x-2">
+                    <ArrowDown className="h-4 w-4 text-green-500" />
+                    <span className="text-sm">Download</span>
+                  </div>
+                  <div className="text-xl font-semibold mt-1">
+                    {currentSpeed.download.toFixed(2)} Mbps
+                  </div>
                 </div>
-                <div className="flex items-center space-x-1">
-                  <ArrowUp className="h-4 w-4 text-red-500" />
-                  <span>{currentSpeed.upload.toFixed(2)} Mbps</span>
+
+                <div className="p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
+                  <div className="flex items-center space-x-2">
+                    <ArrowUp className="h-4 w-4 text-red-500" />
+                    <span className="text-sm">Upload</span>
+                  </div>
+                  <div className="text-xl font-semibold mt-1">
+                    {currentSpeed.upload.toFixed(2)} Mbps
+                  </div>
                 </div>
               </div>
+
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={speedHistory}>
+                  <AreaChart data={speedHistory}>
+                    <defs>
+                      <linearGradient
+                        id="downloadGradient"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#82ca9d"
+                          stopOpacity={0.8}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#82ca9d"
+                          stopOpacity={0}
+                        />
+                      </linearGradient>
+                      <linearGradient
+                        id="uploadGradient"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#8884d8"
+                          stopOpacity={0.8}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#8884d8"
+                          stopOpacity={0}
+                        />
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="timestamp" tickFormatter={formatTime} />
                     <YAxis />
@@ -195,89 +281,109 @@ export function NetworkStatus() {
                       formatter={(value: number) => value.toFixed(2) + " Mbps"}
                     />
                     <Legend />
-                    <Line
+                    <Area
                       type="monotone"
                       dataKey="download"
                       stroke="#82ca9d"
+                      fillOpacity={1}
+                      fill="url(#downloadGradient)"
                       name="Download"
                     />
-                    <Line
+                    <Area
                       type="monotone"
                       dataKey="upload"
                       stroke="#8884d8"
+                      fillOpacity={1}
+                      fill="url(#uploadGradient)"
                       name="Upload"
                     />
-                  </LineChart>
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
-            </div>
+            </motion.div>
           </TabsContent>
+
           <TabsContent value="info">
-            <div className="space-y-2">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-4"
+            >
               <div className="flex items-center space-x-2">
                 <Activity className="h-5 w-5 text-blue-500" />
                 <span className="font-medium">Network Information</span>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <p className="text-gray-500">Network Type</p>
-                  <p className="font-medium">{networkInfo.type}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Latency</p>
-                  <p className="font-medium">
-                    {networkInfo.latency === -1
-                      ? "Measurement failed"
-                      : `${networkInfo.latency} ms`}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Signal Strength</p>
-                  <p className="font-medium">
-                    {networkInfo.signalStrength || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500">IP Address</p>
-                  <p className="font-medium">
-                    {networkInfo.ipAddress || "N/A"}
-                  </p>
-                </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <InfoCard
+                  icon={<Signal className="h-4 w-4" />}
+                  title="Signal Strength"
+                  value={networkInfo.signalStrength || "N/A"}
+                />
+                <InfoCard
+                  icon={<Clock className="h-4 w-4" />}
+                  title="Latency"
+                  value={
+                    networkInfo.latency === -1
+                      ? "N/A"
+                      : `${networkInfo.latency} ms`
+                  }
+                />
+                <InfoCard
+                  icon={<Globe className="h-4 w-4" />}
+                  title="IP Address"
+                  value={networkInfo.ipAddress || "N/A"}
+                />
+                <InfoCard
+                  icon={<HardDrive className="h-4 w-4" />}
+                  title="Network Type"
+                  value={networkInfo.type}
+                />
               </div>
-              <div className="flex items-center space-x-2 mt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRefresh}
-                  className="flex items-center"
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh Status
-                </Button>
-              </div>
-            </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                className="w-full"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh Status
+              </Button>
+            </motion.div>
           </TabsContent>
+
           <TabsContent value="usage">
-            <div className="space-y-2">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-4"
+            >
               <div className="flex items-center space-x-2">
                 <Database className="h-5 w-5 text-purple-500" />
                 <span className="font-medium">Data Usage</span>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-sm mb-4">
-                <div>
-                  <p className="text-gray-500">Download</p>
-                  <p className="font-medium">
-                    {networkInfo.dataUsage.download.toFixed(2)} MB
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Upload</p>
-                  <p className="font-medium">
-                    {networkInfo.dataUsage.upload.toFixed(2)} MB
-                  </p>
-                </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <InfoCard
+                  icon={<ArrowDown className="h-4 w-4 text-green-500" />}
+                  title="Download"
+                  value={formatBytes(
+                    networkInfo.dataUsage.download * 1024 * 1024
+                  )}
+                />
+                <InfoCard
+                  icon={<ArrowUp className="h-4 w-4 text-red-500" />}
+                  title="Upload"
+                  value={formatBytes(
+                    networkInfo.dataUsage.upload * 1024 * 1024
+                  )}
+                />
               </div>
-              <div className="h-32 relative">
+
+              <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={[
@@ -303,24 +409,39 @@ export function NetworkStatus() {
                       activeDot={{ r: 8 }}
                       animationDuration={1000}
                     />
-                    {error && (
-                      <text
-                        x="50%"
-                        y="50%"
-                        textAnchor="middle"
-                        fill="#ff4d4f"
-                        fontSize={14}
-                      >
-                        {error}
-                      </text>
-                    )}
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-            </div>
+            </motion.div>
           </TabsContent>
         </Tabs>
       </PopoverContent>
     </Popover>
   );
+}
+
+function InfoCard({
+  icon,
+  title,
+  value,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  value: string | number;
+}) {
+  return (
+    <div className="p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
+      <div className="flex items-center space-x-2">
+        {icon}
+        <span className="text-sm">{title}</span>
+      </div>
+      <div className="text-xl font-semibold mt-1">{value}</div>
+    </div>
+  );
+}
+
+interface SpeedData {
+  timestamp: number;
+  download: number;
+  upload: number;
 }

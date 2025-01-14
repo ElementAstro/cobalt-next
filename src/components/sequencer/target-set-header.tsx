@@ -8,9 +8,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Button } from "@/components/ui/button";
+import { Button as BaseButton } from "@/components/ui/button";
+import { motion } from "framer-motion";
+
+const Button = motion(BaseButton);
 import { ChevronDown, ChevronUp, Search, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 
 interface TargetSetOptions {
@@ -68,12 +71,22 @@ function SwitchOption({
 }: SwitchOptionProps) {
   return (
     <motion.div
-      className="flex items-center space-x-4 p-2 hover:bg-gray-700/50 rounded-lg transition-colors duration-200"
+      className="flex items-center space-x-4 p-2 hover:bg-gray-700/50 rounded-lg transition-colors duration-200 relative"
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -10 }}
       transition={{ duration: 0.2 }}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
     >
+      {checked && (
+        <motion.div
+          className="absolute inset-0 bg-teal-500/10 rounded-lg pointer-events-none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}
+        />
+      )}
       <div className="flex-1">
         <Label
           htmlFor={id}
@@ -256,25 +269,42 @@ export function TargetSetHeader() {
     >
       <div className="space-y-6">
         <div className="flex items-center space-x-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <motion.div className="relative flex-1" layout>
+            <motion.div
+              className="absolute left-3 top-1/2 -translate-y-1/2"
+              animate={{ scale: searchQuery ? 1.1 : 1 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <Search className="h-4 w-4 text-gray-400" />
+            </motion.div>
             <Input
               placeholder="Search options..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-10"
+              className="pl-10 pr-10 transition-all duration-300"
             />
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 h-auto"
-                onClick={() => setSearchQuery("")}
-              >
-                <X className="h-4 w-4 text-gray-400" />
-              </Button>
-            )}
-          </div>
+            <AnimatePresence>
+              {searchQuery && (
+                <motion.div
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 10 }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2"
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-1 h-auto hover:bg-gray-700/50"
+                    onClick={() => setSearchQuery("")}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <X className="h-4 w-4 text-gray-400" />
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         </div>
 
         {/* Start Options */}
@@ -290,11 +320,12 @@ export function TargetSetHeader() {
               <h2 className="text-sm font-medium text-gray-300">
                 Target Set Start Options
               </h2>
-              {isStartOptionsCollapsed ? (
+              <motion.div
+                animate={{ rotate: isStartOptionsCollapsed ? 0 : 180 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
                 <ChevronDown className="h-4 w-4 text-gray-300" />
-              ) : (
-                <ChevronUp className="h-4 w-4 text-gray-300" />
-              )}
+              </motion.div>
             </Button>
           </CollapsibleTrigger>
           <AnimatePresence>
@@ -361,11 +392,12 @@ export function TargetSetHeader() {
               <h2 className="text-sm font-medium text-gray-300">
                 Target Set End Options
               </h2>
-              {isEndOptionsCollapsed ? (
+              <motion.div
+                animate={{ rotate: isEndOptionsCollapsed ? 0 : 180 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
                 <ChevronDown className="h-4 w-4 text-gray-300" />
-              ) : (
-                <ChevronUp className="h-4 w-4 text-gray-300" />
-              )}
+              </motion.div>
             </Button>
           </CollapsibleTrigger>
           <AnimatePresence>

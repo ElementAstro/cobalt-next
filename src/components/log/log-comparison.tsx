@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -35,7 +35,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface LogComparisonProps {
   logs: LogEntry[];
@@ -52,6 +53,7 @@ export const LogComparison: React.FC<LogComparisonProps> = ({
   const [chartType, setChartType] = useState<"bar" | "line" | "pie" | "radar">(
     "bar"
   );
+  const [isChartLoading, setIsChartLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterLevels, setFilterLevels] = useState<{
     error: boolean;
@@ -139,56 +141,272 @@ export const LogComparison: React.FC<LogComparisonProps> = ({
     value: number,
     change: number,
     icon: React.ReactNode
-  ) => (
-    <Card className="flex-1 min-w-[150px]">
-      <CardHeader className="p-4 flex items-center justify-between">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon}
-      </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <div className="flex items-center space-x-2">
-          <span className="text-2xl font-bold">{value}</span>
-          <Badge
-            variant={change > 0 ? "destructive" : "default"}
-            className="h-5 flex items-center"
-          >
-            {change > 0 ? (
-              <ArrowUpIcon className="w-3 h-3 mr-1" />
-            ) : (
-              <ArrowDownIcon className="w-3 h-3 mr-1" />
-            )}
-            {Math.abs(change).toFixed(1)}%
-          </Badge>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  ) => {
+    const controls = useAnimationControls();
+    const [isLoading, setIsLoading] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
+
+    // Simulate loading state when value changes
+    useEffect(() => {
+      if (value !== undefined) {
+        setIsLoading(true);
+        const timeout = setTimeout(() => setIsLoading(false), 500);
+        return () => clearTimeout(timeout);
+      }
+    }, [value]);
+
+    return (
+      <motion.div
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.97 }}
+        onHoverStart={() => {
+          controls.start({ y: -5 });
+          setIsHovered(true);
+        }}
+        onHoverEnd={() => {
+          controls.start({ y: 0 });
+          setIsHovered(false);
+        }}
+      >
+        <Card className="flex-1 min-w-[150px] hover:shadow-lg transition-shadow relative overflow-hidden group">
+          {/* Background animation */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0"
+            animate={{
+              opacity: isHovered ? 1 : 0,
+              x: isHovered ? "0%" : "-100%",
+            }}
+            transition={{ duration: 0.3 }}
+          />
+
+          {/* Shimmer effect */}
+          {isLoading && (
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent opacity-50"
+              initial={{ x: "-100%" }}
+              animate={{ x: "100%" }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+          )}
+
+          {/* Content */}
+          <CardHeader className="p-4 flex items-center justify-between relative z-10">
+            <motion.div className="flex items-center gap-2" animate={controls}>
+              <CardTitle className="text-sm font-medium">{title}</CardTitle>
+              <motion.div
+                whileHover={{ rotate: 15, scale: 1.1 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                {icon}
+              </motion.div>
+            </motion.div>
+          </CardHeader>
+
+          <CardContent className="p-4 pt-0 relative z-10">
+            <div className="flex items-center space-x-2">
+              {isLoading || value === undefined ? (
+                <div className="relative overflow-hidden">
+                  <Skeleton className="h-8 w-16 rounded-lg" />
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent"
+                    initial={{ x: "-100%" }}
+                    animate={{ x: "100%" }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  />
+                </div>
+              ) : (
+                <motion.span
+                  className="text-2xl font-bold"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {value}
+                </motion.span>
+              )}
+
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Badge
+                  variant={change > 0 ? "destructive" : "default"}
+                  className="h-5 flex items-center relative overflow-hidden"
+                >
+                  {change > 0 ? (
+                    <ArrowUpIcon className="w-3 h-3 mr-1" />
+                  ) : (
+                    <ArrowDownIcon className="w-3 h-3 mr-1" />
+                  )}
+                  {Math.abs(change).toFixed(1)}%
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent opacity-50"
+                    initial={{ x: "-100%" }}
+                    animate={{ x: "100%" }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  />
+                </Badge>
+              </motion.div>
+            </div>
+          </CardContent>
+
+          {/* Hover border animation */}
+          <motion.div
+            className="absolute inset-0 border border-primary/10 rounded-lg pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isHovered ? 1 : 0 }}
+            transition={{ duration: 0.2 }}
+          />
+        </Card>
+      </motion.div>
+    );
+  };
 
   const renderChartTypeButton = (
     type: typeof chartType,
     icon: React.ReactNode
-  ) => (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant={chartType === type ? "default" : "outline"}
-            size="sm"
-            className="w-8 h-8 p-0"
-            onClick={() => setChartType(type)}
-          >
-            {icon}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          {type === "bar" && "柱状图"}
-          {type === "line" && "折线图"}
-          {type === "pie" && "饼图"}
-          {type === "radar" && "雷达图"}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
+  ) => {
+    const controls = useAnimationControls();
+    const [isHovered, setIsHovered] = useState(false);
+    const [isActive, setIsActive] = useState(false);
+    const [isLoadingLocal, setIsLoadingLocal] = useState(false);
+
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onHoverStart={() => {
+                setIsHovered(true);
+                controls.start({ rotate: 10 });
+              }}
+              onHoverEnd={() => {
+                setIsHovered(false);
+                controls.start({ rotate: 0 });
+              }}
+            >
+              <Button
+                variant={chartType === type ? "default" : "outline"}
+                size="sm"
+                className="w-8 h-8 p-0 relative overflow-hidden"
+                onClick={async () => {
+                  setIsActive(true);
+                  setIsLoadingLocal(true);
+                  setIsChartLoading(true);
+                  await new Promise((resolve) => setTimeout(resolve, 200));
+                  setChartType(type);
+                  setIsLoadingLocal(false);
+                  setIsChartLoading(false);
+                  setIsActive(false);
+                }}
+                disabled={isChartLoading}
+              >
+                {/* Background pulse effect */}
+                {isActive && (
+                  <motion.div
+                    className="absolute inset-0 bg-primary/10 rounded-full"
+                    initial={{ scale: 0.8, opacity: 1 }}
+                    animate={{ scale: 1.5, opacity: 0 }}
+                    transition={{ duration: 0.4 }}
+                  />
+                )}
+
+                {/* Hover gradient */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0"
+                  animate={{
+                    x: isHovered ? "0%" : "-100%",
+                    opacity: isHovered ? 1 : 0,
+                  }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                />
+
+                {/* Loading spinner */}
+                {(isChartLoading || isLoadingLocal) && chartType === type ? (
+                  <motion.div
+                    className="absolute inset-0 flex items-center justify-center"
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 1,
+                      ease: "linear",
+                    }}
+                  >
+                    <RefreshCwIcon className="h-4 w-4" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    animate={controls}
+                    className="relative z-10"
+                    whileHover={{ scale: 1.1 }}
+                  >
+                    {icon}
+                  </motion.div>
+                )}
+
+                {/* Active indicator */}
+                {chartType === type && !isChartLoading && (
+                  <motion.div
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] w-4 bg-primary rounded-full"
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                  />
+                )}
+
+                {/* Click ripple effect */}
+                {isActive && (
+                  <motion.div
+                    className="absolute inset-0 bg-primary/20 rounded-full"
+                    initial={{ scale: 0, opacity: 1 }}
+                    animate={{ scale: 1.5, opacity: 0 }}
+                    transition={{ duration: 0.4 }}
+                  />
+                )}
+
+                {/* Hover border */}
+                <motion.div
+                  className="absolute inset-0 border border-primary/10 rounded-full opacity-0"
+                  animate={{
+                    opacity: isHovered ? 1 : 0,
+                    scale: isHovered ? 1.1 : 1,
+                  }}
+                  transition={{ duration: 0.2 }}
+                />
+              </Button>
+            </motion.div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <motion.div
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {type === "bar" && "柱状图"}
+              {type === "line" && "折线图"}
+              {type === "pie" && "饼图"}
+              {type === "radar" && "雷达图"}
+            </motion.div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
 
   const handleLevelChange = (level: keyof typeof filterLevels) => {
     setFilterLevels((prev) => ({ ...prev, [level]: !prev[level] }));
@@ -217,12 +435,114 @@ export const LogComparison: React.FC<LogComparisonProps> = ({
             </Select>
           </div>
           <div className="flex items-center space-x-2">
-            <Input
-              placeholder="搜索日志..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-48"
-            />
+            <div className="relative w-48">
+              <motion.div
+                className="relative"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Input
+                  placeholder="搜索日志..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pr-8 hover:shadow-sm transition-shadow"
+                />
+                {/* Search icon with animated transitions */}
+                <motion.div
+                  className="absolute right-2 top-1/2 -translate-y-1/2"
+                  animate={{
+                    opacity: searchTerm ? 1 : 0.5,
+                    scale: searchTerm ? 1 : 0.9,
+                    rotate: searchTerm ? 0 : 360,
+                  }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <Search className="h-4 w-4" />
+                </motion.div>
+
+                {/* Active search effects */}
+                {searchTerm && (
+                  <>
+                    {/* Background shimmer */}
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent opacity-50"
+                      initial={{ x: "-100%" }}
+                      animate={{ x: "100%" }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                    />
+
+                    {/* Bottom border animation */}
+                    <motion.div
+                      className="absolute bottom-0 left-0 h-[2px] bg-primary rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: "100%" }}
+                      transition={{ duration: 0.3, delay: 0.1 }}
+                    />
+
+                    {/* Floating particles */}
+                    <motion.div
+                      className="absolute inset-0 overflow-hidden"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      {[...Array(5)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          className="absolute w-1 h-1 bg-primary/20 rounded-full"
+                          initial={{
+                            x: Math.random() * 100 - 50,
+                            y: Math.random() * 20 - 10,
+                            scale: 0,
+                          }}
+                          animate={{
+                            x: ["0%", "100%"],
+                            y: [0, Math.random() * 20 - 10],
+                            scale: [0, 1, 0],
+                            opacity: [0, 1, 0],
+                          }}
+                          transition={{
+                            duration: 2 + Math.random(),
+                            delay: Math.random(),
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                          }}
+                        />
+                      ))}
+                    </motion.div>
+                  </>
+                )}
+
+                {/* Hover background gradient */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0"
+                  animate={{
+                    opacity: searchTerm ? 0.3 : 0,
+                    x: ["-100%", "100%"],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                />
+
+                {/* Focus ring */}
+                <motion.div
+                  className="absolute inset-0 rounded-md border-2 border-primary/20 pointer-events-none"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{
+                    opacity: searchTerm ? 1 : 0,
+                    scale: searchTerm ? 1 : 0.95,
+                  }}
+                  transition={{ duration: 0.2 }}
+                />
+              </motion.div>
+            </div>
             <Button size="icon" variant="ghost" className="h-8 w-8">
               <SettingsIcon className="h-4 w-4" />
             </Button>
@@ -331,20 +651,104 @@ export const LogComparison: React.FC<LogComparisonProps> = ({
           onValueChange={(v) => setSelectedTab(v as "current" | "comparison")}
           className="w-full"
         >
-          <TabsList className="w-full justify-start h-9 bg-muted/50">
-            <TabsTrigger value="current" className="text-sm">
-              当前时段
+          <TabsList className="w-full justify-start h-9 bg-muted/50 relative overflow-hidden">
+            {/* Shimmer background */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent opacity-50"
+              initial={{ x: "-100%" }}
+              animate={{ x: "100%" }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+            />
+
+            {/* Tab indicator */}
+            <motion.div
+              className="absolute bottom-0 left-0 h-[2px] bg-primary rounded-full"
+              layoutId="tabIndicator"
+              transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+            >
+              {/* Indicator shimmer */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-primary/50 to-transparent"
+                initial={{ x: "-100%" }}
+                animate={{ x: "100%" }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: "linear",
+                }}
+              />
+            </motion.div>
+
+            {/* Tabs */}
+            <TabsTrigger
+              value="current"
+              className="text-sm relative z-10 hover:bg-primary/10 transition-colors"
+            >
+              <motion.div
+                className="relative"
+                initial={{ opacity: 0.8 }}
+                whileHover={{ opacity: 1, scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                当前时段
+                {/* Hover underline */}
+                <motion.div
+                  className="absolute bottom-0 left-0 h-[2px] bg-primary rounded-full"
+                  initial={{ width: 0 }}
+                  whileHover={{ width: "100%" }}
+                  transition={{ duration: 0.2 }}
+                />
+              </motion.div>
             </TabsTrigger>
-            <TabsTrigger value="comparison" className="text-sm">
-              时段对比
+            <TabsTrigger
+              value="comparison"
+              className="text-sm relative z-10 hover:bg-primary/10 transition-colors"
+            >
+              <motion.div
+                className="relative"
+                initial={{ opacity: 0.8 }}
+                whileHover={{ opacity: 1, scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                时段对比
+                {/* Hover underline */}
+                <motion.div
+                  className="absolute bottom-0 left-0 h-[2px] bg-primary rounded-full"
+                  initial={{ width: 0 }}
+                  whileHover={{ width: "100%" }}
+                  transition={{ duration: 0.2 }}
+                />
+              </motion.div>
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="current" className="mt-2">
-            <LogChart logs={current} chartType={chartType} groupBy={groupBy} />
-          </TabsContent>
-          <TabsContent value="comparison" className="mt-2">
-            <LogChart logs={previous} chartType={chartType} groupBy={groupBy} />
-          </TabsContent>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={selectedTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <TabsContent value="current" className="mt-2">
+                <LogChart
+                  logs={current}
+                  chartType={chartType}
+                  groupBy={groupBy}
+                />
+              </TabsContent>
+              <TabsContent value="comparison" className="mt-2">
+                <LogChart
+                  logs={previous}
+                  chartType={chartType}
+                  groupBy={groupBy}
+                />
+              </TabsContent>
+            </motion.div>
+          </AnimatePresence>
         </Tabs>
       </CardContent>
     </Card>

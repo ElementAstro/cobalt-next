@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
+import type { Software } from "@/types/software";
 import {
   MoreVertical,
-  Info,
   Download,
   Upload,
   RefreshCw,
@@ -9,8 +9,11 @@ import {
   Star,
   Settings,
   Share2,
-  Edit,
   Trash2,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  FileText,
 } from "lucide-react";
 import { useSoftwareStore } from "@/store/useSoftwareStore";
 import { SoftwareState } from "@/store/useSoftwareStore";
@@ -39,7 +42,6 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { useMediaQuery } from "react-responsive";
-import { Software } from "@/types/software";
 
 const variants = {
   hidden: { opacity: 0, y: 20 },
@@ -49,14 +51,15 @@ const variants = {
     transition: {
       delay: i * 0.1,
       duration: 0.5,
-      ease: "easeOut",
+      ease: [0.16, 1, 0.3, 1],
     },
   }),
   hover: {
     scale: 1.02,
+    boxShadow: "0 10px 20px rgba(0,0,0,0.1)",
     transition: {
-      duration: 0.2,
-      ease: "easeInOut",
+      duration: 0.3,
+      ease: [0.4, 0, 0.2, 1],
     },
   },
   tap: {
@@ -67,6 +70,36 @@ const variants = {
     scale: 0.95,
     transition: {
       duration: 0.2,
+    },
+  },
+  expand: {
+    height: "auto",
+    opacity: 1,
+    transition: {
+      duration: 0.4,
+      ease: [0.4, 0, 0.2, 1],
+    },
+  },
+  collapse: {
+    height: 0,
+    opacity: 0,
+    transition: {
+      duration: 0.3,
+      ease: [0.4, 0, 0.2, 1],
+    },
+  },
+  skeleton: {
+    background: `linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.1) 25%,
+      rgba(255, 255, 255, 0.15) 50%,
+      rgba(255, 255, 255, 0.1) 75%
+    )`,
+    backgroundSize: "200% 100%",
+    transition: {
+      duration: 1.5,
+      repeat: Infinity,
+      ease: "linear",
     },
   },
 };
@@ -81,6 +114,14 @@ export function SoftwareList() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const isMobile = useMediaQuery({ maxWidth: 767 });
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // 扩展Software类型
+  type ExtendedSoftware = Software & {
+    installPath?: string;
+    lastUsed?: string;
+    description?: string;
+  };
 
   useEffect(() => {
     const sortSoftware = () => {
@@ -187,10 +228,27 @@ export function SoftwareList() {
                   <h3 className="font-semibold truncate text-white">
                     {item.name}
                   </h3>
-                  {item.isFavorite && (
-                    <Star className="h-4 w-4 text-yellow-400" />
-                  )}
+                  <div className="flex items-center gap-2">
+                    {item.isFavorite && (
+                      <Star className="h-4 w-4 text-yellow-400" />
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="dark:bg-gray-700/50 hover:bg-gray-600/50"
+                      onClick={() =>
+                        setExpandedId(expandedId === item.id ? null : item.id)
+                      }
+                    >
+                      {expandedId === item.id ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
+
                 <div className="flex flex-col text-sm text-gray-400 mt-1">
                   <span>版本: {item.version}</span>
                   <span>作者: {item.author}</span>
@@ -201,9 +259,31 @@ export function SoftwareList() {
                     </>
                   )}
                 </div>
+
+                <AnimatePresence>
+                  {expandedId === item.id && (
+                    <motion.div
+                      initial="collapse"
+                      animate="expand"
+                      exit="collapse"
+                      variants={variants}
+                      className="mt-2 space-y-2"
+                    >
+                      <div className="flex items-center gap-2 text-sm">
+                        <FileText className="h-4 w-4" />
+                        <span>描述: {item.description || "暂无描述"}</span>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 {item.isUpdating && (
                   <div className="mt-2">
                     <Progress value={50} className="h-2" />
+                    <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span>更新中...</span>
+                    </div>
                   </div>
                 )}
               </div>

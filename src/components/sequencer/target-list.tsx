@@ -37,7 +37,13 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { SortableItem } from "./sortable-item";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface TargetListProps {}
 
@@ -45,6 +51,14 @@ export function TargetList({}: TargetListProps) {
   const [targets, setTargets] = useState<Target[]>([]);
   const [newTargetName, setNewTargetName] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const categories = [
+    { value: "all", label: "全部" },
+    { value: "star", label: "恒星" },
+    { value: "galaxy", label: "星系" },
+    { value: "nebula", label: "星云" },
+    { value: "planet", label: "行星" },
+  ];
   const [editingTarget, setEditingTarget] = useState<Target | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
@@ -62,6 +76,7 @@ export function TargetList({}: TargetListProps) {
       const newTarget: Target = {
         id: Date.now().toString(),
         name: newTargetName.trim(),
+        category: selectedCategory,
         coordinates: {
           ra: { h: 0, m: 0, s: 0 },
           dec: { d: 0, m: 0, s: 0 },
@@ -81,13 +96,15 @@ export function TargetList({}: TargetListProps) {
   const addTask = (targetId: string) => {
     const newTask: Task = {
       id: Date.now().toString(),
-      name: `任务 ${targets.find(t => t.id === targetId)?.tasks.length || 0 + 1}`,
+      name: `任务 ${
+        targets.find((t) => t.id === targetId)?.tasks.length || 0 + 1
+      }`,
       duration: 60,
       type: "imaging",
       filter: "L",
       binning: "1x1",
       count: 1,
-      category: "imaging"
+      category: "imaging",
     };
     setEditingTask(newTask);
     setIsTaskDialogOpen(true);
@@ -132,9 +149,9 @@ export function TargetList({}: TargetListProps) {
   return (
     <motion.div
       className="space-y-4"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
     >
       <div className="flex flex-col md:flex-row items-center justify-between space-y-2 md:space-y-0">
         <div className="flex items-center space-x-2">
@@ -372,12 +389,17 @@ export function TargetList({}: TargetListProps) {
               <Button
                 onClick={() => {
                   if (editingTask) {
-                    const target = targets.find(t => t.id === editingTarget?.id);
+                    const target = targets.find(
+                      (t) => t.id === editingTarget?.id
+                    );
                     if (target) {
-                      setTargets(targets.map(t => 
-                        t.id === target.id ? 
-                        { ...t, tasks: [...t.tasks, editingTask] } : t
-                      ));
+                      setTargets(
+                        targets.map((t) =>
+                          t.id === target.id
+                            ? { ...t, tasks: [...t.tasks, editingTask] }
+                            : t
+                        )
+                      );
                     }
                   }
                   setIsTaskDialogOpen(false);

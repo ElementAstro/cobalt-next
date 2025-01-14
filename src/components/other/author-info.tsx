@@ -11,7 +11,8 @@ import {
   ChevronDown,
   ChevronUp,
   Instagram,
-  Clock,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -78,7 +79,6 @@ export function AuthorIntro({
 }: AuthorIntroProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState("about");
-  const [theme, setTheme] = useState("dark");
   const controls = useAnimation();
   const [colorTheme, setColorTheme] = useState<"light" | "dark" | "system">(
     "system"
@@ -101,6 +101,16 @@ export function AuthorIntro({
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, [colorTheme]);
 
+  const toggleTheme = () => {
+    if (colorTheme === "dark") {
+      setColorTheme("light");
+      setIsDark(false);
+    } else {
+      setColorTheme("dark");
+      setIsDark(true);
+    }
+  };
+
   return (
     <div className={isDark ? "dark" : ""}>
       <TooltipProvider>
@@ -113,8 +123,8 @@ export function AuthorIntro({
           transition={{ duration: 0.5 }}
           className="w-full mx-auto"
         >
-          <Card className="overflow-hidden rounded-2xl shadow-2xl dark:bg-gray-800/70 border border-gray-200/20 backdrop-blur-lg">
-            <CardHeader className="p-6 sm:p-8">
+          <Card className="overflow-hidden rounded-2xl shadow-2xl dark:bg-gray-800/90 border border-gray-200/20 backdrop-blur-lg">
+            <CardHeader className="p-6 sm:p-8 flex justify-between items-center">
               <motion.div
                 className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6"
                 whileHover={{ scale: 1.02 }}
@@ -138,13 +148,22 @@ export function AuthorIntro({
                     {name}
                   </CardTitle>
                   <CardDescription className="text-sm text-gray-500 dark:text-gray-400">
-                    Project Author
+                    项目作者
                   </CardDescription>
                 </div>
-                <div className="ml-auto">
-                  <UpdateLogModal />
-                </div>
               </motion.div>
+              <Button
+                variant="ghost"
+                onClick={toggleTheme}
+                className="p-2 rounded-full bg-white/10 backdrop-blur-sm border border-gray-200/20 hover:bg-white/20 shadow-sm"
+              >
+                {isDark ? (
+                  <Sun className="h-5 w-5 text-yellow-400" />
+                ) : (
+                  <Moon className="h-5 w-5 text-gray-800" />
+                )}
+                <span className="sr-only">切换主题</span>
+              </Button>
             </CardHeader>
             <CardContent className="p-6 sm:p-8">
               <Tabs
@@ -153,31 +172,31 @@ export function AuthorIntro({
                 className="w-full"
               >
                 <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-2 p-2 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="about"
                     className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-4 py-2 text-sm"
                   >
                     关于
                   </TabsTrigger>
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="projects"
                     className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-4 py-2 text-sm"
                   >
                     项目
                   </TabsTrigger>
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="contact"
                     className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-4 py-2 text-sm"
                   >
                     联系
                   </TabsTrigger>
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="license"
                     className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-4 py-2 text-sm"
                   >
                     许可证
                   </TabsTrigger>
-                  <TabsTrigger 
+                  <TabsTrigger
                     value="dependencies"
                     className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-4 py-2 text-sm"
                   >
@@ -194,6 +213,7 @@ export function AuthorIntro({
                       className="text-sm text-muted-foreground mb-4"
                       initial={{ height: "4.5em", overflow: "hidden" }}
                       animate={{ height: isExpanded ? "auto" : "4.5em" }}
+                      transition={{ duration: 0.3 }}
                     >
                       {bio}
                     </motion.p>
@@ -277,8 +297,8 @@ export function AuthorIntro({
                       whileHover={{ y: -2 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="icon"
                         className="w-10 h-10 rounded-full bg-white/50 backdrop-blur-sm border border-gray-200/20 hover:bg-white/70 shadow-sm"
                         asChild

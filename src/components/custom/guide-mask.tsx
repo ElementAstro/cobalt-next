@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  startTransition,
+} from "react";
 import {
   X,
   ChevronLeft,
@@ -178,6 +184,7 @@ export function GuideMask({
   });
   const [targetRect, setTargetRect] = useState<Rect | null>(null);
   const [showHotkeys, setShowHotkeys] = useState(false);
+  const debounceTimeout = useRef<NodeJS.Timeout | undefined>(undefined);
   const theme = "dark";
   const t = translations[language];
   const containerRef = useRef<HTMLDivElement>(null);
@@ -257,32 +264,115 @@ export function GuideMask({
     };
   }, [currentStep, steps, onComplete, updateTargetRect]);
 
+  const handleNext = (error?: Error) => {
+    startTransition(() => {
+      if (error) {
+        onError?.(error);
+      }
+
+      if (currentStep < steps.length - 1) {
+        let nextStep = currentStep + 1;
+        while (
+          nextStep < steps.length &&
+          steps[nextStep].condition &&
+          !steps[nextStep].condition?.()
+        ) {
+          nextStep++;
+        }
+        if (nextStep < steps.length) {
+          const previousStep = currentStep;
+          steps[currentStep].onExit?.();
+          setCurrentStep(nextStep);
+          onStepChange?.(nextStep, previousStep);
+        } else {
+          onComplete();
+        }
+      } else {
+        onComplete();
+      }
+    });
+  };
+
+  const handlePrevious = () => {
+    startTransition(() => {
+      if (currentStep > 0) {
+        let prevStep = currentStep - 1;
+        while (
+          prevStep >= 0 &&
+          steps[prevStep].condition &&
+          steps[prevStep].condition instanceof Function &&
+          steps[prevStep].condition &&
+          !steps[prevStep].condition?.()
+        ) {
+          prevStep--;
+        }
+        if (prevStep >= 0) {
+          const previousStep = currentStep;
+          steps[currentStep].onExit?.();
+          setCurrentStep(prevStep);
+          onStepChange?.(prevStep, previousStep);
+        }
+      }
+    });
+  };
+
+  const handleInteraction = () => {
+    try {
+      if (steps[currentStep].interaction) {
+        steps[currentStep].interaction();
+      }
+    } catch (error) {
+      onError?.(error as Error);
+    }
+  };
+
   useEffect(() => {
     if (!keyboardNavigation) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "ArrowRight" || event.key === "Enter") {
-        handleNext();
-      } else if (event.key === "ArrowLeft") {
-        handlePrevious();
-      } else if (event.key === "Escape") {
-        onComplete();
-      } else if (event.key === "s" && event.ctrlKey) {
-        handleSkipAll();
-      } else {
-        const currentStepData = steps[currentStep];
-        if (
-          currentStepData.hotkey &&
-          event.key.toLowerCase() === currentStepData.hotkey.toLowerCase()
-        ) {
-          handleInteraction();
-        }
+      // Only handle key events when the guide is visible
+      if (!steps[currentStep]) return;
+
+      switch (event.key) {
+        case "ArrowRight":
+        case "Enter":
+          handleNext();
+          break;
+        case "ArrowLeft":
+          handlePrevious();
+          break;
+        case "Escape":
+          onComplete();
+          break;
+        case "s":
+          if (event.ctrlKey) {
+            handleSkipAll();
+          }
+          break;
+        default:
+          const currentStepData = steps[currentStep];
+          if (
+            currentStepData.hotkey &&
+            event.key.toLowerCase() === currentStepData.hotkey.toLowerCase()
+          ) {
+            handleInteraction();
+          }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentStep, steps, onComplete, keyboardNavigation]);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    currentStep,
+    steps,
+    onComplete,
+    keyboardNavigation,
+    handleNext,
+    handlePrevious,
+    handleInteraction,
+  ]);
 
   useEffect(() => {
     if (saveProgress) {
@@ -294,50 +384,6 @@ export function GuideMask({
     }
   }, [currentStep, saveProgress, onError]);
 
-  const handleNext = () => {
-    if (currentStep < steps.length - 1) {
-      let nextStep = currentStep + 1;
-      while (
-        nextStep < steps.length &&
-        steps[nextStep].condition &&
-        !steps[nextStep].condition?.()
-      ) {
-        nextStep++;
-      }
-      if (nextStep < steps.length) {
-        const previousStep = currentStep;
-        steps[currentStep].onExit?.();
-        setCurrentStep(nextStep);
-        onStepChange?.(nextStep, previousStep);
-      } else {
-        onComplete();
-      }
-    } else {
-      onComplete();
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentStep > 0) {
-      let prevStep = currentStep - 1;
-      while (
-        prevStep >= 0 &&
-        steps[prevStep].condition &&
-        steps[prevStep].condition instanceof Function &&
-        steps[prevStep].condition &&
-        !steps[prevStep].condition?.()
-      ) {
-        prevStep--;
-      }
-      if (prevStep >= 0) {
-        const previousStep = currentStep;
-        steps[currentStep].onExit?.();
-        setCurrentStep(prevStep);
-        onStepChange?.(prevStep, previousStep);
-      }
-    }
-  };
-
   const handleSkip = () => {
     onSkip?.(currentStep);
     handleNext();
@@ -346,16 +392,6 @@ export function GuideMask({
   const handleSkipAll = () => {
     onSkip?.(currentStep);
     onComplete();
-  };
-
-  const handleInteraction = () => {
-    try {
-      if (steps[currentStep].interaction) {
-        steps[currentStep].interaction();
-      }
-    } catch (error) {
-      onError?.(error as Error);
-    }
   };
 
   if (steps.length === 0 || !steps[currentStep] || skipAll) return null;
@@ -482,7 +518,7 @@ export function GuideMask({
             </Button>
           )}
           <Button
-            onClick={handleNext}
+            onClick={() => handleNext()}
             className="flex-1 flex items-center justify-center"
           >
             {currentStep === steps.length - 1 ? t.finish : t.next}

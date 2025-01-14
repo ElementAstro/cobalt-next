@@ -41,11 +41,14 @@ export interface ChartCustomization {
   showLegend: boolean;
   showAxis: boolean;
   enableAnimation: boolean;
+  animationType: string;
+  animationDuration: number;
   dataPointSize: number;
   lineThickness: number;
   curveType: "linear" | "natural" | "step" | "monotone";
   colorScheme: string;
   darkMode: boolean;
+  gradientFill: boolean;
 }
 
 interface ViewOptions {
@@ -61,9 +64,10 @@ interface CustomizationPanelProps {
   setChartOptions: (options: ChartCustomization) => void;
   viewOptions: ViewOptions;
   setViewOptions: (options: ViewOptions) => void;
-  onExport: () => void;
+  onExport: (type: "json" | "png" | "svg") => void;
   onShare: () => void;
   className?: string;
+  exporting?: boolean;
 }
 
 export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
@@ -82,11 +86,14 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
       showLegend: true,
       showAxis: true,
       enableAnimation: true,
+      animationType: "easeInOut",
+      animationDuration: 1000,
       dataPointSize: 4,
       lineThickness: 2,
       curveType: "monotone",
       colorScheme: "default",
       darkMode: false,
+      gradientFill: false,
     });
     setViewOptions({
       searchBar: true,
@@ -210,7 +217,11 @@ export const CustomizationPanel: React.FC<CustomizationPanelProps> = ({
         <div className="flex gap-2 p-4">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="outline" size="icon" onClick={onExport}>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => onExport("json")}
+              >
                 <Download className="h-4 w-4" />
               </Button>
             </TooltipTrigger>

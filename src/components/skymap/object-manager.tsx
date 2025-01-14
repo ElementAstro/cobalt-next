@@ -14,8 +14,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { Alert } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  List,
+  Grid,
+  Filter,
+  SortAsc,
+  SortDesc,
+  Trash2,
+  X,
+  Download,
+  Sliders,
+  Star,
+  Globe,
+  Sparkles,
+  Search,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -46,14 +61,23 @@ const FilterPanel: FC<{
         <CardTitle>过滤器</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Input
-          type="text"
-          placeholder="搜索目标名称..."
-          value={filterMode.search_query}
-          onChange={(e) =>
-            setFilterMode((prev) => ({ ...prev, search_query: e.target.value }))
-          }
-        />
+        <div className="relative">
+          <Input
+            type="text"
+            placeholder="搜索目标名称..."
+            value={filterMode.search_query}
+            onChange={(e) =>
+              setFilterMode((prev) => ({
+                ...prev,
+                search_query: e.target.value,
+              }))
+            }
+            className="pl-10"
+          />
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="w-4 h-4 text-gray-400" />
+          </div>
+        </div>
 
         <div className="space-y-2">
           <Select
@@ -62,13 +86,22 @@ const FilterPanel: FC<{
               setFilterMode((prev) => ({ ...prev, tag: v }))
             }
           >
-            <SelectTrigger>
+            <SelectTrigger className="flex items-center gap-2">
+              <Filter className="w-4 h-4" />
               <SelectValue placeholder="标签筛选" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">所有标签</SelectItem>
+              <SelectItem value="all" className="flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                所有标签
+              </SelectItem>
               {all_tags.map((tag) => (
-                <SelectItem key={tag} value={tag}>
+                <SelectItem
+                  key={tag}
+                  value={tag}
+                  className="flex items-center gap-2"
+                >
+                  <Filter className="w-4 h-4" />
                   {tag}
                 </SelectItem>
               ))}
@@ -81,13 +114,22 @@ const FilterPanel: FC<{
               setFilterMode((prev) => ({ ...prev, flag: v }))
             }
           >
-            <SelectTrigger>
+            <SelectTrigger className="flex items-center gap-2">
+              <Star className="w-4 h-4" />
               <SelectValue placeholder="标记筛选" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">所有标记</SelectItem>
+              <SelectItem value="all" className="flex items-center gap-2">
+                <Star className="w-4 h-4" />
+                所有标记
+              </SelectItem>
               {all_flags.map((flag) => (
-                <SelectItem key={flag} value={flag}>
+                <SelectItem
+                  key={flag}
+                  value={flag}
+                  className="flex items-center gap-2"
+                >
+                  <Star className="w-4 h-4" />
                   {flag}
                 </SelectItem>
               ))}
@@ -100,23 +142,38 @@ const FilterPanel: FC<{
               setFilterMode((prev) => ({ ...prev, type: v }))
             }
           >
-            <SelectTrigger>
+            <SelectTrigger className="flex items-center gap-2">
+              <Sliders className="w-4 h-4" />
               <SelectValue placeholder="类型筛选" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">所有类型</SelectItem>
-              <SelectItem value="star">恒星</SelectItem>
-              <SelectItem value="planet">行星</SelectItem>
-              <SelectItem value="galaxy">星系</SelectItem>
+              <SelectItem value="all" className="flex items-center gap-2">
+                <Sliders className="w-4 h-4" />
+                所有类型
+              </SelectItem>
+              <SelectItem value="star" className="flex items-center gap-2">
+                <Star className="w-4 h-4" />
+                恒星
+              </SelectItem>
+              <SelectItem value="planet" className="flex items-center gap-2">
+                <Globe className="w-4 h-4" />
+                行星
+              </SelectItem>
+              <SelectItem value="galaxy" className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                星系
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
-          <Button variant="outline" className="w-full">
+          <Button variant="outline" className="w-full flex items-center gap-2">
+            <List className="w-4 h-4" />
             批量操作
           </Button>
-          <Button variant="outline" className="w-full">
+          <Button variant="outline" className="w-full flex items-center gap-2">
+            <Download className="w-4 h-4" />
             导出列表
           </Button>
         </div>
@@ -152,7 +209,13 @@ const TargetList: FC<{
               key={index}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
+              whileHover={{ scale: 1.05 }}
+              transition={{
+                delay: index * 0.05,
+                type: "spring",
+                stiffness: 300,
+              }}
+              className="cursor-pointer"
             >
               <TargetSmallCard
                 target_info={target}
@@ -169,9 +232,15 @@ const TargetList: FC<{
           {targets.map((target, index) => (
             <motion.div
               key={index}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: index * 0.05 }}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              whileHover={{ x: 5 }}
+              transition={{
+                delay: index * 0.05,
+                type: "spring",
+                stiffness: 300,
+              }}
+              className="cursor-pointer"
             >
               <Card className="dark:bg-gray-800">
                 <CardHeader className="p-3 flex justify-between items-center">
@@ -216,9 +285,15 @@ const BatchOperationToolbar: FC<{
         <span>已选择 {selectedCount} 个目标</span>
         <div className="space-x-2">
           <Button variant="outline" onClick={onCancel}>
+            <X className="w-4 h-4 mr-2" />
             取消选择
           </Button>
-          <Button variant="destructive" onClick={onBatchDelete}>
+          <Button
+            variant="destructive"
+            onClick={onBatchDelete}
+            className="flex items-center"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
             批量删除
           </Button>
         </div>
@@ -511,7 +586,17 @@ const ObjectManagement: FC<ObjectManagementProps> = (props) => {
                   setViewMode(viewMode === "grid" ? "list" : "grid")
                 }
               >
-                {viewMode === "grid" ? "列表视图" : "网格视图"}
+                {viewMode === "grid" ? (
+                  <>
+                    <List className="w-4 h-4 mr-2" />
+                    列表视图
+                  </>
+                ) : (
+                  <>
+                    <Grid className="w-4 h-4 mr-2" />
+                    网格视图
+                  </>
+                )}
               </Button>
               <Select
                 value={sortField}
@@ -534,7 +619,11 @@ const ObjectManagement: FC<ObjectManagementProps> = (props) => {
                   setSortOrder(sortOrder === "asc" ? "desc" : "asc")
                 }
               >
-                {sortOrder === "asc" ? "↑" : "↓"}
+                {sortOrder === "asc" ? (
+                  <SortAsc className="w-4 h-4" />
+                ) : (
+                  <SortDesc className="w-4 h-4" />
+                )}
               </Button>
             </div>
           </CardHeader>

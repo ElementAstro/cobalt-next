@@ -1,6 +1,15 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useDeferredValue,
+  useMemo,
+  startTransition,
+  Suspense,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMediaQuery } from "react-responsive";
 import {
@@ -75,9 +84,12 @@ export const CustomIframe: React.FC<CustomIframeProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [zoom, setZoom] = useState(1);
+  const deferredZoom = useDeferredValue(zoom);
+
   const [currentDevice, setCurrentDevice] = useState<
     "mobile" | "tablet" | "desktop"
   >("desktop");
+  const deferredDevice = useDeferredValue(currentDevice);
   const [pageInfo, setPageInfo] = useState<{ title?: string; url?: string }>(
     {}
   );
@@ -211,27 +223,40 @@ export const CustomIframe: React.FC<CustomIframeProps> = ({
   }, [onScreenshot]);
 
   const handleZoom = useCallback((action: "in" | "out" | "reset") => {
-    setZoom((prev) => {
-      switch (action) {
-        case "in":
-          return Math.min(prev + 0.1, 2);
-        case "out":
-          return Math.max(prev - 0.1, 0.5);
-        case "reset":
-          return 1;
-        default:
-          return prev;
-      }
+    startTransition(() => {
+      setZoom((prev) => {
+        switch (action) {
+          case "in":
+            return Math.min(prev + 0.1, 2);
+          case "out":
+            return Math.max(prev - 0.1, 0.5);
+          case "reset":
+            return 1;
+          default:
+            return prev;
+        }
+      });
     });
   }, []);
 
   const handleDeviceChange = useCallback(
     (device: "mobile" | "tablet" | "desktop") => {
-      setCurrentDevice(device);
-      onDeviceChange?.(device);
+      startTransition(() => {
+        setCurrentDevice(device);
+        onDeviceChange?.(device);
+      });
     },
     [onDeviceChange]
   );
+
+  const deviceStyles = useMemo(() => {
+    const baseStyles = {
+      mobile: { width: "375px", height: mobileHeight },
+      tablet: { width: "768px", height: height || desktopHeight },
+      desktop: { width: "100%", height: height || desktopHeight },
+    };
+    return baseStyles[currentDevice];
+  }, [currentDevice, mobileHeight, height, desktopHeight]);
 
   const sandboxProps = allowScripts
     ? { sandbox: `allow-scripts ${sandboxAttributes}`.trim() }

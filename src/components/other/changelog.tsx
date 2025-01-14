@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { Check, AlertTriangle, Info, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -45,7 +46,7 @@ export interface UpdateLog {
   version: string;
   date: string;
   changes: string[];
-  importance?: "critical" | "high" | "medium" | "low";
+  importance: "critical" | "high" | "medium" | "low";
 }
 
 interface UpdateLogState {
@@ -90,10 +91,25 @@ const container = {
 };
 
 const versionItem = {
-  hidden: { opacity: 0, scale: 0.95 },
-  show: { opacity: 1, scale: 1 },
-  hover: { scale: 1.02 },
+  hidden: { opacity: 0, y: 20, scale: 0.95 },
+  show: { opacity: 1, y: 0, scale: 1 },
+  hover: { scale: 1.02, boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.1)" },
   tap: { scale: 0.98 },
+  exit: { opacity: 0, y: -20, scale: 0.95 },
+};
+
+const importanceColors = {
+  critical: "bg-red-500/10 text-red-500 border-red-500/20",
+  high: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+  medium: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+  low: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+};
+
+const importanceIcons = {
+  critical: AlertTriangle,
+  high: Zap,
+  medium: Info,
+  low: Check,
 };
 
 export function UpdateLogModal() {
@@ -242,7 +258,7 @@ export function UpdateLogModal() {
                     whileTap="tap"
                     className="relative border rounded-lg p-4 hover:bg-accent/50 transition-colors"
                   >
-                    <div className="absolute -left-2 top-1/2 transform -translate-y-1/2 w-1 h-[80%] bg-primary rounded-full" />
+                    <div className="absolute -left-2 top-1/2 transform -translate-y-1/2 w-1 h-[80%] bg-primary rounded-full transition-all duration-300" />
 
                     <div className="flex justify-between items-start">
                       <div className="space-y-2">
@@ -250,17 +266,36 @@ export function UpdateLogModal() {
                           <h3 className="text-lg font-semibold">
                             版本 {log.version}
                           </h3>
-                          <Badge
-                            variant={
-                              getVersionType(log.version) === "major"
-                                ? "default"
-                                : "secondary"
-                            }
-                          >
-                            {getVersionType(log.version) === "major"
-                              ? "主要"
-                              : "次要"}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant={
+                                getVersionType(log.version) === "major"
+                                  ? "default"
+                                  : "secondary"
+                              }
+                            >
+                              {getVersionType(log.version) === "major"
+                                ? "主要"
+                                : "次要"}
+                            </Badge>
+                            <Badge
+                              className={cn(
+                                "flex items-center gap-1",
+                                importanceColors[log.importance]
+                              )}
+                            >
+                              {React.createElement(
+                                importanceIcons[log.importance],
+                                {
+                                  className: "h-3 w-3",
+                                }
+                              )}
+                              {log.importance === "critical" && "严重"}
+                              {log.importance === "high" && "重要"}
+                              {log.importance === "medium" && "中等"}
+                              {log.importance === "low" && "低"}
+                            </Badge>
+                          </div>
                         </div>
                         <p className="text-sm text-muted-foreground">
                           {log.date}
@@ -299,17 +334,19 @@ export function UpdateLogModal() {
                           exit={{ opacity: 0, height: 0 }}
                           transition={{ duration: 0.2 }}
                         >
-                          <ul className="mt-4 space-y-2">
+                          <ul className="mt-4 space-y-2 group">
                             {log.changes.map((change, index) => (
                               <motion.li
                                 key={index}
                                 initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.1 }}
-                                className="flex items-start gap-2 text-sm text-muted-foreground"
+                                className="flex items-start gap-2 text-sm text-muted-foreground hover:bg-accent/20 px-2 py-1 rounded-md cursor-pointer transition-all duration-200"
                               >
                                 <Tag className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                <span>{change}</span>
+                                <span className="group-hover:text-foreground transition-colors duration-200">
+                                  {change}
+                                </span>
                               </motion.li>
                             ))}
                           </ul>

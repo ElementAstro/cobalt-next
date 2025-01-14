@@ -5,6 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
+import {
+  Compass,
+  Copy,
+  ClipboardCheck,
+  RotateCw,
+  Target,
+  MapPin,
+  Globe,
+  Sun,
+  Moon,
+  Star,
+} from "lucide-react";
 
 interface IInputProps {
   value: number;
@@ -136,16 +148,35 @@ export const RaInput: FC<IInputProps> = (props) => {
   };
 
   // 新增剪贴板功能
+  const [isCopied, setIsCopied] = useState(false);
+
   const handlePaste = async (e: ClipboardEvent) => {
     e.preventDefault();
-    const text = await navigator.clipboard.readText();
-    const coords = parseCoordsFromText(text);
-    if (coords) {
-      setDegree(coords.degrees.toString());
-      setMinute(coords.minutes.toString());
-      setSecond(coords.seconds.toString());
-      setDmsUpdate(true);
+    try {
+      const text = await navigator.clipboard.readText();
+      const coords = parseCoordsFromText(text);
+      if (coords) {
+        setDegree(coords.degrees.toString());
+        setMinute(coords.minutes.toString());
+        setSecond(coords.seconds.toString());
+        setDmsUpdate(true);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      }
+    } catch (error) {
+      console.error("Failed to read clipboard:", error);
     }
+  };
+
+  const handleCopy = () => {
+    const text = `${degree}° ${minute}′ ${second}″`;
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      })
+      .catch(console.error);
   };
 
   // 新增快速预设值
@@ -167,16 +198,33 @@ export const RaInput: FC<IInputProps> = (props) => {
         layout
       >
         <div className="flex flex-col space-y-4 landscape:space-y-2">
-          <div className="flex justify-between items-center">
-            <Label className="text-white text-lg">RA</Label>
-            <Button
-              variant="link"
-              size="sm"
-              onClick={() => setDegreeSwitch(!degreeSwitch)}
-              className="text-blue-400"
-            >
-              {degreeSwitch ? "DMS" : "Degrees"}
-            </Button>
+          <div className="flex justify-between items-center gap-2">
+            <Label className="text-white text-lg flex items-center gap-1">
+              <Compass className="w-4 h-4" />
+              RA
+            </Label>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCopy}
+                className="text-blue-400 hover:bg-blue-400/10 p-1.5"
+              >
+                {isCopied ? (
+                  <ClipboardCheck className="w-4 h-4" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+              </Button>
+              <Button
+                variant="link"
+                size="sm"
+                onClick={() => setDegreeSwitch(!degreeSwitch)}
+                className="text-blue-400"
+              >
+                {degreeSwitch ? "DMS" : "Degrees"}
+              </Button>
+            </div>
           </div>
           <motion.div
             className="relative"
@@ -431,16 +479,35 @@ export const DecInput: FC<IInputProps> = (props) => {
   };
 
   // 新增剪贴板功能
+  const [isCopied, setIsCopied] = useState(false);
+
   const handlePaste = async (e: ClipboardEvent) => {
     e.preventDefault();
-    const text = await navigator.clipboard.readText();
-    const coords = parseCoordsFromText(text);
-    if (coords) {
-      setDegree(coords.degrees.toString());
-      setMinute(coords.minutes.toString());
-      setSecond(coords.seconds.toString());
-      setDmsUpdate(true);
+    try {
+      const text = await navigator.clipboard.readText();
+      const coords = parseCoordsFromText(text);
+      if (coords) {
+        setDegree(coords.degrees.toString());
+        setMinute(coords.minutes.toString());
+        setSecond(coords.seconds.toString());
+        setDmsUpdate(true);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      }
+    } catch (error) {
+      console.error("Failed to read clipboard:", error);
     }
+  };
+
+  const handleCopy = () => {
+    const text = `${degree}° ${minute}′ ${second}″`;
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      })
+      .catch(console.error);
   };
 
   // 新增快速预设值
@@ -462,16 +529,33 @@ export const DecInput: FC<IInputProps> = (props) => {
         layout
       >
         <div className="flex flex-col space-y-4 landscape:space-y-2">
-          <div className="flex justify-between items-center">
-            <Label className="text-white text-lg">DEC</Label>
-            <Button
-              variant="link"
-              size="sm"
-              onClick={() => setDegreeSwitch(!degreeSwitch)}
-              className="text-blue-400"
-            >
-              {degreeSwitch ? "DMS" : "Degrees"}
-            </Button>
+          <div className="flex justify-between items-center gap-2">
+            <Label className="text-white text-lg flex items-center gap-1">
+              <MapPin className="w-4 h-4" />
+              DEC
+            </Label>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCopy}
+                className="text-blue-400 hover:bg-blue-400/10 p-1.5"
+              >
+                {isCopied ? (
+                  <ClipboardCheck className="w-4 h-4" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+              </Button>
+              <Button
+                variant="link"
+                size="sm"
+                onClick={() => setDegreeSwitch(!degreeSwitch)}
+                className="text-blue-400"
+              >
+                {degreeSwitch ? "DMS" : "Degrees"}
+              </Button>
+            </div>
           </div>
           <motion.div
             className="relative"

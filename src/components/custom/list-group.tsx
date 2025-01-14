@@ -1,6 +1,14 @@
 "use client";
 
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  useMemo,
+  useDeferredValue,
+  startTransition,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import {
@@ -113,6 +121,7 @@ const ListGroup: React.FC<ListGroupProps> = ({
     new Set(selectedItemIds)
   );
   const [searchTerm, setSearchTerm] = useState("");
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [listItems, setListItems] = useState<ListItem[]>(items);
   const [isLoading, setIsLoading] = useState(false);
@@ -125,36 +134,46 @@ const ListGroup: React.FC<ListGroupProps> = ({
     })
   );
 
-  const filteredItems = listItems.filter((item) =>
-    item.label.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredItems = useMemo(
+    () =>
+      listItems.filter((item) =>
+        item.label.toLowerCase().includes(deferredSearchTerm.toLowerCase())
+      ),
+    [listItems, deferredSearchTerm]
   );
 
-  const groupedItems = groupBy
-    ? filteredItems.reduce((acc, item) => {
-        const group = groupBy(item);
-        if (!acc[group]) {
-          acc[group] = [];
-        }
-        acc[group].push(item);
-        return acc;
-      }, {} as Record<string, ListItem[]>)
-    : { default: filteredItems };
+  const groupedItems = useMemo(
+    () =>
+      groupBy
+        ? filteredItems.reduce((acc, item) => {
+            const group = groupBy(item);
+            if (!acc[group]) {
+              acc[group] = [];
+            }
+            acc[group].push(item);
+            return acc;
+          }, {} as Record<string, ListItem[]>)
+        : { default: filteredItems },
+    [filteredItems, groupBy]
+  );
 
   const handleItemClick = useCallback(
     (id: string) => {
-      setSelectedItems((prev) => {
-        const newSet = new Set(prev);
-        if (multiSelect) {
-          if (newSet.has(id)) {
-            newSet.delete(id);
+      startTransition(() => {
+        setSelectedItems((prev) => {
+          const newSet = new Set(prev);
+          if (multiSelect) {
+            if (newSet.has(id)) {
+              newSet.delete(id);
+            } else {
+              newSet.add(id);
+            }
           } else {
+            newSet.clear();
             newSet.add(id);
           }
-        } else {
-          newSet.clear();
-          newSet.add(id);
-        }
-        return newSet;
+          return newSet;
+        });
       });
       const selectedItem = listItems.find((item) => item.id === id);
       if (selectedItem) {
@@ -196,14 +215,16 @@ const ListGroup: React.FC<ListGroupProps> = ({
   };
 
   const toggleGroup = (group: string) => {
-    setExpandedGroups((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(group)) {
-        newSet.delete(group);
-      } else {
-        newSet.add(group);
-      }
-      return newSet;
+    startTransition(() => {
+      setExpandedGroups((prev) => {
+        const newSet = new Set(prev);
+        if (newSet.has(group)) {
+          newSet.delete(group);
+        } else {
+          newSet.add(group);
+        }
+        return newSet;
+      });
     });
   };
 
@@ -283,29 +304,45 @@ const ListGroup: React.FC<ListGroupProps> = ({
     </div>
   );
 
-  const renderVirtualizedList = () => (
-    <AutoSizer>
-      {({ height, width }) => (
-        <List
-          height={height}
-          itemCount={filteredItems.length}
-          itemSize={50}
-          width={width}
-        >
-          {({ index, style }) => (
-            <div style={style} key={filteredItems[index].id}>
-              <SortableItem
-                item={filteredItems[index]}
-                isSelected={selectedItems.has(filteredItems[index].id)}
-                onClick={() => handleItemClick(filteredItems[index].id)}
-                customRender={customItemRender}
-              />
-            </div>
-          )}
-        </List>
-      )}
-    </AutoSizer>
-  );
+  const renderVirtualizedList = () => {
+    const itemData = useMemo(
+      () => ({
+        items: filteredItems,
+        selectedItems,
+        handleItemClick,
+        customItemRender,
+      }),
+      [filteredItems, selectedItems, handleItemClick, customItemRender]
+    );
+
+    return (
+      <AutoSizer>
+        {({ height, width }) => (
+          <List
+            height={height}
+            itemCount={filteredItems.length}
+            itemSize={50}
+            width={width}
+            itemData={itemData}
+          >
+            {({ index, style, data }) => {
+              const item = data.items[index];
+              return (
+                <div style={style} key={item.id}>
+                  <SortableItem
+                    item={item}
+                    isSelected={data.selectedItems.has(item.id)}
+                    onClick={() => data.handleItemClick(item.id)}
+                    customRender={data.customItemRender}
+                  />
+                </div>
+              );
+            }}
+          </List>
+        )}
+      </AutoSizer>
+    );
+  };
 
   return (
     <div className={`rounded-lg shadow-md overflow-hidden ${themeClasses}`}>

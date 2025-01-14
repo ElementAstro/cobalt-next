@@ -47,7 +47,7 @@ interface TempDataPoint {
   temperature: number;
 }
 
-interface SoftwareState {
+export interface SoftwareState {
   view: View;
   software: Software[];
   themeMode: ThemeMode;

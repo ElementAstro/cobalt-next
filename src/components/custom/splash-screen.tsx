@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LoadingAnimation } from "./loading-animation";
 import Image from "next/image";
 import useMediaQuery from "react-responsive";
+import ParticleBackground from "../about/particle-background";
 
 export default function SplashScreen() {
   const [loading, setLoading] = useState(true);
@@ -13,13 +14,20 @@ export default function SplashScreen() {
   const contentRef = useRef<HTMLDivElement>(null);
   const isLandscape = useMediaQuery({ query: "(orientation: landscape)" });
 
+  // Enhanced loading simulation
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 2000);
+    }, 3000);
 
     const progressInterval = setInterval(() => {
-      setProgress((prev) => (prev < 100 ? prev + 10 : 100));
+      setProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(progressInterval);
+          return 100;
+        }
+        return prev + Math.floor(Math.random() * 10) + 1;
+      });
     }, 200);
 
     const observer = new IntersectionObserver((entries) => {
@@ -46,7 +54,7 @@ export default function SplashScreen() {
     if (!loading) {
       const hideTimer = setTimeout(() => {
         setVisible(false);
-      }, 700);
+      }, 1000);
 
       return () => clearTimeout(hideTimer);
     }
@@ -58,23 +66,41 @@ export default function SplashScreen() {
       opacity: 1,
       transition: {
         staggerChildren: 0.3,
+        when: "beforeChildren",
       },
     },
     exit: {
       opacity: 0,
       transition: {
-        duration: 0.5,
+        duration: 0.8,
+        ease: "easeInOut",
       },
     },
   };
 
   const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: { y: 40, opacity: 0 },
     visible: {
       y: 0,
       opacity: 1,
       transition: {
-        duration: 0.5,
+        type: "spring",
+        stiffness: 100,
+        damping: 20,
+      },
+    },
+  };
+
+  const logoVariants = {
+    hidden: { scale: 0.8, opacity: 0 },
+    visible: {
+      scale: 1,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 10,
+        delay: 0.2,
       },
     },
   };
@@ -83,30 +109,31 @@ export default function SplashScreen() {
     <AnimatePresence>
       {visible && (
         <motion.div
-          className="fixed inset-0 z-50 bg-gray-900"
+          className="fixed inset-0 z-50 bg-gradient-to-b from-gray-900 to-gray-950"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
           exit="exit"
         >
+          <ParticleBackground />
           <AnimatePresence mode="wait">
             {loading ? (
               <motion.div
                 key="splash"
                 className={`flex flex-col items-center justify-center min-h-screen
-                  ${isLandscape ? "lg:flex-row lg:space-x-8" : "space-y-6"}`}
+                  ${isLandscape ? "lg:flex-row lg:space-x-12" : "space-y-8"}`}
                 variants={containerVariants}
               >
-                <motion.div variants={itemVariants}>
+                <motion.div variants={logoVariants}>
                   <Image
                     src="/atom.png"
                     alt="Logo"
-                    width={isLandscape ? 150 : 100}
-                    height={isLandscape ? 150 : 100}
-                    className="drop-shadow-2xl"
+                    width={isLandscape ? 180 : 120}
+                    height={isLandscape ? 180 : 120}
+                    className="drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]"
                   />
                 </motion.div>
-                <motion.div variants={itemVariants}>
+                <motion.div variants={itemVariants} className="w-full max-w-md">
                   <LoadingAnimation progress={progress} />
                 </motion.div>
               </motion.div>
@@ -114,22 +141,33 @@ export default function SplashScreen() {
               <motion.div
                 key="content"
                 ref={contentRef}
-                className="flex flex-col items-center justify-center min-h-screen p-4"
+                className="flex flex-col items-center justify-center min-h-screen p-6"
                 variants={containerVariants}
               >
                 <motion.h1
                   variants={itemVariants}
                   className="text-4xl font-bold text-gray-100 text-center
-                    md:text-5xl lg:text-6xl"
+                    md:text-5xl lg:text-6xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"
                 >
                   欢迎来到 Cobalt
                 </motion.h1>
                 <motion.p
                   variants={itemVariants}
-                  className="mt-4 text-gray-400 text-center max-w-lg"
+                  className="mt-6 text-gray-300 text-center max-w-2xl text-lg leading-relaxed"
                 >
                   探索无限可能，开启您的数字之旅
                 </motion.p>
+                <motion.div
+                  variants={itemVariants}
+                  className="mt-8 flex space-x-4"
+                >
+                  <button className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:scale-105 transition-transform">
+                    开始探索
+                  </button>
+                  <button className="px-6 py-2.5 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors">
+                    了解更多
+                  </button>
+                </motion.div>
               </motion.div>
             )}
           </AnimatePresence>

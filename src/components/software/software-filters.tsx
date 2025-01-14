@@ -14,9 +14,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import {
   CalendarIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
   FilterIcon,
   RefreshCwIcon,
   SearchIcon,
+  SlidersIcon,
+  TagIcon,
+  XIcon,
 } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import {
@@ -171,14 +176,32 @@ export function SoftwareFilters({
           initial="hidden"
           animate="show"
         >
-          <div className="relative">
+          <motion.div
+            className="relative"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
             <Input
               placeholder="搜索应用"
-              className="w-[180px] dark:bg-gray-700 dark:text-white pl-8"
+              className="w-[180px] dark:bg-gray-700 dark:text-white pl-8 pr-8"
               onChange={(e) => onSearchChange(e.target.value)}
             />
-            <SearchIcon className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          </div>
+            <motion.div
+              className="absolute left-2 top-1/2 -translate-y-1/2"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <SearchIcon className="w-4 h-4 text-gray-400" />
+            </motion.div>
+            <motion.div
+              className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => onSearchChange("")}
+            >
+              <XIcon className="w-4 h-4 text-gray-400" />
+            </motion.div>
+          </motion.div>
 
           <Select value={selectedFilter} onValueChange={onFilterChange}>
             <SelectTrigger className="w-[180px] dark:bg-gray-700 dark:text-white">
@@ -289,13 +312,35 @@ export function SoftwareFilters({
           </div>
         </motion.div>
 
-        <Button
-          variant="ghost"
-          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+        <motion.div
           className="w-full"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          {showAdvancedFilters ? "收起" : "显示高级过滤器"}
-        </Button>
+          <Button
+            variant="ghost"
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className="w-full flex items-center justify-center gap-2"
+          >
+            <motion.div
+              animate={{ rotate: showAdvancedFilters ? 180 : 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            >
+              <SlidersIcon className="w-4 h-4" />
+            </motion.div>
+            {showAdvancedFilters ? "收起高级过滤器" : "显示高级过滤器"}
+            <motion.div
+              animate={{ rotate: showAdvancedFilters ? 180 : 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            >
+              {showAdvancedFilters ? (
+                <ChevronUpIcon className="w-4 h-4" />
+              ) : (
+                <ChevronDownIcon className="w-4 h-4" />
+              )}
+            </motion.div>
+          </Button>
+        </motion.div>
       </motion.div>
 
       <motion.div
@@ -339,19 +384,27 @@ export function SoftwareFilters({
 
         <div className="flex flex-wrap gap-2">
           {availableTags.map((tag) => (
-            <Button
+            <motion.div
               key={tag}
-              variant="outline"
-              size="sm"
-              className={cn(
-                "transition-colors",
-                selectedTags.has(tag) &&
-                  "bg-primary text-primary-foreground hover:bg-primary/90"
-              )}
-              onClick={() => toggleTag(tag)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              layout
             >
-              {tag}
-            </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "transition-colors flex items-center gap-1",
+                  selectedTags.has(tag) &&
+                    "bg-primary text-primary-foreground hover:bg-primary/90"
+                )}
+                onClick={() => toggleTag(tag)}
+              >
+                <TagIcon className="w-3 h-3" />
+                <span>{tag}</span>
+                {selectedTags.has(tag) && <XIcon className="w-3 h-3 ml-1" />}
+              </Button>
+            </motion.div>
           ))}
         </div>
       </motion.div>

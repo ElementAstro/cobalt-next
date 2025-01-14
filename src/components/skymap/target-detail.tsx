@@ -26,6 +26,18 @@ import {
 import { DateTime } from "luxon";
 import { motion, AnimatePresence } from "framer-motion";
 import { Spinner } from "@/components/custom/spinner";
+import {
+  Star,
+  Info,
+  BookOpen,
+  Plus,
+  Target,
+  X,
+  BarChart2,
+  PieChart as PieChartIcon,
+  LineChart as LineChartIcon,
+  Radar as RadarIcon,
+} from "lucide-react";
 import { IDSOObjectDetailedInfo } from "@/types/skymap";
 import { useGlobalStore } from "@/store/useSkymapStore";
 
@@ -180,10 +192,12 @@ const TargetDetailCard: FC<TargetSmallCardProps> = (props) => {
 
   return (
     <motion.div
-      className="h-full w-full p-4 bg-gray-800 dark:bg-gray-900 rounded-lg shadow-lg landscape:flex landscape:gap-4"
+      className="h-full w-full p-6 bg-gray-800/95 backdrop-blur-sm dark:bg-gray-900/95 rounded-xl shadow-2xl landscape:flex landscape:gap-6 border border-gray-700/50"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
+      whileHover={{ scale: 1.02 }}
+      transition={{ type: "spring", stiffness: 300 }}
     >
       <AnimatePresence>
         <Tabs
@@ -194,14 +208,23 @@ const TargetDetailCard: FC<TargetSmallCardProps> = (props) => {
             <TabsList className="flex landscape:flex-col space-x-1 landscape:space-x-0 landscape:space-y-1 bg-gray-700 dark:bg-gray-800 p-1 rounded">
               <TabsTrigger
                 value="observationData"
-                className="px-4 py-2 text-white"
+                className="px-4 py-2 text-white flex items-center gap-2"
               >
+                <LineChartIcon className="w-4 h-4" />
                 观测数据
               </TabsTrigger>
-              <TabsTrigger value="basicInfo" className="px-4 py-2 text-white">
+              <TabsTrigger
+                value="basicInfo"
+                className="px-4 py-2 text-white flex items-center gap-2"
+              >
+                <Info className="w-4 h-4" />
                 基础信息
               </TabsTrigger>
-              <TabsTrigger value="wiki" className="px-4 py-2 text-white">
+              <TabsTrigger
+                value="wiki"
+                className="px-4 py-2 text-white flex items-center gap-2"
+              >
+                <BookOpen className="w-4 h-4" />
                 小百科
               </TabsTrigger>
             </TabsList>
@@ -244,25 +267,31 @@ const TargetDetailCard: FC<TargetSmallCardProps> = (props) => {
                     {props.in_updating ? (
                       <Spinner />
                     ) : (
-                      <RadarChart
-                        cx="50%"
-                        cy="50%"
-                        outerRadius="80%"
-                        width={300}
-                        height={300}
-                        data={polar_data}
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
                       >
-                        <PolarGrid />
-                        <PolarAngleAxis dataKey="angle" stroke="#ffffff" />
-                        <PolarRadiusAxis stroke="#ffffff" />
-                        <Radar
-                          name={props.target_info.name}
-                          dataKey="radius"
-                          stroke="#8884d8"
-                          fill="#8884d8"
-                          fillOpacity={0.6}
-                        />
-                      </RadarChart>
+                        <RadarChart
+                          cx="50%"
+                          cy="50%"
+                          outerRadius="80%"
+                          width={300}
+                          height={300}
+                          data={polar_data}
+                        >
+                          <PolarGrid />
+                          <PolarAngleAxis dataKey="angle" stroke="#ffffff" />
+                          <PolarRadiusAxis stroke="#ffffff" />
+                          <Radar
+                            name={props.target_info.name}
+                            dataKey="radius"
+                            stroke="#8884d8"
+                            fill="#8884d8"
+                            fillOpacity={0.6}
+                          />
+                        </RadarChart>
+                      </motion.div>
                     )}
                   </motion.div>
                 </motion.div>
@@ -271,62 +300,89 @@ const TargetDetailCard: FC<TargetSmallCardProps> = (props) => {
                     <Spinner />
                   ) : (
                     <>
-                      <LineChart width={600} height={300} data={alt_data}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff" />
-                        <XAxis dataKey="date" stroke="#ffffff" />
-                        <YAxis stroke="#ffffff" />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "#333",
-                            color: "#fff",
-                          }}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="value"
-                          stroke="#8884d8"
-                          activeDot={{ r: 8 }}
-                        />
-                      </LineChart>
-                      <BarChart width={600} height={300} data={bar_data}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff" />
-                        <XAxis dataKey="name" stroke="#ffffff" />
-                        <YAxis stroke="#ffffff" />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "#333",
-                            color: "#fff",
-                          }}
-                        />
-                        <Bar dataKey="uv" fill="#8884d8" />
-                        <Bar dataKey="pv" fill="#82ca9d" />
-                      </BarChart>
-                      <PieChart width={400} height={400}>
-                        <Pie
-                          data={pie_data}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) =>
-                            `${name} ${(percent * 100).toFixed(0)}%`
-                          }
-                          outerRadius={100}
-                          fill="#8884d8"
-                          dataKey="value"
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                      >
+                        <LineChart width={600} height={300} data={alt_data}>
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#ffffff"
+                          />
+                          <XAxis dataKey="date" stroke="#ffffff" />
+                          <YAxis stroke="#ffffff" />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "#333",
+                              color: "#fff",
+                            }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="value"
+                            stroke="#8884d8"
+                            activeDot={{ r: 8 }}
+                          />
+                        </LineChart>
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.4 }}
                         >
-                          {pie_data.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={
-                                ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"][
-                                  index % 4
-                                ]
-                              }
+                          <BarChart width={600} height={300} data={bar_data}>
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              stroke="#ffffff"
                             />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
+                            <XAxis dataKey="name" stroke="#ffffff" />
+                            <YAxis stroke="#ffffff" />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: "#333",
+                                color: "#fff",
+                              }}
+                            />
+                            <Bar dataKey="uv" fill="#8884d8" />
+                            <Bar dataKey="pv" fill="#82ca9d" />
+                          </BarChart>
+                        </motion.div>
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.5 }}
+                        >
+                          <PieChart width={400} height={400}>
+                            <Pie
+                              data={pie_data}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              label={({ name, percent }) =>
+                                `${name} ${(percent * 100).toFixed(0)}%`
+                              }
+                              outerRadius={100}
+                              fill="#8884d8"
+                              dataKey="value"
+                            >
+                              {pie_data.map((entry, index) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={
+                                    [
+                                      "#0088FE",
+                                      "#00C49F",
+                                      "#FFBB28",
+                                      "#FF8042",
+                                    ][index % 4]
+                                  }
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        </motion.div>
+                      </motion.div>
                     </>
                   )}
                 </motion.div>
@@ -437,7 +493,9 @@ const TargetDetailCard: FC<TargetSmallCardProps> = (props) => {
                 variant={add_btn_color}
                 size="sm"
                 onClick={on_add_target_to_list_clicked}
+                className="gap-2"
               >
+                <Plus className="w-4 h-4" />
                 加入目标列表
               </Button>
             </motion.div>
@@ -447,12 +505,20 @@ const TargetDetailCard: FC<TargetSmallCardProps> = (props) => {
               variant="default"
               size="sm"
               onClick={on_add_focused_target_clicked}
+              className="gap-2"
             >
+              <Target className="w-4 h-4" />
               以该目标构图
             </Button>
           </motion.div>
           <motion.div variants={itemVariants}>
-            <Button variant="secondary" size="sm" onClick={handleClose}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleClose}
+              className="gap-2"
+            >
+              <X className="w-4 h-4" />
               退出
             </Button>
           </motion.div>

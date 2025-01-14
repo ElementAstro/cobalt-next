@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Progress } from "@/components/ui/progress";
+import { Check, AlertCircle, Clock, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -96,9 +99,26 @@ export function ExposureTaskList({
   };
 
   const updateTask = (updatedTask: Task) => {
+    const isCompleted = updatedTask.progress[0] === updatedTask.progress[1];
+    const prevTask = tasks.find((t) => t.id === updatedTask.id);
+    const wasCompleted = prevTask?.progress[0] === prevTask?.progress[1];
+
     onTasksChange(
       tasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
     );
+
+    if (isCompleted && !wasCompleted) {
+      setTaskStatus((prev) => ({
+        ...prev,
+        [updatedTask.id]: {
+          ...prev[updatedTask.id],
+          status: "completed",
+          endTime: new Date(),
+          notified: false,
+        },
+      }));
+    }
+
     setEditingTask(null);
     setIsDialogOpen(false);
   };
@@ -145,9 +165,47 @@ export function ExposureTaskList({
         startTime?: Date;
         endTime?: Date;
         error?: string;
+        notified?: boolean;
       }
     >
   >({});
+
+  useEffect(() => {
+    const completedTasks = Object.entries(taskStatus).filter(
+      ([_, status]) => status.status === "completed" && !status.notified
+    );
+
+    if (completedTasks.length > 0) {
+      completedTasks.forEach(([taskId]) => {
+        // 更新通知状态
+        setTaskStatus((prev) => ({
+          ...prev,
+          [taskId]: {
+            ...prev[taskId],
+            notified: true,
+          },
+        }));
+
+        // 播放提示音
+        new Audio("/sounds/task-completed.mp3").play().catch(() => {});
+      });
+    }
+  }, [taskStatus]);
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "pending":
+        return <Clock className="w-4 h-4 text-yellow-500" />;
+      case "running":
+        return <Play className="w-4 h-4 text-blue-500 animate-pulse" />;
+      case "completed":
+        return <Check className="w-4 h-4 text-green-500" />;
+      case "failed":
+        return <AlertCircle className="w-4 h-4 text-red-500" />;
+      default:
+        return null;
+    }
+  };
 
   const [bulkActions, setBulkActions] = useState({
     selectedTasks: new Set<string>(),
@@ -245,7 +303,20 @@ export function ExposureTaskList({
             <div className="space-y-2">
               {filteredTasks.map((task) => (
                 <SortableItem key={task.id} task={task}>
-                  <div className="bg-gray-800 p-4 rounded-lg flex flex-col space-y-2 border border-gray-700">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className={`bg-gray-800 p-4 rounded-lg flex flex-col space-y-2 border ${
+                      taskStatus[task.id]?.status === "completed"
+                        ? "border-green-500"
+                        : "border-gray-700"
+                    }`}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    layout
+                  >
                     <div className="flex justify-between items-center">
                       <div className="flex items-center space-x-2">
                         <Switch
@@ -255,7 +326,10 @@ export function ExposureTaskList({
                           }
                           className="data-[state=checked]:bg-teal-500"
                         />
-                        <span className="text-sm text-white">{task.name}</span>
+                        <span className="text-sm text-white flex items-center gap-1">
+                          {task.name}
+                          {getStatusIcon(taskStatus[task.id]?.status)}
+                        </span>
                       </div>
                       <div className="flex space-x-1">
                         <Button
@@ -278,7 +352,16 @@ export function ExposureTaskList({
                     <div className="text-sm text-gray-400">
                       类型: {task.type} | 总数: {task.total} | 时间: {task.time}
                     </div>
-                  </div>
+                    <div className="flex items-center space-x-2">
+                      <Progress
+                        value={(task.progress[0] / task.progress[1]) * 100}
+                        className="h-2 w-full"
+                      />
+                      <span className="text-sm">
+                        {task.progress.join(" / ")}
+                      </span>
+                    </div>
+                  </motion.div>
                 </SortableItem>
               ))}
             </div>
@@ -312,7 +395,13 @@ export function ExposureTaskList({
               <TableBody>
                 {filteredTasks.map((task) => (
                   <SortableItem key={task.id} task={task}>
-                    <TableRow>
+                    <TableRow
+                      className={
+                        taskStatus[task.id]?.status === "completed"
+                          ? "bg-green-900/10"
+                          : ""
+                      }
+                    >
                       <TableCell>
                         <Switch
                           checked={task.enabled}
@@ -321,11 +410,24 @@ export function ExposureTaskList({
                           }
                         />
                       </TableCell>
-                      <TableCell>{task.name}</TableCell>
+                      <TableCell className="flex items-center gap-1">
+                        {task.name}
+                        {getStatusIcon(taskStatus[task.id]?.status)}
+                      </TableCell>
                       <TableCell>{task.type}</TableCell>
                       <TableCell>{task.total}</TableCell>
                       <TableCell>{task.time}</TableCell>
-                      <TableCell>{task.progress.join(" / ")}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Progress
+                            value={(task.progress[0] / task.progress[1]) * 100}
+                            className="h-2 w-24"
+                          />
+                          <span className="text-sm">
+                            {task.progress.join(" / ")}
+                          </span>
+                        </div>
+                      </TableCell>
                       <TableCell>{task.filter}</TableCell>
                       <TableCell>{task.binning}</TableCell>
                       <TableCell>

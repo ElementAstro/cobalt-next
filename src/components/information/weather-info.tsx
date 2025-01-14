@@ -9,8 +9,20 @@ import WeatherCards from "./weather-cards";
 import ForecastAccordion from "./forecast-accordion";
 import TemperatureChart from "./temperature-chart";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, MapPin, Navigation, Map } from "lucide-react";
+import {
+  AlertCircle,
+  MapPin,
+  Navigation,
+  Map,
+  Sun,
+  Moon,
+  RefreshCw,
+  Wind,
+  Droplet,
+  Cloud,
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +31,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import StaticMap from "./static-map";
+import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface WeatherInfoProps {
   onClose: () => void;
@@ -31,6 +50,7 @@ interface WeatherData {
   temperature: number;
   humidity: number;
   windSpeed: number;
+  windDirection: string;
   cloudCover: number;
   description: string;
   uvi: number;
@@ -56,7 +76,7 @@ interface WeatherAPI {
   ) => Promise<WeatherData>;
 }
 
-const DEFAULT_CITY = "London";
+const DEFAULT_CITY = "Beijing";
 const DEFAULT_API = "OpenWeatherMap";
 
 const AVAILABLE_APIS: WeatherAPI[] = [
@@ -83,6 +103,7 @@ const AVAILABLE_APIS: WeatherAPI[] = [
         temperature: data.main.temp,
         humidity: data.main.humidity,
         windSpeed: data.wind.speed,
+        windDirection: data.wind.deg,
         cloudCover: data.clouds.all,
         description: data.weather[0].description,
         uvi: data.uvi || 0,
@@ -118,6 +139,7 @@ const AVAILABLE_APIS: WeatherAPI[] = [
           units === "metric"
             ? data.current.wind_kph / 3.6
             : data.current.wind_mph,
+        windDirection: data.current.wind_dir,
         cloudCover: data.current.cloud,
         description: data.current.condition.text,
         uvi: data.current.uv,
@@ -150,6 +172,7 @@ export const WeatherInfo: React.FC<WeatherInfoProps> = memo(
     );
     const [showSettings, setShowSettings] = useState<boolean>(false);
     const [showMap, setShowMap] = useState<boolean>(false);
+    const [darkMode, setDarkMode] = useState<boolean>(false);
 
     const fetchWeatherData = useCallback(async () => {
       if (isMock) {
@@ -157,6 +180,7 @@ export const WeatherInfo: React.FC<WeatherInfoProps> = memo(
           temperature: 25,
           humidity: 50,
           windSpeed: 5,
+          windDirection: "NE",
           cloudCover: 20,
           description: "晴朗",
           uvi: 5,
@@ -260,6 +284,11 @@ export const WeatherInfo: React.FC<WeatherInfoProps> = memo(
       }
     };
 
+    const toggleDarkMode = () => {
+      setDarkMode((prev) => !prev);
+      document.documentElement.classList.toggle("dark");
+    };
+
     const temperatureData =
       weatherData?.forecast?.map((f) => ({
         date: f.date,
@@ -267,100 +296,163 @@ export const WeatherInfo: React.FC<WeatherInfoProps> = memo(
       })) || [];
 
     return (
-      <AnimatePresence>
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.3 }}
-          className="p-4 bg-gray-800 rounded-lg shadow-lg"
-        >
-          <WeatherInfoHeader onClose={onClose} />
-          <WeatherControls
-            city={city}
-            setCity={setCity}
-            units={units}
-            setUnits={setUnits}
-            selectedAPI={selectedAPI.name}
-            setSelectedAPI={(api) => {
-              const selected = AVAILABLE_APIS.find((a) => a.name === api);
-              if (selected) setSelectedAPI(selected);
-            }}
-            handleGeolocation={handleGeolocation}
-            fetchWeatherData={fetchWeatherData}
-            loading={loading}
-            setShowSettings={setShowSettings}
-            AVAILABLE_APIS={AVAILABLE_APIS}
-          />
-          {showSettings && (
-            <SettingsDialog apiKey={apiKey} setApiKey={setApiKey} />
-          )}
-          <div className="mt-4 flex space-x-2">
-            <Button
-              variant="secondary"
-              onClick={() => setShowMap(true)}
-              className="flex items-center"
-            >
-              <Map className="mr-2" />
-              选择位置
-            </Button>
-          </div>
-          <Dialog open={showMap} onOpenChange={setShowMap}>
-            <DialogContent className="w-full h-96">
-              <DialogHeader>
-                <DialogTitle>选择位置</DialogTitle>
-              </DialogHeader>
-              <StaticMap
-                location={city}
-                zoom={10}
-                showControls={false}
-                showZoomButtons={false}
-                allowFullscreen={false}
-                onMapClick={handleMapClick}
-              />
-            </DialogContent>
-          </Dialog>
-          {loading && (
-            <div className="flex justify-center items-center my-6">
-              <motion.div
-                className="loader ease-linear rounded-full border-4 border-t-4 border-gray-400 h-12 w-12"
-                animate={{ rotate: 360 }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 1,
-                  ease: "linear",
-                }}
-              />
+      <TooltipProvider>
+        <AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className={`p-6 bg-gray-900 rounded-lg shadow-lg ${
+              darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
+            }`}
+          >
+            <div className="flex justify-between items-center">
+              <WeatherInfoHeader onClose={onClose} />
+              <div className="flex items-center space-x-4">
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Button
+                      variant="ghost"
+                      onClick={toggleDarkMode}
+                      className="p-2"
+                      aria-label="切换主题"
+                    >
+                      {darkMode ? (
+                        <Sun className="w-5 h-5 text-yellow-500" />
+                      ) : (
+                        <Moon className="w-5 h-5 text-gray-800" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>切换 {darkMode ? "亮色" : "暗色"} 主题</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
-          )}
-          {error && (
-            <div className="flex items-center justify-center my-6 text-red-500">
-              <AlertCircle className="h-6 w-6 mr-2" />
-              {error}
+            <WeatherControls
+              city={city}
+              setCity={setCity}
+              units={units}
+              setUnits={setUnits}
+              selectedAPI={selectedAPI.name}
+              setSelectedAPI={(api) => {
+                const selected = AVAILABLE_APIS.find((a) => a.name === api);
+                if (selected) setSelectedAPI(selected);
+              }}
+              handleGeolocation={handleGeolocation}
+              fetchWeatherData={fetchWeatherData}
+              loading={loading}
+              setShowSettings={setShowSettings}
+              AVAILABLE_APIS={AVAILABLE_APIS}
+            />
+            {showSettings && (
+              <SettingsDialog apiKey={apiKey} setApiKey={setApiKey} />
+            )}
+            <div className="mt-4 flex space-x-2">
+              <Button
+                variant="secondary"
+                onClick={() => setShowMap(true)}
+                className="flex items-center"
+              >
+                <Map className="mr-2" />
+                选择位置
+              </Button>
             </div>
-          )}
-          {weatherData && !loading && !error && (
-            <>
-              <WeatherCards weatherData={weatherData} units={units} />
-              <Tabs defaultValue="current" className="mt-6">
-                <TabsList>
-                  <TabsTrigger value="forecast">预报</TabsTrigger>
-                  <TabsTrigger value="chart">图表</TabsTrigger>
-                </TabsList>
-                <TabsContent value="forecast">
-                  <ForecastAccordion
-                    forecast={weatherData.forecast || []}
-                    units={units}
-                  />
-                </TabsContent>
-                <TabsContent value="chart">
-                  <TemperatureChart data={temperatureData} />
-                </TabsContent>
-              </Tabs>
-            </>
-          )}
-        </motion.div>
-      </AnimatePresence>
+            <Dialog open={showMap} onOpenChange={setShowMap}>
+              <DialogContent className="w-full h-96">
+                <DialogHeader>
+                  <DialogTitle>选择位置</DialogTitle>
+                </DialogHeader>
+                <StaticMap
+                  location={city}
+                  zoom={10}
+                  showControls={true}
+                  showZoomButtons={true}
+                  allowFullscreen={true}
+                  onMapClick={handleMapClick}
+                />
+              </DialogContent>
+            </Dialog>
+            {loading && (
+              <div className="flex justify-center items-center my-6">
+                <motion.div
+                  className="loader ease-linear rounded-full border-4 border-t-4 border-gray-400 h-12 w-12"
+                  animate={{ rotate: 360 }}
+                  transition={{
+                    repeat: Infinity,
+                    duration: 1,
+                    ease: "linear",
+                  }}
+                />
+              </div>
+            )}
+            {error && (
+              <div className="flex items-center justify-center my-6 text-red-500">
+                <AlertCircle className="h-6 w-6 mr-2" />
+                {error}
+              </div>
+            )}
+            {weatherData && !loading && !error && (
+              <>
+                <WeatherCards weatherData={weatherData} units={units} />
+                <Tabs defaultValue="current" className="mt-6">
+                  <TabsList>
+                    <TabsTrigger value="forecast">预报</TabsTrigger>
+                    <TabsTrigger value="chart">图表</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="forecast">
+                    <ForecastAccordion
+                      forecast={weatherData.forecast || []}
+                      units={units}
+                    />
+                  </TabsContent>
+                  <TabsContent value="chart">
+                    <TemperatureChart data={temperatureData} />
+                  </TabsContent>
+                </Tabs>
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card className="bg-gray-800 border-gray-700 hover:border-gray-600 transition-all duration-300">
+                    <CardHeader>
+                      <CardTitle className="text-white">详细信息</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="flex items-center">
+                        <Wind className="w-5 h-5 text-blue-500 mr-2" />
+                        <span>
+                          风速: {weatherData.windSpeed}{" "}
+                          {units === "metric" ? "m/s" : "mph"}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <Droplet className="w-5 h-5 text-blue-300 mr-2" />
+                        <span>湿度: {weatherData.humidity}%</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Sun className="w-5 h-5 text-yellow-500 mr-2" />
+                        <span>日出: {weatherData.sunrise}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Moon className="w-5 h-5 text-gray-400 mr-2" />
+                        <span>日落: {weatherData.sunset}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Cloud className="w-5 h-5 text-gray-300 mr-2" />
+                        <span>云量: {weatherData.cloudCover}%</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Wind className="w-5 h-5 text-blue-500 mr-2" />
+                        <span>风向: {weatherData.windDirection}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </TooltipProvider>
     );
   }
 );

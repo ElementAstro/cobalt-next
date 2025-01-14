@@ -53,6 +53,7 @@ export interface Task {
 export interface Target {
   id: string;
   name: string;
+  category?: string;
   coordinates: CoordinateData;
   tasks: Task[];
 }

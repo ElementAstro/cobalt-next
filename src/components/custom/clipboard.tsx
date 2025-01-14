@@ -45,10 +45,16 @@ interface ClipboardItem {
   formatted?: boolean;
 }
 
+interface FloatingClipboardProps {
+  customRender?: (item: ClipboardItem) => React.ReactNode;
+}
+
 type ClipboardSize = "small" | "medium" | "large";
 type ClipboardTheme = "default" | "minimal" | "glass";
 
-export function AdvancedFloatingClipboard() {
+export function FloatingClipboard({
+  customRender,
+}: FloatingClipboardProps) {
   const [activeTab, setActiveTab] = useState("current");
   const [content, setContent] = useState("");
   const [history, setHistory] = useState<ClipboardItem[]>([]);
@@ -59,7 +65,9 @@ export function AdvancedFloatingClipboard() {
   const [isMarkdownMode, setIsMarkdownMode] = useState(false);
   const [currentTag, setCurrentTag] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [hasPastePermission, setHasPastePermission] = useState<boolean | null>(null);
+  const [hasPastePermission, setHasPastePermission] = useState<boolean | null>(
+    null
+  );
   const [size, setSize] = useState<ClipboardSize>("medium");
   const [theme, setTheme] = useState<ClipboardTheme>("default");
   const [searchQuery, setSearchQuery] = useState("");
@@ -248,7 +256,8 @@ export function AdvancedFloatingClipboard() {
 
   const handleExport = () => {
     const dataStr = JSON.stringify({ content, history });
-    const dataUri = "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
+    const dataUri =
+      "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
     const exportFileDefaultName = "clipboard_export.json";
 
     const linkElement = document.createElement("a");
@@ -337,7 +346,7 @@ export function AdvancedFloatingClipboard() {
       case "list":
         formattedText = selectedText
           .split("\n")
-          .map(line => `- ${line}`)
+          .map((line) => `- ${line}`)
           .join("\n");
         break;
       case "ordered-list":
@@ -361,7 +370,7 @@ export function AdvancedFloatingClipboard() {
     );
   };
 
-  const filteredHistory = history.filter(item =>
+  const filteredHistory = history.filter((item) =>
     item.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -419,10 +428,12 @@ export function AdvancedFloatingClipboard() {
                 size="icon"
                 className="h-6 w-6 text-primary-foreground mr-1"
                 onClick={() =>
-                  setTheme(prev =>
-                    prev === "default" ? "minimal" :
-                    prev === "minimal" ? "glass" :
-                    "default"
+                  setTheme((prev) =>
+                    prev === "default"
+                      ? "minimal"
+                      : prev === "minimal"
+                      ? "glass"
+                      : "default"
                   )
                 }
               >
@@ -432,7 +443,7 @@ export function AdvancedFloatingClipboard() {
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 text-primary-foreground mr-1"
-                onClick={() => setIsDarkMode(mode => !mode)}
+                onClick={() => setIsDarkMode((mode) => !mode)}
               >
                 {isDarkMode ? (
                   <Sun className="h-4 w-4" />
@@ -446,7 +457,11 @@ export function AdvancedFloatingClipboard() {
                 className="h-6 w-6 text-primary-foreground"
                 onClick={() => setIsMinimized(!isMinimized)}
               >
-                {isMinimized ? <ExternalLink className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                {isMinimized ? (
+                  <ExternalLink className="h-4 w-4" />
+                ) : (
+                  <X className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </motion.div>
@@ -534,8 +549,12 @@ export function AdvancedFloatingClipboard() {
                   </div>
                   {history[0] && history[0].tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-2">
-                      {history[0].tags.map(tag => (
-                        <Badge key={tag} onClick={() => removeTag(tag)} className="cursor-pointer">
+                      {history[0].tags.map((tag) => (
+                        <Badge
+                          key={tag}
+                          onClick={() => removeTag(tag)}
+                          className="cursor-pointer"
+                        >
                           {tag} <X className="inline-block ml-1 h-3 w-3" />
                         </Badge>
                       ))}
@@ -584,21 +603,17 @@ export function AdvancedFloatingClipboard() {
                     >
                       <Download className="mr-2 h-4 w-4" /> 导出
                     </Button>
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      asChild
-                    >
-                        <Label className="flex items-center justify-center cursor-pointer">
+                    <Button variant="outline" className="flex-1" asChild>
+                      <Label className="flex items-center justify-center cursor-pointer">
                         <Upload className="mr-2 h-4 w-4" />
                         导入
-                        <Input 
-                        type="file" 
-                        accept="application/json"
-                        onChange={handleImport}
-                        className="hidden"
+                        <Input
+                          type="file"
+                          accept="application/json"
+                          onChange={handleImport}
+                          className="hidden"
                         />
-                        </Label>
+                      </Label>
                     </Button>
                     <Button
                       onClick={clearHistory}
@@ -618,46 +633,57 @@ export function AdvancedFloatingClipboard() {
                   />
                   <div className="max-h-64 overflow-y-auto">
                     {filteredHistory.length > 0 ? (
-                      filteredHistory.map(item => (
-                        <Card key={item.id} className="mb-2">
-                          <CardContent>
-                            <div className="flex justify-between items-center">
-                              <p className="text-sm">{item.content}</p>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => restoreFromHistory(item)}
-                                >
-                                  <Copy className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(item.content);
-                                    toast({
-                                      title: "复制成功",
-                                      description: "内容已复制到剪贴板。",
-                                    });
-                                  }}
-                                >
-                                  <Copy className="h-4 w-4" />
-                                </Button>
+                      filteredHistory.map((item) =>
+                        customRender ? (
+                          customRender(item)
+                        ) : (
+                          <Card key={item.id} className="mb-2">
+                            <CardContent>
+                              <div className="flex justify-between items-center">
+                                <p className="text-sm">{item.content}</p>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => restoreFromHistory(item)}
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(
+                                        item.content
+                                      );
+                                      toast({
+                                        title: "复制成功",
+                                        description: "内容已复制到剪贴板。",
+                                      });
+                                    }}
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
-                            </div>
-                            {item.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {item.tags.map(tag => (
-                                  <Badge key={tag} className="cursor-pointer" onClick={() => removeTag(tag)}>
-                                    {tag} <X className="inline-block ml-1 h-3 w-3" />
-                                  </Badge>
-                                ))}
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))
+                              {item.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {item.tags.map((tag) => (
+                                    <Badge
+                                      key={tag}
+                                      className="cursor-pointer"
+                                      onClick={() => removeTag(tag)}
+                                    >
+                                      {tag}{" "}
+                                      <X className="inline-block ml-1 h-3 w-3" />
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        )
+                      )
                     ) : (
                       <p>No history found.</p>
                     )}

@@ -1,4 +1,10 @@
-import { useState, useEffect } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  startTransition,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle,
@@ -60,21 +66,29 @@ export function GuideSteps({
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState(0);
 
+  const memoizedSteps = useMemo(() => steps, [steps]);
+  const currentStepData = useMemo(
+    () => steps[currentStep],
+    [steps, currentStep]
+  );
+
   useEffect(() => {
-    setSteps((prev) =>
-      prev.map((step, i) => ({
-        ...step,
-        status:
-          i === currentStep
-            ? "active"
-            : i < currentStep
-            ? "completed"
-            : "pending",
-      }))
-    );
+    startTransition(() => {
+      setSteps((prev) =>
+        prev.map((step, i) => ({
+          ...step,
+          status:
+            i === currentStep
+              ? "active"
+              : i < currentStep
+              ? "completed"
+              : "pending",
+        }))
+      );
+    });
   }, [currentStep]);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     const current = steps[currentStep];
     if (current.validation && !current.validation()) {
       setSteps((prev) =>
@@ -91,23 +105,26 @@ export function GuideSteps({
     } else {
       onComplete?.();
     }
-  };
+  }, [currentStep, onComplete, steps]);
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     if (currentStep > 0) {
       setDirection(-1);
       setCurrentStep((prev) => prev - 1);
     }
-  };
+  }, [currentStep]);
 
-  const handleStepClick = (index: number) => {
-    if (allowSkip || index <= currentStep) {
-      setDirection(index > currentStep ? 1 : -1);
-      setCurrentStep(index);
-    }
-  };
+  const handleStepClick = useCallback(
+    (index: number) => {
+      if (allowSkip || index <= currentStep) {
+        setDirection(index > currentStep ? 1 : -1);
+        setCurrentStep(index);
+      }
+    },
+    [allowSkip, currentStep]
+  );
 
-  const getStatusIcon = (status: Step["status"]) => {
+  const getStatusIcon = useCallback((status: Step["status"]) => {
     switch (status) {
       case "completed":
         return <CheckCircle className="w-5 h-5 text-green-500" />;
@@ -116,7 +133,7 @@ export function GuideSteps({
       default:
         return null;
     }
-  };
+  }, []);
 
   return (
     <div
@@ -132,7 +149,7 @@ export function GuideSteps({
           orientation === "horizontal" ? "flex-row" : "flex-col"
         )}
       >
-        {steps.map((step, index) => (
+        {memoizedSteps.map((step, index) => (
           <>
             {separator && index !== 0 && (
               <div className="flex items-center justify-center">
@@ -189,7 +206,7 @@ export function GuideSteps({
           transition={{ duration: 0.3 }}
           className="mt-8"
         >
-          {steps[currentStep].children}
+          {currentStepData.children}
         </motion.div>
       </AnimatePresence>
 

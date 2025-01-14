@@ -28,6 +28,50 @@ import {
   Type,
   MoreHorizontal,
   Info,
+  Star,
+  Compass,
+  Clock,
+  MapPin,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  ChevronLeft,
+  Settings,
+  RotateCw,
+  ZoomIn,
+  ZoomOut,
+  Target,
+  Plus,
+  Minus,
+  Search,
+  Calendar,
+  Sun,
+  Moon,
+  Cloud,
+  CloudRain,
+  CloudSnow,
+  CloudLightning,
+  CloudDrizzle,
+  CloudFog,
+  CloudSun,
+  CloudMoon,
+  CloudOff,
+  Thermometer,
+  Droplet,
+  Wind,
+  Sunset,
+  Sunrise,
+  Navigation,
+  Navigation2,
+  Map,
+  Globe,
+  Layers,
+  Grid,
+  List,
+  LayoutGrid,
+  LayoutList,
+  LayoutTemplate,
+  LayoutDashboard,
 } from "lucide-react";
 import { useGlobalStore } from "@/store/useSkymapStore";
 import * as AXIOSOF from "@/services/find-object";
@@ -337,9 +381,21 @@ const TargetSmallCard: React.FC<TargetSmallCardProps> = (props) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="mb-2 hover:shadow-lg transition-all duration-300 dark:bg-gray-800 rounded-lg"
+      whileHover={{ scale: 1.02 }}
+      transition={{
+        duration: 0.5,
+        type: "spring",
+        stiffness: 200,
+        damping: 10,
+      }}
+      className="mb-2 hover:shadow-xl transition-all duration-300 dark:bg-gray-800 rounded-lg relative overflow-hidden"
     >
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 hover:opacity-100"
+        initial={{ x: "-100%" }}
+        whileHover={{ x: "100%" }}
+        transition={{ duration: 1.5, repeat: Infinity }}
+      />
       <Card className="p-3 landscape:flex landscape:gap-3">
         <div className="landscape:w-[30%]">
           <CardContent className="flex flex-col md:flex-row">
@@ -465,75 +521,108 @@ const TargetSmallCard: React.FC<TargetSmallCardProps> = (props) => {
         <div id="chart-container" className="landscape:w-[70%]">
           <div className="relative h-28 mt-2">
             {in_updating ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-700 bg-opacity-50 backdrop-blur-sm rounded">
-                <Spinner className="w-8 h-8" />
-              </div>
-            ) : (
-              <LineChart
-                width={chartDimensions.width}
-                height={chartDimensions.height}
-                data={real_target_info.altitude.map(([time, _, alt]) => ({
-                  time: DateTime.fromFormat(
-                    time,
-                    "yyyy-MM-dd HH:mm:ss"
-                  ).toJSDate(),
-                  altitude: Number(alt.toFixed(2)),
-                }))}
-                margin={{ top: 10, right: 5, left: 10, bottom: 20 }}
-                className="transition-all duration-300 hover:opacity-90"
-                onMouseEnter={() =>
-                  setChartDimensions((prev) => ({ ...prev, height: 320 }))
-                }
-                onMouseLeave={() =>
-                  setChartDimensions((prev) => ({ ...prev, height: 280 }))
-                }
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="absolute inset-0 flex items-center justify-center bg-gray-700 bg-opacity-50 backdrop-blur-sm rounded"
               >
-                <XAxis
-                  dataKey="time"
-                  tickFormatter={(time) =>
-                    DateTime.fromJSDate(time).toFormat("HH")
+                <motion.div
+                  initial={{ scale: 0.8 }}
+                  animate={{ scale: 1 }}
+                  transition={{
+                    duration: 0.5,
+                    repeat: Infinity,
+                    repeatType: "mirror",
+                  }}
+                >
+                  <Spinner className="w-8 h-8" />
+                </motion.div>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ scale: 1.02 }}
+                transition={{
+                  duration: 0.5,
+                  type: "spring",
+                  stiffness: 150,
+                }}
+                className="relative"
+              >
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 hover:opacity-100"
+                  initial={{ x: "-100%" }}
+                  whileHover={{ x: "100%" }}
+                  transition={{ duration: 1.2, repeat: Infinity }}
+                />
+                <LineChart
+                  width={chartDimensions.width}
+                  height={chartDimensions.height}
+                  data={real_target_info.altitude.map(([time, _, alt]) => ({
+                    time: DateTime.fromFormat(
+                      time,
+                      "yyyy-MM-dd HH:mm:ss"
+                    ).toJSDate(),
+                    altitude: Number(alt.toFixed(2)),
+                  }))}
+                  margin={{ top: 10, right: 5, left: 10, bottom: 20 }}
+                  className="transition-all duration-300 hover:opacity-90"
+                  onMouseEnter={() =>
+                    setChartDimensions((prev) => ({ ...prev, height: 320 }))
                   }
-                  stroke="#fff"
-                />
-                <YAxis domain={[0, 90]} stroke="#fff" />
-                <RechartsTooltip />
-                <Line
-                  type="monotone"
-                  dataKey="altitude"
-                  stroke="#8884d8"
-                  dot={false}
-                  strokeWidth={2}
-                  animationDuration={1000}
-                />
-                <defs>
-                  <linearGradient
-                    id="altitudeGradient"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <Area
-                  type="monotone"
-                  dataKey="altitude"
-                  stroke="#8884d8"
-                  fill="url(#altitudeGradient)"
-                  strokeWidth={2}
-                  animationDuration={1000}
-                />
-                {fig_line_data_template.map((line, index) => (
-                  <ReferenceLine
-                    key={index}
-                    x={line.xAxis.getTime()}
-                    stroke={line.lineStyle.color}
-                    label={line.name}
+                  onMouseLeave={() =>
+                    setChartDimensions((prev) => ({ ...prev, height: 280 }))
+                  }
+                >
+                  <XAxis
+                    dataKey="time"
+                    tickFormatter={(time) =>
+                      DateTime.fromJSDate(time).toFormat("HH")
+                    }
+                    stroke="#fff"
                   />
-                ))}
-              </LineChart>
+                  <YAxis domain={[0, 90]} stroke="#fff" />
+                  <RechartsTooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="altitude"
+                    stroke="#8884d8"
+                    dot={false}
+                    strokeWidth={2}
+                    animationDuration={1000}
+                  />
+                  <defs>
+                    <linearGradient
+                      id="altitudeGradient"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <Area
+                    type="monotone"
+                    dataKey="altitude"
+                    stroke="#8884d8"
+                    fill="url(#altitudeGradient)"
+                    strokeWidth={2}
+                    animationDuration={1000}
+                  />
+                  {fig_line_data_template.map((line, index) => (
+                    <ReferenceLine
+                      key={index}
+                      x={line.xAxis.getTime()}
+                      stroke={line.lineStyle.color}
+                      label={line.name}
+                    />
+                  ))}
+                </LineChart>
+              </motion.div>
             )}
           </div>
         </div>

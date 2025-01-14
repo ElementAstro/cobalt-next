@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import {
+  useState,
+  useEffect,
+  useDeferredValue,
+  startTransition,
+  useMemo,
+  useCallback,
+} from "react";
 import { motion, useAnimation, useMotionValue } from "framer-motion";
 import { MouseFollowerProps } from "@/types/home";
 
@@ -19,6 +26,7 @@ export default function MouseFollower({
   rotateOnMove = true,
 }: MouseFollowerProps) {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const deferredMousePosition = useDeferredValue(mousePosition);
   const [trailPositions, setTrailPositions] = useState<
     { x: number; y: number }[]
   >([]);
@@ -29,19 +37,24 @@ export default function MouseFollower({
   const cursorControls = useAnimation();
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent | TouchEvent) => {
-      let clientX, clientY;
-      if ("touches" in e) {
-        clientX = e.touches[0].clientX;
-        clientY = e.touches[0].clientY;
-      } else {
-        clientX = e.clientX;
-        clientY = e.clientY;
-      }
-      setMousePosition({ x: clientX, y: clientY });
-      cursorX.set(clientX);
-      cursorY.set(clientY);
-    };
+    const handleMouseMove = useCallback(
+      (e: MouseEvent | TouchEvent) => {
+        let clientX, clientY;
+        if ("touches" in e) {
+          clientX = e.touches[0].clientX;
+          clientY = e.touches[0].clientY;
+        } else {
+          clientX = e.clientX;
+          clientY = e.clientY;
+        }
+        startTransition(() => {
+          setMousePosition({ x: clientX, y: clientY });
+        });
+        cursorX.set(clientX);
+        cursorY.set(clientY);
+      },
+      [cursorX, cursorY]
+    );
 
     const handleTouchStart = () => setIsTouching(true);
     const handleTouchEnd = () => setIsTouching(false);
@@ -59,27 +72,38 @@ export default function MouseFollower({
     };
   }, [cursorX, cursorY]);
 
+  const trailPositionsMemo = useMemo(() => {
+    const newPositions = [
+      deferredMousePosition,
+      ...trailPositions.slice(0, trail - 1),
+    ];
+    return newPositions;
+  }, [deferredMousePosition, trail, trailPositions]);
+
   useEffect(() => {
-    setTrailPositions((prevPositions) => {
-      const newPositions = [
-        mousePosition,
-        ...prevPositions.slice(0, trail - 1),
-      ];
-      return newPositions;
+    startTransition(() => {
+      setTrailPositions(trailPositionsMemo);
     });
 
     if (rotateOnMove) {
       const angle = Math.atan2(
-        mousePosition.y - cursorY.get(),
-        mousePosition.x - cursorX.get()
+        deferredMousePosition.y - cursorY.get(),
+        deferredMousePosition.x - cursorX.get()
       );
       cursorControls.start({ rotate: angle * (180 / Math.PI) });
     }
-  }, [mousePosition, trail, rotateOnMove, cursorControls, cursorX, cursorY]);
+  }, [
+    trailPositionsMemo,
+    rotateOnMove,
+    cursorControls,
+    cursorX,
+    cursorY,
+    deferredMousePosition,
+  ]);
 
   return (
     <>
-      {trailPositions.map((position, index) => (
+      {trailPositionsMemo.map((position, index) => (
         <motion.div
           key={index}
           className="fixed top-0 left-0 rounded-full pointer-events-none mix-blend-difference"

@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -35,6 +35,17 @@ interface RowProps {
 const LogItem: React.FC<RowProps> = ({ index, style }) => {
   const { filteredLogs, selectedLogs, setSelectedLogs, setSelectedLogForNote } =
     useLogStore();
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
 
   const log = filteredLogs[index] as LogEntry;
 
@@ -68,13 +79,28 @@ const LogItem: React.FC<RowProps> = ({ index, style }) => {
     <motion.div
       style={style}
       className={cn(
-        "group px-4 py-2 border-b dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-all duration-200",
+        "group px-4 py-2 border-b dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-all duration-200 relative",
         selectedLogs.includes(log.id) && "bg-blue-50/50 dark:bg-blue-900/10"
       )}
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.2 }}
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.98 }}
     >
+      <AnimatePresence>
+        {isCopied && (
+          <motion.div
+            className="absolute top-2 right-2 bg-green-500 text-white px-3 py-1 rounded-full text-xs"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            已复制
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="flex items-center gap-3">
         <Checkbox
           checked={selectedLogs.includes(log.id)}
@@ -137,9 +163,8 @@ const LogItem: React.FC<RowProps> = ({ index, style }) => {
               添加备注
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => {
-                /* 复制日志内容 */
-              }}
+              onClick={() => handleCopy(log.message)}
+              className="focus:bg-green-50 dark:focus:bg-green-900/20"
             >
               <Copy className="h-4 w-4 mr-2" />
               复制内容

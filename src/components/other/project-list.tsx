@@ -36,6 +36,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Project {
   name: string;
@@ -50,6 +51,14 @@ interface Project {
 interface ProjectListProps {
   projects: Project[];
 }
+
+const categoryColors = {
+  Web: "bg-blue-500/10 text-blue-500",
+  Mobile: "bg-green-500/10 text-green-500",
+  AI: "bg-purple-500/10 text-purple-500",
+  Data: "bg-orange-500/10 text-orange-500",
+  Design: "bg-pink-500/10 text-pink-500",
+};
 
 export function ProjectList({ projects }: ProjectListProps) {
   const [filter, setFilter] = useState<string>("all");
@@ -66,7 +75,7 @@ export function ProjectList({ projects }: ProjectListProps) {
 
   // Simulate loading
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000);
+    const timer = setTimeout(() => setIsLoading(false), 1500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -131,6 +140,30 @@ export function ProjectList({ projects }: ProjectListProps) {
     console.log("Updated favorites:", updatedProjects);
   };
 
+  const renderRatingStars = (rating?: number) => {
+    if (!rating) return null;
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 !== 0;
+    
+    return (
+      <div className="flex items-center gap-1 mt-2">
+        {Array.from({ length: fullStars }).map((_, i) => (
+          <Star key={i} className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+        ))}
+        {hasHalfStar && (
+          <div className="relative h-4 w-4">
+            <Star className="absolute h-4 w-4 text-yellow-400" />
+            <Star className="absolute h-4 w-4 text-yellow-400 fill-yellow-400" 
+              style={{ clipPath: 'inset(0 50% 0 0)' }} />
+          </div>
+        )}
+        {Array.from({ length: 5 - Math.ceil(rating) }).map((_, i) => (
+          <Star key={i} className="h-4 w-4 text-muted-foreground" />
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="p-4 min-h-screen bg-gradient-to-b from-background to-muted/20">
       {/* Controls and filters */}
@@ -188,20 +221,25 @@ export function ProjectList({ projects }: ProjectListProps) {
           >
             <div className="flex flex-wrap gap-2">
               {allTags.map((tag) => (
-                <Button
+                <motion.div
                   key={tag}
-                  variant={tagFilter.includes(tag) ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setTagFilter((prev) =>
-                      prev.includes(tag)
-                        ? prev.filter((t) => t !== tag)
-                        : [...prev, tag]
-                    );
-                  }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  {tag}
-                </Button>
+                  <Button
+                    variant={tagFilter.includes(tag) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setTagFilter((prev) =>
+                        prev.includes(tag)
+                          ? prev.filter((t) => t !== tag)
+                          : [...prev, tag]
+                      );
+                    }}
+                  >
+                    {tag}
+                  </Button>
+                </motion.div>
               ))}
             </div>
           </motion.div>
@@ -257,17 +295,25 @@ export function ProjectList({ projects }: ProjectListProps) {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: itemsPerPage }).map((_, index) => (
-            <Card key={index} className="w-full h-full">
-              <CardHeader>
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-1/2 mt-2" />
-              </CardHeader>
-              <div className="p-4 space-y-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-2/3" />
-                <Skeleton className="h-10 w-24 mt-4" />
-              </div>
-            </Card>
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <Card className="w-full h-full relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-muted/50 to-transparent animate-shimmer" />
+                <CardHeader>
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-1/2 mt-2" />
+                </CardHeader>
+                <div className="p-4 space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-10 w-24 mt-4" />
+                </div>
+              </Card>
+            </motion.div>
           ))}
         </div>
       ) : (
@@ -292,7 +338,7 @@ export function ProjectList({ projects }: ProjectListProps) {
                     : "grid-cols-1 gap-4"
                 }`}
               >
-                <AnimatePresence>
+                <AnimatePresence mode="wait">
                   {currentProjects.map((project, index) => (
                     <motion.div
                       key={project.name}
@@ -307,38 +353,58 @@ export function ProjectList({ projects }: ProjectListProps) {
                       }}
                       whileHover={{
                         scale: 1.02,
+                        y: -5,
                         transition: { duration: 0.2 },
                       }}
                       className="flex flex-col h-full"
                     >
                       <Card className="w-full h-full bg-background/50 backdrop-blur-sm border border-border/50 shadow-sm hover:shadow-md transition-shadow">
                         <CardHeader>
-                          <CardTitle className="text-lg flex justify-between items-center">
-                            <span>{project.name}</span>
-                            <button
-                              onClick={() => toggleFavorite(project.name)}
-                              className="p-1 hover:bg-muted rounded-full"
-                            >
-                              <Star
-                                className={`h-5 w-5 ${
-                                  project.isFavorite
-                                    ? "text-yellow-400 fill-yellow-400"
-                                    : "text-muted-foreground"
-                                }`}
-                              />
-                            </button>
-                          </CardTitle>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="text-lg">
+                                {project.name}
+                              </CardTitle>
+                              <div className={`text-xs px-2 py-1 mt-2 rounded-full w-fit ${
+                                categoryColors[project.category as keyof typeof categoryColors] || 
+                                "bg-gray-500/10 text-gray-500"
+                              }`}>
+                                {project.category}
+                              </div>
+                            </div>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => toggleFavorite(project.name)}
+                                  className="p-1 hover:bg-muted rounded-full"
+                                >
+                                  <Star
+                                    className={`h-5 w-5 ${
+                                      project.isFavorite
+                                        ? "text-yellow-400 fill-yellow-400"
+                                        : "text-muted-foreground"
+                                    }`}
+                                  />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                {project.isFavorite ? "取消收藏" : "添加到收藏"}
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
                           <CardDescription className="mt-2">
                             {project.description}
                           </CardDescription>
+                          {renderRatingStars(project.rating)}
                           <div className="flex flex-wrap gap-2 mt-2">
                             {project.tags?.map((tag) => (
-                              <span
+                              <motion.span
                                 key={tag}
+                                whileHover={{ scale: 1.1 }}
                                 className="text-xs px-2 py-1 bg-muted rounded-full"
                               >
                                 {tag}
-                              </span>
+                              </motion.span>
                             ))}
                           </div>
                         </CardHeader>
@@ -360,9 +426,14 @@ export function ProjectList({ projects }: ProjectListProps) {
                 </AnimatePresence>
               </motion.div>
 
-              {/* Pagination using existing components */}
+              {/* Pagination */}
               {totalPages > 1 && (
-                <div className="mt-8">
+                <motion.div 
+                  className="mt-8"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
                   <Pagination>
                     <PaginationContent>
                       <PaginationItem>
@@ -402,7 +473,7 @@ export function ProjectList({ projects }: ProjectListProps) {
                       </PaginationItem>
                     </PaginationContent>
                   </Pagination>
-                </div>
+                </motion.div>
               )}
             </>
           )}

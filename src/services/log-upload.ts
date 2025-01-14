@@ -15,7 +15,7 @@ const logSchema = z.object({
 
 const logsArraySchema = z.array(logSchema);
 
-export async function uploadLogs(file: File): Promise<LogEntry[]> {
+export async function uploadLogs(file: File, onProgress?: (progress: number) => void): Promise<LogEntry[]> {
   try {
     // 1. 验证文件类型
     if (!file.name.match(/\.(json|csv|xml|yaml|yml)$/)) {

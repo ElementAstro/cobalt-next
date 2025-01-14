@@ -34,6 +34,35 @@ export function TargetControls() {
       priority: "medium",
       colorTheme: "default",
     });
+  const [presets, setPresets] = React.useState<
+    Array<{ name: string; settings: TargetSettings & AdvancedSettings }>
+  >([]);
+  const [selectedPreset, setSelectedPreset] = React.useState<string | null>(null);
+
+  const handleSavePreset = () => {
+    const presetName = prompt("请输入预设名称");
+    if (presetName) {
+      const newPreset = {
+        name: presetName,
+        settings: { ...settings, ...advancedSettings },
+      };
+      setPresets((prev) => [...prev, newPreset]);
+    }
+  };
+
+  const handleLoadPreset = (presetName: string) => {
+    const preset = presets.find((p) => p.name === presetName);
+    if (preset) {
+      Object.entries(preset.settings).forEach(([key, value]) => {
+        if (key in settings) {
+          setSetting(key as keyof TargetSettings, value);
+        } else {
+          handleAdvancedChange(key as keyof AdvancedSettings, value);
+        }
+      });
+      setSelectedPreset(presetName);
+    }
+  };
   const isMobile = useMediaQuery({ query: "(max-width: 768px)" });
   const [errors, setErrors] = React.useState<{
     [key in keyof TargetSettings]?: string;
@@ -91,7 +120,36 @@ export function TargetControls() {
   };
 
   const toggleExpansion = () => {
-    setIsExpanded(!isExpanded);
+    setIsExpanded((prev) => !prev);
+  };
+
+  // 按钮点击动画变体
+  const buttonVariants = {
+    hover: { scale: 1.05 },
+    tap: { scale: 0.95 },
+    focus: { scale: 1.02 },
+  };
+
+  // 面板动画变体
+  const panelVariants = {
+    expanded: {
+      opacity: 1,
+      height: "auto",
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 15
+      }
+    },
+    collapsed: {
+      opacity: 0,
+      height: 0,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 15
+      }
+    }
   };
 
   return (
@@ -385,6 +443,40 @@ export function TargetControls() {
                   持续时间: {settings.duration}
                 </div>
               </motion.div>
+            </motion.div>
+
+            <motion.div
+              className="mt-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <div className="text-lg font-medium text-gray-400 mb-4">
+                预设管理
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Select
+                  value={selectedPreset || ""}
+                  onValueChange={handleLoadPreset}
+                >
+                  <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                    <SelectValue placeholder="选择预设" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                    {presets.map((preset) => (
+                      <SelectItem key={preset.name} value={preset.name}>
+                        {preset.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={handleSavePreset}
+                  className="bg-purple-500 hover:bg-purple-600 text-white"
+                >
+                  保存当前为预设
+                </Button>
+              </div>
             </motion.div>
 
             <AnimatePresence>

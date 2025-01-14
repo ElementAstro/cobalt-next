@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -13,17 +14,37 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useLogStore } from "@/store/useLogStore";
-import { X, Sliders, Calendar as CalendarIcon } from "lucide-react";
+import {
+  X,
+  Sliders,
+  Calendar as CalendarIcon,
+  ChevronDown,
+  ChevronUp,
+  Filter,
+} from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { DateRange } from "react-day-picker";
+
+const animationVariants = {
+  hidden: { opacity: 0, y: -10 },
+  visible: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: 10 },
+};
 
 const LogFilters: React.FC = () => {
-  const [date, setDate] = useState<Date>();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const {
     filter,
     setFilter,
@@ -46,97 +67,66 @@ const LogFilters: React.FC = () => {
   const handleClearFilter = () => {
     setFilter("");
     setSearch("");
+    setDateRange(undefined);
+    setLogCount(100);
+    setLogLevel("all");
+    setIsPaginationEnabled(false);
+    setIsRealTimeEnabled(true);
   };
 
+  const filterCount = [
+    filter ? 1 : 0,
+    search ? 1 : 0,
+    dateRange ? 1 : 0,
+    logLevel !== "all" ? 1 : 0,
+    logCount !== 100 ? 1 : 0,
+  ].reduce((a, b) => a + b, 0);
+
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap gap-2">
-        <div className="flex-1 min-w-[200px]">
-          <Input
-            type="text"
-            placeholder="搜索日志内容..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full"
-          />
-        </div>
-        <div className="flex-1 min-w-[200px]">
-          <Input
-            type="text"
-            placeholder="按标签过滤..."
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="w-full"
-          />
+    <motion.div
+      className="space-y-4"
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      variants={animationVariants}
+    >
+      {/* Filter Summary */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Filter className="h-5 w-5 text-muted-foreground" />
+          <span className="text-sm font-medium">
+            当前筛选 ({filterCount} 个条件)
+          </span>
         </div>
         <Button
+          variant="ghost"
+          size="sm"
           onClick={handleClearFilter}
-          variant="outline"
-          size="icon"
-          className="shrink-0"
+          disabled={filterCount === 0}
         >
-          <X className="h-4 w-4" />
+          重置所有筛选
+          <X className="h-4 w-4 ml-2" />
         </Button>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="icon">
-              <Sliders className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80">
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <span className="text-sm">时间范围</span>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <CalendarIcon className="h-4 w-4 mr-2" />
-                      {date ? date.toLocaleDateString() : "选择日期"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={date}
-                      onSelect={setDate}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="space-y-2">
-                <Label>日志数量限制</Label>
-                <Slider
-                  value={[logCount]}
-                  onValueChange={([value]) => setLogCount(value)}
-                  max={1000}
-                  step={100}
-                />
-                <div className="text-xs text-gray-500">
-                  显示最近 {logCount} 条日志
-                </div>
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
       </div>
-      <div className="flex flex-wrap items-center gap-4 text-sm">
-        <div className="flex items-center space-x-2">
-          <Switch
-            checked={isPaginationEnabled}
-            onCheckedChange={setIsPaginationEnabled}
-          />
-          <span>分页显示</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Switch
-            checked={isRealTimeEnabled}
-            onCheckedChange={setIsRealTimeEnabled}
-          />
-          <span>实时更新</span>
-        </div>
+
+      {/* Main Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <Input
+          type="text"
+          placeholder="搜索日志内容..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full"
+        />
+        <Input
+          type="text"
+          placeholder="按标签过滤..."
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="w-full"
+        />
         <Select value={logLevel} onValueChange={setLogLevel}>
-          <SelectTrigger className="w-[120px]">
+          <SelectTrigger>
             <SelectValue placeholder="日志级别" />
           </SelectTrigger>
           <SelectContent>
@@ -146,8 +136,111 @@ const LogFilters: React.FC = () => {
             <SelectItem value="info">信息</SelectItem>
           </SelectContent>
         </Select>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-full justify-start">
+              <CalendarIcon className="h-4 w-4 mr-2" />
+              {dateRange?.from ? (
+                dateRange.to ? (
+                  <>
+                    {dateRange.from.toLocaleDateString()} -{" "}
+                    {dateRange.to.toLocaleDateString()}
+                  </>
+                ) : (
+                  dateRange.from.toLocaleDateString()
+                )
+              ) : (
+                "选择日期范围"
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="range"
+              selected={dateRange}
+              onSelect={setDateRange}
+              numberOfMonths={2}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
       </div>
-    </div>
+
+      {/* Advanced Filters */}
+      <div className="space-y-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full"
+          onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
+        >
+          {isAdvancedOpen ? (
+            <ChevronUp className="h-4 w-4 mr-2" />
+          ) : (
+            <ChevronDown className="h-4 w-4 mr-2" />
+          )}
+          高级筛选
+        </Button>
+
+        <AnimatePresence>
+          {isAdvancedOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-4 overflow-hidden"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>日志数量限制</Label>
+                  <Slider
+                    value={[logCount]}
+                    onValueChange={([value]) => setLogCount(value)}
+                    max={1000}
+                    step={100}
+                  />
+                  <div className="text-xs text-muted-foreground">
+                    显示最近 {logCount} 条日志
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>分页显示</Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Switch
+                          checked={isPaginationEnabled}
+                          onCheckedChange={setIsPaginationEnabled}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        启用分页显示可以提升大量日志的性能
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label>实时更新</Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Switch
+                          checked={isRealTimeEnabled}
+                          onCheckedChange={setIsRealTimeEnabled}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        实时更新会持续获取最新的日志
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.div>
   );
 };
 

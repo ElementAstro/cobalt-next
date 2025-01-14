@@ -1,13 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import { useLanguage } from "@/context/language-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { CodeBlock } from "@/components/custom/code-block";
+import { CheckCircle, Copy } from "lucide-react";
 
 export default function BuildInstructions() {
   const { t } = useLanguage();
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <section id="build" className="py-16 md:py-24 px-4">
@@ -125,17 +135,34 @@ sudo apt-get install build-essential cmake libcfitsio-dev zlib1g-dev libssl-dev 
                     />
                   </div>
                 </li>
-                <li>
+                <motion.li
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
                   {t("launchProgram")}:
-                  <CodeBlock
-                    language="bash"
-                    code="./lithium_server"
-                    theme="dark"
-                    showLineNumbers={false}
-                    fontSize="small"
-                    className="mt-2"
-                  />
-                </li>
+                  <div className="relative mt-2">
+                    <CodeBlock
+                      language="bash"
+                      code="./lithium_server"
+                      theme="dark"
+                      showLineNumbers={false}
+                      fontSize="small"
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="absolute top-1 right-1 hover:bg-background/50"
+                      onClick={() => handleCopy("./lithium_server")}
+                    >
+                      {copied ? (
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                </motion.li>
               </ol>
             </CardContent>
           </Card>

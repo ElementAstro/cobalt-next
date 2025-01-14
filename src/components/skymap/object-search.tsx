@@ -1,6 +1,6 @@
 "use client";
 
-import { FC, useState, useMemo } from "react";
+import { FC, useState, useMemo, useEffect } from "react";
 import * as AXIOSOF from "@/services/find-object";
 import TargetSmallCard from "./target-small";
 import { motion } from "framer-motion";
@@ -20,7 +20,15 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { FilterIcon, Download, Search, ChevronDown } from "lucide-react";
+import {
+  FilterIcon,
+  Download,
+  Search,
+  ChevronDown,
+  Heart,
+  History,
+  Moon,
+} from "lucide-react";
 import { IDSOObjectDetailedInfo } from "@/types/skymap";
 import {
   Select,
@@ -30,6 +38,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
+import html2canvas from "html2canvas";
+import { saveAs } from "file-saver";
 import {
   PieChart,
   Pie,
@@ -62,6 +72,11 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
     useState("请在左侧输入框输入需要搜索的信息");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
+
+  // 新增状态
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   // 数据
   const [toSearchText, setToSearchText] = useState("");
@@ -143,6 +158,42 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
     return { typeData, magData };
   }, [foundTargetResult]);
 
+  // 夜间模式切换效果
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", isDarkMode);
+  }, [isDarkMode]);
+
+  // 收藏功能
+  const toggleFavorite = (targetId: string) => {
+    setFavorites((prev) => {
+      const newFavorites = new Set(prev);
+      if (newFavorites.has(targetId)) {
+        newFavorites.delete(targetId);
+      } else {
+        newFavorites.add(targetId);
+      }
+      return newFavorites;
+    });
+  };
+
+  // 图表导出功能
+  const exportChart = async (chartType: "pie" | "bar") => {
+    const chartElement = document.querySelector(
+      chartType === "pie"
+        ? ".recharts-wrapper"
+        : ".recharts-wrapper + .recharts-wrapper"
+    );
+
+    if (chartElement) {
+      const canvas = await html2canvas(chartElement as HTMLElement);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          saveAs(blob, `${chartType}_chart.png`);
+        }
+      });
+    }
+  };
+
   const exportResults = () => {
     if (foundTargetResult.length === 0) {
       toast({
@@ -181,6 +232,19 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
       exit={{ opacity: 0 }}
       className="flex flex-col lg:flex-row w-full gap-2 p-4 bg-gradient-to-b from-gray-900 to-gray-800 min-h-[70vh] rounded-lg relative"
     >
+      {/* 夜间模式切换 */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="absolute top-2 right-2 z-50"
+        onClick={() => setIsDarkMode(!isDarkMode)}
+      >
+        <Moon
+          className={`w-4 h-4 ${
+            isDarkMode ? "text-yellow-400" : "text-gray-400"
+          }`}
+        />
+      </Button>
       {/* Loading overlay */}
       {alertText === "查询中..." && (
         <motion.div
@@ -360,6 +424,26 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
               导出
             </Button>
           </CardContent>
+          <div className="flex gap-2 mt-4 px-4 pb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => exportChart("pie")}
+              className="flex items-center gap-1"
+            >
+              <Download className="w-4 h-4" />
+              导出饼图
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => exportChart("bar")}
+              className="flex items-center gap-1"
+            >
+              <Download className="w-4 h-4" />
+              导出柱状图
+            </Button>
+          </div>
         </Card>
 
         {/* 统计图表 */}
@@ -418,7 +502,11 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
                     key={target.id || index}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.02 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ delay: index * 0.02, type: "spring" }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="relative"
                   >
                     <TargetSmallCard
                       target_info={target}
@@ -426,6 +514,20 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
                       on_card_clicked={null}
                       on_choice_maken={props.on_choice_maken}
                     />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={() => toggleFavorite(target.id)}
+                    >
+                      <Heart
+                        className={`w-4 h-4 ${
+                          favorites.has(target.id)
+                            ? "text-red-500 fill-red-500"
+                            : "text-gray-400"
+                        }`}
+                      />
+                    </Button>
                   </motion.div>
                 ))}
               </div>

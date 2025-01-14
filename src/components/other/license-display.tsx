@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   fetchLicense,
   parseLicense,
@@ -27,9 +27,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Sun, Moon, Copy } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Search, Sun, Moon, Copy, Star, BarChart2, X } from "lucide-react";
+import { motion, AnimatePresence, useAnimationControls } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function LicenseDisplay() {
   const [licenses, setLicenses] = useState<License[]>([]);
@@ -50,10 +51,22 @@ export function LicenseDisplay() {
   const [compareSections, setCompareSections] = useState<
     Array<{ id: string; title: string; content: string }>
   >([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [showStats, setShowStats] = useState(false);
+  const controls = useAnimationControls();
 
+  // Enhanced loading animation
+  const loadingVariants = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -20 },
+  };
+
+  // Load licenses with error handling
   useEffect(() => {
     async function loadLicenses() {
       try {
+        controls.start("animate");
         const licensePromises = SUPPORTED_LICENSES.map(async (license) => {
           const licenseText = await fetchLicense(license.id);
           return parseLicense(licenseText, license.id, license.name);
@@ -64,6 +77,7 @@ export function LicenseDisplay() {
         loadLicense("gpl-3.0");
       } catch (err) {
         setError("无法加载许可证。请稍后再试。");
+        controls.start("exit");
       } finally {
         setIsLoading(false);
       }
@@ -72,6 +86,7 @@ export function LicenseDisplay() {
     loadLicenses();
   }, []);
 
+  // Load individual license
   async function loadLicense(licenseId: string) {
     try {
       const license = licenses.find((l) => l.id === licenseId);
@@ -84,12 +99,14 @@ export function LicenseDisplay() {
     }
   }
 
+  // Handle license selection
   useEffect(() => {
     if (selectedLicense) {
       loadLicense(selectedLicense);
     }
   }, [selectedLicense]);
 
+  // Handle comparison mode
   useEffect(() => {
     if (isComparing && compareLicense) {
       const license = licenses.find((l) => l.id === compareLicense);
@@ -99,6 +116,7 @@ export function LicenseDisplay() {
     }
   }, [isComparing, compareLicense, licenses]);
 
+  // Handle window resize
   useEffect(() => {
     const handleResize = () => {
       setIsLandscape(window.innerWidth > window.innerHeight);
@@ -110,6 +128,7 @@ export function LicenseDisplay() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Handle search
   useEffect(() => {
     if (searchQuery) {
       const filteredSections = searchLicense(licenseSections, searchQuery);
@@ -119,10 +138,21 @@ export function LicenseDisplay() {
     }
   }, [searchQuery, licenseSections]);
 
+  // Handle dark mode
   useEffect(() => {
     document.body.classList.toggle("dark", isDarkMode);
   }, [isDarkMode]);
 
+  // Handle favorites
+  const toggleFavorite = (licenseId: string) => {
+    setFavorites((prev) =>
+      prev.includes(licenseId)
+        ? prev.filter((id) => id !== licenseId)
+        : [...prev, licenseId]
+    );
+  };
+
+  // Copy section content
   const handleCopySection = (content: string) => {
     navigator.clipboard.writeText(content);
     toast({
@@ -131,15 +161,51 @@ export function LicenseDisplay() {
     });
   };
 
+  // Loading state
   if (isLoading) {
     return (
-      <div className="text-center p-4 dark:text-gray-200">加载许可证中...</div>
+      <motion.div
+        className="grid gap-4 p-4"
+        variants={loadingVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+      >
+        <div className="flex gap-4">
+          <Skeleton className="h-10 w-[180px]" />
+          <Skeleton className="h-10 flex-1" />
+          <Skeleton className="h-10 w-10" />
+        </div>
+        {[...Array(5)].map((_, i) => (
+          <Skeleton key={i} className="h-20 w-full" />
+        ))}
+      </motion.div>
     );
   }
 
+  // Error state
   if (error) {
-    return <div className="text-center p-4 text-red-500">{error}</div>;
+    return (
+      <motion.div
+        className="text-center p-4 text-red-500"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        {error}
+      </motion.div>
+    );
   }
+
+  // License statistics
+  const licenseStats = useMemo(() => {
+    const totalLicenses = licenses.length;
+    const totalSections = licenses.reduce(
+      (acc, license) => acc + license.sections.length,
+      0
+    );
+    const avgSections = (totalSections / totalLicenses).toFixed(1);
+    return { totalLicenses, totalSections, avgSections };
+  }, [licenses]);
 
   return (
     <motion.div
@@ -150,9 +216,10 @@ export function LicenseDisplay() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
+      {/* Header Section */}
       <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
         <motion.div
-          className="flex items-center gap-4"
+          className="flex items-center gap-4 flex-1"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
@@ -166,22 +233,33 @@ export function LicenseDisplay() {
                 <SelectLabel>开源许可证</SelectLabel>
                 {licenses.map((license) => (
                   <SelectItem key={license.id} value={license.id}>
-                    {license.name}
+                    <div className="flex items-center gap-2">
+                      {license.name}
+                      {favorites.includes(license.id) && (
+                        <Star className="h-4 w-4 text-yellow-400" />
+                      )}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectGroup>
             </SelectContent>
           </Select>
+
           <Input
             type="text"
             placeholder="搜索许可证..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="mr-2 flex-1 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            className="flex-1 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
           />
+
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Button variant="outline" size="icon">
-              <Search className="h-5 w-5" />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setSearchQuery("")}
+            >
+              {searchQuery ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
             </Button>
           </motion.div>
         </motion.div>
@@ -197,6 +275,14 @@ export function LicenseDisplay() {
             onClick={() => setIsComparing(!isComparing)}
           >
             {isComparing ? "停止比较" : "比较许可证"}
+          </Button>
+
+          <Button
+            variant={showStats ? "default" : "outline"}
+            onClick={() => setShowStats(!showStats)}
+          >
+            <BarChart2 className="h-5 w-5 mr-2" />
+            统计
           </Button>
 
           <div className="flex items-center gap-2">
@@ -217,6 +303,33 @@ export function LicenseDisplay() {
         </motion.div>
       </div>
 
+      {/* Statistics Panel */}
+      {showStats && (
+        <motion.div
+          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 dark:bg-gray-700/20 rounded-lg"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="text-center">
+            <div className="text-2xl font-bold">{licenseStats.totalLicenses}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">许可证总数</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold">{licenseStats.totalSections}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">章节总数</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold">{licenseStats.avgSections}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">平均章节数</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold">{favorites.length}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">收藏数量</div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Comparison Selector */}
       {isComparing && (
         <motion.div
           className="mb-6"
@@ -246,6 +359,7 @@ export function LicenseDisplay() {
         </motion.div>
       )}
 
+      {/* Main Content */}
       <AnimatePresence mode="wait">
         <motion.div
           key={selectedLicense + (compareLicense || "")}
@@ -258,6 +372,7 @@ export function LicenseDisplay() {
             className="grid gap-6"
             style={{ gridTemplateColumns: isComparing ? "1fr 1fr" : "1fr" }}
           >
+            {/* Primary License */}
             <div>
               <Accordion type="single" collapsible className="w-full">
                 {displayedSections.map((section, index) => (
@@ -301,6 +416,7 @@ export function LicenseDisplay() {
               </Accordion>
             </div>
 
+            {/* Comparison License */}
             {isComparing && compareLicense && (
               <div>
                 <Accordion type="single" collapsible className="w-full">

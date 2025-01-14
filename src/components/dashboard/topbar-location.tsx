@@ -12,10 +12,9 @@ import {
   TooltipProvider,
 } from "@/components/ui/tooltip";
 import StaticMap from "@/components/information/static-map";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import GeocodingComponent from "@/components/information/geo-coding";
 import MessageBus, { LogLevel } from "@/utils/message-bus";
-import WebSocketClient from "@/utils/websocket-client";
 import wsClient from "@/utils/ws-client";
 
 const messageBus = wsClient
@@ -34,6 +33,7 @@ export default function TopbarLocation() {
   );
   const setLocation = useDashboardStore((state) => state.setLocation);
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+  const controls = useAnimation();
   const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
@@ -111,13 +111,25 @@ export default function TopbarLocation() {
           <AnimatePresence>
             {isTooltipOpen && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 20,
+                  duration: 0.3,
+                }}
+                onHoverStart={() => controls.start({ scale: 1.02 })}
+                onHoverEnd={() => controls.start({ scale: 1 })}
               >
                 <TooltipContent className="w-80 p-4 bg-gray-800 text-white rounded-md shadow-lg">
-                  <div className="w-full mb-4">
+                  <motion.div
+                    className="w-full mb-4 rounded-lg overflow-hidden shadow-2xl"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
                     <StaticMap
                       location={location || undefined}
                       key="44fc0016a614cb00ed9d8000eb8f9428"
@@ -132,10 +144,15 @@ export default function TopbarLocation() {
                       features={["road", "building", "point"]}
                       onLocationChange={handleLocationUpdate}
                     />
-                  </div>
+                  </motion.div>
                   <GeocodingComponent onLocationSelect={handleLocationUpdate} />
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <motion.div
+                    className="grid grid-cols-2 gap-2"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
                     <Button
                       variant="outline"
                       className="w-full"
@@ -152,7 +169,7 @@ export default function TopbarLocation() {
                     >
                       使用当前位置
                     </Button>
-                  </div>
+                  </motion.div>
                 </TooltipContent>
               </motion.div>
             )}
@@ -161,23 +178,48 @@ export default function TopbarLocation() {
         {loading && (
           <motion.div
             className="flex items-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 20,
+              duration: 0.3,
+            }}
           >
-            <Loader2 className="w-4 h-4 animate-spin text-white" />
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{
+                repeat: Infinity,
+                duration: 1,
+                ease: "linear",
+              }}
+            >
+              <Loader2 className="w-4 h-4 text-white" />
+            </motion.div>
           </motion.div>
         )}
         <AnimatePresence>
           {showSuccess && (
             <motion.div
-              className="flex items-center bg-green-600 text-white px-3 py-1 rounded-md"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5 }}
+              className="flex items-center bg-green-600/90 backdrop-blur-sm text-white px-3 py-1 rounded-md shadow-lg"
+              initial={{ opacity: 0, y: -20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.9 }}
+              transition={{
+                type: "spring",
+                stiffness: 300,
+                damping: 20,
+                duration: 0.3,
+              }}
             >
-              <Check className="w-4 h-4 mr-2" />
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Check className="w-4 h-4 mr-2" />
+              </motion.div>
               位置已更新
             </motion.div>
           )}
@@ -185,13 +227,24 @@ export default function TopbarLocation() {
         {error && (
           <AnimatePresence>
             <motion.div
-              className="flex items-center bg-red-600 text-white px-3 py-1 rounded-md"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5 }}
+              className="flex items-center bg-red-600/90 backdrop-blur-sm text-white px-3 py-1 rounded-md shadow-lg"
+              initial={{ opacity: 0, y: -20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -20, scale: 0.9 }}
+              transition={{
+                type: "spring",
+                stiffness: 300,
+                damping: 20,
+                duration: 0.3,
+              }}
             >
-              <X className="w-4 h-4 mr-2" />
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <X className="w-4 h-4 mr-2" />
+              </motion.div>
               {error}
             </motion.div>
           </AnimatePresence>
@@ -199,12 +252,28 @@ export default function TopbarLocation() {
         {location && (
           <motion.div
             className="flex flex-col text-sm text-white"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 20,
+              duration: 0.3,
+            }}
           >
-            <span>纬度: {location.latitude.toFixed(2)}</span>
-            <span>经度: {location.longitude.toFixed(2)}</span>
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4" />
+              <span>纬度: {location.latitude.toFixed(2)}</span>
+              <span>经度: {location.longitude.toFixed(2)}</span>
+            </div>
+            <motion.div
+              className="text-xs text-gray-300"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              最后更新: {new Date().toLocaleTimeString()}
+            </motion.div>
           </motion.div>
         )}
       </div>

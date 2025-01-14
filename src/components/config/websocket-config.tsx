@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { Power, RefreshCw, Activity, Check, X } from "lucide-react";
+import { Power, PowerOff, RefreshCw, Activity, Check, X } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion } from "framer-motion";
@@ -60,6 +60,11 @@ const formSchema = z.object({
   heartbeatInterval: z.number().min(1000).max(60000),
   debug: z.boolean(),
   binaryType: z.enum(["blob", "arraybuffer"]),
+  queueSize: z.number().min(10).max(1000),
+  timeout: z.number().min(1000).max(30000),
+  compression: z.boolean(),
+  autoReconnect: z.boolean(),
+  messageFormat: z.enum(["json", "text", "binary"]),
 });
 
 interface WebSocketStats {
@@ -68,6 +73,16 @@ interface WebSocketStats {
   connectionAttempts: number;
   lastConnectedAt: Date | null;
   lastDisconnectedAt: Date | null;
+  messageQueueSize: number;
+  latency: number;
+  packetLoss: number;
+  bandwidth: number;
+  errors: number;
+  messageHistory: Array<{
+    timestamp: Date;
+    direction: "in" | "out";
+    message: string;
+  }>;
 }
 
 export default function WebSocketConfig() {
@@ -82,6 +97,12 @@ export default function WebSocketConfig() {
     connectionAttempts: 0,
     lastConnectedAt: null,
     lastDisconnectedAt: null,
+    messageQueueSize: 0,
+    latency: 0,
+    packetLoss: 0,
+    bandwidth: 0,
+    errors: 0,
+    messageHistory: [],
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -213,6 +234,30 @@ export default function WebSocketConfig() {
     }
   };
 
+  const getStatusIcon = () => {
+    switch (connectionStatus) {
+      case "open":
+        return <Activity className="w-5 h-5 text-green-500" />;
+      case "connecting":
+        return <RefreshCw className="w-5 h-5 text-yellow-500 animate-spin" />;
+      case "closing":
+        return <Power className="w-5 h-5 text-orange-500" />;
+      default:
+        return <PowerOff className="w-5 h-5 text-red-500" />;
+    }
+  };
+
+  const getConnectionQuality = () => {
+    if (stats.latency < 100 && stats.packetLoss < 1) {
+      return "excellent";
+    } else if (stats.latency < 300 && stats.packetLoss < 5) {
+      return "good";
+    } else if (stats.latency < 500 && stats.packetLoss < 10) {
+      return "fair";
+    }
+    return "poor";
+  };
+
   const lineData = [
     {
       id: "发送消息数",
@@ -252,9 +297,15 @@ export default function WebSocketConfig() {
               <TooltipTrigger>
                 <div className="flex items-center space-x-2">
                   <span
-                    className={`w-3 h-3 rounded-full ${connectionStatus === "open" ? "animate-ping" : "animate-pulse"} ${getStatusColor()}`}
+                    className={`w-3 h-3 rounded-full ${
+                      connectionStatus === "open"
+                        ? "animate-ping"
+                        : "animate-pulse"
+                    } ${getStatusColor()}`}
                   />
-                  <span className="text-sm text-white capitalize">{connectionStatus}</span>
+                  <span className="text-sm text-white capitalize">
+                    {connectionStatus}
+                  </span>
                 </div>
               </TooltipTrigger>
               <TooltipContent>
@@ -320,9 +371,15 @@ export default function WebSocketConfig() {
                   name="url"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-gray-300">WebSocket URL</FormLabel>
+                      <FormLabel className="text-gray-300">
+                        WebSocket URL
+                      </FormLabel>
                       <FormControl>
-                        <Input placeholder="ws://localhost:8080" {...field} className="bg-gray-700 text-white" />
+                        <Input
+                          placeholder="ws://localhost:8080"
+                          {...field}
+                          className="bg-gray-700 text-white"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -335,9 +392,15 @@ export default function WebSocketConfig() {
                     name="reconnectInterval"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-gray-300">重连间隔 (ms)</FormLabel>
+                        <FormLabel className="text-gray-300">
+                          重连间隔 (ms)
+                        </FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} className="bg-gray-700 text-white" />
+                          <Input
+                            type="number"
+                            {...field}
+                            className="bg-gray-700 text-white"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -349,9 +412,15 @@ export default function WebSocketConfig() {
                     name="maxReconnectAttempts"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-gray-300">最大重连次数</FormLabel>
+                        <FormLabel className="text-gray-300">
+                          最大重连次数
+                        </FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} className="bg-gray-700 text-white" />
+                          <Input
+                            type="number"
+                            {...field}
+                            className="bg-gray-700 text-white"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -365,9 +434,15 @@ export default function WebSocketConfig() {
                     name="heartbeatInterval"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-gray-300">心跳间隔 (ms)</FormLabel>
+                        <FormLabel className="text-gray-300">
+                          心跳间隔 (ms)
+                        </FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} className="bg-gray-700 text-white" />
+                          <Input
+                            type="number"
+                            {...field}
+                            className="bg-gray-700 text-white"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -379,14 +454,21 @@ export default function WebSocketConfig() {
                     name="binaryType"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-gray-300">二进制类型</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormLabel className="text-gray-300">
+                          二进制类型
+                        </FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <SelectTrigger className="bg-gray-700 text-white">
                             <SelectValue placeholder="选择二进制类型" />
                           </SelectTrigger>
                           <SelectContent className="bg-gray-800 text-white">
                             <SelectItem value="blob">Blob</SelectItem>
-                            <SelectItem value="arraybuffer">ArrayBuffer</SelectItem>
+                            <SelectItem value="arraybuffer">
+                              ArrayBuffer
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -401,7 +483,9 @@ export default function WebSocketConfig() {
                   render={({ field }) => (
                     <FormItem className="flex items-center justify-between bg-gray-700 p-4 rounded-lg">
                       <div className="space-y-0.5">
-                        <FormLabel className="text-gray-300">调试模式</FormLabel>
+                        <FormLabel className="text-gray-300">
+                          调试模式
+                        </FormLabel>
                         <FormDescription className="text-gray-400">
                           启用后将在控制台输出详细日志
                         </FormDescription>
@@ -424,7 +508,7 @@ export default function WebSocketConfig() {
               <CardHeader>
                 <CardTitle className="text-white">连接统计</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="space-y-2">
                     <Label className="text-gray-400">发送消息数</Label>
@@ -451,6 +535,73 @@ export default function WebSocketConfig() {
                         ? new Date(stats.lastConnectedAt).toLocaleString()
                         : "未连接"}
                     </div>
+                  </div>
+                </div>
+
+                {/* Connection Quality */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-gray-400">延迟</Label>
+                    <div className="text-2xl font-bold text-purple-500">
+                      {stats.latency}ms
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-gray-400">丢包率</Label>
+                    <div className="text-2xl font-bold text-pink-500">
+                      {stats.packetLoss}%
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-gray-400">带宽</Label>
+                    <div className="text-2xl font-bold text-indigo-500">
+                      {stats.bandwidth}kb/s
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-gray-400">连接质量</Label>
+                    <div className="text-2xl font-bold">
+                      <span
+                        className={`${
+                          getConnectionQuality() === "excellent"
+                            ? "text-green-500"
+                            : getConnectionQuality() === "good"
+                            ? "text-yellow-500"
+                            : getConnectionQuality() === "fair"
+                            ? "text-orange-500"
+                            : "text-red-500"
+                        }`}
+                      >
+                        {getConnectionQuality()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Message History */}
+                <div className="space-y-4">
+                  <Label className="text-gray-400">消息历史</Label>
+                  <div className="h-64 overflow-y-auto bg-gray-700 rounded-lg p-4">
+                    {stats.messageHistory.map((msg, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center space-x-4 py-2 border-b border-gray-600"
+                      >
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            msg.direction === "in"
+                              ? "bg-blue-500"
+                              : "bg-green-500"
+                          }`}
+                        />
+                        <div className="text-sm text-gray-300">
+                          {new Date(msg.timestamp).toLocaleTimeString()}
+                        </div>
+                        <div className="text-sm text-gray-200 flex-1 truncate">
+                          {msg.message}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </CardContent>

@@ -108,10 +108,15 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 
   const panelAnimation = enableAnimation
     ? {
-        initial: { opacity: 0, y: 20 },
-        animate: { opacity: 1, y: 0 },
-        exit: { opacity: 0, y: -20 },
-        transition: { duration: 0.3 },
+        initial: { opacity: 0, y: 20, scale: 0.95 },
+        animate: { opacity: 1, y: 0, scale: 1 },
+        exit: { opacity: 0, y: -20, scale: 0.95 },
+        transition: {
+          duration: 0.3,
+          type: "spring",
+          stiffness: 100,
+          damping: 15,
+        },
       }
     : {};
 
@@ -131,31 +136,70 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         layout === "compact" ? "p-2" : "p-4"
       )}
     >
-      <div className="flex flex-col space-y-4 min-w-[200px]">
+      <div className="flex flex-col space-y-4 min-w-[200px] bg-background/50 backdrop-blur-md rounded-lg p-4 border">
         <div className="flex flex-col space-y-2">
-          {!isConnected ? (
-            <Button onClick={connectToVNC} className="w-full">
-              连接
-            </Button>
-          ) : (
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            {!isConnected ? (
+              <Button
+                onClick={connectToVNC}
+                className="w-full hover:shadow-lg transition-shadow"
+              >
+                <motion.span
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  连接
+                </motion.span>
+              </Button>
+            ) : (
+              <Button
+                onClick={disconnectFromVNC}
+                variant="destructive"
+                className="w-full hover:shadow-lg transition-shadow"
+              >
+                <motion.span
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  断开连接
+                </motion.span>
+              </Button>
+            )}
+          </motion.div>
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
             <Button
-              onClick={disconnectFromVNC}
-              variant="destructive"
-              className="w-full"
+              onClick={toggleFullscreen}
+              className="w-full hover:shadow-lg transition-shadow"
             >
-              断开连接
+              <Expand className="h-4 w-4 mr-2" />
+              {isConnected ? "退出全屏" : "全屏"}
             </Button>
-          )}
-          <Button onClick={toggleFullscreen} className="w-full">
-            <Expand className="h-4 w-4 mr-2" />
-            {isConnected ? "退出全屏" : "全屏"}
-          </Button>
+          </motion.div>
         </div>
       </div>
 
-      <Separator
-        className={orientation === "horizontal" ? "h-auto" : "w-auto"}
-      />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.1 }}
+      >
+        <Separator
+          className={cn(
+            orientation === "horizontal" ? "h-auto" : "w-auto",
+            "my-4"
+          )}
+        />
+      </motion.div>
 
       <Collapsible defaultOpen className="flex-1">
         <CollapsibleTrigger className="flex items-center justify-between w-full">
@@ -220,7 +264,11 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             </Select>
           </div>
 
-          <div className="flex justify-between items-center">
+          <motion.div
+            className="flex justify-between items-center p-2 rounded-lg bg-background/20"
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
             <div className="flex items-center space-x-2">
               <Activity className="h-4 w-4" />
               <span className="text-sm">性能监控</span>
@@ -228,10 +276,16 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             <Switch
               checked={showPerformanceStats}
               onCheckedChange={onTogglePerformanceStats}
+              className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted"
             />
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+          <motion.div
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             {customKeys.map((key, index) => (
               <Button
                 key={index}
@@ -243,7 +297,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 {key.label}
               </Button>
             ))}
-          </div>
+          </motion.div>
 
           <motion.div
             initial={false}
@@ -253,7 +307,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             {/* 性能监控图表组件 */}
           </motion.div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <motion.div
+            className="grid grid-cols-2 gap-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
             <Button variant="outline" size="sm">
               <Command className="h-4 w-4 mr-2" />
               Ctrl+Alt+Del
@@ -262,9 +321,14 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               <Keyboard className="h-4 w-4 mr-2" />
               发送组合键
             </Button>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <motion.div
+            className="grid grid-cols-2 gap-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
             <Button
               variant="outline"
               size="sm"
@@ -281,43 +345,77 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               <Power className="h-4 w-4 mr-2" />
               关闭程序
             </Button>
-          </div>
+          </motion.div>
 
-          <div className="flex items-center space-x-2">
+          <motion.div
+            className="flex items-center space-x-2 p-2 rounded-lg bg-background/20"
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
             <Network className="h-4 w-4" />
             <span className="text-sm">
-              连接质量: {connectionQuality === "good" ? "良好" : connectionQuality === "fair" ? "一般" : "差"}
+              连接质量:
+              <span
+                className={cn(
+                  "ml-1 font-medium",
+                  connectionQuality === "good"
+                    ? "text-green-500"
+                    : connectionQuality === "fair"
+                    ? "text-yellow-500"
+                    : "text-red-500"
+                )}
+              >
+                {connectionQuality === "good"
+                  ? "良好"
+                  : connectionQuality === "fair"
+                  ? "一般"
+                  : "差"}
+              </span>
             </span>
-          </div>
+          </motion.div>
 
           <motion.div
             variants={statsVariants}
             initial="hidden"
             animate={showPerformanceStats ? "visible" : "hidden"}
-            className="performance-stats"
+            className="performance-stats bg-background/20 p-4 rounded-lg"
           >
-            <div className="stats-grid">
-              <div className="stat-item">
-                <Label>延迟</Label>
+            <div className="stats-grid grid grid-cols-1 md:grid-cols-3 gap-4">
+              <motion.div
+                className="stat-item p-3 rounded-lg bg-background/30"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Label className="text-sm font-medium">延迟</Label>
                 <p
                   className={cn(
-                    "stat-value",
+                    "stat-value text-lg font-semibold mt-1",
                     latency > 100 ? "text-red-500" : "text-green-500"
                   )}
                 >
                   {latency}ms
                 </p>
-              </div>
-              <div className="stat-item">
-                <Label>帧率</Label>
-                <p className="stat-value">{frameRate} FPS</p>
-              </div>
-              <div className="stat-item">
-                <Label>带宽</Label>
-                <p className="stat-value">
+              </motion.div>
+              <motion.div
+                className="stat-item p-3 rounded-lg bg-background/30"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Label className="text-sm font-medium">帧率</Label>
+                <p className="stat-value text-lg font-semibold mt-1">
+                  {frameRate} FPS
+                </p>
+              </motion.div>
+              <motion.div
+                className="stat-item p-3 rounded-lg bg-background/30"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Label className="text-sm font-medium">带宽</Label>
+                <p className="stat-value text-lg font-semibold mt-1">
                   {(bandwidth / 1024 / 1024).toFixed(2)} Mbps
                 </p>
-              </div>
+              </motion.div>
             </div>
           </motion.div>
         </CollapsibleContent>
