@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useTheme } from "@/context/theme-context";
 import {
   Table,
   TableBody,
@@ -32,6 +33,7 @@ import {
   Plus,
   Check,
   X,
+  Loader2,
 } from "lucide-react";
 import {
   Select,
@@ -40,6 +42,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+const MotionButton = motion(Button);
 
 export function CookieManager({ isLandscape }: { isLandscape: boolean }) {
   const {
@@ -72,7 +76,9 @@ export function CookieManager({ isLandscape }: { isLandscape: boolean }) {
   const [selectAllChecked, setSelectAllChecked] = useState(false);
   const [copiedCookie, setCopiedCookie] = useState<string | null>(null);
 
-  const handleAddCookie = () => {
+  const [isAdding, setIsAdding] = useState(false);
+
+  const handleAddCookie = async () => {
     if (!newCookie.name || !newCookie.value) {
       toast({
         title: "添加失败",
@@ -91,12 +97,24 @@ export function CookieManager({ isLandscape }: { isLandscape: boolean }) {
       return;
     }
 
-    addCookie(newCookie);
-    setNewCookie({ name: "", value: "" });
-    toast({
-      title: "Cookie 已添加",
-      description: `Cookie "${newCookie.name}" 已成功添加。`,
-    });
+    setIsAdding(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // 模拟异步操作
+      addCookie(newCookie);
+      setNewCookie({ name: "", value: "" });
+      toast({
+        title: "Cookie 已添加",
+        description: `Cookie "${newCookie.name}" 已成功添加。`,
+      });
+    } catch (error) {
+      toast({
+        title: "添加失败",
+        description: "添加Cookie时发生错误。",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   const handleUpdateCookie = () => {
@@ -110,14 +128,29 @@ export function CookieManager({ isLandscape }: { isLandscape: boolean }) {
     }
   };
 
-  const handleDeleteSelected = () => {
-    deleteSelected();
-    toast({
-      title: "选中 Cookie 已删除",
-    });
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleDeleteSelected = async () => {
+    setIsDeleting(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // 模拟异步操作
+      deleteSelected();
+      toast({
+        title: "选中 Cookie 已删除",
+      });
+    } catch (error) {
+      toast({
+        title: "删除失败",
+        description: "删除Cookie时发生错误。",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const selectedCookies = cookies.filter(
       (cookie: { selected?: boolean }) => cookie.selected === true
     );
@@ -130,21 +163,33 @@ export function CookieManager({ isLandscape }: { isLandscape: boolean }) {
       return;
     }
 
-    const cookieData = JSON.stringify(selectedCookies, null, 2);
-    const blob = new Blob([cookieData], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "cookies.json";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    setIsExporting(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // 模拟异步操作
+      const cookieData = JSON.stringify(selectedCookies, null, 2);
+      const blob = new Blob([cookieData], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "cookies.json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
 
-    toast({
-      title: "Cookies 已导出",
-      description: `${selectedCookies.length} 个Cookie已成功导出。`,
-    });
+      toast({
+        title: "Cookies 已导出",
+        description: `${selectedCookies.length} 个Cookie已成功导出。`,
+      });
+    } catch (error) {
+      toast({
+        title: "导出失败",
+        description: "导出Cookie时发生错误。",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleCopyValue = (value: string) => {
@@ -245,9 +290,18 @@ export function CookieManager({ isLandscape }: { isLandscape: boolean }) {
             <Label htmlFor="httpOnly">HttpOnly</Label>
           </div>
         </div>
-        <Button onClick={handleAddCookie} className="gap-2">
-          <Plus className="w-4 h-4" />
-          添加 Cookie
+        <Button onClick={handleAddCookie} className="gap-2" disabled={isAdding}>
+          {isAdding ? (
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            >
+              <Loader2 className="w-4 h-4 animate-spin" />
+            </motion.div>
+          ) : (
+            <Plus className="w-4 h-4" />
+          )}
+          {isAdding ? "添加中..." : "添加 Cookie"}
         </Button>
       </motion.div>
 
@@ -273,19 +327,37 @@ export function CookieManager({ isLandscape }: { isLandscape: boolean }) {
           <Button
             onClick={handleDeleteSelected}
             variant="destructive"
-            disabled={!cookies.some((c) => c.selected === true)}
+            disabled={!cookies.some((c) => c.selected === true) || isDeleting}
             className="gap-2 flex-1"
           >
-            <Trash2 className="w-4 h-4" />
-            删除选中
+            {isDeleting ? (
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              >
+                <Loader2 className="w-4 h-4 animate-spin" />
+              </motion.div>
+            ) : (
+              <Trash2 className="w-4 h-4" />
+            )}
+            {isDeleting ? "删除中..." : "删除选中"}
           </Button>
           <Button
             onClick={handleExport}
-            disabled={!cookies.some((c) => c.selected === true)}
+            disabled={!cookies.some((c) => c.selected === true) || isExporting}
             className="gap-2 flex-1"
           >
-            <Download className="w-4 h-4" />
-            导出选中
+            {isExporting ? (
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              >
+                <Loader2 className="w-4 h-4 animate-spin" />
+              </motion.div>
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            {isExporting ? "导出中..." : "导出选中"}
           </Button>
         </div>
       </motion.div>
@@ -319,6 +391,9 @@ export function CookieManager({ isLandscape }: { isLandscape: boolean }) {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                 >
                   <TableCell>
                     <Checkbox
@@ -373,7 +448,7 @@ export function CookieManager({ isLandscape }: { isLandscape: boolean }) {
                     <div className="flex gap-2">
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button
+                          <MotionButton
                             variant="outline"
                             size="sm"
                             onClick={() =>
@@ -382,11 +457,13 @@ export function CookieManager({ isLandscape }: { isLandscape: boolean }) {
                                 value: cookie.value,
                               })
                             }
-                            className="gap-2"
+                            className="gap-2 hover:bg-blue-50 dark:hover:bg-blue-900 transition-colors"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                           >
                             <Edit className="w-4 h-4" />
                             编辑
-                          </Button>
+                          </MotionButton>
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>

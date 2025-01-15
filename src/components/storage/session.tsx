@@ -37,6 +37,13 @@ import {
   Plus,
   Download,
   Upload,
+  Loader2,
+  CheckCircle,
+  XCircle,
+  ChevronLeft,
+  ChevronRight,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useMediaQuery } from "react-responsive";
 import { Card, CardContent } from "@/components/ui/card";
@@ -57,10 +64,27 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { settings, updateSettings } = useSessionStorageStore();
   const [localSettings, setLocalSettings] = useState(settings);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<
+    "idle" | "success" | "error"
+  >("idle");
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings(localSettings);
-    onClose();
+    setIsSubmitting(true);
+    setSubmitStatus("idle");
+
+    try {
+      await updateSettings(localSettings);
+      setSubmitStatus("success");
+      setTimeout(() => {
+        onClose();
+      }, 1000);
+    } catch (error) {
+      setSubmitStatus("error");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -82,11 +106,24 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 }
               >
                 <SelectTrigger className="col-span-3 h-8">
-                  <SelectValue placeholder="选择主题" />
+                  <div className="flex items-center gap-2">
+                    <SelectValue placeholder="选择主题" />
+                    {localSettings.theme === "light" ? (
+                      <Sun className="w-4 h-4" />
+                    ) : (
+                      <Moon className="w-4 h-4" />
+                    )}
+                  </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="light">浅色</SelectItem>
-                  <SelectItem value="dark">深色</SelectItem>
+                  <SelectItem value="light" className="flex items-center gap-2">
+                    <Sun className="w-4 h-4" />
+                    浅色
+                  </SelectItem>
+                  <SelectItem value="dark" className="flex items-center gap-2">
+                    <Moon className="w-4 h-4" />
+                    深色
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -125,8 +162,30 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" size="sm">
-              保存更改
+            <Button
+              type="submit"
+              size="sm"
+              disabled={isSubmitting}
+              className="gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  保存中...
+                </>
+              ) : submitStatus === "success" ? (
+                <>
+                  <CheckCircle className="w-4 h-4" />
+                  保存成功
+                </>
+              ) : submitStatus === "error" ? (
+                <>
+                  <XCircle className="w-4 h-4" />
+                  保存失败
+                </>
+              ) : (
+                "保存更改"
+              )}
             </Button>
           </DialogFooter>
         </form>
@@ -383,7 +442,10 @@ export function SessionStorageEditor() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.3 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="hover:shadow-md transition-all"
             >
               <Card className="mb-2">
                 <CardContent className="p-2">
@@ -442,7 +504,10 @@ export function SessionStorageEditor() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  transition={{ 0.5: 0.8 }}
+                  transition={{ duration: 0.3 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="hover:bg-secondary/50 transition-colors cursor-pointer"
                 >
                   <TableCell>{key}</TableCell>
                   {settings.showValuePreview && (

@@ -1,9 +1,22 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  RefreshCw,
+  Trash2,
+  Edit,
+  Plus,
+  Check,
+  X,
+  Search,
+  Download,
+  Upload,
+  Lock,
+  Unlock,
+} from "lucide-react";
 import {
   Table,
   TableBody,
@@ -248,12 +261,14 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
             </motion.h2>
             <div className="flex space-x-2">
               <Button variant="outline" onClick={() => loadItems()}>
+                <RefreshCw className="mr-2 h-4 w-4" />
                 刷新
               </Button>
               <Button
                 variant="secondary"
                 onClick={() => window.localStorage.clear()}
               >
+                <Trash2 className="mr-2 h-4 w-4" />
                 清空全部
               </Button>
             </div>
@@ -319,6 +334,7 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
                 aria-label="描述输入"
               />
               <Button onClick={handleAddItem} className="w-full">
+                <Plus className="mr-2 h-4 w-4" />
                 添加项
               </Button>
             </div>
@@ -329,13 +345,24 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
             animate={{ opacity: 1 }}
             className="flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0"
           >
-            <Input
-              placeholder="搜索项..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              aria-label="搜索项"
-              className="w-full md:w-1/2"
-            />
+            <div className="relative w-full md:w-1/2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="搜索项..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                aria-label="搜索项"
+                className="pl-10 pr-10"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-700 transition-colors"
+                >
+                  <X className="h-4 w-4 text-gray-400" />
+                </button>
+              )}
+            </div>
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="select-all"
@@ -367,8 +394,12 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
                 className="flex-1"
                 aria-label="批量编辑输入"
               />
-              <Button onClick={handleBulkEdit}>应用</Button>
+              <Button onClick={handleBulkEdit}>
+                <Check className="mr-2 h-4 w-4" />
+                应用
+              </Button>
               <Button variant="outline" onClick={() => setBulkEditMode(false)}>
+                <X className="mr-2 h-4 w-4" />
                 取消
               </Button>
             </motion.div>
@@ -399,7 +430,9 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="border-b border-gray-700"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="border-b border-gray-700 hover:bg-gray-800/50 transition-colors cursor-pointer"
                   >
                     <TableCell>
                       <Checkbox
@@ -418,7 +451,13 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
                     <TableCell>
                       {item.size ? `${item.size} bytes` : "-"}
                     </TableCell>
-                    <TableCell>{item.encrypted ? "是" : "否"}</TableCell>
+                    <TableCell>
+                      {item.encrypted ? (
+                        <Lock className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Unlock className="h-4 w-4 text-gray-500" />
+                      )}
+                    </TableCell>
                     <TableCell>
                       {item.description ? (
                         <Tooltip>
@@ -447,6 +486,7 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
                               variant="outline"
                               onClick={() => setEditItem(item)}
                             >
+                              <Edit className="mr-2 h-4 w-4" />
                               编辑
                             </Button>
                           </DialogTrigger>
@@ -571,6 +611,7 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
                           variant="destructive"
                           onClick={() => deleteItem(item.key)}
                         >
+                          <Trash2 className="mr-2 h-4 w-4" />
                           删除
                         </Button>
                       </div>
@@ -592,15 +633,18 @@ export function LocalStorageManager({ isLandscape }: LocalStorageManagerProps) {
                 variant="destructive"
                 disabled={!items.some((i: StorageItem) => i.selected)}
               >
+                <Trash2 className="mr-2 h-4 w-4" />
                 删除选中项
               </Button>
               <Button
                 onClick={handleExport}
                 disabled={!items.some((i: StorageItem) => i.selected)}
               >
+                <Download className="mr-2 h-4 w-4" />
                 导出选中项
               </Button>
               <Button onClick={() => fileInputRef.current?.click()}>
+                <Upload className="mr-2 h-4 w-4" />
                 导入项
               </Button>
               <input

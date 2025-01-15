@@ -5,6 +5,17 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
+import {
+  RefreshCw,
+  Trash2,
+  Plus,
+  Image,
+  Database,
+  AlertCircle,
+  Settings,
+  Check,
+  X,
+} from "lucide-react";
 import { useIndexedDBStore } from "@/store/useStorageStore";
 import {
   Select,
@@ -214,9 +225,12 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
           <motion.div
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="bg-red-500/10 border border-red-500/30 text-red-500 p-3 rounded-md mb-4"
+            exit={{ y: -20, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 100 }}
+            className="bg-red-500/10 border border-red-500/30 text-red-500 p-3 rounded-md mb-4 flex items-center gap-2"
           >
-            {error}
+            <AlertCircle className="w-5 h-5" />
+            <span>{error}</span>
           </motion.div>
         )}
 
@@ -292,7 +306,19 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
             />
 
             {uploadProgress > 0 && (
-              <Progress value={uploadProgress} className="w-full" />
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Progress
+                  value={uploadProgress}
+                  className="w-full transition-all duration-300"
+                  style={{
+                    backgroundColor: `hsl(${uploadProgress * 1.2}, 100%, 50%)`,
+                  }}
+                />
+              </motion.div>
             )}
           </div>
 
@@ -304,11 +330,17 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
                 transition={{ duration: 0.3 }}
                 className="relative"
               >
-                <img
-                  src={previewUrl}
-                  alt="预览"
-                  className="max-w-full h-auto rounded-lg shadow-lg"
-                />
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="cursor-pointer"
+                >
+                  <img
+                    src={previewUrl}
+                    alt="预览"
+                    className="max-w-full h-auto rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
+                  />
+                </motion.div>
                 {showMetadata && metadata && (
                   <motion.div
                     initial={{ opacity: 0 }}
@@ -340,19 +372,12 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
             variant="default"
             className="flex items-center gap-2"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+            <motion.div
+              whileHover={{ rotate: 360 }}
+              transition={{ duration: 0.5 }}
             >
-              <path d="M21 12a9 9 0 0 1-9 9m9-9a9 9 0 0 0-9-9m9 9H3m9 9a9 9 0 0 1-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 0 1 9-9" />
-            </svg>
+              <RefreshCw className="w-4 h-4" />
+            </motion.div>
             打开数据库
           </Button>
           <Button
@@ -360,21 +385,9 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
             variant="secondary"
             className="flex items-center gap-2"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M3 6h18" />
-              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-            </svg>
+            <motion.div whileTap={{ scale: 0.9 }}>
+              <Trash2 className="w-4 h-4" />
+            </motion.div>
             清空数据库
           </Button>
           <Button
@@ -382,23 +395,12 @@ export function IndexedDBManager({ isLandscape }: { isLandscape: boolean }) {
             variant="default"
             className="flex items-center gap-2"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+            <motion.div
+              animate={{ rotate: isLoading ? 360 : 0 }}
+              transition={{ duration: 1, repeat: isLoading ? Infinity : 0 }}
             >
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7" />
-              <line x1="16" y1="5" x2="22" y2="5" />
-              <line x1="19" y1="2" x2="19" y2="8" />
-              <circle cx="9" cy="9" r="2" />
-              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-            </svg>
+              <Plus className="w-4 h-4" />
+            </motion.div>
             添加图片
           </Button>
           <Button
