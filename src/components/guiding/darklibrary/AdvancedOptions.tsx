@@ -11,8 +11,10 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface Props {
   isoValue: number;
@@ -47,6 +49,34 @@ export default function AdvancedOptions({
 }: Props) {
   const [isMockMode, setIsMockMode] = useState(false);
   const [activeTab, setActiveTab] = useState("camera");
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const validateTemperature = (temp: number) => {
+    if (temp < -20 || temp > 0) {
+      toast({
+        title: "温度设置错误",
+        description: "目标温度必须在-20°C到0°C之间",
+        variant: "destructive",
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const handleTemperatureChange = (value: number) => {
+    if (validateTemperature(value)) {
+      setTargetTemperature(value);
+    }
+  };
 
   const optionVariants = {
     hidden: { opacity: 0, y: 10 },
@@ -66,14 +96,14 @@ export default function AdvancedOptions({
         <Button
           variant={activeTab === "camera" ? "default" : "outline"}
           onClick={() => setActiveTab("camera")}
-          size="sm"
+          size={isMobile ? "sm" : "default"}
         >
           相机设置
         </Button>
         <Button
           variant={activeTab === "processing" ? "default" : "outline"}
           onClick={() => setActiveTab("processing")}
-          size="sm"
+          size={isMobile ? "sm" : "default"}
         >
           处理选项
         </Button>
@@ -101,11 +131,18 @@ export default function AdvancedOptions({
               />
               <p className="text-sm text-muted-foreground">{isoValue}</p>
             </div>
+
             <div className="space-y-2">
               <Label>Binning 模式:</Label>
               <Select
                 value={binningMode}
-                onValueChange={setBinningMode}
+                onValueChange={(value) => {
+                  setBinningMode(value);
+                  toast({
+                    title: "Binning 模式已更新",
+                    description: `当前模式: ${value}`,
+                  });
+                }}
                 disabled={isLoading}
               >
                 <SelectTrigger>
@@ -120,15 +157,25 @@ export default function AdvancedOptions({
                 </SelectContent>
               </Select>
             </div>
+
             <div className="flex items-center space-x-2">
               <Switch
                 id="cooling"
                 checked={coolingEnabled}
-                onCheckedChange={setCoolingEnabled}
+                onCheckedChange={(checked) => {
+                  setCoolingEnabled(checked);
+                  if (!checked) {
+                    toast({
+                      title: "制冷已关闭",
+                      description: "相机温度将逐渐回升",
+                    });
+                  }
+                }}
                 disabled={isLoading}
               />
               <Label htmlFor="cooling">启用制冷</Label>
             </div>
+
             {coolingEnabled && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
@@ -143,7 +190,7 @@ export default function AdvancedOptions({
                   max={0}
                   step={1}
                   value={[targetTemperature]}
-                  onValueChange={(value) => setTargetTemperature(value[0])}
+                  onValueChange={(value) => handleTemperatureChange(value[0])}
                   disabled={isLoading}
                 />
                 <p className="text-sm text-muted-foreground">
@@ -151,6 +198,7 @@ export default function AdvancedOptions({
                 </p>
               </motion.div>
             )}
+
             <div className="space-y-2">
               <Label>增益值:</Label>
               <Slider
@@ -163,6 +211,7 @@ export default function AdvancedOptions({
               />
               <p className="text-sm text-muted-foreground">{gainValue}</p>
             </div>
+
             <div className="space-y-2">
               <Label>偏移值:</Label>
               <Slider
@@ -175,18 +224,34 @@ export default function AdvancedOptions({
               />
               <p className="text-sm text-muted-foreground">{offsetValue}</p>
             </div>
+
             <div className="flex items-center space-x-2">
               <Switch
                 id="mockMode"
                 checked={isMockMode}
-                onCheckedChange={setIsMockMode}
+                onCheckedChange={(checked) => {
+                  setIsMockMode(checked);
+                  toast({
+                    title: checked ? "模拟模式已启用" : "模拟模式已禁用",
+                    variant: checked ? "default" : "destructive",
+                  });
+                }}
                 disabled={isLoading}
               />
               <Label htmlFor="mockMode">启用模拟模式</Label>
             </div>
+
             <div className="space-y-2">
               <Label>快门模式:</Label>
-              <Select defaultValue="electronic">
+              <Select
+                defaultValue="electronic"
+                onValueChange={(value) =>
+                  toast({
+                    title: "快门模式已更新",
+                    description: `当前模式: ${value}`,
+                  })
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -208,10 +273,17 @@ export default function AdvancedOptions({
             variants={optionVariants}
             className="space-y-4"
           >
-            {/* 添加更多处理选项 */}
             <div className="space-y-2">
               <Label>暗场校正方法:</Label>
-              <Select defaultValue="average">
+              <Select
+                defaultValue="average"
+                onValueChange={(value) =>
+                  toast({
+                    title: "暗场校正方法已更新",
+                    description: `当前方法: ${value}`,
+                  })
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -222,6 +294,7 @@ export default function AdvancedOptions({
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-2">
               <Label>噪声降低强度:</Label>
               <Slider
@@ -249,13 +322,27 @@ export default function AdvancedOptions({
                 id="autoOptimize"
                 defaultChecked={true}
                 disabled={isLoading}
+                onCheckedChange={(checked) =>
+                  toast({
+                    title: checked ? "自动优化已启用" : "自动优化已禁用",
+                    variant: checked ? "default" : "destructive",
+                  })
+                }
               />
               <Label htmlFor="autoOptimize">自动优化处理参数</Label>
             </div>
 
             <div className="space-y-2">
               <Label>帧对齐方法:</Label>
-              <Select defaultValue="star">
+              <Select
+                defaultValue="star"
+                onValueChange={(value) =>
+                  toast({
+                    title: "帧对齐方法已更新",
+                    description: `当前方法: ${value}`,
+                  })
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

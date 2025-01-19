@@ -34,12 +34,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { motion, AnimatePresence } from "framer-motion";
-import { useDarkFieldStore } from "@/lib/store/guiding/dark-field";
+import { useDarkFieldStore } from "@/store/useGuidingStore";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import AdvancedOptions from "./AdvancedOptions";
-import { useMediaQuery } from "@/hooks/use-media-query";
+import { useMediaQuery } from "react-responsive";
 import {
   Dialog,
   DialogContent,
@@ -54,6 +54,7 @@ export default function DarkFieldLibrary() {
   const [showProgressDetails, setShowProgressDetails] = useState(false);
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
 
+  const store = useDarkFieldStore();
   const {
     minExposure,
     maxExposure,
@@ -72,6 +73,9 @@ export default function DarkFieldLibrary() {
     darkFrameCount,
     gainValue,
     offsetValue,
+  } = store;
+
+  const {
     setMinExposure,
     setMaxExposure,
     setFramesPerExposure,
@@ -87,11 +91,11 @@ export default function DarkFieldLibrary() {
     resetSettings,
     startCreation,
     cancelCreation,
-  } = useDarkFieldStore();
+  } = store;
 
-  const isLandscape = useMediaQuery(
-    "(orientation: landscape) and (max-width: 1024px)"
-  );
+  const isLandscape = useMediaQuery({
+    query: "(orientation: landscape) and (max-width: 1024px)",
+  });
 
   const handleFramesChange = (value: string) => {
     const numValue = parseInt(value);
@@ -249,8 +253,8 @@ export default function DarkFieldLibrary() {
                   <div className="space-y-2">
                     <Label>最小曝光时间:</Label>
                     <Select
-                      value={minExposure}
-                      onValueChange={setMinExposure}
+                      value={minExposure.toString()}
+                      onValueChange={(value) => setMinExposure(Number(value))}
                       disabled={isLoading}
                     >
                       <SelectTrigger>
@@ -268,8 +272,8 @@ export default function DarkFieldLibrary() {
                   <div className="space-y-2">
                     <Label>最大曝光时间:</Label>
                     <Select
-                      value={maxExposure}
-                      onValueChange={setMaxExposure}
+                      value={maxExposure.toString()}
+                      onValueChange={(value) => setMaxExposure(Number(value))}
                       disabled={isLoading}
                     >
                       <SelectTrigger>
@@ -361,8 +365,10 @@ export default function DarkFieldLibrary() {
                       <AdvancedOptions
                         isoValue={isoValue}
                         setIsoValue={setIsoValue}
-                        binningMode={binningMode}
-                        setBinningMode={setBinningMode}
+                        binningMode={binningMode.toString()}
+                        setBinningMode={(value: string) =>
+                          setBinningMode(Number(value))
+                        }
                         coolingEnabled={coolingEnabled}
                         setCoolingEnabled={setCoolingEnabled}
                         targetTemperature={targetTemperature}
@@ -502,7 +508,7 @@ export default function DarkFieldLibrary() {
                   {Math.ceil(
                     ((100 - progress) *
                       darkFrameCount *
-                      parseFloat(minExposure)) /
+                      parseFloat(minExposure.toString())) /
                       100
                   )}
                   s

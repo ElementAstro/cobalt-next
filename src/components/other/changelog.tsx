@@ -135,7 +135,7 @@ export function UpdateLogModal() {
 
   const getVersionType = (version: string) => {
     const [major, minor] = version.split(".");
-    return minor === "0" ? "major" : "minor";
+    return parseInt(minor) === 0 && parseInt(major) > 0 ? "major" : "minor";
   };
 
   const copyChangelog = (version: string, changes: string[]) => {
@@ -177,16 +177,27 @@ export function UpdateLogModal() {
           查看更新日志
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-w-[95vw] h-[90vh] sm:h-auto">
-        <DialogHeader className="space-y-4">
-          <DialogTitle className="text-2xl font-bold">更新日志</DialogTitle>
-          <DialogDescription className="text-muted-foreground">
-            查看应用程序的最新更新和改进信息
-          </DialogDescription>
+      <DialogContent className="max-w-[95vw] sm:max-w-[90vw] h-[90vh] sm:h-[85vh] lg:h-[80vh] xl:h-[75vh] landscape:h-[85vh] landscape:max-w-[95vw]">
+        <DialogHeader className="space-y-2">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <DialogTitle className="text-2xl font-bold">更新日志</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              查看应用程序的最新更新和改进信息
+            </DialogDescription>
+          </motion.div>
         </DialogHeader>
 
-        <div className="mt-4 space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
+        <div className="mt-2 space-y-2">
+          <motion.div
+            className="flex flex-col sm:flex-row gap-2"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -228,11 +239,11 @@ export function UpdateLogModal() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </div>
+          </motion.div>
 
           <Separator />
 
-          <ScrollArea className="h-[50vh] sm:h-[400px] pr-4">
+          <ScrollArea className="h-[calc(100vh-280px)] sm:h-[calc(100vh-320px)] landscape:h-[calc(100vh-240px)] pr-4">
             {isLoading ? (
               <div className="flex justify-center items-center h-full">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -256,7 +267,11 @@ export function UpdateLogModal() {
                     animate="show"
                     whileHover="hover"
                     whileTap="tap"
-                    className="relative border rounded-lg p-4 hover:bg-accent/50 transition-colors"
+                    className="relative border rounded-lg p-4 hover:bg-accent/50 transition-all duration-300"
+                    style={{
+                      willChange: "transform, box-shadow",
+                      transformOrigin: "center",
+                    }}
                   >
                     <div className="absolute -left-2 top-1/2 transform -translate-y-1/2 w-1 h-[80%] bg-primary rounded-full transition-all duration-300" />
 
@@ -341,7 +356,11 @@ export function UpdateLogModal() {
                                 initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.1 }}
-                                className="flex items-start gap-2 text-sm text-muted-foreground hover:bg-accent/20 px-2 py-1 rounded-md cursor-pointer transition-all duration-200"
+                                className="flex items-start gap-2 text-sm text-muted-foreground hover:bg-accent/20 px-2 py-1 rounded-md cursor-pointer transition-all duration-300"
+                                style={{
+                                  willChange: "transform, opacity",
+                                  transformOrigin: "left",
+                                }}
                               >
                                 <Tag className="h-4 w-4 mt-0.5 flex-shrink-0" />
                                 <span className="group-hover:text-foreground transition-colors duration-200">

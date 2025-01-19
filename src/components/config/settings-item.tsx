@@ -53,6 +53,8 @@ interface SettingItemProps {
   path: string[];
   className?: string;
   style?: React.CSSProperties;
+  onError?: (error: string) => void;
+  onSuccess?: () => void;
 }
 
 const SettingItem: React.FC<SettingItemProps> = ({
@@ -60,6 +62,8 @@ const SettingItem: React.FC<SettingItemProps> = ({
   path,
   className,
   style,
+  onError,
+  onSuccess,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
@@ -116,23 +120,36 @@ const SettingItem: React.FC<SettingItemProps> = ({
   };
 
   const handleChange = async (value: SettingValue) => {
+    // Debounce validation for better UX
     setIsValidating(true);
+    setError(null);
+
     const validationError = validateSetting(item, value);
 
-    await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate validation delay
+    // Only show validation error after user stops typing
+    const debounceTimeout = setTimeout(
+      async () => {
+        setError(validationError);
+        setIsValidating(false);
 
-    setError(validationError);
-    setIsValidating(false);
+        if (!validationError) {
+          try {
+            await updateSetting(path, value);
+            onSuccess?.();
+          } catch (error) {
+            const errorMessage =
+              typeof error === "string" ? error : "Failed to update setting";
+            setError(errorMessage);
+            onError?.(errorMessage);
+          }
+        } else {
+          onError?.(validationError);
+        }
+      },
+      item.type === "number" ? 1000 : 500
+    ); // Longer debounce for numbers
 
-    if (!validationError) {
-      try {
-        await updateSetting(path, value);
-      } catch (error) {
-        setError(
-          typeof error === "string" ? error : "Failed to update setting"
-        );
-      }
-    }
+    return () => clearTimeout(debounceTimeout);
   };
 
   const renderInput = () => {
@@ -292,13 +309,14 @@ const SettingItem: React.FC<SettingItemProps> = ({
       <AnimatePresence>
         {error && (
           <motion.div
-            className="text-red-500 text-sm"
+            className="flex items-center gap-2 text-sm"
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
             transition={{ duration: 0.2 }}
           >
-            {error}
+            <Icons.AlertTriangle className="h-4 w-4 text-astro-red-500" />
+            <span className="text-astro-red-500">{error}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -306,10 +324,15 @@ const SettingItem: React.FC<SettingItemProps> = ({
       {isValidating && (
         <motion.div
           className="absolute right-2 top-2"
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, rotate: 360 }}
+          exit={{ opacity: 0 }}
+          transition={{
+            rotate: { repeat: Infinity, duration: 1, ease: "linear" },
+            opacity: { duration: 0.2 },
+          }}
         >
-          <Icons.Loader2 className="h-4 w-4 text-muted-foreground" />
+          <Icons.Satellite className="h-4 w-4 text-astro-purple-500" />
         </motion.div>
       )}
     </motion.div>

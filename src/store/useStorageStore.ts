@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import CryptoJS from "crypto-js";
 import Cookies from "js-cookie";
 import log from "@/utils/logger"; // Import the logger
+import { toast } from "@/hooks/use-toast";
 
 export interface CookieData {
   name: string;
@@ -207,12 +208,23 @@ export const useCookieConsentStore = create<{
           ? options(state.acceptedOptions)
           : options,
     })),
-  toggleOption: (optionId) =>
-    set((state) => ({
-      acceptedOptions: state.acceptedOptions.includes(optionId)
+  toggleOption: (optionId) => {
+    set((state) => {
+      const newOptions = state.acceptedOptions.includes(optionId)
         ? state.acceptedOptions.filter((id) => id !== optionId)
-        : [...state.acceptedOptions, optionId],
-    })),
+        : [...state.acceptedOptions, optionId];
+      
+      toast({
+        title: "设置已更新",
+        description: `已${newOptions.includes(optionId) ? "启用" : "禁用"}该 Cookie 类别`,
+        duration: 2000,
+      });
+
+      return {
+        acceptedOptions: newOptions
+      };
+    });
+  },
   setShowDetails: (show) => set({ showDetails: show }),
 }));
 

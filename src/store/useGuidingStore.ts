@@ -6,6 +6,7 @@ import type {
   StarPosition,
   CustomOptions,
 } from "@/types/guiding";
+import { toast } from "@/hooks/use-toast";
 
 interface WaveformState {
   imageUrl: string | null;
@@ -324,4 +325,236 @@ export const usePeakChartStore = create<PeakChartSettings>((set) => ({
   setStrokeColor: (color) => set({ strokeColor: color }),
   setStrokeWidth: (width) => set({ strokeWidth: width }),
   setShowGrid: (show) => set({ showGrid: show }),
+}));
+
+interface DarkFieldLibraryState {
+  minExposure: number;
+  maxExposure: number;
+  framesPerExposure: number;
+  libraryType: "modify" | "create";
+  isoValue: number;
+  binningMode: number;
+  coolingEnabled: boolean;
+  targetTemperature: number;
+  isLoading: boolean;
+  isSuccess: boolean;
+  isError: boolean;
+  errorMessage: string;
+  progress: number;
+  isMockMode: boolean;
+  darkFrameCount: number;
+  gainValue: number;
+  offsetValue: number;
+  setMinExposure: (value: number) => void;
+  setMaxExposure: (value: number) => void;
+  setFramesPerExposure: (value: number) => void;
+  setLibraryType: (value: "modify" | "create") => void;
+  setIsoValue: (value: number) => void;
+  setBinningMode: (value: number) => void;
+  setCoolingEnabled: (value: boolean) => void;
+  setTargetTemperature: (value: number) => void;
+  setIsMockMode: (value: boolean) => void;
+  setDarkFrameCount: (value: number) => void;
+  setGainValue: (value: number) => void;
+  setOffsetValue: (value: number) => void;
+  resetSettings: () => void;
+  startCreation: () => Promise<void>;
+  cancelCreation: () => void;
+}
+
+export const useDarkFieldStore = create<DarkFieldLibraryState>((set, get) => ({
+  minExposure: 0.5,
+  maxExposure: 3.0,
+  framesPerExposure: 10,
+  libraryType: "create",
+  isoValue: 800,
+  binningMode: 1,
+  coolingEnabled: true,
+  targetTemperature: -10,
+  isLoading: false,
+  isSuccess: false,
+  isError: false,
+  errorMessage: "",
+  progress: 0,
+  isMockMode: false,
+  darkFrameCount: 50,
+  gainValue: 0,
+  offsetValue: 0,
+  setMinExposure: (value) => set({ minExposure: value }),
+  setMaxExposure: (value) => set({ maxExposure: value }),
+  setFramesPerExposure: (value) => set({ framesPerExposure: value }),
+  setLibraryType: (value) => set({ libraryType: value }),
+  setIsoValue: (value) => set({ isoValue: value }),
+  setBinningMode: (value) => set({ binningMode: value }),
+  setCoolingEnabled: (value) => set({ coolingEnabled: value }),
+  setTargetTemperature: (value) => set({ targetTemperature: value }),
+  setIsMockMode: (value) => set({ isMockMode: value }),
+  setDarkFrameCount: (value) => set({ darkFrameCount: value }),
+  setGainValue: (value) => set({ gainValue: value }),
+  setOffsetValue: (value) => set({ offsetValue: value }),
+  resetSettings: () => {
+    set({
+      minExposure: 0.5,
+      maxExposure: 3.0,
+      framesPerExposure: 10,
+      libraryType: "create",
+      isoValue: 800,
+      binningMode: 1,
+      coolingEnabled: true,
+      targetTemperature: -10,
+      darkFrameCount: 50,
+      gainValue: 0,
+      offsetValue: 0,
+    });
+    toast({
+      title: "设置已重置",
+      description: "所有设置已恢复为默认值",
+    });
+  },
+  startCreation: async () => {
+    set({ isLoading: true, isSuccess: false, isError: false, progress: 0 });
+
+    try {
+      // 模拟创建过程
+      const totalFrames = get().darkFrameCount;
+      const interval = setInterval(() => {
+        set((state) => {
+          const newProgress = state.progress + 100 / totalFrames;
+          if (newProgress >= 100) {
+            clearInterval(interval);
+            return {
+              progress: 100,
+              isLoading: false,
+              isSuccess: true,
+            };
+          }
+          return { progress: newProgress };
+        });
+      }, 1000);
+
+      toast({
+        title: "创建成功",
+        description: "暗场库已成功创建",
+      });
+    } catch (error) {
+      set({
+        isLoading: false,
+        isError: true,
+        errorMessage: error instanceof Error ? error.message : "创建失败",
+      });
+      toast({
+        title: "创建失败",
+        description: error instanceof Error ? error.message : "未知错误",
+        variant: "destructive",
+      });
+    }
+  },
+  cancelCreation: () => {
+    set({ isLoading: false, progress: 0 });
+    toast({
+      title: "创建已取消",
+      description: "暗场库创建过程已中止",
+    });
+  },
+}));
+
+interface CalibrationData {
+  raStars: number;
+  decStars: number;
+  cameraAngle: number;
+  orthogonalError: number;
+  raSpeed: string;
+  decSpeed: string;
+  predictedRaSpeed: string;
+  predictedDecSpeed: string;
+  combined: number;
+  raDirection: string;
+  createdAt: string;
+}
+
+interface SettingsData {
+  modifiedAt: string;
+  focalLength: string;
+  resolution: string;
+  raDirection: string;
+  combined: string;
+  raGuideSpeed: string;
+  decGuideSpeed: string;
+  decValue: string;
+  rotationAngle: string;
+}
+
+interface GuidingState {
+  isLandscape: boolean;
+  showAnimation: boolean;
+  lineLength: number;
+  showGrid: boolean;
+  calibrationData: CalibrationData;
+  settingsData: SettingsData;
+  autoRotate: boolean;
+  rotationSpeed: number;
+  zoomLevel: number;
+  setAutoRotate: (value: boolean) => void;
+  setRotationSpeed: (value: number) => void;
+  setZoomLevel: (value: number) => void;
+  setIsLandscape: (isLandscape: boolean) => void;
+  setShowAnimation: (showAnimation: boolean) => void;
+  setLineLength: (lineLength: number) => void;
+  setShowGrid: (showGrid: boolean) => void;
+  updateCalibrationData: (data: Partial<CalibrationData>) => void;
+  updateSettingsData: (data: Partial<SettingsData>) => void;
+  handleRecalibrate: () => void;
+}
+
+export const useGuidingStore = create<GuidingState>((set) => ({
+  isLandscape: false,
+  showAnimation: false,
+  lineLength: 100,
+  showGrid: true,
+
+  calibrationData: {
+    raStars: 7,
+    decStars: 6,
+    cameraAngle: -167.2,
+    orthogonalError: 2.8,
+    raSpeed: "13.409 角秒/秒\n10.264 像素/秒",
+    decSpeed: "14.405 角秒/秒\n11.027 像素/秒",
+    predictedRaSpeed: "无",
+    predictedDecSpeed: "无",
+    combined: 1,
+    raDirection: "无",
+    createdAt: "2024/11/2 21:11:20",
+  },
+  settingsData: {
+    modifiedAt: "2024/11/2 21:11:20",
+    focalLength: "300 毫米",
+    resolution: "1.31 角秒/像素",
+    raDirection: "无",
+    combined: "合并: 1",
+    raGuideSpeed: "无",
+    decGuideSpeed: "无",
+    decValue: "21.4 (est)",
+    rotationAngle: "无",
+  },
+  autoRotate: false,
+  rotationSpeed: 0,
+  zoomLevel: 1,
+  setAutoRotate: (value) => set({ autoRotate: value }),
+  setRotationSpeed: (value) => set({ rotationSpeed: value }),
+  setZoomLevel: (value) => set({ zoomLevel: value }),
+  setIsLandscape: (isLandscape) => set({ isLandscape }),
+  setShowAnimation: (showAnimation) => set({ showAnimation }),
+  setLineLength: (lineLength) => set({ lineLength }),
+  setShowGrid: (showGrid) => set({ showGrid }),
+  updateCalibrationData: (data) =>
+    set((state) => ({
+      calibrationData: { ...state.calibrationData, ...data },
+    })),
+  updateSettingsData: (data) =>
+    set((state) => ({
+      settingsData: { ...state.settingsData, ...data },
+    })),
+  handleRecalibrate: () => {
+    console.log("Recalibrating...");
+  },
 }));

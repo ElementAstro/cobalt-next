@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
+import { toast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LineChart,
@@ -44,6 +45,7 @@ interface DataPoint {
 }
 
 const HistoryGraph: React.FC = () => {
+  const [isLoading, setIsLoading] = useState(false);
   const [zoomLevel, setZoomLevel] = useState("×100");
   const [yAxis, setYAxis] = useState("-/+4°");
   const [period, setPeriod] = useState(70);
@@ -55,6 +57,67 @@ const HistoryGraph: React.FC = () => {
   const [filterMethod, setFilterMethod] = useState("无效波段");
   const [filterStart, setFilterStart] = useState(2500);
   const [filterEnd, setFilterEnd] = useState(2500);
+
+  const validateInputs = useCallback(() => {
+    try {
+      if (isNaN(period) || period <= 0) {
+        throw new Error("精度必须为正数");
+      }
+      if (isNaN(interval) || interval <= 0) {
+        throw new Error("间隔必须为正数");
+      }
+      if (sensitivity < 0 || sensitivity > 1) {
+        throw new Error("灵敏度必须在0到1之间");
+      }
+      if (algorithmPeriod <= 0) {
+        throw new Error("算法周期必须为正数");
+      }
+      if (filterStart >= filterEnd) {
+        throw new Error("过滤起始值必须小于结束值");
+      }
+      return true;
+    } catch (error) {
+      if (error instanceof Error) {
+        toast({
+          title: "输入错误",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+      return false;
+    }
+  }, [
+    period,
+    interval,
+    sensitivity,
+    algorithmPeriod,
+    filterStart,
+    filterEnd,
+    toast,
+  ]);
+
+  const handleApplySettings = useCallback(async () => {
+    if (!validateInputs()) return;
+
+    setIsLoading(true);
+    try {
+      // 模拟异步操作
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      toast({
+        title: "设置已应用",
+        description: "图表设置已成功更新",
+      });
+    } catch (error) {
+      toast({
+        title: "应用设置失败",
+        description: "请检查您的输入并重试",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [validateInputs, toast]);
   const [raColor, setRaColor] = useState("#ff4444");
   const [decColor, setDecColor] = useState("#4444ff");
   const [showRaAsymptote, setShowRaAsymptote] = useState(false);
@@ -91,8 +154,8 @@ const HistoryGraph: React.FC = () => {
       return {
         top: 5,
         right: 10, // 增加右边距以显示Y轴标签
-        left: 5,  // 增加左边距以显示Y轴标签
-        bottom: 0 // 增加底部边距以显示X轴标签
+        left: 5, // 增加左边距以显示Y轴标签
+        bottom: 0, // 增加底部边距以显示X轴标签
       };
     }, []);
 
@@ -118,8 +181,8 @@ const HistoryGraph: React.FC = () => {
           }}
         >
           {gridEnabled && (
-            <CartesianGrid 
-              strokeDasharray="3 3" 
+            <CartesianGrid
+              strokeDasharray="3 3"
               stroke="#333"
               horizontalPoints={[0, 25, 50, 75, 100]} // 减少网格线数量
               verticalPoints={[-4, -2, 0, 2, 4]} // 减少网格线数量
@@ -135,7 +198,7 @@ const HistoryGraph: React.FC = () => {
             tickFormatter={(value) => value.toString()} // 简化标签
             interval="preserveStartEnd" // 只显示首尾刻度
             height={20} // 固定高度
-            tick={{fontSize: 10}} // 减小字体
+            tick={{ fontSize: 10 }} // 减小字体
           />
           <YAxis
             type={yAxisType as any}
@@ -145,18 +208,18 @@ const HistoryGraph: React.FC = () => {
             tickFormatter={(value) => value.toFixed(1)} // 简化标签
             interval="preserveStartEnd" // 只显示首尾刻度
             width={30} // 固定宽度
-            tick={{fontSize: 10}} // 减小字体
+            tick={{ fontSize: 10 }} // 减小字体
           />
           <Tooltip
             contentStyle={{
               backgroundColor: "#111",
               border: "1px solid #333",
               fontSize: "12px", // 减小字体
-              padding: "4px" // 减小内边距
+              padding: "4px", // 减小内边距
             }}
-            labelStyle={{fontSize: "10px"}} // 减小标签字体
-            itemStyle={{fontSize: "10px"}} // 减小项目字体
-            wrapperStyle={{zIndex: 1000}} // 确保提示框显示在最上层
+            labelStyle={{ fontSize: "10px" }} // 减小标签字体
+            itemStyle={{ fontSize: "10px" }} // 减小项目字体
+            wrapperStyle={{ zIndex: 1000 }} // 确保提示框显示在最上层
           />
           <Line
             type={lineType as any}
@@ -194,9 +257,9 @@ const HistoryGraph: React.FC = () => {
               stroke={raColor}
               strokeDasharray="3 3"
               label={{
-                value: "RA",  // 简化标签文本
+                value: "RA", // 简化标签文本
                 position: "insideTopRight",
-                fontSize: 10 // 减小字体
+                fontSize: 10, // 减小字体
               }}
             />
           )}
@@ -208,7 +271,7 @@ const HistoryGraph: React.FC = () => {
               label={{
                 value: "DEC", // 简化标签文本
                 position: "insideTopRight",
-                fontSize: 10 // 减小字体
+                fontSize: 10, // 减小字体
               }}
             />
           )}
@@ -228,7 +291,7 @@ const HistoryGraph: React.FC = () => {
       <div className="flex flex-wrap items-start gap-2">
         {/* Chart Section */}
         <div className="flex-grow h-full">
-            <Chart />
+          <Chart />
         </div>
 
         {/* Stats and Controls Panel */}
@@ -558,8 +621,21 @@ const HistoryGraph: React.FC = () => {
                     </div>
                   </TabsContent>
                 </Tabs>
-                <Button variant="default" size="sm" className="w-full mt-2">
-                  应用设置
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="w-full mt-2"
+                  onClick={handleApplySettings}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin mr-2">⏳</div>
+                      正在应用...
+                    </div>
+                  ) : (
+                    "应用设置"
+                  )}
                 </Button>
               </DialogContent>
             </Dialog>

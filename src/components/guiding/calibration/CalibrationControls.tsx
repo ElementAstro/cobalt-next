@@ -3,7 +3,7 @@
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { useGuidingStore } from "@/lib/store/guiding/calibration";
+import { useGuidingStore } from "@/store/useGuidingStore";
 import { motion } from "framer-motion";
 import { Settings, RotateCcw, Play, Pause } from "lucide-react";
 

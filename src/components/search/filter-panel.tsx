@@ -13,6 +13,13 @@ import {
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  Search,
+  ChevronDown,
+  ChevronUp,
+  Sliders,
+  RefreshCw,
+} from "lucide-react";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -100,18 +107,38 @@ export function FilterPanel() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
         >
-          <Input
-            placeholder="搜索星座..."
-            value={search}
-            onChange={handleSearchChange}
-            className="mb-4 dark:bg-gray-700 dark:text-white"
-          />
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="搜索星座..."
+              value={search}
+              onChange={handleSearchChange}
+              className="mb-4 dark:bg-gray-700 dark:text-white pl-10"
+            />
+            {search && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
+                onClick={() => setSearch("")}
+              >
+                <RefreshCw className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors" />
+              </motion.div>
+            )}
+          </div>
         </motion.div>
       </AnimatePresence>
 
       <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="constellations">
-          <AccordionTrigger>星座</AccordionTrigger>
+          <AccordionTrigger className="group">
+            <div className="flex items-center gap-2">
+              <Sliders className="h-4 w-4 text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors" />
+              <span>星座</span>
+            </div>
+            <ChevronDown className="h-4 w-4 text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+          </AccordionTrigger>
           <AccordionContent>
             <ScrollArea className="h-[200px]">
               <div className="grid grid-cols-2 gap-2">
@@ -138,7 +165,13 @@ export function FilterPanel() {
         </AccordionItem>
 
         <AccordionItem value="types">
-          <AccordionTrigger>对象类型</AccordionTrigger>
+          <AccordionTrigger className="group">
+            <div className="flex items-center gap-2">
+              <Sliders className="h-4 w-4 text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors" />
+              <span>对象类型</span>
+            </div>
+            <ChevronDown className="h-4 w-4 text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+          </AccordionTrigger>
           <AccordionContent>
             <div className="grid grid-cols-2 gap-2">
               {OBJECT_TYPES.map((type) => (
@@ -156,7 +189,13 @@ export function FilterPanel() {
         </AccordionItem>
 
         <AccordionItem value="magnitude">
-          <AccordionTrigger>星等</AccordionTrigger>
+          <AccordionTrigger className="group">
+            <div className="flex items-center gap-2">
+              <Sliders className="h-4 w-4 text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors" />
+              <span>星等</span>
+            </div>
+            <ChevronDown className="h-4 w-4 text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+          </AccordionTrigger>
           <AccordionContent>
             <div className="space-y-4">
               <div>
@@ -188,7 +227,13 @@ export function FilterPanel() {
         </AccordionItem>
 
         <AccordionItem value="distance">
-          <AccordionTrigger>距离 (光年)</AccordionTrigger>
+          <AccordionTrigger className="group">
+            <div className="flex items-center gap-2">
+              <Sliders className="h-4 w-4 text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors" />
+              <span>距离 (光年)</span>
+            </div>
+            <ChevronDown className="h-4 w-4 text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+          </AccordionTrigger>
           <AccordionContent>
             <div className="space-y-4">
               <div>
@@ -220,7 +265,13 @@ export function FilterPanel() {
         </AccordionItem>
 
         <AccordionItem value="advanced">
-          <AccordionTrigger>高级选项</AccordionTrigger>
+          <AccordionTrigger className="group">
+            <div className="flex items-center gap-2">
+              <Sliders className="h-4 w-4 text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors" />
+              <span>高级选项</span>
+            </div>
+            <ChevronDown className="h-4 w-4 text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+          </AccordionTrigger>
           <AccordionContent>
             <TooltipProvider>
               <div className="space-y-4">
@@ -272,7 +323,11 @@ export function FilterPanel() {
         </AccordionItem>
       </Accordion>
 
-      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+      <motion.div
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        className="relative overflow-hidden"
+      >
         <Button
           onClick={() =>
             setFilters({
@@ -284,9 +339,16 @@ export function FilterPanel() {
               maxDistance: 1000000,
             })
           }
-          className="w-full"
+          className="w-full group"
         >
-          重置筛选
+          <RefreshCw className="mr-2 h-4 w-4 transition-transform group-hover:rotate-180" />
+          <span>重置筛选</span>
+          <motion.div
+            className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.3 }}
+          />
         </Button>
       </motion.div>
     </motion.div>

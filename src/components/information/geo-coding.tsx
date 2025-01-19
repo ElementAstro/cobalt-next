@@ -179,9 +179,16 @@ export default function GeocodingComponent({
       return result.geocodes.map((item, index) => (
         <motion.div
           key={index}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.1 }}
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{
+            delay: index * 0.1,
+            type: "spring",
+            stiffness: 100,
+            damping: 10,
+          }}
+          whileHover={{ scale: 1.02 }}
+          className="lg:w-[calc(50%-0.5rem)]"
         >
           <Card className="mt-4 bg-gray-800 text-white">
             <CardHeader>
@@ -287,16 +294,16 @@ export default function GeocodingComponent({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="w-full max-w-2xl mx-auto p-4"
+      className="w-full h-[calc(100vh-4rem)] flex flex-col lg:flex-row lg:space-x-4 p-4"
     >
-      <Card className="bg-gray-900 text-white">
-        <CardHeader>
+      <Card className="bg-gray-900 text-white h-full flex flex-col lg:w-1/2">
+        <CardHeader className="flex-none">
           <CardTitle>地理编码 / 逆地理编码</CardTitle>
           <CardDescription>
             输入地址获取坐标，或输入坐标获取地址信息
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 overflow-y-auto">
           <Tabs defaultValue="search" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="search">
@@ -346,19 +353,29 @@ export default function GeocodingComponent({
                     aria-label="提交查询"
                   >
                     {isLoading ? (
-                      <>
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ type: "spring", stiffness: 200 }}
+                        className="flex items-center"
+                      >
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         处理中...
-                      </>
+                      </motion.div>
                     ) : (
-                      "查询"
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        查询
+                      </motion.div>
                     )}
                   </Button>
                 </motion.div>
               </form>
             </TabsContent>
             <TabsContent value="history">
-              <ScrollArea className="h-[200px] w-full rounded-md border p-4 bg-gray-800">
+              <ScrollArea className="h-[calc(100%-4rem)] w-full rounded-md border p-4 bg-gray-800">
                 {recentSearches.map((search, index) => (
                   <Button
                     key={index}

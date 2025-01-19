@@ -10,25 +10,14 @@ import {
 } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Clock,
   Globe,
   Bell,
   Settings,
-  Sun,
-  Moon,
   Search,
   Timer,
-  Volume2,
-  Plus,
-  Minus,
   Play,
   Pause,
   StopCircle,
-  CalendarDays,
-  AlarmClock,
-  Clock4,
-  Clock8,
-  Clock9,
   Clock12,
 } from "lucide-react";
 import { Howl } from "howler";
@@ -67,7 +56,7 @@ export default function WindowsTaskbarClock() {
     { title: string; date: string; time: string }[]
   >([]);
   const [newEvent, setNewEvent] = useState({ title: "", date: "", time: "" });
-  const [snoozeDuration, setSnoozeDuration] = useState(5); // in minutes
+  const [snoozeDuration, setSnoozeDuration] = useState(5);
   const [activeAlarmSound, setActiveAlarmSound] = useState<Howl | null>(null);
   const [newAlarm, setNewAlarm] = useState("");
   const [alarmRepeat, setAlarmRepeat] = useState("once");
@@ -105,10 +94,10 @@ export default function WindowsTaskbarClock() {
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
 
-    if (days > 0) return `${days} day${days > 1 ? "s" : ""} ago`;
-    if (hours > 0) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
-    if (minutes > 0) return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
-    return "Just now";
+    if (days > 0) return `${days}天前`;
+    if (hours > 0) return `${hours}小时前`;
+    if (minutes > 0) return `${minutes}分钟前`;
+    return "刚刚";
   }, []);
 
   const formatTime = useMemo(() => {
@@ -126,14 +115,14 @@ export default function WindowsTaskbarClock() {
         case "spoken":
           const hours = date.getHours();
           const minutes = date.getMinutes();
-          const ampm = hours >= 12 ? "PM" : "AM";
+          const ampm = hours >= 12 ? "下午" : "上午";
           const spokenHours = hours % 12 || 12;
           return `${spokenHours}:${minutes
             .toString()
             .padStart(2, "0")} ${ampm}`;
 
         case "military":
-          return date.toLocaleTimeString("en-US", {
+          return date.toLocaleTimeString("zh-CN", {
             hour: "2-digit",
             minute: "2-digit",
             hour12: false,
@@ -149,7 +138,7 @@ export default function WindowsTaskbarClock() {
           return Math.floor(date.getTime() / 1000).toString();
 
         default:
-          return date.toLocaleTimeString("en-US", {
+          return date.toLocaleTimeString("zh-CN", {
             hour: "numeric",
             minute: "2-digit",
             hour12: !is24HourFormat,
@@ -161,11 +150,11 @@ export default function WindowsTaskbarClock() {
 
   const formatDate = useMemo(() => {
     return (date: Date) => {
-      return date.toLocaleDateString("en-US", {
+      return date.toLocaleDateString("zh-CN", {
         weekday: "long",
+        year: "numeric",
         month: "long",
         day: "numeric",
-        year: "numeric",
       });
     };
   }, []);
@@ -181,26 +170,35 @@ export default function WindowsTaskbarClock() {
       const syncedTime = new Date(data.datetime);
       setCurrentTime(syncedTime);
       toast({
-        title: "Time Synced",
-        description: "Your clock has been synchronized with the world time.",
+        title: "时间同步成功",
+        description: "您的时钟已与世界时间同步",
       });
     } catch (error) {
-      console.error("Failed to sync time:", error);
+      console.error("时间同步失败:", error);
       toast({
-        title: "Sync Failed",
-        description: "Unable to synchronize time. Please try again later.",
+        title: "同步失败",
+        description: "无法同步时间，请稍后重试",
         variant: "destructive",
       });
     }
   }, []);
 
   const addAlarm = useCallback(() => {
-    if (newAlarm) {
+    try {
+      if (!newAlarm) {
+        throw new Error("请选择有效的时间");
+      }
+
+      const [alarmHours, alarmMinutes] = newAlarm.split(":");
+      if (isNaN(Number(alarmHours)) || isNaN(Number(alarmMinutes))) {
+        throw new Error("时间格式无效，请使用HH:MM格式");
+      }
+
       const alarm = {
         time: newAlarm,
         repeat: alarmRepeat,
         sound: alarmSound,
-        label: `Alarm ${alarms.length + 1}`,
+        label: `闹钟 ${alarms.length + 1}`,
         snooze: snoozeDuration,
         active: true,
       };
@@ -208,19 +206,23 @@ export default function WindowsTaskbarClock() {
       setAlarms((prev) => [...prev, alarm]);
       setNewAlarm("");
       toast({
-        title: "Alarm Added",
-        description: `New alarm set for ${newAlarm} (${alarmRepeat})`,
+        title: "闹钟已添加",
+        description: `已设置新闹钟：${newAlarm} (${alarmRepeat})`,
+        duration: 3000,
       });
-
-      // Check if alarm should trigger immediately
-      const now = new Date();
-      const [hours, minutes] = newAlarm.split(":");
-      const alarmTime = new Date();
-      alarmTime.setHours(parseInt(hours));
-      alarmTime.setMinutes(parseInt(minutes));
-
-      if (now >= alarmTime) {
-        triggerAlarm(alarm);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast({
+          title: "错误",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "错误",
+          description: "发生未知错误",
+          variant: "destructive",
+        });
       }
     }
   }, [newAlarm, alarmRepeat, alarmSound, snoozeDuration, alarms.length]);
@@ -236,8 +238,8 @@ export default function WindowsTaskbarClock() {
     setActiveAlarmSound(sound);
 
     toast({
-      title: "Alarm Triggered",
-      description: `Alarm for ${alarm.time} is ringing!`,
+      title: "闹钟响起",
+      description: `${alarm.time}的闹钟正在响铃！`,
       action: (
         <Button
           variant="default"
@@ -257,7 +259,7 @@ export default function WindowsTaskbarClock() {
             }
           }}
         >
-          {alarm.snooze ? "Snooze" : "Dismiss"}
+          {alarm.snooze ? "稍后提醒" : "关闭"}
         </Button>
       ),
     });
@@ -266,8 +268,8 @@ export default function WindowsTaskbarClock() {
   const removeAlarm = useCallback((alarm: { time: string }) => {
     setAlarms((prev) => prev.filter((a) => a.time !== alarm.time));
     toast({
-      title: "Alarm Removed",
-      description: `Alarm for ${alarm.time} has been removed`,
+      title: "闹钟已移除",
+      description: `${alarm.time}的闹钟已移除`,
     });
   }, []);
 
@@ -316,8 +318,8 @@ export default function WindowsTaskbarClock() {
       setCalendarEvents((prev) => [...prev, newEvent]);
       setNewEvent({ title: "", date: "", time: "" });
       toast({
-        title: "Event Added",
-        description: `New event "${newEvent.title}" added to calendar`,
+        title: "事件已添加",
+        description: `新事件"${newEvent.title}"已添加到日历`,
       });
     }
   }, [newEvent]);
@@ -335,8 +337,8 @@ export default function WindowsTaskbarClock() {
           clearInterval(countdownInterval.current!);
           setIsCounting(false);
           toast({
-            title: "Countdown Complete",
-            description: "Your countdown has finished!",
+            title: "倒计时结束",
+            description: "您的倒计时已完成！",
           });
         }
         const hours = Math.floor(remaining / 3600);
@@ -377,11 +379,11 @@ export default function WindowsTaskbarClock() {
       <PopoverContent className="w-96">
         <Tabs defaultValue="datetime" className="w-full">
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="datetime">Date & Time</TabsTrigger>
-            <TabsTrigger value="alarms">Alarms</TabsTrigger>
-            <TabsTrigger value="stopwatch">Stopwatch</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-            <TabsTrigger value="worldclock">World Clock</TabsTrigger>
+            <TabsTrigger value="datetime">日期时间</TabsTrigger>
+            <TabsTrigger value="alarms">闹钟</TabsTrigger>
+            <TabsTrigger value="stopwatch">秒表</TabsTrigger>
+            <TabsTrigger value="settings">设置</TabsTrigger>
+            <TabsTrigger value="worldclock">世界时钟</TabsTrigger>
           </TabsList>
           <TabsContent value="datetime">
             <AnimatePresence>
@@ -406,7 +408,7 @@ export default function WindowsTaskbarClock() {
                   className="rounded-md border"
                 />
                 <Button onClick={syncTime} className="w-full">
-                  Sync Time
+                  同步时间
                 </Button>
               </motion.div>
             </AnimatePresence>
@@ -422,7 +424,7 @@ export default function WindowsTaskbarClock() {
               >
                 <div className="flex items-center space-x-2">
                   <Bell className="h-4 w-4" />
-                  <span className="text-lg font-semibold">Alarms</span>
+                  <span className="text-lg font-semibold">闹钟</span>
                 </div>
                 <div className="space-y-2">
                   <div className="flex space-x-2">
@@ -430,34 +432,34 @@ export default function WindowsTaskbarClock() {
                       type="time"
                       value={newAlarm}
                       onChange={(e) => setNewAlarm(e.target.value)}
-                      placeholder="Set new alarm"
+                      placeholder="设置新闹钟"
                     />
-                    <Button onClick={addAlarm}>Add</Button>
+                    <Button onClick={addAlarm}>添加</Button>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Label>Repeat:</Label>
+                    <Label>重复:</Label>
                     <Select value={alarmRepeat} onValueChange={setAlarmRepeat}>
                       <SelectTrigger className="w-40">
-                        <SelectValue placeholder="Select repeat" />
+                        <SelectValue placeholder="选择重复" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="once">Once</SelectItem>
-                        <SelectItem value="daily">Daily</SelectItem>
-                        <SelectItem value="weekdays">Weekdays</SelectItem>
-                        <SelectItem value="weekends">Weekends</SelectItem>
+                        <SelectItem value="once">一次</SelectItem>
+                        <SelectItem value="daily">每天</SelectItem>
+                        <SelectItem value="weekdays">工作日</SelectItem>
+                        <SelectItem value="weekends">周末</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Label>Sound:</Label>
+                    <Label>铃声:</Label>
                     <Select value={alarmSound} onValueChange={setAlarmSound}>
                       <SelectTrigger className="w-40">
-                        <SelectValue placeholder="Select sound" />
+                        <SelectValue placeholder="选择铃声" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="bell">Bell</SelectItem>
-                        <SelectItem value="chime">Chime</SelectItem>
-                        <SelectItem value="beep">Beep</SelectItem>
+                        <SelectItem value="bell">铃声</SelectItem>
+                        <SelectItem value="chime">钟声</SelectItem>
+                        <SelectItem value="beep">蜂鸣</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -474,7 +476,7 @@ export default function WindowsTaskbarClock() {
                         size="sm"
                         onClick={() => removeAlarm(alarm)}
                       >
-                        Remove
+                        移除
                       </Button>
                     </li>
                   ))}
@@ -493,7 +495,7 @@ export default function WindowsTaskbarClock() {
               >
                 <div className="flex items-center space-x-2">
                   <Settings className="h-4 w-4" />
-                  <span className="text-lg font-semibold">Settings</span>
+                  <span className="text-lg font-semibold">设置</span>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
@@ -502,7 +504,7 @@ export default function WindowsTaskbarClock() {
                       checked={is24HourFormat}
                       onCheckedChange={setIs24HourFormat}
                     />
-                    <Label htmlFor="24-hour">Use 24-hour format</Label>
+                    <Label htmlFor="24-hour">使用24小时制</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Switch
@@ -510,7 +512,7 @@ export default function WindowsTaskbarClock() {
                       checked={showSeconds}
                       onCheckedChange={setShowSeconds}
                     />
-                    <Label htmlFor="show-seconds">Show seconds</Label>
+                    <Label htmlFor="show-seconds">显示秒数</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Switch
@@ -518,10 +520,10 @@ export default function WindowsTaskbarClock() {
                       checked={isDarkMode}
                       onCheckedChange={toggleDarkMode}
                     />
-                    <Label htmlFor="dark-mode">Dark mode</Label>
+                    <Label htmlFor="dark-mode">深色模式</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Label>Time Format:</Label>
+                    <Label>时间格式:</Label>
                     <Select
                       value={timeFormat}
                       onValueChange={(value: typeof timeFormat) =>
@@ -529,15 +531,15 @@ export default function WindowsTaskbarClock() {
                       }
                     >
                       <SelectTrigger className="w-40">
-                        <SelectValue placeholder="Select format" />
+                        <SelectValue placeholder="选择格式" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="default">Default</SelectItem>
-                        <SelectItem value="spoken">Spoken</SelectItem>
-                        <SelectItem value="military">Military</SelectItem>
+                        <SelectItem value="default">默认</SelectItem>
+                        <SelectItem value="spoken">口语</SelectItem>
+                        <SelectItem value="military">军用</SelectItem>
                         <SelectItem value="iso">ISO 8601</SelectItem>
-                        <SelectItem value="relative">Relative</SelectItem>
-                        <SelectItem value="unix">Unix Timestamp</SelectItem>
+                        <SelectItem value="relative">相对</SelectItem>
+                        <SelectItem value="unix">Unix时间戳</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -557,12 +559,12 @@ export default function WindowsTaskbarClock() {
               >
                 <div className="flex items-center space-x-2">
                   <Globe className="h-4 w-4" />
-                  <span className="text-lg font-semibold">World Clock</span>
+                  <span className="text-lg font-semibold">世界时钟</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Search className="h-4 w-4" />
                   <Input
-                    placeholder="Search timezone..."
+                    placeholder="搜索时区..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -582,7 +584,7 @@ export default function WindowsTaskbarClock() {
                       >
                         <span>{timezone.split("/")[1].replace("_", " ")}</span>
                         <span>
-                          {new Date().toLocaleTimeString("en-US", {
+                          {new Date().toLocaleTimeString("zh-CN", {
                             timeZone: timezone,
                             hour: "2-digit",
                             minute: "2-digit",
@@ -608,7 +610,7 @@ export default function WindowsTaskbarClock() {
               >
                 <div className="flex items-center space-x-2">
                   <Clock12 className="h-4 w-4" />
-                  <span className="text-lg font-semibold">Stopwatch</span>
+                  <span className="text-lg font-semibold">秒表</span>
                 </div>
                 <div className="text-3xl font-mono text-center">
                   {formatStopwatchTime(stopwatchTime)}
@@ -617,17 +619,17 @@ export default function WindowsTaskbarClock() {
                   {isStopwatchRunning ? (
                     <Button variant="destructive" onClick={stopStopwatch}>
                       <Pause className="mr-2 h-4 w-4" />
-                      Pause
+                      暂停
                     </Button>
                   ) : (
                     <Button onClick={startStopwatch}>
                       <Play className="mr-2 h-4 w-4" />
-                      Start
+                      开始
                     </Button>
                   )}
                   <Button variant="outline" onClick={resetStopwatch}>
                     <StopCircle className="mr-2 h-4 w-4" />
-                    Reset
+                    重置
                   </Button>
                 </div>
               </motion.div>
@@ -645,22 +647,22 @@ export default function WindowsTaskbarClock() {
               >
                 <div className="flex items-center space-x-2">
                   <Timer className="h-4 w-4" />
-                  <span className="text-lg font-semibold">Countdown Timer</span>
+                  <span className="text-lg font-semibold">倒计时</span>
                 </div>
                 <div className="flex space-x-2">
                   <Input
                     type="time"
                     value={countdown}
                     onChange={(e) => setCountdown(e.target.value)}
-                    placeholder="Set countdown"
+                    placeholder="设置倒计时"
                     step="1"
                   />
                   {isCounting ? (
                     <Button variant="destructive" onClick={stopCountdown}>
-                      Stop
+                      停止
                     </Button>
                   ) : (
-                    <Button onClick={startCountdown}>Start</Button>
+                    <Button onClick={startCountdown}>开始</Button>
                   )}
                 </div>
               </motion.div>

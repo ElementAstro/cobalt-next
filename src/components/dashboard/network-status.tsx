@@ -60,24 +60,37 @@ export function NetworkStatus() {
     jitter: 0,
   });
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{
+    message: string;
+    retryCount: number;
+  } | null>(null);
+  const [lastRefreshTime, setLastRefreshTime] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!networkStatus.online) {
-      setStatus("offline");
-    } else if (
-      networkStatus.effectiveType === "slow-2g" ||
-      networkStatus.effectiveType === "2g"
-    ) {
-      setStatus("slow");
-    } else {
-      setStatus("online");
-    }
+    const updateStatus = () => {
+      if (!networkStatus.online) {
+        setStatus("offline");
+      } else if (
+        networkStatus.effectiveType === "slow-2g" ||
+        networkStatus.effectiveType === "2g"
+      ) {
+        setStatus("slow");
+      } else {
+        setStatus("online");
+      }
+    };
+
+    updateStatus();
+    const interval = setInterval(updateStatus, 5000);
+    return () => clearInterval(interval);
   }, [networkStatus]);
 
-  const refreshNetworkStatus = async () => {
+  const refreshNetworkStatus = async (retryCount = 0) => {
     try {
       const response = await fetch("/api/network-status");
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
+
       const data = await response.json();
       setCurrentSpeed(data.speed);
       setSpeedHistory((prev) => [
@@ -89,18 +102,31 @@ export function NetworkStatus() {
         },
       ]);
       setNetworkInfo(data.info);
+      setError(null);
+      setLastRefreshTime(Date.now());
     } catch (error) {
-      console.error("Failed to fetch network status:", error);
+      if (retryCount < 3) {
+        setTimeout(() => refreshNetworkStatus(retryCount + 1), 2000);
+      } else {
+        setError({
+          message:
+            error instanceof Error ? error.message : "Network request failed",
+          retryCount: retryCount + 1,
+        });
+      }
     }
   };
 
   const handleRefresh = async () => {
+    setIsRefreshing(true);
+    setError(null);
     try {
-      setIsRefreshing(true);
-      setError(null);
       await refreshNetworkStatus();
     } catch (err) {
-      setError("Failed to refresh network status");
+      setError({
+        message: "Failed to refresh network status",
+        retryCount: 0,
+      });
     } finally {
       setIsRefreshing(false);
     }
@@ -109,22 +135,76 @@ export function NetworkStatus() {
   const getStatusIcon = () => {
     switch (status) {
       case "online":
-        return <Wifi className="h-5 w-5" />;
+        return (
+          <motion.div
+            key="online"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Wifi className="h-5 w-5" />
+          </motion.div>
+        );
       case "offline":
-        return <WifiOff className="h-5 w-5" />;
+        return (
+          <motion.div
+            key="offline"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <WifiOff className="h-5 w-5" />
+          </motion.div>
+        );
       case "slow":
-        return <AlertCircle className="h-5 w-5" />;
+        return (
+          <motion.div
+            key="slow"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <AlertCircle className="h-5 w-5" />
+          </motion.div>
+        );
     }
   };
 
   const getStatusText = () => {
     switch (status) {
       case "online":
-        return "Connected";
+        return (
+          <motion.span
+            key="online"
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            Connected
+          </motion.span>
+        );
       case "offline":
-        return "Disconnected";
+        return (
+          <motion.span
+            key="offline"
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            Disconnected
+          </motion.span>
+        );
       case "slow":
-        return "Slow Connection";
+        return (
+          <motion.span
+            key="slow"
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            Slow Connection
+          </motion.span>
+        );
     }
   };
 
@@ -142,6 +222,33 @@ export function NetworkStatus() {
     const sizes = ["B", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
+  const calculateNetworkQuality = (info: typeof networkInfo) => {
+    let score = 0;
+
+    // Signal strength (0-40)
+    if (info.signalStrength !== "N/A") {
+      const signal = parseFloat(info.signalStrength);
+      if (!isNaN(signal)) {
+        score += Math.min(Math.max(signal, 0), 40);
+      }
+    }
+
+    // Latency (0-30)
+    if (info.latency !== -1) {
+      score += Math.max(0, 30 - Math.min(info.latency / 10, 30));
+    }
+
+    // Packet loss (0-20)
+    score += Math.max(0, 20 - info.packetLoss * 20);
+
+    // Jitter (0-10)
+    if (info.jitter > 0) {
+      score += Math.max(0, 10 - info.jitter / 2);
+    }
+
+    return Math.round(Math.min(Math.max(score, 0), 100) / 10);
   };
 
   return (
@@ -315,42 +422,106 @@ export function NetworkStatus() {
                 <span className="font-medium">Network Information</span>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <InfoCard
-                  icon={<Signal className="h-4 w-4" />}
-                  title="Signal Strength"
-                  value={networkInfo.signalStrength || "N/A"}
-                />
-                <InfoCard
-                  icon={<Clock className="h-4 w-4" />}
-                  title="Latency"
-                  value={
-                    networkInfo.latency === -1
-                      ? "N/A"
-                      : `${networkInfo.latency} ms`
-                  }
-                />
-                <InfoCard
-                  icon={<Globe className="h-4 w-4" />}
-                  title="IP Address"
-                  value={networkInfo.ipAddress || "N/A"}
-                />
-                <InfoCard
-                  icon={<HardDrive className="h-4 w-4" />}
-                  title="Network Type"
-                  value={networkInfo.type}
-                />
+              <div className="space-y-4">
+                <div className="p-4 rounded-lg bg-gray-100 dark:bg-gray-800">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Activity className="h-5 w-5 text-blue-500" />
+                      <span className="font-medium">Network Quality</span>
+                    </div>
+                    <div className="text-xl font-semibold">
+                      {calculateNetworkQuality(networkInfo)}/10
+                    </div>
+                  </div>
+                  <div className="mt-2 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-blue-500"
+                      style={{
+                        width: `${calculateNetworkQuality(networkInfo) * 10}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <InfoCard
+                    icon={<Signal className="h-4 w-4" />}
+                    title="Signal Strength"
+                    value={networkInfo.signalStrength || "N/A"}
+                  />
+                  <InfoCard
+                    icon={<Clock className="h-4 w-4" />}
+                    title="Latency"
+                    value={
+                      networkInfo.latency === -1
+                        ? "N/A"
+                        : `${networkInfo.latency} ms`
+                    }
+                  />
+                  <InfoCard
+                    icon={<Globe className="h-4 w-4" />}
+                    title="IP Address"
+                    value={networkInfo.ipAddress || "N/A"}
+                  />
+                  <InfoCard
+                    icon={<HardDrive className="h-4 w-4" />}
+                    title="Network Type"
+                    value={networkInfo.type}
+                  />
+                </div>
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-                className="w-full"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh Status
-              </Button>
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefresh}
+                  className="w-full"
+                  disabled={isRefreshing}
+                >
+                  <AnimatePresence mode="wait">
+                    {isRefreshing ? (
+                      <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex items-center"
+                      >
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Refreshing...
+                      </motion.div>
+                    ) : error ? (
+                      <motion.div
+                        key="error"
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        className="flex items-center text-red-500"
+                      >
+                        <AlertCircle className="h-4 w-4 mr-2" />
+                        Refresh Failed
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="normal"
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        className="flex items-center"
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Refresh Status
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </Button>
+                {!isRefreshing && !error && lastRefreshTime && (
+                  <div className="absolute -bottom-5 left-0 right-0 text-xs text-gray-500 text-center">
+                    Last refreshed: {formatTime(lastRefreshTime)}
+                  </div>
+                )}
+              </div>
             </motion.div>
           </TabsContent>
 

@@ -47,16 +47,22 @@ const orbitVariants = {
 
 const planetVariants = {
   hover: {
-    scale: 1.05,
-    y: -5,
+    scale: 1.1,
+    y: -10,
+    rotate: [0, -5, 5, 0],
+    boxShadow: "0px 10px 30px rgba(192, 132, 252, 0.3)",
     transition: {
       type: "spring",
-      stiffness: 300,
-      damping: 10,
+      stiffness: 200,
+      damping: 8,
     },
   },
   tap: {
-    scale: 0.95,
+    scale: 0.9,
+    rotate: [0, 5, -5, 0],
+    transition: {
+      duration: 0.2,
+    },
   },
 };
 
@@ -114,7 +120,7 @@ export function SolarSystem() {
   return (
     <>
       <motion.div
-        className="relative bg-gradient-to-br from-purple-950/90 to-gray-900/95 rounded-xl shadow-xl border border-purple-800/20 backdrop-blur-sm p-4 overflow-hidden"
+        className="relative bg-gradient-to-br from-purple-950/90 to-gray-900/95 rounded-xl shadow-xl border border-purple-800/20 backdrop-blur-sm p-4 overflow-hidden min-h-[calc(100vh-4rem)]"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -123,25 +129,31 @@ export function SolarSystem() {
         <motion.div
           className="absolute inset-0 z-0"
           variants={starFieldVariants}
+          initial="hidden"
+          animate="visible"
         >
           {[...Array(100)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-0.5 h-0.5 bg-white rounded-full"
+              className="absolute w-0.5 h-0.5 bg-white/80 rounded-full"
               style={{
                 top: `${Math.random() * 100}%`,
                 left: `${Math.random() * 100}%`,
                 opacity: Math.random() * 0.5 + 0.2,
+                filter: `blur(${Math.random() * 2}px)`,
               }}
               animate={{
                 opacity: [0.2, 0.8, 0.2],
                 scale: [0.8, 1.2, 0.8],
+                x: [0, Math.random() * 10 - 5, 0],
+                y: [0, Math.random() * 10 - 5, 0],
               }}
               transition={{
                 duration: Math.random() * 3 + 2,
                 repeat: Infinity,
                 ease: "easeInOut",
                 delay: Math.random() * 2,
+                repeatType: "mirror",
               }}
             />
           ))}
@@ -178,11 +190,13 @@ export function SolarSystem() {
                     }}
                     animate={{
                       rotate: 360,
+                      opacity: [0.4, 0.8, 0.4],
+                      borderWidth: [1, 2, 1],
                     }}
                     transition={{
                       duration: 20 + index * 5,
                       repeat: Infinity,
-                      ease: "linear",
+                      ease: "easeInOut",
                     }}
                   />
                   <motion.div

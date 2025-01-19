@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { toast, useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import {
   X,
@@ -20,7 +21,7 @@ import {
   EyeOff,
   List,
   FileText,
-  History
+  History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -99,6 +100,7 @@ export default function CookieConsent({
   const [showAuditModal, setShowAuditModal] = useState(false);
   const [cookieSearch, setCookieSearch] = useState("");
   const [selectedTab, setSelectedTab] = useState("categories");
+  const [isLoading, setIsLoading] = useState(false);
   const {
     isVisible,
     acceptedOptions,
@@ -110,45 +112,159 @@ export default function CookieConsent({
   } = useCookieConsentStore();
   const [rememberChoice, setRememberChoice] = useState(false);
 
+  const handleRememberChoiceChange = useCallback(
+    (checked: boolean) => {
+      setRememberChoice(checked);
+      toast({
+        title: checked ? "选择已记住" : "选择未记住",
+        description: `您的选择将${
+          checked ? "" : "不"
+        }被记住 ${rememberExpiry} 天`,
+        duration: 2000,
+      });
+    },
+    [rememberExpiry, toast]
+  );
+
   useEffect(() => {
-    const consent = localStorage.getItem("cookieConsent");
-    if (!consent) {
+    try {
+      const consent = localStorage.getItem("cookieConsent");
+      if (!consent) {
+        setIsVisible(true);
+      } else {
+        const parsedConsent = JSON.parse(consent);
+        if (parsedConsent && Array.isArray(parsedConsent.options)) {
+          setAcceptedOptions(parsedConsent.options);
+        } else {
+          setIsVisible(true);
+          toast({
+            title: "Cookie 设置无效",
+            description: "检测到无效的 Cookie 设置，已重置",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error reading cookie consent:", error);
       setIsVisible(true);
-    } else {
-      setAcceptedOptions(JSON.parse(consent));
+      toast({
+        title: "读取 Cookie 设置失败",
+        description: "无法读取 Cookie 设置，请重新选择",
+        variant: "destructive",
+      });
     }
-  }, [setIsVisible, setAcceptedOptions]);
+  }, [setIsVisible, setAcceptedOptions, toast]);
 
   useEffect(() => {
-    setAcceptedOptions((prev: string[]) => {
-      const requiredOptions: string[] = cookieOptions
-        .filter((option: CookieOption) => option.isRequired)
-        .map((option: CookieOption) => option.id);
-      const newOptions: string[] = prev.concat(requiredOptions);
-      return Array.from(new Set(newOptions));
-    });
-  }, [cookieOptions, setAcceptedOptions]);
+    try {
+      setAcceptedOptions((prev: string[]) => {
+        const requiredOptions: string[] = cookieOptions
+          .filter((option: CookieOption) => option.isRequired)
+          .map((option: CookieOption) => option.id);
 
-  const handleAccept = () => {
-    localStorage.setItem("cookieConsent", JSON.stringify(acceptedOptions));
-    setIsVisible(false);
-    onAccept?.(acceptedOptions);
-  };
+        if (!requiredOptions.length) {
+          toast({
+            title: "缺少必要 Cookie",
+            description: "未找到任何必要的 Cookie 设置",
+            variant: "destructive",
+          });
+        }
 
-  const handleDecline = () => {
-    const requiredOptions = cookieOptions
-      .filter((option) => option.isRequired)
-      .map((option) => option.id);
-    localStorage.setItem("cookieConsent", JSON.stringify(requiredOptions));
-    setIsVisible(false);
-    onDecline?.();
-  };
+        const newOptions: string[] = prev.concat(requiredOptions);
+        return Array.from(new Set(newOptions));
+      });
+    } catch (error) {
+      console.error("Error initializing required cookies:", error);
+      toast({
+        title: "初始化失败",
+        description: "无法初始化必要的 Cookie 设置",
+        variant: "destructive",
+      });
+    }
+  }, [cookieOptions, setAcceptedOptions, toast]);
 
-  const handleSavePreferences = () => {
-    localStorage.setItem("cookieConsent", JSON.stringify(acceptedOptions));
-    setIsVisible(false);
-    onAccept?.(acceptedOptions);
-  };
+  const handleAccept = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      localStorage.setItem(
+        "cookieConsent",
+        JSON.stringify({
+          options: acceptedOptions,
+          timestamp: new Date().toISOString(),
+          remember: rememberChoice,
+        })
+      );
+      setIsVisible(false);
+      onAccept?.(acceptedOptions);
+      toast({
+        title: "设置已保存",
+        description: "您的 Cookie 偏好设置已成功保存",
+        duration: 2000,
+      });
+    } catch (error) {
+      toast({
+        title: "错误",
+        description: "保存设置时出错，请重试",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [acceptedOptions, onAccept, rememberChoice, toast]);
+
+  const handleDecline = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const requiredOptions = cookieOptions
+        .filter((option) => option.isRequired)
+        .map((option) => option.id);
+      localStorage.setItem("cookieConsent", JSON.stringify(requiredOptions));
+      setIsVisible(false);
+      onDecline?.();
+      toast({
+        title: "仅必要 Cookies",
+        description: "已仅接受必要的 Cookies",
+        duration: 3000,
+      });
+    } catch (error) {
+      toast({
+        title: "错误",
+        description: "保存 Cookie 设置时出错，请重试",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [cookieOptions, onDecline, toast]);
+
+  const handleSavePreferences = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      localStorage.setItem(
+        "cookieConsent",
+        JSON.stringify({
+          options: acceptedOptions,
+          timestamp: new Date().toISOString(),
+          remember: rememberChoice,
+        })
+      );
+      setIsVisible(false);
+      onAccept?.(acceptedOptions);
+      toast({
+        title: "偏好设置已保存",
+        description: "您的 Cookie 偏好设置已成功保存",
+        duration: 3000,
+      });
+    } catch (error) {
+      toast({
+        title: "错误",
+        description: "保存偏好设置时出错，请重试",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [acceptedOptions, onAccept, rememberChoice, toast]);
 
   const containerVariants: Variants = {
     hidden: { opacity: 0, y: position === "bottom" ? 100 : -100 },
@@ -176,7 +292,7 @@ export default function CookieConsent({
     },
     tap: {
       scale: 0.98,
-    }
+    },
   };
 
   const childVariants: Variants = {
@@ -185,7 +301,7 @@ export default function CookieConsent({
     hover: {
       scale: 1.05,
       transition: { duration: 0.2 },
-    }
+    },
   };
 
   const detailsVariants: Variants = {
@@ -215,36 +331,56 @@ export default function CookieConsent({
       scale: 1,
       transition: {
         duration: 0.3,
-        ease: "easeOut"
-      }
+        ease: "easeOut",
+      },
     },
     exit: {
       opacity: 0,
       scale: 0.9,
       transition: {
-        duration: 0.2
-      }
-    }
+        duration: 0.2,
+      },
+    },
   };
 
   const filteredCookies = useMemo(() => {
-    return cookieOptions.filter(option => 
-      option.name.toLowerCase().includes(cookieSearch.toLowerCase()) ||
-      option.description.toLowerCase().includes(cookieSearch.toLowerCase())
+    return cookieOptions.filter(
+      (option) =>
+        option.name.toLowerCase().includes(cookieSearch.toLowerCase()) ||
+        option.description.toLowerCase().includes(cookieSearch.toLowerCase())
     );
   }, [cookieOptions, cookieSearch]);
 
   const cookieExpirationProgress = useMemo(() => {
     const storedConsent = localStorage.getItem("cookieConsent");
     if (!storedConsent) return 0;
-    
-    const consentDate = new Date(JSON.parse(storedConsent).timestamp);
-    const daysSinceConsent = Math.floor(
-      (new Date().getTime() - consentDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    
-    return Math.min((daysSinceConsent / rememberExpiry) * 100, 100);
-  }, [rememberExpiry]);
+
+    try {
+      const consentData = JSON.parse(storedConsent);
+      if (!consentData.timestamp) return 0;
+
+      const consentDate = new Date(consentData.timestamp);
+      const daysSinceConsent = Math.floor(
+        (new Date().getTime() - consentDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      const progress = Math.min((daysSinceConsent / rememberExpiry) * 100, 100);
+
+      if (progress >= 100) {
+        toast({
+          title: "Cookie 设置已过期",
+          description: "您的 Cookie 偏好设置已过期，请重新选择",
+          duration: 3000,
+        });
+        setIsVisible(true);
+      }
+
+      return progress;
+    } catch (error) {
+      console.error("Error parsing cookie consent data:", error);
+      return 0;
+    }
+  }, [rememberExpiry, toast]);
 
   if (!isVisible) return null;
 
@@ -260,7 +396,7 @@ export default function CookieConsent({
         whileTap="tap"
         style={{
           backgroundColor: primaryColor,
-          borderColor: secondaryColor
+          borderColor: secondaryColor,
         }}
         className={`fixed ${position}-0 left-0 right-0 text-white p-6 shadow-lg z-50 border-t ${
           isMobile ? "px-3" : "px-6"
@@ -270,97 +406,97 @@ export default function CookieConsent({
         aria-labelledby="cookie-consent-title"
       >
         <div className="max-w-3xl mx-auto">
-            <motion.div
-              variants={childVariants}
-              className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6"
-            >
-              <motion.div className="flex items-center space-x-4">
-                <Cookie className="w-6 h-6" />
-                <motion.h2
-                  variants={childVariants}
-                  id="cookie-consent-title"
-                  className="text-lg font-semibold mb-4 sm:mb-0"
-                >
-                  我们使用Cookies
-                </motion.h2>
-              </motion.div>
-              
-              <motion.div variants={childVariants} className="flex space-x-4">
-                {showAdvancedSettings && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          onClick={() => setShowSettingsModal(true)}
-                          variant="ghost"
-                          size="icon"
-                          aria-label="高级设置"
-                        >
-                          <Settings className="w-4 h-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>打开高级Cookie设置</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={handleAccept}
-                        variant="default"
-                        aria-label="接受所选Cookies"
-                        style={{ backgroundColor: secondaryColor }}
-                      >
-                        {customIcons.accept || <Check className="w-4 h-4 mr-2" />}
-                        接受所选
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>接受选定的Cookie类别</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={handleDecline}
-                        variant="outline"
-                        aria-label="仅接受必要的Cookies"
-                      >
-                        {customIcons.decline || "仅必要"}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>仅接受必要的Cookie，不接受其他类型的Cookie</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={handleSavePreferences}
-                        variant="secondary"
-                        aria-label="保存我的偏好设置"
-                      >
-                        保存偏好设置
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>保存您的Cookie偏好设置</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </motion.div>
+          <motion.div
+            variants={childVariants}
+            className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6"
+          >
+            <motion.div className="flex items-center space-x-4">
+              <Cookie className="w-6 h-6" />
+              <motion.h2
+                variants={childVariants}
+                id="cookie-consent-title"
+                className="text-lg font-semibold mb-4 sm:mb-0"
+              >
+                我们使用Cookies
+              </motion.h2>
             </motion.div>
+
+            <motion.div variants={childVariants} className="flex space-x-4">
+              {showAdvancedSettings && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={() => setShowSettingsModal(true)}
+                        variant="ghost"
+                        size="icon"
+                        aria-label="高级设置"
+                      >
+                        <Settings className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>打开高级Cookie设置</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleAccept}
+                      variant="default"
+                      aria-label="接受所选Cookies"
+                      style={{ backgroundColor: secondaryColor }}
+                    >
+                      {customIcons.accept || <Check className="w-4 h-4 mr-2" />}
+                      接受所选
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>接受选定的Cookie类别</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleDecline}
+                      variant="outline"
+                      aria-label="仅接受必要的Cookies"
+                    >
+                      {customIcons.decline || "仅必要"}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>仅接受必要的Cookie，不接受其他类型的Cookie</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleSavePreferences}
+                      variant="secondary"
+                      aria-label="保存我的偏好设置"
+                    >
+                      保存偏好设置
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>保存您的Cookie偏好设置</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </motion.div>
+          </motion.div>
           <motion.div variants={childVariants} className="mt-2">
             <Button
               onClick={() => setShowDetails(!showDetails)}

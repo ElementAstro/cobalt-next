@@ -29,7 +29,7 @@ interface WeatherCardsProps {
 
 const WeatherCards: React.FC<WeatherCardsProps> = ({ weatherData, units }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+    <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-4 h-[calc(100vh-4rem)] overflow-y-auto">
       <Card className="bg-gray-700 text-white">
         <CardHeader>
           <CardTitle>温度</CardTitle>
@@ -42,7 +42,7 @@ const WeatherCards: React.FC<WeatherCardsProps> = ({ weatherData, units }) => {
           </span>
         </CardContent>
       </Card>
-      <Card className="bg-gray-700 text-white">
+      <Card className="bg-gray-700 text-white hover:scale-105 transition-transform duration-300 ease-in-out">
         <CardHeader>
           <CardTitle>湿度</CardTitle>
         </CardHeader>
@@ -72,7 +72,7 @@ const WeatherCards: React.FC<WeatherCardsProps> = ({ weatherData, units }) => {
           <span>{weatherData.cloudCover}%</span>
         </CardContent>
       </Card>
-      <Card className="bg-gray-700 text-white">
+      <Card className="bg-gray-700 text-white hover:scale-105 transition-transform duration-300 ease-in-out">
         <CardHeader>
           <CardTitle>紫外线指数</CardTitle>
         </CardHeader>
@@ -81,7 +81,7 @@ const WeatherCards: React.FC<WeatherCardsProps> = ({ weatherData, units }) => {
           <span>{weatherData.uvi}</span>
         </CardContent>
       </Card>
-      <Card className="bg-gray-700 text-white">
+      <Card className="bg-gray-700 text-white hover:scale-105 transition-transform duration-300 ease-in-out">
         <CardHeader>
           <CardTitle>气压</CardTitle>
         </CardHeader>
@@ -90,7 +90,7 @@ const WeatherCards: React.FC<WeatherCardsProps> = ({ weatherData, units }) => {
           <span>{weatherData.pressure} hPa</span>
         </CardContent>
       </Card>
-      <Card className="bg-gray-700 text-white">
+      <Card className="bg-gray-700 text-white hover:scale-105 transition-transform duration-300 ease-in-out">
         <CardHeader>
           <CardTitle>日出</CardTitle>
         </CardHeader>
@@ -99,7 +99,7 @@ const WeatherCards: React.FC<WeatherCardsProps> = ({ weatherData, units }) => {
           <span>{weatherData.sunrise}</span>
         </CardContent>
       </Card>
-      <Card className="bg-gray-700 text-white">
+      <Card className="bg-gray-700 text-white hover:scale-105 transition-transform duration-300 ease-in-out">
         <CardHeader>
           <CardTitle>日落</CardTitle>
         </CardHeader>

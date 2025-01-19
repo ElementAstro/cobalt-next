@@ -1,6 +1,11 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import AceEditor from "react-ace";
+import "ace-builds/src-noconflict/mode-sh";
+import "ace-builds/src-noconflict/theme-github";
+import "ace-builds/src-noconflict/theme-twilight";
+import "ace-builds/src-noconflict/ext-language_tools";
 import {
   Select,
   SelectContent,
@@ -14,7 +19,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useEditorStore } from "@/store/useScriptStore";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Heart, Info, Star, Bookmark, X } from "lucide-react";
+import { Search, Heart, Info, Star, X } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -299,9 +304,25 @@ const TemplateSelector: React.FC<TemplateSelectorProps> = ({ onInsert }) => {
             <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
               {showPreview.description}
             </p>
-            <pre className="bg-gray-200 dark:bg-gray-700 p-3 rounded text-sm overflow-x-auto">
-              {showPreview.code}
-            </pre>
+            <AceEditor
+              mode="sh"
+              theme={theme === "dark" ? "twilight" : "github"}
+              value={showPreview.code}
+              readOnly={true}
+              width="100%"
+              height="300px"
+              fontSize={14}
+              showPrintMargin={false}
+              showGutter={true}
+              highlightActiveLine={true}
+              setOptions={{
+                enableBasicAutocompletion: true,
+                enableLiveAutocompletion: true,
+                enableSnippets: true,
+                showLineNumbers: true,
+                tabSize: 2,
+              }}
+            />
             <div className="flex justify-end mt-4 space-x-2">
               <Button variant="outline" onClick={() => setShowPreview(null)}>
                 关闭

@@ -18,8 +18,9 @@ import { cn } from "@/lib/utils";
 import { RiseSetChart } from "./riseset-chart";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useMemo, useEffect } from "react";
+import { motion, useAnimationControls } from "framer-motion";
+import { useTheme } from "next-themes";
 import {
   Dialog,
   DialogContent,
@@ -62,6 +63,46 @@ export function CelestialObjectCard({
 }: CelestialObjectProps) {
   const { favorites, toggleFavorite } = useSearchStore();
   const isFavorite = favorites.includes(id);
+  const controls = useAnimationControls();
+  const { theme } = useTheme();
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    setIsDarkMode(theme === "dark");
+  }, [theme]);
+
+  const handleButtonHover = async (buttonType: string) => {
+    await controls.start({
+      scale: 1.05,
+      transition: { type: "spring", stiffness: 300 },
+    });
+
+    switch (buttonType) {
+      case "favorite":
+        await controls.start({
+          rotate: isFavorite ? [0, -10, 10, 0] : [0, 10, -10, 0],
+          transition: { duration: 0.4 },
+        });
+        break;
+      case "share":
+        await controls.start({
+          rotate: [0, 10, -10, 0],
+          transition: { duration: 0.3 },
+        });
+        break;
+      case "info":
+        await controls.start({
+          rotate: [0, 5, -5, 0],
+          transition: { duration: 0.2 },
+        });
+        break;
+      default:
+        await controls.start({
+          rotate: [0, 5, -5, 0],
+          transition: { duration: 0.2 },
+        });
+    }
+  };
 
   const handleFavoriteClick = () => {
     toggleFavorite(id);
@@ -101,10 +142,14 @@ export function CelestialObjectCard({
     >
       <Card
         className={cn(
-          "w-full p-2 bg-white dark:bg-gray-800 shadow-lg rounded-lg transition-all duration-300",
+          "w-full p-2 shadow-lg rounded-lg transition-all duration-300",
           {
             "max-w-md": cardStyle === "compact",
             "max-w-2xl": cardStyle === "detailed",
+            "bg-white": !isDarkMode,
+            "bg-gray-800": isDarkMode,
+            "border border-gray-200": !isDarkMode,
+            "border border-gray-700": isDarkMode,
           }
         )}
       >
@@ -219,98 +264,174 @@ export function CelestialObjectCard({
                 "justify-center": cardStyle === "compact",
               })}
             >
-              <Button
-                className="w-full"
-                variant="default"
-                onClick={() => console.log("Target added")}
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onHoverStart={() => handleButtonHover("target")}
               >
-                <Maximize2 className="w-4 h-4 mr-2" />
-                Add target
-              </Button>
-              {cardStyle === "detailed" && (
                 <Button
                   className="w-full"
-                  variant="outline"
-                  onClick={() => console.log("Settings opened")}
+                  variant={isDarkMode ? "secondary" : "default"}
+                  onClick={() => console.log("Target added")}
                 >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Observation Settings
+                  <motion.div animate={controls} whileHover={{ rotate: 10 }}>
+                    <Maximize2 className="w-4 h-4 mr-2" />
+                  </motion.div>
+                  Add target
                 </Button>
-              )}
-              <Button
-                className="w-full"
-                variant="outline"
-                onClick={() => console.log("Framing set")}
-              >
-                <Lightbulb className="w-4 h-4 mr-2" />
-                Set framing
-              </Button>
+              </motion.div>
               {cardStyle === "detailed" && (
-                <Button
-                  className="w-full"
-                  variant="outline"
-                  onClick={() => console.log("Preview opened")}
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onHoverStart={() => handleButtonHover("settings")}
                 >
-                  <Eye className="w-4 h-4 mr-2" />
-                  Preview Observation
-                </Button>
-              )}
-              <Button className="w-full" variant="outline">
-                <Move className="w-4 h-4 mr-2" />
-                Slew
-              </Button>
-              {props.isLoggedIn && (
-                <Button
-                  className="w-full mt-2"
-                  variant="outline"
-                  onClick={handleFavoriteClick}
-                >
-                  <Star
-                    className={`w-4 h-4 mr-2 ${
-                      isFavorite ? "fill-yellow-400" : ""
-                    }`}
-                  />
-                  {isFavorite ? "Remove from Favorites" : "Add to Favorites"}
-                </Button>
-              )}
-              <Button
-                className="w-full"
-                variant="outline"
-                onClick={handleShare}
-              >
-                <Share2 className="w-4 h-4 mr-2" />
-                分享
-              </Button>
-
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="w-full" variant="outline">
-                    <Info className="w-4 h-4 mr-2" />
-                    详细信息
+                  <Button
+                    className="w-full"
+                    variant={isDarkMode ? "ghost" : "outline"}
+                    onClick={() => console.log("Settings opened")}
+                  >
+                    <motion.div animate={controls} whileHover={{ rotate: 10 }}>
+                      <Settings className="w-4 h-4 mr-2" />
+                    </motion.div>
+                    Observation Settings
                   </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{props.name} - 详细信息</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-medium">大小</h4>
-                      <p>{props.size} 角分</p>
-                    </div>
-                    <div>
-                      <h4 className="font-medium">距离</h4>
-                      <p>{props.distance} 光年</p>
-                    </div>
-                    {/* 添加更多详细信息 */}
-                  </div>
-                  <DialogClose asChild>
-                    <Button variant="outline" className="mt-4">
-                      关闭
+                </motion.div>
+              )}
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onHoverStart={() => handleButtonHover("framing")}
+              >
+                <Button
+                  className="w-full"
+                  variant={isDarkMode ? "ghost" : "outline"}
+                  onClick={() => console.log("Framing set")}
+                >
+                  <motion.div animate={controls} whileHover={{ rotate: 10 }}>
+                    <Lightbulb className="w-4 h-4 mr-2" />
+                  </motion.div>
+                  Set framing
+                </Button>
+              </motion.div>
+              {cardStyle === "detailed" && (
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onHoverStart={() => handleButtonHover("preview")}
+                >
+                  <Button
+                    className="w-full"
+                    variant={isDarkMode ? "ghost" : "outline"}
+                    onClick={() => console.log("Preview opened")}
+                  >
+                    <motion.div animate={controls} whileHover={{ rotate: 10 }}>
+                      <Eye className="w-4 h-4 mr-2" />
+                    </motion.div>
+                    Preview Observation
+                  </Button>
+                </motion.div>
+              )}
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onHoverStart={() => handleButtonHover("slew")}
+              >
+                <Button
+                  className="w-full"
+                  variant={isDarkMode ? "ghost" : "outline"}
+                >
+                  <motion.div animate={controls} whileHover={{ rotate: 10 }}>
+                    <Move className="w-4 h-4 mr-2" />
+                  </motion.div>
+                  Slew
+                </Button>
+              </motion.div>
+              {props.isLoggedIn && (
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onHoverStart={() => handleButtonHover("favorite")}
+                >
+                  <Button
+                    className="w-full mt-2"
+                    variant={isDarkMode ? "ghost" : "outline"}
+                    onClick={handleFavoriteClick}
+                  >
+                    <motion.div
+                      animate={controls}
+                      whileHover={{ rotate: isFavorite ? -10 : 10 }}
+                    >
+                      <Star
+                        className={`w-4 h-4 mr-2 ${
+                          isFavorite ? "fill-yellow-400" : ""
+                        }`}
+                      />
+                    </motion.div>
+                    {isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+                  </Button>
+                </motion.div>
+              )}
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onHoverStart={() => handleButtonHover("share")}
+              >
+                <Button
+                  className="w-full"
+                  variant={isDarkMode ? "ghost" : "outline"}
+                  onClick={handleShare}
+                >
+                  <motion.div animate={controls} whileHover={{ rotate: 10 }}>
+                    <Share2 className="w-4 h-4 mr-2" />
+                  </motion.div>
+                  分享
+                </Button>
+              </motion.div>
+
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onHoverStart={() => handleButtonHover("info")}
+              >
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      className="w-full"
+                      variant={isDarkMode ? "ghost" : "outline"}
+                    >
+                      <motion.div
+                        animate={controls}
+                        whileHover={{ rotate: 10 }}
+                      >
+                        <Info className="w-4 h-4 mr-2" />
+                      </motion.div>
+                      详细信息
                     </Button>
-                  </DialogClose>
-                </DialogContent>
-              </Dialog>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{props.name} - 详细信息</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="font-medium">大小</h4>
+                        <p>{props.size} 角分</p>
+                      </div>
+                      <div>
+                        <h4 className="font-medium">距离</h4>
+                        <p>{props.distance} 光年</p>
+                      </div>
+                      {/* 添加更多详细信息 */}
+                    </div>
+                    <DialogClose asChild>
+                      <Button variant="outline" className="mt-4">
+                        关闭
+                      </Button>
+                    </DialogClose>
+                  </DialogContent>
+                </Dialog>
+              </motion.div>
             </div>
           </div>
         </CardContent>

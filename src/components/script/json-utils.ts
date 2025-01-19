@@ -61,12 +61,40 @@ export function parseInputData(data: any): any {
   }
 }
 
-export function validateJson(json: any): boolean {
+export function validateJson(json: any, schema?: z.ZodTypeAny): boolean {
   try {
+    // 基本JSON验证
     JSON.stringify(json);
+    
+    // 如果提供了schema，进行额外验证
+    if (schema) {
+      const result = schema.safeParse(json);
+      if (!result.success) {
+        throw new Error(result.error.errors[0].message);
+      }
+    }
     return true;
-  } catch {
+  } catch (error) {
+    console.error("JSON validation failed:", error);
     return false;
+  }
+}
+
+export function formatJson(json: any, indent = 2): string {
+  try {
+    return JSON.stringify(json, null, indent);
+  } catch (error) {
+    console.error("Failed to format JSON:", error);
+    return "{}";
+  }
+}
+
+export function minifyJson(json: any): string {
+  try {
+    return JSON.stringify(json);
+  } catch (error) {
+    console.error("Failed to minify JSON:", error);
+    return "{}";
   }
 }
 

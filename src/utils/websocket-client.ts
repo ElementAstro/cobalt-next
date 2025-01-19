@@ -220,6 +220,74 @@ class WebSocketClient {
         return "closed";
     }
   }
+
+  public async testConnection(config: WebSocketClientOptions): Promise<{
+    success: boolean;
+    latency?: number;
+    packetLoss?: number;
+    error?: string;
+  }> {
+    return new Promise((resolve) => {
+      if (!this.ws) {
+        return resolve({
+          success: false,
+          error: "WebSocket 未初始化",
+        });
+      }
+
+      const testWs = new WebSocket(config.url);
+      const startTime = Date.now();
+      let receivedPong = false;
+      let packetLoss = 0;
+      let latency = 0;
+
+      const timeout = setTimeout(() => {
+        testWs.close();
+        resolve({
+          success: false,
+          error: "连接测试超时",
+        });
+      }, 5000);
+
+      testWs.onopen = () => {
+        // 发送测试消息
+        testWs.send(JSON.stringify({ type: "ping" }));
+      };
+
+      testWs.onmessage = (event) => {
+        if (event.data === JSON.stringify({ type: "pong" })) {
+          receivedPong = true;
+          latency = Date.now() - startTime;
+          packetLoss = 0;
+          clearTimeout(timeout);
+          testWs.close();
+          resolve({
+            success: true,
+            latency,
+            packetLoss,
+          });
+        }
+      };
+
+      testWs.onerror = (event: Event) => {
+        clearTimeout(timeout);
+        resolve({
+          success: false,
+          error: "连接测试失败",
+        });
+      };
+
+      testWs.onclose = () => {
+        if (!receivedPong) {
+          clearTimeout(timeout);
+          resolve({
+            success: false,
+            error: "连接意外关闭",
+          });
+        }
+      };
+    });
+  }
 }
 
 export default WebSocketClient;

@@ -1,7 +1,7 @@
 "use client";
 
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { useGuidingStore } from "@/lib/store/guiding/calibration";
+import { useGuidingStore } from "@/store/useGuidingStore";
 import { motion } from "framer-motion";
 
 export default function CalibrationData() {

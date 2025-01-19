@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   DndContext,
   closestCenter,
@@ -28,12 +28,25 @@ import {
   stringifyJson,
   reorderNodes,
   parseInputData,
+  formatJson,
+  minifyJson,
+  validateJson,
 } from "./json-utils";
 import Prism from "prismjs";
 import "prismjs/themes/prism-tomorrow.css";
 import "prismjs/components/prism-json";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Download, Upload, Search } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Download,
+  Upload,
+  Search,
+  Code,
+  Minus,
+  Check,
+  X,
+} from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -41,6 +54,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
+import { z } from "zod";
+import jsonpath from "jsonpath";
+import { toast } from "@/hooks/use-toast";
 
 interface JsonEditorProps {
   initialData?: any;
@@ -59,6 +75,68 @@ export default function JsonEditor({ initialData, onChange }: JsonEditorProps) {
   const [historyIndex, setHistoryIndex] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [schema, setSchema] = useState<z.ZodTypeAny>();
+  const [validationError, setValidationError] = useState("");
+  const [isFormatted, setIsFormatted] = useState(true);
+  const [jsonPathQuery, setJsonPathQuery] = useState("");
+  const [jsonPathResults, setJsonPathResults] = useState<any[]>([]);
+
+  const handleFormat = useCallback(() => {
+    try {
+      const formatted = formatJson(json);
+      setJson(JSON.parse(formatted));
+      setIsFormatted(true);
+      toast({
+        title: "格式化成功",
+        description: "JSON 已格式化",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "格式化失败",
+        description: error instanceof Error ? error.message : "未知错误",
+        variant: "destructive",
+      });
+    }
+  }, [json]);
+
+  const handleMinify = useCallback(() => {
+    try {
+      const minified = minifyJson(json);
+      setJson(JSON.parse(minified));
+      setIsFormatted(false);
+      toast({
+        title: "压缩成功",
+        description: "JSON 已压缩",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "压缩失败",
+        description: error instanceof Error ? error.message : "未知错误",
+        variant: "destructive",
+      });
+    }
+  }, [json]);
+
+  const handleJsonPathSearch = useCallback(() => {
+    try {
+      const results = jsonpath.query(json, jsonPathQuery);
+      setJsonPathResults(results);
+      toast({
+        title: "搜索成功",
+        description: `找到 ${results.length} 个匹配项`,
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "搜索失败",
+        description:
+          error instanceof Error ? error.message : "无效的 JSONPath 表达式",
+        variant: "destructive",
+      });
+    }
+  }, [json, jsonPathQuery]);
 
   useEffect(() => {
     setHistory((prev) => [...prev.slice(0, historyIndex), json]);
@@ -263,6 +341,20 @@ export default function JsonEditor({ initialData, onChange }: JsonEditorProps) {
                     <TooltipContent>切换编辑模式</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/10">
+                  {validationError ? (
+                    <>
+                      <X className="w-4 h-4 text-red-500" />
+                      <span className="text-sm text-red-500">验证失败</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span className="text-sm text-green-500">验证通过</span>
+                    </>
+                  )}
+                </div>
               </div>
             </motion.div>
 
@@ -306,6 +398,12 @@ export default function JsonEditor({ initialData, onChange }: JsonEditorProps) {
                   className="hidden"
                   id="import-json"
                 />
+                <Button variant="outline" onClick={handleFormat}>
+                  <Code className="w-4 h-4 mr-1" /> 格式化
+                </Button>
+                <Button variant="outline" onClick={handleMinify}>
+                  <Minus className="w-4 h-4 mr-1" /> 压缩
+                </Button>
               </div>
             </motion.div>
           </CardTitle>
@@ -322,6 +420,17 @@ export default function JsonEditor({ initialData, onChange }: JsonEditorProps) {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10"
               />
+            </div>
+            <div className="flex items-center gap-2 w-full max-w-xs">
+              <Input
+                placeholder="JSONPath 查询..."
+                value={jsonPathQuery}
+                onChange={(e) => setJsonPathQuery(e.target.value)}
+                className="w-full"
+              />
+              <Button variant="outline" onClick={handleJsonPathSearch}>
+                <Search className="w-4 h-4" />
+              </Button>
             </div>
           </div>
           {/* ...existing controls... */}
@@ -422,11 +531,36 @@ export default function JsonEditor({ initialData, onChange }: JsonEditorProps) {
                   transition={{ duration: 0.3 }}
                 >
                   <ScrollArea className="h-96 md:h-[600px] bg-gray-50 dark:bg-gray-800 p-4 rounded">
-                    <pre className="whitespace-pre-wrap text-gray-800 dark:text-gray-100">
-                      <code
-                        dangerouslySetInnerHTML={{ __html: highlightedJson }}
-                      />
-                    </pre>
+                    {jsonPathResults.length > 0 ? (
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="font-semibold">JSONPath 搜索结果</h3>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setJsonPathResults([])}
+                          >
+                            清除结果
+                          </Button>
+                        </div>
+                        {jsonPathResults.map((result, index) => (
+                          <div
+                            key={index}
+                            className="p-2 bg-white dark:bg-gray-700 rounded"
+                          >
+                            <pre className="text-sm break-all">
+                              {JSON.stringify(result, null, 2)}
+                            </pre>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <pre className="whitespace-pre-wrap text-gray-800 dark:text-gray-100">
+                        <code
+                          dangerouslySetInnerHTML={{ __html: highlightedJson }}
+                        />
+                      </pre>
+                    )}
                   </ScrollArea>
                 </motion.div>
               </TabsContent>

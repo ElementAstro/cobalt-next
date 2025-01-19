@@ -201,13 +201,13 @@ export function FocuserPage() {
   return (
     <AnimatePresence>
       <motion.div
-        className="min-h-screen text-white"
+        className="h-screen flex flex-col text-white overflow-hidden"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
         exit="hidden"
       >
-        <div className="max-w-7xl mx-auto space-y-3">
+        <div className="max-w-7xl mx-auto flex-1 flex flex-col space-y-3 p-4 overflow-y-auto">
           <DeviceSelector
             deviceType="Focuser"
             onDeviceChange={handleDeviceChange}
@@ -216,7 +216,7 @@ export function FocuserPage() {
           {isDesktop ? (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* 左侧面板 */}
-              <Card className="lg:col-span-6 bg-background/95 rounded-2xl shadow-xl border-white transition-transform duration-200 hover:-translate-y-1">
+              <Card className="lg:col-span-6 bg-background/95 rounded-2xl shadow-xl border-white transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Compass className="h-6 w-6 animate-pulse" />
@@ -293,7 +293,7 @@ export function FocuserPage() {
               </Card>
 
               {/* 右侧面板 */}
-              <Card className="lg:col-span-6 bg-background/95 rounded-2xl shadow-xl border-white transition-transform duration-200 hover:-translate-y-1">
+              <Card className="lg:col-span-6 bg-background/95 rounded-2xl shadow-xl border-white transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Settings2 className="h-6 w-6" />
@@ -448,7 +448,7 @@ export function FocuserPage() {
           ) : (
             <div className="space-y-3">
               {/* 移动端布局 */}
-              <Card className="bg-background/95 rounded-2xl shadow-xl border-white transition-transform duration-200 hover:-translate-y-1">
+              <Card className="bg-background/95 rounded-2xl shadow-xl border-white transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Compass className="h-6 w-6 animate-bounce" />

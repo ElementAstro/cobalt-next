@@ -59,13 +59,15 @@ export function PlanetDetail({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
     >
       <motion.div
         initial={{ scale: 0.95, y: 50 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.95, y: 50 }}
-        className="relative w-full max-w-2xl bg-gray-900/90 rounded-lg shadow-xl border border-gray-800"
+        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+        className="relative w-full max-w-2xl h-[90vh] max-h-[800px] bg-gray-900/90 rounded-lg shadow-xl border border-gray-800 flex flex-col overflow-hidden"
       >
         <Button
           onClick={onClose}
@@ -75,8 +77,8 @@ export function PlanetDetail({
           <X size={24} />
         </Button>
 
-        <div className="p-6">
-          <div className="flex flex-col sm:flex-row items-start gap-6 mb-6">
+        <div className="p-6 flex-1 overflow-y-auto">
+          <div className="flex flex-col lg:flex-row items-start gap-6 mb-6">
             <motion.div
               className="relative w-24 h-24 sm:w-32 sm:h-32"
               animate={{ rotate: rotation }}
@@ -124,7 +126,7 @@ export function PlanetDetail({
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mt-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
                 <div className="flex items-center gap-2">
                   <Sunrise className="w-5 h-5 text-blue-400" />
                   <div>
@@ -157,8 +159,8 @@ export function PlanetDetail({
             </div>
           </div>
 
-          <Tabs defaultValue="info" className="w-full">
-            <TabsList className="grid grid-cols-3 mb-4">
+          <Tabs defaultValue="info" className="w-full mt-6">
+            <TabsList className="grid grid-cols-3 mb-4 sticky top-0 bg-gray-900/90 backdrop-blur-sm z-10">
               <TabsTrigger value="info">
                 <Star className="w-4 h-4 mr-1" />
                 基本信息
@@ -183,7 +185,7 @@ export function PlanetDetail({
                 animate="visible"
                 className="transition-all duration-300"
               >
-                <Card className="border-gray-800 bg-gray-900/50">
+                <Card className="border-gray-800 bg-gray-900/50 hover:bg-gray-900/70 transition-colors duration-300">
                   <CardContent className="grid grid-cols-2 gap-4 pt-6">
                     <div className="space-y-1 flex items-center">
                       <Moon className="w-5 h-5 text-indigo-400" />

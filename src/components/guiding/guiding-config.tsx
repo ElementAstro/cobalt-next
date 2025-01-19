@@ -31,7 +31,8 @@ import { Label } from "@/components/ui/label";
 import type { CustomOptions } from "@/types/guiding";
 import { useGuidingConfigStore } from "@/store/useGuidingStore";
 import { useMediaQuery } from "react-responsive";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "@/hooks/use-toast";
 
 export default function StarGuiding() {
   const {
@@ -49,14 +50,99 @@ export default function StarGuiding() {
   const isLandscape = useMediaQuery({ query: "(orientation: landscape)" });
   const isMobile = useMediaQuery({ query: "(max-width: 640px)" });
 
-  const handleStart = () => setIsRunning(true);
-  const handleStop = () => setIsRunning(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleStart = async () => {
+    try {
+      setIsLoading(true);
+
+      // Validate SNR threshold
+      if (customOptions.snrThreshold <= 0) {
+        throw new Error("SNR 阈值必须大于0");
+      }
+
+      // Validate measurement interval
+      if (customOptions.measurementInterval < 100) {
+        throw new Error("测量间隔不能小于100ms");
+      }
+
+      // Validate auto stop duration
+      if (customOptions.autoStopDuration < 1000) {
+        throw new Error("自动停止时间不能小于1000ms");
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate async operation
+      setIsRunning(true);
+      toast({
+        title: "启动成功",
+        description: "导星程序已成功启动",
+      });
+    } catch (err) {
+      toast({
+        title: "启动失败",
+        description: err instanceof Error ? err.message : "未知错误",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStop = async () => {
+    try {
+      setIsLoading(true);
+      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate async operation
+      setIsRunning(false);
+      toast({
+        title: "停止成功",
+        description: "导星程序已成功停止",
+      });
+    } catch (err) {
+      toast({
+        title: "停止失败",
+        description: err instanceof Error ? err.message : "未知错误",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleCustomOptionChange = (
     option: keyof CustomOptions,
     value: number
   ) => {
-    setCustomOptions({ [option]: value });
+    try {
+      // Validate input values
+      if (value < 0) {
+        throw new Error("值不能为负数");
+      }
+
+      // Specific validation for each option
+      switch (option) {
+        case "snrThreshold":
+          if (value === 0) throw new Error("SNR 阈值不能为0");
+          break;
+        case "measurementInterval":
+          if (value < 100) throw new Error("测量间隔不能小于100ms");
+          break;
+        case "autoStopDuration":
+          if (value < 1000) throw new Error("自动停止时间不能小于1000ms");
+          break;
+      }
+
+      setCustomOptions({ [option]: value });
+      toast({
+        title: "设置成功",
+        description: `${option} 已更新为 ${value}`,
+      });
+    } catch (err) {
+      toast({
+        title: "设置失败",
+        description: err instanceof Error ? err.message : "无效的输入值",
+        variant: "destructive",
+      });
+    }
   };
 
   useEffect(() => {

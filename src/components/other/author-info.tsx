@@ -36,14 +36,6 @@ import { DependencyList } from "./dependency-list";
 import { ProjectList } from "./project-list";
 import { ContactForm } from "./contact-form";
 import { LicenseDisplay } from "./license-display";
-import { UpdateLogModal } from "./changelog";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
 
 interface AuthorIntroProps {
   name: string;

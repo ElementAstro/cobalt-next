@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, RotateCcw, Download, Check, X } from "lucide-react";
+import { Loader2, RotateCcw, Download, Check, X, Search } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -25,6 +25,11 @@ import {
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Terminal as XTerm } from "@xterm/xterm";
+import { FitAddon } from '@xterm/addon-fit';
+import { SearchAddon } from '@xterm/addon-search';
+import { WebLinksAddon } from '@xterm/addon-web-links';
+import { Unicode11Addon } from '@xterm/addon-unicode11';
+import { LigaturesAddon } from '@xterm/addon-ligatures';
 import "@xterm/xterm/css/xterm.css";
 
 import {
@@ -52,9 +57,23 @@ export default function TerminalPage() {
   const outputRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
+  const fitAddonRef = useRef<FitAddon | null>(null);
+  const searchAddonRef = useRef<SearchAddon | null>(null);
+  const webLinksAddonRef = useRef<WebLinksAddon | null>(null);
+  const unicode11AddonRef = useRef<Unicode11Addon | null>(null);
+  const ligaturesAddonRef = useRef<LigaturesAddon | null>(null);
 
   useEffect(() => {
     if (terminalRef.current && !xtermRef.current) {
+      // 初始化插件
+      const fitAddon = new FitAddon();
+      const searchAddon = new SearchAddon();
+      const webLinksAddon = new WebLinksAddon((event: MouseEvent, uri: string) => {
+        window.open(uri, '_blank');
+      });
+      const unicode11Addon = new Unicode11Addon();
+      const ligaturesAddon = new LigaturesAddon();
+
       const xterm = new XTerm({
         theme: {
           background: THEMES[selectedTheme],
@@ -65,19 +84,83 @@ export default function TerminalPage() {
         cursorBlink: true,
         fontSize: 14,
         fontFamily: '"Cascadia Code", "Fira Code", monospace',
+        allowProposedApi: true,
+        allowTransparency: true,
+        letterSpacing: 1,
+        lineHeight: 1.2,
       });
+
+      // 加载插件
+      xterm.loadAddon(fitAddon);
+      xterm.loadAddon(searchAddon);
+      xterm.loadAddon(webLinksAddon);
+      xterm.loadAddon(unicode11Addon);
+      xterm.loadAddon(ligaturesAddon);
+
       xterm.open(terminalRef.current);
       xterm.write("欢迎使用增强终端。请输入命令。\r\n");
       xtermRef.current = xterm;
 
+      // 存储插件引用
+      fitAddonRef.current = fitAddon;
+      searchAddonRef.current = searchAddon;
+      webLinksAddonRef.current = webLinksAddon;
+      unicode11AddonRef.current = unicode11Addon;
+      ligaturesAddonRef.current = ligaturesAddon;
+
+      // 初始化调整大小
+      fitAddon.fit();
+
+      // 处理窗口大小变化
+      const handleResize = () => {
+        fitAddon.fit();
+      };
+      window.addEventListener('resize', handleResize);
+
       xterm.onData((data) => {
         setInput((prevInput: string) => prevInput + data);
       });
-    }
 
-    return () => {
-      xtermRef.current?.dispose();
-    };
+      // 添加鼠标点击支持
+      const handleMouseClick = (e: MouseEvent) => {
+        if (e.ctrlKey && xtermRef.current) {
+          const cursorY = xtermRef.current.buffer.active.cursorY;
+          const cursorX = xtermRef.current.buffer.active.cursorX;
+          xtermRef.current.write(`\x1b[${cursorY + 1};${cursorX + 1}H`);
+          xtermRef.current.write('\x1b[?25h'); // 显示光标
+        }
+      };
+      terminalRef.current?.addEventListener('click', handleMouseClick);
+
+      // 添加快捷键支持
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.ctrlKey) {
+          e.preventDefault();
+          if (e.key === 'f') {
+            const searchValue = prompt('请输入要搜索的内容');
+            if (searchValue && searchAddonRef.current) {
+              searchAddonRef.current.findNext(searchValue);
+            }
+          } else if (e.key === 'm') {
+            // 切换多光标模式
+            if (xtermRef.current) {
+              xtermRef.current.options.cursorStyle = 'bar';
+              xtermRef.current.options.cursorBlink = true;
+              xtermRef.current.write('\x1b[?1003h'); // 启用鼠标报告
+              addOutput('多光标模式已启用。使用 Ctrl+点击添加新光标');
+            }
+          }
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+
+      return () => {
+        xtermRef.current?.dispose();
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('keydown', handleKeyDown);
+        terminalRef.current?.removeEventListener('click', handleMouseClick);
+      };
+    }
   }, [selectedTheme, setInput]);
 
   useEffect(() => {
@@ -159,7 +242,28 @@ export default function TerminalPage() {
           newCommand.output = "";
         }
       } catch (error) {
-        const errorMessage = `错误: ${(error as Error).message}`;
+        let errorMessage = `错误: ${(error as Error).message}`;
+        
+        // 错误分类
+        if (error instanceof SyntaxError) {
+          errorMessage = `语法错误: ${error.message}\n建议检查命令格式`;
+        } else if (error instanceof TypeError) {
+          errorMessage = `类型错误: ${error.message}\n建议检查参数类型`;
+        } else if (error instanceof RangeError) {
+          errorMessage = `范围错误: ${error.message}\n建议检查输入范围`;
+        } else if (error instanceof URIError) {
+          errorMessage = `URI错误: ${error.message}\n建议检查URL格式`;
+        } else if (error instanceof ReferenceError) {
+          errorMessage = `引用错误: ${error.message}\n建议检查变量或函数名`;
+        }
+
+        // 添加恢复建议
+        errorMessage += `\n\n恢复建议:
+1. 检查命令拼写
+2. 确保参数正确
+3. 使用 help 查看可用命令
+4. 联系管理员获取支持`;
+
         addOutput(errorMessage);
         xtermRef.current?.writeln(errorMessage);
         newCommand.status = "error";
@@ -182,9 +286,13 @@ export default function TerminalPage() {
   return (
     <motion.div
       className="flex flex-col space-y-4 p-2 md:p-4 bg-gray-900 min-h-screen"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: 0.5,
+        ease: "easeOut",
+        delay: 0.2
+      }}
     >
       <motion.div
         className="flex justify-between items-center flex-wrap gap-2"
@@ -220,6 +328,19 @@ export default function TerminalPage() {
           <Button
             variant="outline"
             size="icon"
+            onClick={() => {
+              const searchValue = prompt('请输入要搜索的内容');
+              if (searchValue && searchAddonRef.current) {
+                searchAddonRef.current.findNext(searchValue);
+              }
+            }}
+            title="搜索"
+          >
+            <Search className="h-4 w-4 md:h-5 md:w-5" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
             onClick={downloadHistory}
             title="下载历史记录"
           >
@@ -246,6 +367,11 @@ export default function TerminalPage() {
                 THEMES[selectedTheme]
               )}
               ref={terminalRef}
+              style={{
+                fontSize: 'clamp(12px, 1.5vw, 16px)',
+                lineHeight: '1.5',
+                padding: '0.5rem'
+              }}
             ></div>
             <form
               onSubmit={handleSubmit}

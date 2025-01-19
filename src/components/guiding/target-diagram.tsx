@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Download, FileJson, RefreshCw, Info } from "lucide-react";
 import { PeakChart } from "./peak-chart";
+import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface TargetDiagramProps {
   radius: number;
@@ -67,32 +69,64 @@ export function TargetDiagram({
     });
   };
 
-  const handleExportImage = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  const { toast } = useToast();
 
-    const link = document.createElement("a");
-    link.download = "target-diagram.png";
-    link.href = canvas.toDataURL();
-    link.click();
+  const handleExportImage = () => {
+    try {
+      const canvas = canvasRef.current;
+      if (!canvas) {
+        throw new Error("无法获取画布元素");
+      }
+
+      const link = document.createElement("a");
+      link.download = "target-diagram.png";
+      link.href = canvas.toDataURL();
+      link.click();
+      
+      toast({
+        title: "导出成功",
+        description: "图像已成功导出",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "导出失败",
+        description: error instanceof Error ? error.message : "导出图像时发生错误",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleExportData = () => {
-    const data = {
-      currentPosition,
-      stats,
-      history: positionHistory.current,
-    };
+    try {
+      const data = {
+        currentPosition,
+        stats,
+        history: positionHistory.current,
+      };
 
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.download = "target-data.json";
-    link.href = url;
-    link.click();
-    URL.revokeObjectURL(url);
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = "target-data.json";
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "导出成功",
+        description: "数据已成功导出",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "导出失败",
+        description: error instanceof Error ? error.message : "导出数据时发生错误",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleReset = () => {
@@ -102,6 +136,40 @@ export function TargetDiagram({
       maxDeviation: 0,
       avgDeviation: 0,
     });
+    toast({
+      title: "重置成功",
+      description: "统计数据已重置",
+      variant: "default",
+    });
+  };
+
+  const confirmReset = () => {
+    return (
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="重置"
+            className="h-6 w-6"
+          >
+            <RefreshCw className="h-3 w-3 text-white" />
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认重置统计数据？</AlertDialogTitle>
+            <AlertDialogDescription>
+              此操作将清除所有历史数据，且无法恢复。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={handleReset}>确认</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
   };
 
   useEffect(() => {

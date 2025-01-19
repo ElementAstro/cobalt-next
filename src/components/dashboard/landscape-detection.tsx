@@ -15,6 +15,9 @@ import { Progress } from "@/components/ui/progress";
 import { useMediaQuery } from "react-responsive";
 import { cn } from "@/lib/utils";
 import { create } from "zustand";
+import { motion } from "framer-motion";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
 
 interface LandscapeStore {
   isVisible: boolean;
@@ -110,22 +113,29 @@ export default function LandscapeDetector({
 
   // Progress animation with configurable duration
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let animationFrame: number;
+    let startTime: number;
+
+    const animateProgress = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min((elapsed / duration) * 100, 100);
+      setProgress(progress);
+
+      if (progress < 100) {
+        animationFrame = requestAnimationFrame(animateProgress);
+      }
+    };
+
     if (isVisible) {
       setProgress(0);
-      const increment = 100 / (duration / 20);
-      timer = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(timer);
-            return 100;
-          }
-          return prev + increment;
-        });
-      }, 20);
+      animationFrame = requestAnimationFrame(animateProgress);
     }
+
     return () => {
-      clearInterval(timer);
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
     };
   }, [isVisible, duration]);
 
@@ -153,6 +163,8 @@ export default function LandscapeDetector({
     setIsFullscreen(fullscreen);
   }, [setIsFullscreen]);
 
+  const [error, setError] = useState<string | null>(null);
+
   const enterFullscreen = useCallback(async () => {
     try {
       const docEl = document.documentElement;
@@ -160,12 +172,16 @@ export default function LandscapeDetector({
         await docEl.requestFullscreen();
       } else if ((docEl as any).webkitRequestFullscreen) {
         await (docEl as any).webkitRequestFullscreen();
+      } else {
+        setError(t("fullscreenNotSupported"));
+        return;
       }
       checkFullscreen();
     } catch (error) {
+      setError(t("fullscreenError"));
       console.error("Failed to enter fullscreen:", error);
     }
-  }, [checkFullscreen]);
+  }, [checkFullscreen, t]);
 
   const exitFullscreen = useCallback(async () => {
     try {
@@ -173,12 +189,16 @@ export default function LandscapeDetector({
         await document.exitFullscreen();
       } else if ((document as any).webkitExitFullscreen) {
         await (document as any).webkitExitFullscreen();
+      } else {
+        setError(t("fullscreenNotSupported"));
+        return;
       }
       checkFullscreen();
     } catch (error) {
+      setError(t("fullscreenError"));
       console.error("Failed to exit fullscreen:", error);
     }
-  }, [checkFullscreen]);
+  }, [checkFullscreen, t]);
 
   const checkOrientation = useCallback(() => {
     const aspectRatio = window.innerWidth / window.innerHeight;
@@ -189,6 +209,8 @@ export default function LandscapeDetector({
     }
   }, [aspectRatioThreshold, showDialog, hideDialog]);
 
+  const [sensitivity, setSensitivity] = useState(300); // Default 300ms debounce
+
   const debounce = useCallback((func: () => void, delay: number) => {
     let timer: number | null = null;
     return () => {
@@ -197,7 +219,21 @@ export default function LandscapeDetector({
     };
   }, []);
 
-  const debouncedCheckOrientation = useRef(debounce(checkOrientation, 300));
+  const debouncedCheckOrientation = useRef(
+    debounce(checkOrientation, sensitivity)
+  );
+
+  const handleSensitivityChange = (value: number) => {
+    setSensitivity(value);
+    localStorage.setItem("landscapeSensitivity", value.toString());
+  };
+
+  useEffect(() => {
+    const savedSensitivity = localStorage.getItem("landscapeSensitivity");
+    if (savedSensitivity) {
+      setSensitivity(Number(savedSensitivity));
+    }
+  }, []);
 
   useEffect(() => {
     const handleResize = debouncedCheckOrientation.current;
@@ -311,6 +347,35 @@ export default function LandscapeDetector({
             <DialogDescription className="text-center">
               {isFullscreen ? t("fullscreenEnabled") : t("fullscreenDisabled")}
             </DialogDescription>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label
+                  htmlFor="sensitivity"
+                  className="text-sm font-medium text-foreground"
+                >
+                  {t("sensitivity")}
+                </Label>
+                <motion.span
+                  className="text-sm font-medium rounded-md bg-primary/10 px-2 py-1"
+                  initial={{ scale: 0.9 }}
+                  animate={{ scale: 1 }}
+                  key={sensitivity}
+                >
+                  {sensitivity}ms
+                </motion.span>
+              </div>
+              <Slider
+                id="sensitivity"
+                min={100}
+                max={1000}
+                step={50}
+                value={[sensitivity]}
+                onValueChange={([value]) => handleSensitivityChange(value)}
+                className="w-full"
+                aria-label={t("sensitivity")}
+              />
+            </div>
           </div>
 
           <DialogFooter className="grid grid-cols-2 gap-4 sm:grid-cols-2">

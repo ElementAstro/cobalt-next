@@ -12,6 +12,7 @@ import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import type { SettingGroup as SettingGroupType } from "@/types/config";
 import SettingItem from "./settings-item";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface AnimationConfig {
   iconRotation?: number;
@@ -42,6 +43,7 @@ export const SettingGroup: React.FC<SettingGroupProps> = ({
 }) => {
   const controls = useAnimation();
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const mergedConfig = { ...defaultAnimationConfig, ...animationConfig };
 
@@ -157,7 +159,23 @@ export const SettingGroup: React.FC<SettingGroupProps> = ({
                     variants={itemVariants}
                     className="mb-4"
                   >
-                    <SettingItem item={item} path={[...path, group.id]} />
+                    <SettingItem
+                      item={item}
+                      path={[...path, group.id]}
+                      onError={(err) => {
+                        toast({
+                          variant: "destructive",
+                          title: "Error",
+                          description: err,
+                        });
+                      }}
+                      onSuccess={() => {
+                        toast({
+                          title: "Success",
+                          description: "Settings saved successfully!",
+                        });
+                      }}
+                    />
                   </motion.div>
                 )
               )}

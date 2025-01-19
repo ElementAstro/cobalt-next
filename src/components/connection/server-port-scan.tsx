@@ -83,6 +83,9 @@ const ServerPortScanModal: React.FC<{
     setNetworkInterfaces,
   } = usePortScanStore();
 
+  const [isCancelled, setIsCancelled] = React.useState(false);
+  const cancelRef = React.useRef(false);
+
   useEffect(() => {
     if (isOpen && !isScanning) {
       resetScan();
@@ -138,10 +141,28 @@ const ServerPortScanModal: React.FC<{
 
   const ipSchema = z
     .string()
+    .min(1, "IP地址不能为空")
     .regex(
       /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/,
-      "请输入有效的IP地址"
+      "请输入有效的IPv4地址"
     );
+
+  const portRangeSchema = z.string().refine((value) => {
+    if (value === "custom") {
+      const ranges = customPortRange.split(",");
+      return ranges.every((range) => {
+        const [start, end] = range.split("-").map(Number);
+        return (
+          !isNaN(start) &&
+          !isNaN(end) &&
+          start > 0 &&
+          end <= 65535 &&
+          start <= end
+        );
+      });
+    }
+    return true;
+  }, "自定义端口范围无效，请使用格式：1-100,200-300");
 
   const scanPort = async (ip: string, port: number, timeout: number) => {
     return new Promise((resolve) => {
@@ -178,6 +199,8 @@ const ServerPortScanModal: React.FC<{
     }
 
     setIsScanning(true);
+    setIsCancelled(false);
+    cancelRef.current = false;
     setProgress(0);
     setScanResults([]);
     setStatus("正在扫描...");
@@ -188,12 +211,25 @@ const ServerPortScanModal: React.FC<{
 
     logger.info("Starting port scan", { ipAddress, totalPorts });
 
-    for (let i = 0; i < totalPorts; i += concurrentScans) {
+    for (
+      let i = 0;
+      i < totalPorts && !cancelRef.current;
+      i += concurrentScans
+    ) {
       const batch = ports.slice(i, i + concurrentScans);
       try {
         const results = await Promise.all(
-          batch.map((port) => scanPort(ipAddress, port, timeout))
+          batch.map((port) => {
+            if (cancelRef.current) {
+              return { port, status: "cancelled" };
+            }
+            return scanPort(ipAddress, port, timeout);
+          })
         );
+
+        if (cancelRef.current) {
+          break;
+        }
 
         scannedPorts += batch.length;
         setProgress((scannedPorts / totalPorts) * 100);
@@ -226,14 +262,25 @@ const ServerPortScanModal: React.FC<{
       }
     }
 
-    setIsScanning(false);
-    setStatus("扫描完成");
-    saveScanHistory();
-    toast({
-      title: "扫描完成",
-      description: `成功扫描了 ${totalPorts} 个端口`,
-    });
-    logger.info("Port scan completed", { totalPorts });
+    if (cancelRef.current) {
+      setIsScanning(false);
+      setStatus("扫描已取消");
+      toast({
+        title: "扫描已取消",
+        description: `扫描了 ${scannedPorts} 个端口`,
+        variant: "default",
+      });
+      logger.info("Port scan cancelled", { scannedPorts });
+    } else {
+      setIsScanning(false);
+      setStatus("扫描完成");
+      saveScanHistory();
+      toast({
+        title: "扫描完成",
+        description: `成功扫描了 ${totalPorts} 个端口`,
+      });
+      logger.info("Port scan completed", { totalPorts });
+    }
   };
 
   const saveScanHistory = () => {
@@ -474,18 +521,35 @@ const ServerPortScanModal: React.FC<{
                       />
                       <Label htmlFor="show-closed-ports">显示关闭的端口</Label>
                     </div>
-                    <Button
-                      onClick={startScan}
-                      disabled={isScanning || !ipAddress}
-                      className="min-w-[120px]"
-                    >
-                      {isScanning ? (
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
+                    {isScanning ? (
+                      <Button
+                        onClick={() => {
+                          cancelRef.current = true;
+                          setIsCancelled(true);
+                          setIsScanning(false);
+                          setStatus("扫描已取消");
+                          toast({
+                            title: "扫描已取消",
+                            description: "扫描操作已被用户中断",
+                            variant: "default",
+                          });
+                        }}
+                        variant="destructive"
+                        className="min-w-[120px]"
+                      >
+                        <X className="mr-2 h-4 w-4" />
+                        取消扫描
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={startScan}
+                        disabled={!ipAddress}
+                        className="min-w-[120px]"
+                      >
                         <Shield className="mr-2 h-4 w-4" />
-                      )}
-                      {isScanning ? "扫描中..." : "开始扫描"}
-                    </Button>
+                        开始扫描
+                      </Button>
+                    )}
                   </div>
 
                   <div>

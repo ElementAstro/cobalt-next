@@ -33,6 +33,7 @@ import {
   generateAnalogousPalette,
   generateMonochromaticPalette,
 } from "@/utils/color-utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface ColorPickerProps {
   color: string;
@@ -80,27 +81,75 @@ const ColorPickerComponent: React.FC<ColorPickerProps> = ({
   const [inputColor, setInputColor] = useState(color);
   const [colorFormat, setColorFormat] = useState<"hex" | "rgb" | "hsl">("hex");
   const [showContrast, setShowContrast] = useState(false);
+  const [contrastRatio, setContrastRatio] = useState<number | null>(null);
+
+  const calculateLuminance = (color: string): number => {
+    const rgb = hexToRgb(color);
+    const [r, g, b] = [rgb.r / 255, rgb.g / 255, rgb.b / 255].map((v) =>
+      v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)
+    );
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+
+  const calculateContrastRatio = (color1: string, color2: string): number => {
+    const lum1 = calculateLuminance(color1);
+    const lum2 = calculateLuminance(color2);
+    const lighter = Math.max(lum1, lum2);
+    const darker = Math.min(lum1, lum2);
+    return (lighter + 0.05) / (darker + 0.05);
+  };
+
+  useEffect(() => {
+    if (showContrast) {
+      const ratio = calculateContrastRatio(color, "#ffffff");
+      setContrastRatio(ratio);
+    }
+  }, [showContrast, color]);
   const [paletteType, setPaletteType] = useState<"analogous" | "monochromatic">(
     "analogous"
   );
   const [generatedPalette, setGeneratedPalette] = useState<string[]>([]);
 
+  const { toast } = useToast();
+
+  const isValidColor = (color: string): boolean => {
+    return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color);
+  };
+
   const handleColorChange = (newColor: string | RgbColor | HslColor) => {
-    let colorString =
-      typeof newColor === "string"
-        ? newColor
-        : "r" in newColor
-        ? rgbToHex(newColor)
-        : hslToHex(newColor);
+    try {
+      let colorString =
+        typeof newColor === "string"
+          ? newColor
+          : "r" in newColor
+          ? rgbToHex(newColor)
+          : hslToHex(newColor);
 
-    onChange(colorString);
-    setInputColor(colorString);
-    updatePalette(colorString);
+      if (!isValidColor(colorString)) {
+        throw new Error("无效的颜色值");
+      }
 
-    setRecentColors((prev) => {
-      const newRecent = [colorString, ...prev.filter((c) => c !== colorString)];
-      return newRecent.slice(0, 12);
-    });
+      onChange(colorString);
+      setInputColor(colorString);
+      updatePalette(colorString);
+
+      setRecentColors((prev) => {
+        const newRecent = [
+          colorString,
+          ...prev.filter((c) => c !== colorString),
+        ];
+        return newRecent.slice(0, 12);
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "颜色值无效";
+      toast({
+        title: "颜色错误",
+        description: errorMessage,
+        variant: "destructive",
+        duration: 3000,
+      });
+      setInputColor(color);
+    }
   };
 
   const rgbToHex = (rgb: RgbColor): string => {
@@ -303,14 +352,39 @@ const ColorPickerComponent: React.FC<ColorPickerProps> = ({
                       </div>
                     </div>
 
-                    <div className="w-full h-64">{renderColorPicker()}</div>
+                    <div className="w-full h-64 relative">
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={colorFormat}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute inset-0"
+                        >
+                          {renderColorPicker()}
+                        </motion.div>
+                      </AnimatePresence>
+                    </div>
 
                     <div className="flex items-center gap-2">
                       <Input
                         value={inputColor}
-                        onChange={(e) => setInputColor(e.target.value)}
+                        onChange={(e) => {
+                          setInputColor(e.target.value);
+                          // 实时验证颜色格式
+                          if (!isValidColor(e.target.value)) {
+                            toast({
+                              title: "格式错误",
+                              description: "请输入有效的十六进制颜色值",
+                              variant: "destructive",
+                              duration: 2000,
+                            });
+                          }
+                        }}
                         onBlur={() => handleColorChange(inputColor)}
                         className="w-full"
+                        placeholder="#FFFFFF"
                       />
                       <div
                         className="w-10 h-10 rounded-md border"
@@ -381,6 +455,31 @@ const ColorPickerComponent: React.FC<ColorPickerProps> = ({
                         onCheckedChange={setShowContrast}
                       />
                     </div>
+                    {showContrast && contrastRatio && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">对比度比率</span>
+                          <span className="text-sm font-medium">
+                            {contrastRatio.toFixed(2)}:1
+                          </span>
+                        </div>
+                        <div className="h-2 w-full bg-gray-700 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500"
+                            style={{
+                              width: `${Math.min(contrastRatio * 10, 100)}%`,
+                            }}
+                          />
+                        </div>
+                        <p className="text-xs text-gray-400">
+                          {contrastRatio >= 7
+                            ? "符合WCAG AAA标准"
+                            : contrastRatio >= 4.5
+                            ? "符合WCAG AA标准"
+                            : "不符合可访问性标准"}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
               </Tabs>

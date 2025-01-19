@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
 import {
   ZoomIn,
@@ -91,45 +92,70 @@ export default function CameraViewfinder({
       setIsCapturing(true);
 
       if (!viewfinderRef.current) {
-        throw new Error("Viewfinder not found");
+        toast({
+          variant: "destructive",
+          title: "错误",
+          description: "无法找到取景器",
+        });
+        return;
       }
 
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       if (!ctx) {
-        throw new Error("Could not create canvas context");
+        toast({
+          variant: "destructive",
+          title: "错误",
+          description: "无法创建画布上下文",
+        });
+        return;
       }
 
       canvas.width = viewfinderRef.current.clientWidth;
       canvas.height = viewfinderRef.current.clientHeight;
 
-      const imgSrc = await domtoimage.toPng(viewfinderRef.current, {
-        quality: 0.95,
-        bgcolor: "#000000",
-        style: {
-          transform: `scale(${zoom}) rotate(${rotation}deg)`,
-          filter: `
-            brightness(${brightness}%)
-            contrast(${contrast}%)
-            saturate(${saturation}%)
-          `,
-        },
-      });
+      try {
+        const imgSrc = await domtoimage.toPng(viewfinderRef.current, {
+          quality: 0.95,
+          bgcolor: "#000000",
+          style: {
+            transform: `scale(${zoom}) rotate(${rotation}deg)`,
+            filter: `
+              brightness(${brightness}%)
+              contrast(${contrast}%)
+              saturate(${saturation}%)
+            `,
+          },
+        });
 
-      const img = new window.Image();
-      img.src = imgSrc;
+        const img = new window.Image();
+        img.src = imgSrc;
 
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-      });
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = () => {
+            reject(new Error("图片加载失败"));
+          };
+        });
 
-      ctx.drawImage(img, 0, 0);
+        ctx.drawImage(img, 0, 0);
 
-      const link = document.createElement("a");
-      link.download = `capture_${Date.now()}.png`;
-      link.href = canvas.toDataURL("image/png", 0.9);
-      link.click();
+        const link = document.createElement("a");
+        link.download = `capture_${Date.now()}.png`;
+        link.href = canvas.toDataURL("image/png", 0.9);
+        link.click();
+
+        toast({
+          title: "成功",
+          description: "图片已保存",
+        });
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "错误",
+          description: error instanceof Error ? error.message : "图片生成失败",
+        });
+      }
     } finally {
       setIsCapturing(false);
     }
@@ -140,11 +166,14 @@ export default function CameraViewfinder({
       settingsRef.current &&
       !settingsRef.current.contains(e.target as Node)
     ) {
-      setShowSettings(false);
+      setTimeout(() => {
+        setShowSettings(false);
+      }, 100);
     }
   };
 
   const [showSettings, setShowSettings] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (showSettings) {
@@ -274,7 +303,11 @@ export default function CameraViewfinder({
                   onClick={handleStartCapture}
                   disabled={isCapturing}
                 >
-                  <Camera className="h-4 w-4" />
+                  {isCapturing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>保存图像</TooltipContent>
@@ -306,10 +339,18 @@ export default function CameraViewfinder({
           <AnimatePresence>
             {showSettings && (
               <motion.div
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 50 }}
-                transition={{ duration: 0.3 }}
+                initial={{ opacity: 0, x: 50, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 50, scale: 0.95 }}
+                transition={{
+                  duration: 0.2,
+                  ease: "easeInOut",
+                  scale: {
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 20,
+                  },
+                }}
                 className="absolute top-0 right-0 bg-black/50 backdrop-blur-sm p-4 space-y-4"
               >
                 <CollapsibleContent>

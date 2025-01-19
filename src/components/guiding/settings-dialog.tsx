@@ -23,13 +23,41 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Settings } from "lucide-react";
 import { useGuideStore } from "@/store/useGuidingStore";
+import { toast } from "@/hooks/use-toast";
 
 export default function SettingsDialog() {
   const { settings, setSettings } = useGuideStore();
 
-  const handleSave = (e: React.FormEvent) => {
+  const [isSaving, setIsSaving] = React.useState(false);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    // 关闭对话框逻辑如果需要
+    setIsSaving(true);
+
+    try {
+      // 验证曝光时间
+      if (settings.exposureTime < 1 || settings.exposureTime > 60000) {
+        throw new Error("曝光时间必须在1到60000毫秒之间");
+      }
+
+      // 模拟保存操作
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      toast({
+        title: "设置保存成功",
+        description: "您的设置已成功保存",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "保存失败",
+        description:
+          error instanceof Error ? error.message : "保存设置时发生错误",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -129,7 +157,9 @@ export default function SettingsDialog() {
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit">保存</Button>
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? "保存中..." : "保存"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/card";
 import { create } from "zustand";
 import { useMediaQuery } from "react-responsive";
+import { toast } from "@/hooks/use-toast";
 
 interface AgreementStore {
   isVisible: boolean;
@@ -107,6 +108,15 @@ export function UserAgreementMask({
   const handleAgree = () => {
     if (requireReadConfirmation && (!hasReadAgreement || !hasReadPrivacy)) {
       setHasInteracted(true);
+      toast({
+        title: language === "en" ? "Attention Required" : "需要关注",
+        description:
+          language === "en"
+            ? "Please read both the Agreement and Privacy Policy before continuing."
+            : "请先阅读用户协议和隐私政策",
+        variant: "destructive",
+        duration: 3000,
+      });
       return;
     }
     const now = new Date().toISOString();
@@ -114,11 +124,28 @@ export function UserAgreementMask({
     localStorage.setItem("userAgreedDate", now);
     hideAgreement();
     onAgree();
+    toast({
+      title: language === "en" ? "Agreement Accepted" : "协议已接受",
+      description:
+        language === "en"
+          ? "Thank you for accepting our terms."
+          : "感谢您接受我们的条款",
+      duration: 2000,
+    });
   };
 
   const handleDisagree = () => {
     setHasInteracted(true);
     onDisagree();
+    toast({
+      title: language === "en" ? "Agreement Declined" : "协议已拒绝",
+      description:
+        language === "en"
+          ? "You have declined the agreement. Some features may be limited."
+          : "您已拒绝协议，部分功能可能受限",
+      variant: "destructive",
+      duration: 3000,
+    });
   };
 
   const handleSavePreferences = () => {

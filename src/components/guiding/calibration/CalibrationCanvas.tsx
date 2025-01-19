@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { useGuidingStore } from "@/lib/store/guiding/calibration";
+import { useGuidingStore } from "@/store/useGuidingStore";
 
 export default function CalibrationCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);

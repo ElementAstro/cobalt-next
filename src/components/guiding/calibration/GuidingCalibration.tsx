@@ -6,7 +6,7 @@ import CalibrationCanvas from "./CalibrationCanvas";
 import CalibrationControls from "./CalibrationControls";
 import CalibrationData from "./CalibrationData";
 import { motion } from "framer-motion";
-import { useGuidingStore } from "@/lib/store/guiding/calibration";
+import { useGuidingStore } from "@/store/useGuidingStore";
 
 export default function GuidingCalibration() {
   const { isLandscape, setIsLandscape } = useGuidingStore();

@@ -42,11 +42,18 @@ const tableVariants = {
       type: "spring",
       stiffness: 100,
       damping: 10,
+      mass: 0.5,
     },
   }),
   hover: {
     scale: 1.02,
-    transition: { duration: 0.2 },
+    rotateX: 1,
+    boxShadow:
+      "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    transition: {
+      duration: 0.2,
+      ease: "easeInOut",
+    },
   },
 };
 
@@ -137,18 +144,18 @@ export function CelestialInfo() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="w-full max-w-4xl mx-auto"
+      className="w-full h-[calc(100vh-8rem)] mx-auto p-4"
     >
-      <Card className="bg-gray-900 dark:bg-gray-800">
+      <Card className="bg-gray-900 dark:bg-gray-800 h-full">
         <CardHeader className="border-b border-gray-700">
           <CardTitle className="text-xl sm:text-2xl font-bold text-white dark:text-gray-200">
             当前条件
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto -mx-6 sm:mx-0">
-            <div className="inline-block min-w-full align-middle">
-              <Table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <CardContent className="h-[calc(100%-4rem)] overflow-y-auto">
+          <div className="overflow-x-auto -mx-6 sm:mx-0 h-full">
+            <div className="inline-block min-w-full align-middle h-full">
+              <Table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 h-full">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">

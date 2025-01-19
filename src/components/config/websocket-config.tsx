@@ -192,7 +192,7 @@ export default function WebSocketConfig() {
     setIsDialogOpen(true);
   }
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     const values = form.getValues();
     try {
       setConfig(values);
@@ -201,12 +201,34 @@ export default function WebSocketConfig() {
         description: "WebSocket 配置已成功保存。",
         variant: "default",
       });
-    } catch (error) {
+
+      // 测试新配置的连接性
+      if (wsClient) {
+        setConnectionStatus("connecting");
+        toast({
+          title: "正在测试连接...",
+          description: "正在使用新配置测试WebSocket连接",
+          variant: "default",
+        });
+
+        const testResult = await wsClient.testConnection(values);
+        if (testResult.success) {
+          toast({
+            title: "连接测试成功",
+            description: `连接延迟：${testResult.latency}ms`,
+            variant: "default",
+          });
+        } else {
+          throw new Error(testResult.error || "连接测试失败");
+        }
+      }
+    } catch (error: any) {
       toast({
-        title: "保存失败",
-        description: "无法保存 WebSocket 配置，请稍后重试。",
+        title: "配置保存失败",
+        description: error.message || "无法保存 WebSocket 配置，请稍后重试。",
         variant: "destructive",
       });
+      console.error("配置保存错误:", error);
     } finally {
       setIsDialogOpen(false);
     }
