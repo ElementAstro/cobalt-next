@@ -2,7 +2,8 @@
 
 import React, { useMemo, useCallback, useState } from "react";
 import { mockFileSystem } from "@/data/mock-filesystem";
-import { File, Folder as FolderType } from "@/types/filesystem";
+import { File, Folder as FolderType, FileOperation } from "@/types/filesystem";
+import { z } from "zod";
 import {
   DndContext,
   closestCenter,
@@ -30,8 +31,48 @@ import { TrashBin } from "@/components/filesystem/trash-bin";
 import { FileEncryption } from "@/components/filesystem/file-encryption";
 import { FileProperties } from "@/components/filesystem/file-properties";
 import { FilePreview } from "@/components/filesystem/file-preview";
-
 import { useFilesystemStore } from "@/store/useFilesystemStore";
+import { toast } from "@/hooks/use-toast";
+
+// Zod schema for file operations validation
+const fileOperationSchema = z.object({
+  operation: z.enum([
+    "open",
+    "preview",
+    "download",
+    "rename",
+    "delete",
+    "copy",
+    "cut",
+    "paste",
+    "share",
+    "properties",
+    "versionHistory",
+    "manageTags",
+    "compress",
+    "encrypt",
+  ]),
+  file: z.object({
+    id: z.union([z.string(), z.number()]),
+    name: z.string().min(1, "文件名不能为空"),
+    type: z.enum([
+      "folder",
+      "image",
+      "video",
+      "document",
+      "code",
+      "audio",
+      "archive",
+      "unknown",
+    ]),
+    size: z.number().min(0, "文件大小不能为负数"),
+    createdAt: z.date(),
+    lastModified: z.date(),
+    owner: z.string().min(1, "所有者不能为空"),
+    permissions: z.string().min(1, "权限不能为空"),
+    path: z.string().min(1, "路径不能为空"),
+  }),
+});
 
 // Make sure the store or its types define these properties properly:
 interface CustomizationOptionsData {
@@ -53,7 +94,6 @@ export default function FileBrowser() {
     setViewMode,
     selectedFiles,
     setSelectedFiles,
-    // removed unused loading & error
     options: customOptions,
     setOptions,
   } = useFilesystemStore();
@@ -68,7 +108,7 @@ export default function FileBrowser() {
   } | null>(null);
 
   const [previewFile, setPreviewFile] = useState<File | null>(null);
-  // removed unused states
+  const [error, setError] = useState<string | null>(null);
 
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [isTagManagerOpen, setIsTagManagerOpen] = useState(false);
@@ -101,6 +141,10 @@ export default function FileBrowser() {
     };
     deleteFiles(mockFileSystem);
     setSelectedFiles([]);
+    toast({
+      title: "删除成功",
+      description: `已删除${selectedFiles.length}个文件`,
+    });
   }, [selectedFiles, setSelectedFiles]);
 
   const handleContextMenu = useCallback(
@@ -133,41 +177,54 @@ export default function FileBrowser() {
     setContextMenu(null);
   }, []);
 
-  const [isVersionHistoryOpenTemp, setIsVersionHistoryOpenTemp] =
-    useState(false);
-  // state to open modals triggered by handleFileOperation
   const handleFileOperation = useCallback(
     (operation: string, file: File) => {
-      switch (operation) {
-        case "preview":
-          setPreviewFile(file);
-          break;
-        case "download":
-          // Handle download logic here
-          break;
-        case "rename":
-          // Handle rename logic here
-          break;
-        case "versionHistory":
-          setIsVersionHistoryOpen(true);
-          break;
-        case "manageTags":
-          setIsTagManagerOpen(true);
-          break;
-        case "compress":
-          setIsFileCompressionOpen(true);
-          break;
-        case "encrypt":
-          setIsFileEncryptionOpen(true);
-          break;
-        case "delete":
-          handleDelete();
-          break;
-        case "properties":
-          setIsPropertiesOpen(true);
-          break;
-        default:
-          break;
+      try {
+        // Validate operation and file data
+        const validated = fileOperationSchema.parse({
+          operation,
+          file,
+        });
+
+        switch (validated.operation) {
+          case "preview":
+            setPreviewFile(validated.file);
+            break;
+          case "download":
+            // Handle download logic here
+            break;
+          case "rename":
+            // Handle rename logic here
+            break;
+          case "versionHistory":
+            setIsVersionHistoryOpen(true);
+            break;
+          case "manageTags":
+            setIsTagManagerOpen(true);
+            break;
+          case "compress":
+            setIsFileCompressionOpen(true);
+            break;
+          case "encrypt":
+            setIsFileEncryptionOpen(true);
+            break;
+          case "delete":
+            handleDelete();
+            break;
+          case "properties":
+            setIsPropertiesOpen(true);
+            break;
+          default:
+            throw new Error(`无效操作: ${operation}`);
+        }
+      } catch (error) {
+        console.error("文件操作验证失败:", error);
+        setError(error instanceof Error ? error.message : "未知错误");
+        toast({
+          title: "操作失败",
+          description: error instanceof Error ? error.message : "未知错误",
+          variant: "destructive",
+        });
       }
     },
     [
@@ -236,7 +293,6 @@ export default function FileBrowser() {
       );
     }
 
-    // customOptions.showHiddenFiles is assigned a type from our patched interface
     if (!customOptions.options.showHiddenFiles) {
       result = result.filter((file) => !file.name.startsWith("."));
     }
@@ -302,16 +358,16 @@ export default function FileBrowser() {
           toggleSortOrder={toggleSortOrder}
           openModals={{
             settings: () => setIsSettingsPanelOpen(true),
-            upload: () => {}, // TODO: Implement upload modal
+            upload: () => {},
             search: () => setIsSearchModalOpen(true),
-            share: () => {}, // TODO: Implement share modal
+            share: () => {},
             versionHistory: () => setIsVersionHistoryOpen(true),
             tagManager: () => setIsTagManagerOpen(true),
-            realtimeCollaboration: () => {}, // TODO: Implement realtime collaboration
+            realtimeCollaboration: () => {},
             fileCompression: () => setIsFileCompressionOpen(true),
-            cloudIntegration: () => {}, // TODO: Implement cloud integration
+            cloudIntegration: () => {},
             advancedSearch: () => setIsAdvancedSearchOpen(true),
-            authModal: () => {}, // TODO: Implement auth modal
+            authModal: () => {},
             trashBin: () => setIsTrashBinOpen(true),
             fileEncryption: () => setIsFileEncryptionOpen(true),
           }}
@@ -326,13 +382,17 @@ export default function FileBrowser() {
             viewMode === "grid"
               ? `grid gap-2 md:gap-3 auto-rows-min ${
                   customOptions.options.gridSize === "small"
-                    ? "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8"
+                    ? "grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9"
                     : customOptions.options.gridSize === "medium"
-                    ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7"
-                    : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
+                    ? "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8"
+                    : "grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7"
                 }`
               : "space-y-1"
           }`}
+          style={{
+            scrollbarWidth: "thin",
+            scrollbarColor: "#4a5568 #2d3748",
+          }}
         >
           <SortableContext
             items={files.map((file) => file.id)}

@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from "react";
+"use client";
+
+import React, { useEffect, useState, useCallback } from "react";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -9,7 +11,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useApiService } from "@/services/device-connection";
 import { motion, AnimatePresence } from "framer-motion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -20,18 +21,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { useDeviceSelectorStore } from "@/store/useDeviceStore"; // 更新导入
-import { Search } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useDeviceSelectorStore } from "@/store/useDeviceStore";
 import cn from "classnames";
-import { DeviceInfo } from "@/types/device";
+import { DeviceInfo, ConnectionRecord } from "@/types/device";
 import {
   Table,
   TableBody,
@@ -42,67 +35,114 @@ import {
 } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 
+// Define interfaces for state
+interface FilterOptions {
+  showConnected: boolean;
+  showDisconnected: boolean;
+  showFavorites: boolean;
+}
+
+interface FilterSettings {
+  connected: boolean;
+  disconnected: boolean;
+  favorites: boolean;
+  type: string;
+}
+
 export function DevicesTab() {
   const {
     devices,
-    remoteDrivers,
-    setDevices,
-    setRemoteDrivers,
     connect,
     disconnect,
     startScanning,
     stopScanning,
-    isScanning,
-    error,
     connectionHistory,
-  } = useDeviceSelectorStore(); // 使用最新的store方法和状态
+    setConnectionHistory,
+  } = useDeviceSelectorStore();
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [groups] = useState<string[]>(["All", "Telescope", "Camera"]);
+  const [groups, setGroups] = useState<string[]>(["All", "Telescope", "Camera"]);
   const [selectedGroup, setSelectedGroup] = useState("All");
   const [groupDialogOpen, setGroupDialogOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
-  const [sortOrder, setSortOrder] = useState<"name" | "type" | "status">(
-    "name"
-  );
+  const [sortOrder, setSortOrder] = useState<"name" | "type" | "status">("name");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-
-  // 添加新的状态
   const [showConnectionHistory, setShowConnectionHistory] = useState(false);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [filterOptions, setFilterOptions] = useState({
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     showConnected: true,
     showDisconnected: true,
     showFavorites: false,
   });
 
+  const [filterSettings, setFilterSettings] = useState<FilterSettings>({
+    connected: true,
+    disconnected: true,
+    favorites: false,
+    type: "all",
+  });
+
+  // Connection history handling
+  const handleUpdateConnectionHistory = useCallback(
+    (deviceId: string, success: boolean) => {
+      const newRecord: ConnectionRecord = {
+        deviceId,
+        timestamp: new Date().toISOString(),
+        success,
+      };
+      setConnectionHistory((prev: ConnectionRecord[]) => [newRecord, ...prev]);
+    },
+    [setConnectionHistory]
+  );
+
+  // Device connection handling
+  const handleDeviceConnection = useCallback(
+    async (deviceId: string) => {
+      try {
+        const device = devices.find((d) => d.id === deviceId);
+        if (!device) return;
+
+        if (device.connected) {
+          disconnect();
+          handleUpdateConnectionHistory(deviceId, true);
+        } else {
+          connect();
+          handleUpdateConnectionHistory(deviceId, true);
+        }
+      } catch (error) {
+        handleUpdateConnectionHistory(deviceId, false);
+        console.error("Connection operation failed:", error);
+      }
+    },
+    [devices, connect, disconnect, handleUpdateConnectionHistory]
+  );
+
   useEffect(() => {
-    startScanning(); // 使用store的方法开始扫描
+    startScanning();
     return () => {
-      stopScanning(); // 清理时停止扫描
+      stopScanning();
     };
   }, [startScanning, stopScanning]);
 
-  // 添加过滤逻辑
-  const filteredDevices = devices.filter((device) => {
-    const matchesSearch = device.name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesGroup =
-      selectedGroup === "All" || device.type === selectedGroup;
-    const matchesConnectionState =
-      (filterOptions.showConnected && device.connected) ||
-      (filterOptions.showDisconnected && !device.connected);
-    const matchesFavorites = !filterOptions.showFavorites;
+  // 改进过滤设备的逻辑
+  const filteredDevices = React.useMemo(() => {
+    return devices.filter((device) => {
+      const matchesSearch = device.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const matchesType =
+        filterSettings.type === "all" || device.type === filterSettings.type;
+      const matchesConnection =
+        (device.connected && filterSettings.connected) ||
+        (!device.connected && filterSettings.disconnected);
+      const matchesFavorites = !filterSettings.favorites || device.isFavorite;
 
-    return (
-      matchesSearch &&
-      matchesGroup &&
-      matchesConnectionState &&
-      matchesFavorites
-    );
-  });
+      return (
+        matchesSearch && matchesType && matchesConnection && matchesFavorites
+      );
+    });
+  }, [devices, searchTerm, filterSettings]);
 
   // Sort devices based on current sort order
   const sortedDevices = [...filteredDevices].sort((a, b) => {
@@ -117,6 +157,24 @@ export function DevicesTab() {
         return 0;
     }
   });
+
+  // 实现分组管理功能
+  const handleCreateGroup = useCallback(() => {
+    if (!newGroupName || selectedDevices.length === 0) return;
+
+    // 创建新分组
+    const newGroup = {
+      id: `group-${Date.now()}`,
+      name: newGroupName,
+      devices: selectedDevices,
+    };
+
+    // 更新分组列表
+    setGroups((prev) => [...prev, newGroup.name]);
+    setGroupDialogOpen(false);
+    setNewGroupName("");
+    setSelectedDevices([]);
+  }, [newGroupName, selectedDevices]);
 
   return (
     <motion.div
@@ -327,16 +385,7 @@ export function DevicesTab() {
               >
                 取消
               </Button>
-              <Button
-                onClick={() => {
-                  // Handle group creation
-                  setGroupDialogOpen(false);
-                  setNewGroupName("");
-                  setSelectedDevices([]);
-                }}
-              >
-                创建
-              </Button>
+              <Button onClick={handleCreateGroup}>创建</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -386,105 +435,126 @@ export function DevicesTab() {
   );
 }
 
-// New component for device card
-function DeviceCard({
-  device,
-  viewMode,
-  onSelect,
-  isSelected,
-}: {
-  device: DeviceInfo;
-  viewMode: "grid" | "list";
-  onSelect: (id: string) => void;
-  isSelected: boolean;
-}) {
-  function disconnect() {
-    const { disconnect } = useDeviceSelectorStore();
-    try {
-      disconnect();
-    } catch (error) {
-      console.error("Failed to disconnect device:", error);
-    }
-  }
-  function connect() {
-    const { connect } = useDeviceSelectorStore();
-    try {
-      connect();
-    } catch (error) {
-      console.error("Failed to connect device:", error);
-    }
-  }
-  return (
-    <motion.div
-      layout
-      initial={{ scale: 0.95, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      exit={{ scale: 0.95, opacity: 0 }}
-      whileHover={{ scale: 1.02 }}
-      transition={{ duration: 0.2 }}
-    >
-      <Card
-        className={cn(
-          "bg-gray-800 text-white transition-colors",
-          isSelected && "ring-2 ring-primary"
-        )}
+// Device Card component with proper typing
+const DeviceCard = React.memo(
+  ({
+    device,
+    viewMode,
+    onSelect,
+    isSelected,
+  }: {
+    device: DeviceInfo;
+    viewMode: "grid" | "list";
+    onSelect: (id: string) => void;
+    isSelected: boolean;
+  }) => {
+    const { devices, setDevices, connect, disconnect } = useDeviceSelectorStore();
+    
+    const handleConnect = useCallback(async () => {
+      try {
+        if (device.connected) {
+          await disconnect();
+          // 更新本地设备状态
+          const updatedDevices = devices.map(d => 
+            d.id === device.id ? { ...d, connected: false } : d
+          );
+          setDevices(updatedDevices);
+        } else {
+          await connect();
+          // 更新本地设备状态
+          const updatedDevices = devices.map(d => 
+            d.id === device.id ? { ...d, connected: true } : d
+          );
+          setDevices(updatedDevices);
+        }
+      } catch (error) {
+        console.error("设备连接操作失败:", error);
+        // 可以在这里添加错误提示UI
+      }
+    }, [device.id, device.connected, devices, connect, disconnect, setDevices]);
+
+    const handleToggleFavorite = useCallback(() => {
+      const updatedDevices = devices.map(d => 
+        d.id === device.id ? { ...d, isFavorite: !d.isFavorite } : d
+      );
+      setDevices(updatedDevices);
+    }, [device.id, devices, setDevices]);
+
+    return (
+      <motion.div
+        layout
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        whileHover={{ scale: 1.02 }}
+        transition={{ duration: 0.2 }}
       >
-        <CardContent
+        <Card
           className={cn(
-            "p-4",
-            viewMode === "list" && "flex items-center justify-between"
+            "bg-gray-800 text-white transition-colors",
+            isSelected && "ring-2 ring-primary"
           )}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Badge variant={device.connected ? "default" : "secondary"}>
-                {device.type}
-              </Badge>
-              <h3 className="font-medium">{device.name}</h3>
+          <CardContent
+            className={cn(
+              "p-4",
+              viewMode === "list" && "flex items-center justify-between"
+            )}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Badge variant={device.connected ? "default" : "secondary"}>
+                  {device.type}
+                </Badge>
+                <h3 className="font-medium">{device.name}</h3>
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" aria-label="更多选项">
+                    ⋮
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="bg-gray-800 text-white">
+                  <DropdownMenuItem onClick={() => onSelect(device.id)}>
+                    {isSelected ? "取消选择" : "选择"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleToggleFavorite}>
+                    {device.isFavorite ? "取消收藏" : "收藏"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>配置</DropdownMenuItem>
+                  <DropdownMenuItem>属性</DropdownMenuItem>
+                  <DropdownMenuItem className="text-red-500">
+                    移除
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" aria-label="更多选项">
-                  ⋮
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="bg-gray-800 text-white">
-                <DropdownMenuItem>配置</DropdownMenuItem>
-                <DropdownMenuItem>属性</DropdownMenuItem>
-                <DropdownMenuItem className="text-red-500">
-                  移除
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  device.connected ? "bg-green-500" : "bg-gray-300"
-                }`}
-              />
-              <span className="text-sm">
-                {device.connected ? "已连接" : "未连接"}
-              </span>
+            <div className="flex items-center justify-between mt-4">
+              <div className="flex items-center space-x-2">
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    device.connected ? "bg-green-500" : "bg-gray-300"
+                  }`}
+                />
+                <span className="text-sm">
+                  {device.connected ? "已连接" : "未连接"}
+                </span>
+              </div>
+              <Button
+                variant={device.connected ? "destructive" : "default"}
+                size="sm"
+                onClick={handleConnect}
+                aria-label={device.connected ? "断开连接" : "连接设备"}
+              >
+                {device.connected ? "断开" : "连接"}
+              </Button>
             </div>
-            <Button
-              variant={device.connected ? "destructive" : "default"}
-              size="sm"
-              onClick={
-                () =>
-                  device.connected
-                    ? disconnect() // 使用store的断开方法
-                    : connect() // 使用store的连接方法
-              }
-              aria-label={device.connected ? "断开连接" : "连接设备"}
-            >
-              {device.connected ? "断开" : "连接"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
+          </CardContent>
+        </Card>
+      </motion.div>
+    );
+  }
+);
+
+DeviceCard.displayName = "DeviceCard";

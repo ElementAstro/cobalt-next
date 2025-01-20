@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Site } from "@/types/home";
 import { useSiteStore } from "@/store/useHomeStore";
 import { z } from "zod";
+import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -42,13 +46,34 @@ const AddEditSiteDialog: React.FC<AddEditSiteDialogProps> = ({
   editingSite,
   setEditingSite,
 }) => {
+  const icons = [
+    { value: "camera", label: "相机" },
+    { value: "telescope", label: "望远镜" },
+    { value: "star", label: "星星" },
+    { value: "moon", label: "月亮" },
+    { value: "sun", label: "太阳" },
+    { value: "planet", label: "行星" },
+  ];
+
+  const categories = [
+    { value: "camera", label: "相机控制" },
+    { value: "telescope", label: "望远镜控制" },
+    { value: "guiding", label: "导星" },
+    { value: "filter", label: "滤镜轮" },
+    { value: "focuser", label: "调焦器" },
+    { value: "weather", label: "天气" },
+  ];
+
   const [site, setSite] = useState<Site>({
     id: "",
     name: "",
     url: "",
-    icon: "",
-    category: "",
+    icon: icons[0].value,
+    category: categories[0].value,
   });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -61,29 +86,57 @@ const AddEditSiteDialog: React.FC<AddEditSiteDialogProps> = ({
     }
   }, [editingSite]);
 
-  const handleSubmit = () => {
-    const validation = siteSchema.safeParse(site);
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      const validation = siteSchema.safeParse(site);
 
-    if (!validation.success) {
-      const fieldErrors: FormErrors = {};
-      validation.error.errors.forEach((err) => {
-        if (err.path.length > 0) {
-          const field = err.path[0] as keyof FormErrors;
-          fieldErrors[field] = err.message;
-        }
+      if (!validation.success) {
+        const fieldErrors: FormErrors = {};
+        validation.error.errors.forEach((err) => {
+          if (err.path.length > 0) {
+            const field = err.path[0] as keyof FormErrors;
+            fieldErrors[field] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+        return;
+      }
+
+      if (editingSite) {
+        await updateSite(site);
+        toast({
+          title: "站点更新成功",
+          description: `${site.name} 已成功更新`,
+          variant: "default",
+        });
+      } else {
+        await addSite(site);
+        toast({
+          title: "站点添加成功",
+          description: `${site.name} 已成功添加`,
+          action: <CheckCircle className="text-green-500" />,
+        });
+      }
+
+      setSite({
+        id: "",
+        name: "",
+        url: "",
+        icon: icons[0].value,
+        category: categories[0].value
       });
-      setErrors(fieldErrors);
-      return;
+      setErrors({});
+      setEditingSite(null);
+    } catch (error) {
+      toast({
+        title: "操作失败",
+        description: error instanceof Error ? error.message : "未知错误",
+        action: <XCircle className="text-red-500" />,
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    if (editingSite) {
-      updateSite(site);
-    } else {
-      addSite(site);
-    }
-    setSite({ id: "", name: "", url: "", icon: "", category: "" });
-    setErrors({});
-    setEditingSite(null);
   };
 
   return (
@@ -131,44 +184,87 @@ const AddEditSiteDialog: React.FC<AddEditSiteDialogProps> = ({
               )}
             </div>
           </div>
-          <div className="grid grid-cols-5 items-center gap-4">
+          <motion.div
+            className="grid grid-cols-5 items-center gap-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
             <Label htmlFor="icon" className="text-center">
               图标
             </Label>
             <div className="col-span-4">
-              <Input
-                id="icon"
+              <Select
                 value={site.icon}
-                onChange={(e) => setSite({ ...site, icon: e.target.value })}
-                className={`bg-indigo-800 text-white border-indigo-700 ${
-                  errors.icon ? "border-red-500" : ""
-                }`}
-                placeholder="请输入图标名称"
-              />
+                onValueChange={(value) => setSite({ ...site, icon: value })}
+              >
+                <SelectTrigger className="bg-indigo-800 text-white border-indigo-700">
+                  <SelectValue placeholder="选择图标" />
+                </SelectTrigger>
+                <SelectContent className="bg-indigo-900 border-indigo-700">
+                  {icons.map((icon) => (
+                    <SelectItem
+                      key={icon.value}
+                      value={icon.value}
+                      className="hover:bg-indigo-700"
+                    >
+                      {icon.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {errors.icon && (
-                <p className="mt-1 text-sm text-red-500">{errors.icon}</p>
+                <motion.p
+                  className="mt-1 text-sm text-red-500"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  {errors.icon}
+                </motion.p>
               )}
             </div>
-          </div>
-          <div className="grid grid-cols-5 items-center gap-4">
+          </motion.div>
+
+          <motion.div
+            className="grid grid-cols-5 items-center gap-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
             <Label htmlFor="category" className="text-center">
               类别
             </Label>
             <div className="col-span-4">
-              <Input
-                id="category"
+              <Select
                 value={site.category}
-                onChange={(e) => setSite({ ...site, category: e.target.value })}
-                className={`bg-indigo-800 text-white border-indigo-700 ${
-                  errors.category ? "border-red-500" : ""
-                }`}
-                placeholder="请输入类别"
-              />
+                onValueChange={(value) => setSite({ ...site, category: value })}
+              >
+                <SelectTrigger className="bg-indigo-800 text-white border-indigo-700">
+                  <SelectValue placeholder="选择类别" />
+                </SelectTrigger>
+                <SelectContent className="bg-indigo-900 border-indigo-700">
+                  {categories.map((category) => (
+                    <SelectItem
+                      key={category.value}
+                      value={category.value}
+                      className="hover:bg-indigo-700"
+                    >
+                      {category.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {errors.category && (
-                <p className="mt-1 text-sm text-red-500">{errors.category}</p>
+                <motion.p
+                  className="mt-1 text-sm text-red-500"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  {errors.category}
+                </motion.p>
               )}
             </div>
-          </div>
+          </motion.div>
         </div>
       </CardContent>
       <CardFooter>

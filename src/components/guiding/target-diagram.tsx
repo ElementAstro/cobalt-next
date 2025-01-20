@@ -176,8 +176,12 @@ export function TargetDiagram({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Support high resolution
-    const context = canvas.getContext("2d");
+    // Support high resolution with anti-aliasing
+    const context = canvas.getContext("2d", {
+      alpha: true,
+      desynchronized: true,
+      willReadFrequently: false
+    });
     if (!context) return;
 
     const ratio = window.devicePixelRatio || 1;
@@ -187,11 +191,29 @@ export function TargetDiagram({
     canvas.style.height = `${canvasSize.height}px`;
     context.scale(ratio, ratio);
 
-    let animationFrame: number;
+    // Enable anti-aliasing
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
 
-    const drawFrame = () => {
+    let animationFrame: number;
+    let lastTime = 0;
+    const frameRate = 60;
+    const frameInterval = 1000 / frameRate;
+
+    const drawFrame = (timestamp: number) => {
+      const deltaTime = timestamp - lastTime;
+      
+      if (deltaTime < frameInterval) {
+        animationFrame = requestAnimationFrame(drawFrame);
+        return;
+      }
+      
+      lastTime = timestamp - (deltaTime % frameInterval);
+
+      // Clear canvas with optimized method
+      context.clearRect(0, 0, canvas.width, canvas.height);
       context.fillStyle = colors.background;
-      context.fillRect(0, 0, canvas.width / ratio, canvas.height / ratio);
+      context.fillRect(0, 0, canvas.width, canvas.height);
 
       const centerX = canvas.width / (2 * ratio);
       const centerY = canvas.height / (2 * ratio);

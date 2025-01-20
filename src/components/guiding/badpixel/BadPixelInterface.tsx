@@ -3,15 +3,17 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useBadPixelStore } from "@/lib/store/guiding/bad-pixel";
+import { useBadPixelStore } from "@/store/guiding/useBadPixelStore";
 import { X, Settings } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import SettingsPanel from "./SettingsPanel";
 import PixelInfo from "./PixelInfo";
 import ActionButtons from "./ActionButtons";
 import BadPixelVisualization from "./BadPixelVisualization";
+import { useToast } from "@/hooks/use-toast";
 
 export default function BadPixelInterface() {
+  const { toast } = useToast();
   const {
     data,
     options,
@@ -53,12 +55,54 @@ export default function BadPixelInterface() {
     document.documentElement.classList.toggle("dark");
   };
 
+  const handleGenerateBadPixels = async () => {
+    try {
+      await generateBadPixels();
+      toast({
+        title: "成功生成坏点数据",
+        description: "已更新坏点分布图",
+      });
+    } catch (error) {
+      toast({
+        title: "生成坏点数据失败",
+        description: error instanceof Error ? error.message : "未知错误",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleResetCorrectionLevels = () => {
+    resetCorrectionLevels();
+    toast({
+      title: "已重置修正等级",
+      description: "热点和冷点修正等级已恢复默认值",
+    });
+  };
+
   const handleManualAddPixel = () => {
     const pixel = parseInt(manualPixel);
-    if (!isNaN(pixel)) {
-      addBadPixel(pixel);
-      setManualPixel("");
+    if (isNaN(pixel)) {
+      toast({
+        title: "输入无效",
+        description: "请输入有效的像素坐标",
+        variant: "destructive",
+      });
+      return;
     }
+    if (pixel < 0 || pixel >= data.width * data.height) {
+      toast({
+        title: "坐标超出范围",
+        description: "请输入在有效范围内的坐标值",
+        variant: "destructive",
+      });
+      return;
+    }
+    addBadPixel(pixel);
+    setManualPixel("");
+    toast({
+      title: "已添加坏点",
+      description: `成功添加坐标 ${pixel} 的坏点`,
+    });
   };
 
   const containerClass = isLandscape
@@ -119,11 +163,14 @@ export default function BadPixelInterface() {
               isLandscape={isLandscape}
               expanded={expanded}
               onToggleExpand={() => setExpanded(!expanded)}
+              onManualAddPixel={addBadPixel}
+              manualPixel={manualPixel}
+              setManualPixel={setManualPixel}
             />
 
             <ActionButtons
-              resetCorrectionLevels={resetCorrectionLevels}
-              generateBadPixels={generateBadPixels}
+              resetCorrectionLevels={handleResetCorrectionLevels}
+              generateBadPixels={handleGenerateBadPixels}
               handleManualAddPixel={handleManualAddPixel}
               manualPixel={manualPixel}
               setManualPixel={setManualPixel}

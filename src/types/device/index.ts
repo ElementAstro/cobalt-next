@@ -10,6 +10,12 @@ export type ProfileData = {
   retry: number;
 };
 
+export type ConnectionRecord = {
+  deviceId: string;
+  timestamp: string;
+  success: boolean;
+};
+
 export type DeviceType =
   | "Camera"
   | "Telescope"
@@ -30,6 +36,7 @@ export interface DeviceInfo {
   model?: string;
   capabilities?: string[];
   connected: boolean;
+  isFavorite: boolean;
 }
 
 export type AdvancedSettings = {

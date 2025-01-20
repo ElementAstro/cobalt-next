@@ -17,8 +17,30 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { z } from "zod";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Settings,
+  AlertCircle,
+  Clock,
+  RefreshCw,
+  HardDrive,
+  Activity,
+} from "lucide-react";
+
+// Zod schema for advanced settings validation
+const AdvancedSettingsSchema = z.object({
+  updateInterval: z.number().min(100).max(10000),
+  connectionTimeout: z.number().min(1).max(300),
+  debugMode: z.boolean(),
+  logLevel: z.enum(["error", "warn", "info", "debug"]),
+  maxRetries: z.number().min(0).max(10),
+  connectionBuffer: z.number().min(128).max(8192),
+  keepAliveInterval: z.number().min(5).max(300),
+});
 
 export function AdvancedTab() {
+  const { toast } = useToast();
   const { fetchAdvancedSettings, updateAdvancedSettings } = useApiService();
   const [settings, setSettings] = useState({
     updateInterval: 1000,
@@ -39,24 +61,58 @@ export function AdvancedTab() {
   >([]);
 
   useEffect(() => {
-    fetchAdvancedSettings().then((data) => {
-      setSettings({
-        updateInterval: data.updateInterval ?? 1000,
-        connectionTimeout: data.connectionTimeout ?? 30,
-        debugMode: data.debugMode ?? false,
-        logLevel: data.logLevel ?? "info",
-        maxRetries: data.maxRetries ?? 3,
-        connectionBuffer: data.connectionBuffer ?? 1024,
-        keepAliveInterval: data.keepAliveInterval ?? 30,
+    fetchAdvancedSettings()
+      .then((data) => {
+        const parsed = AdvancedSettingsSchema.safeParse(data);
+        if (parsed.success) {
+          setSettings(parsed.data);
+        } else {
+          toast({
+            title: "配置错误",
+            description: "从服务器获取的配置数据格式不正确",
+            variant: "destructive",
+          });
+        }
+      })
+      .catch((error) => {
+        toast({
+          title: "获取配置失败",
+          description: (error as Error).message,
+          variant: "destructive",
+        });
       });
-    });
-  }, [fetchAdvancedSettings]);
+  }, [fetchAdvancedSettings, toast]);
 
-  const handleChange = (field: string, value: number | boolean | string) => {
-    setSettings((prev) => ({ ...prev, [field]: value }));
-    updateAdvancedSettings({ [field]: value }).catch((error) => {
-      console.error("Failed to update advanced settings:", error);
-    });
+  const handleChange = async (
+    field: string,
+    value: number | boolean | string
+  ) => {
+    const newSettings = { ...settings, [field]: value };
+    const validation = AdvancedSettingsSchema.safeParse(newSettings);
+
+    if (!validation.success) {
+      toast({
+        title: "验证失败",
+        description: validation.error.errors[0].message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await updateAdvancedSettings({ [field]: value });
+      setSettings(newSettings);
+      toast({
+        title: "更新成功",
+        description: `${field} 已更新`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "更新失败",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -67,14 +123,22 @@ export function AdvancedTab() {
       className="space-y-6 bg-gray-900 text-white p-4 rounded-lg shadow-lg"
     >
       <div className="grid md:grid-cols-2 gap-6">
+        {/* Connection Settings Card */}
         <Card className="bg-gray-800">
           <CardHeader>
-            <CardTitle>连接设置</CardTitle>
+            <div className="flex items-center space-x-2">
+              <Settings className="w-5 h-5" />
+              <CardTitle>连接设置</CardTitle>
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="mt-4\">
-              <Label htmlFor="updateInterval" className="text-gray-300">
-                更新间隔 (毫秒)
+          <CardContent className="space-y-4">
+            <div>
+              <Label
+                htmlFor="updateInterval"
+                className="text-gray-300 flex items-center space-x-2"
+              >
+                <Clock className="w-4 h-4" />
+                <span>更新间隔 (毫秒)</span>
               </Label>
               <Input
                 id="updateInterval"
@@ -86,9 +150,14 @@ export function AdvancedTab() {
                 className="mt-1 bg-gray-700 text-white"
               />
             </div>
-            <div className="mt-4">
-              <Label htmlFor="timeout" className="text-gray-300">
-                连接超时 (秒)
+
+            <div>
+              <Label
+                htmlFor="timeout"
+                className="text-gray-300 flex items-center space-x-2"
+              >
+                <AlertCircle className="w-4 h-4" />
+                <span>连接超时 (秒)</span>
               </Label>
               <Input
                 id="timeout"
@@ -100,21 +169,14 @@ export function AdvancedTab() {
                 className="mt-1 bg-gray-700 text-white"
               />
             </div>
-            <div className="mt-4">
-              <Label htmlFor="logLevel" className="text-gray-300">
-                日志级别
-              </Label>
-              <Input
-                id="logLevel"
-                type="text"
-                value={settings.logLevel}
-                onChange={(e) => handleChange("logLevel", e.target.value)}
-                className="mt-1 bg-gray-700 text-white"
-              />
-            </div>
-            <div className="mt-4">
-              <Label htmlFor="maxRetries" className="text-gray-300">
-                最大重试次数
+
+            <div>
+              <Label
+                htmlFor="maxRetries"
+                className="text-gray-300 flex items-center space-x-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>最大重试次数</span>
               </Label>
               <Input
                 id="maxRetries"
@@ -126,9 +188,14 @@ export function AdvancedTab() {
                 className="mt-1 bg-gray-700 text-white"
               />
             </div>
-            <div className="mt-4">
-              <Label htmlFor="connectionBuffer" className="text-gray-300">
-                连接缓冲区 (字节)
+
+            <div>
+              <Label
+                htmlFor="connectionBuffer"
+                className="text-gray-300 flex items-center space-x-2"
+              >
+                <HardDrive className="w-4 h-4" />
+                <span>连接缓冲区 (字节)</span>
               </Label>
               <Input
                 id="connectionBuffer"
@@ -140,9 +207,14 @@ export function AdvancedTab() {
                 className="mt-1 bg-gray-700 text-white"
               />
             </div>
-            <div className="mt-4">
-              <Label htmlFor="keepAliveInterval" className="text-gray-300">
-                保持活动间隔 (秒)
+
+            <div>
+              <Label
+                htmlFor="keepAliveInterval"
+                className="text-gray-300 flex items-center space-x-2"
+              >
+                <Activity className="w-4 h-4" />
+                <span>保持活动间隔 (秒)</span>
               </Label>
               <Input
                 id="keepAliveInterval"
@@ -156,9 +228,14 @@ export function AdvancedTab() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Debug Settings Card */}
         <Card className="bg-gray-800">
           <CardHeader>
-            <CardTitle>调试设置</CardTitle>
+            <div className="flex items-center space-x-2">
+              <Activity className="w-5 h-5" />
+              <CardTitle>调试设置</CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex items-center mt-4">
@@ -177,9 +254,14 @@ export function AdvancedTab() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Logs Card */}
       <Card className="bg-gray-800">
         <CardHeader>
-          <CardTitle>日志</CardTitle>
+          <div className="flex items-center space-x-2">
+            <Activity className="w-5 h-5" />
+            <CardTitle>日志</CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-64 mt-4 bg-gray-700 rounded-md p-2">

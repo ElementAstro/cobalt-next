@@ -44,6 +44,7 @@ interface DeviceSelectorState {
   toggleFavoriteDevice: (deviceId: string) => void;
   updateDeviceNote: (deviceId: string, note: string) => void;
   updateDeviceSettings: (deviceId: string, settings: any) => void;
+  setConnectionHistory: (history: any) => void;
   clearConnectionHistory: () => void;
 }
 
@@ -61,6 +62,7 @@ const deviceTemplates: Record<DeviceType, DeviceInfo[]> = {
       lastConnected: new Date().toISOString(),
       capabilities: ["Cooling", "High Speed", "16bit ADC"],
       connected: false,
+      isFavorite: true,
     },
     {
       id: "camera-2",
@@ -73,6 +75,7 @@ const deviceTemplates: Record<DeviceType, DeviceInfo[]> = {
       lastConnected: new Date().toISOString(),
       capabilities: ["Cooling", "High Speed", "16bit ADC"],
       connected: false,
+      isFavorite: false,
     },
   ],
   Telescope: [
@@ -87,6 +90,7 @@ const deviceTemplates: Record<DeviceType, DeviceInfo[]> = {
       lastConnected: new Date().toISOString(),
       capabilities: ["Goto", "Tracking", "PEC"],
       connected: false,
+      isFavorite: true,
     },
   ],
   Focuser: [
@@ -101,6 +105,7 @@ const deviceTemplates: Record<DeviceType, DeviceInfo[]> = {
       lastConnected: new Date().toISOString(),
       capabilities: ["Temperature Compensation"],
       connected: false,
+      isFavorite: false,
     },
   ],
   FilterWheel: [
@@ -115,6 +120,7 @@ const deviceTemplates: Record<DeviceType, DeviceInfo[]> = {
       lastConnected: new Date().toISOString(),
       capabilities: ["7-Position"],
       connected: false,
+      isFavorite: true,
     },
   ],
   Guider: [
@@ -129,6 +135,7 @@ const deviceTemplates: Record<DeviceType, DeviceInfo[]> = {
       lastConnected: new Date().toISOString(),
       capabilities: ["High Speed", "Small Pixel"],
       connected: false,
+      isFavorite: false,
     },
   ],
   Dome: [
@@ -143,6 +150,7 @@ const deviceTemplates: Record<DeviceType, DeviceInfo[]> = {
       lastConnected: new Date().toISOString(),
       capabilities: ["Automatic", "Remote Control"],
       connected: false,
+      isFavorite: true,
     },
   ],
   Rotator: [
@@ -157,6 +165,7 @@ const deviceTemplates: Record<DeviceType, DeviceInfo[]> = {
       lastConnected: new Date().toISOString(),
       capabilities: ["High Precision", "Remote Control"],
       connected: false,
+      isFavorite: true,
     },
   ],
 };
@@ -312,6 +321,8 @@ export const useDeviceSelectorStore = create<DeviceSelectorState>(
             [deviceId]: settings,
           },
         })),
+
+      setConnectionHistory: (history) => set({ connectionHistory: history }),
 
       clearConnectionHistory: () => set({ connectionHistory: [] }),
     };

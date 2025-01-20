@@ -34,7 +34,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { motion, AnimatePresence } from "framer-motion";
-import { useDarkFieldStore } from "@/store/useGuidingStore";
+import { useGuidingStore } from "@/store/useGuidingStore";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
@@ -54,7 +54,7 @@ export default function DarkFieldLibrary() {
   const [showProgressDetails, setShowProgressDetails] = useState(false);
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
 
-  const store = useDarkFieldStore();
+  const store = useGuidingStore();
   const {
     minExposure,
     maxExposure,
@@ -73,7 +73,7 @@ export default function DarkFieldLibrary() {
     darkFrameCount,
     gainValue,
     offsetValue,
-  } = store;
+  } = store.darkField;
 
   const {
     setMinExposure,
@@ -91,7 +91,7 @@ export default function DarkFieldLibrary() {
     resetSettings,
     startCreation,
     cancelCreation,
-  } = store;
+  } = store.settings;
 
   const isLandscape = useMediaQuery({
     query: "(orientation: landscape) and (max-width: 1024px)",

@@ -9,7 +9,7 @@ export type FileType =
   | "unknown";
 
 export interface File {
-  id: number;
+  id: string | number;
   name: string;
   type: FileType;
   size: number;
@@ -61,4 +61,8 @@ export type FileOperation =
   | "cut"
   | "paste"
   | "share"
-  | "properties";
+  | "properties"
+  | "versionHistory"
+  | "manageTags"
+  | "compress"
+  | "encrypt";

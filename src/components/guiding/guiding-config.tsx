@@ -29,7 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { CustomOptions } from "@/types/guiding";
-import { useGuidingConfigStore } from "@/store/useGuidingStore";
+import { useGuidingStore } from "@/store/useGuidingStore";
 import { useMediaQuery } from "react-responsive";
 import { useEffect, useState } from "react";
 import { toast } from "@/hooks/use-toast";
@@ -45,7 +45,7 @@ export default function StarGuiding() {
     measurements,
     highFrequency,
     starPosition,
-  } = useGuidingConfigStore();
+  } = useGuidingStore().tracking;
 
   const isLandscape = useMediaQuery({ query: "(orientation: landscape)" });
   const isMobile = useMediaQuery({ query: "(max-width: 640px)" });
