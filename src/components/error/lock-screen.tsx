@@ -38,8 +38,25 @@ import {
   CloudMoonIcon,
   FingerprintIcon,
   AlertTriangleIcon,
+  Compass,
+  Camera,
+  Telescope,
+  Wind,
+  Eye,
+  Lightbulb,
+  Shuffle,
+  TreeDeciduous,
+  Star,
+  HardDrive,
+  ChevronLeft,
 } from "lucide-react";
-
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 import { create } from "zustand";
 
 interface LockScreenState {
@@ -61,6 +78,8 @@ interface Notification {
   title: string;
   message: string;
   icon: React.ReactNode;
+  type: "info" | "warning" | "alert" | "success";
+  timestamp: number;
 }
 
 interface MinimalModeConfig {
@@ -84,15 +103,61 @@ interface LockScreenProps {
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.2 } },
-  exit: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+      when: "beforeChildren",
+    },
+  },
+  exit: {
+    opacity: 0,
+    transition: {
+      staggerChildren: 0.1,
+      staggerDirection: -1,
+    },
+  },
 };
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
-  hover: { scale: 1.05 },
-  tap: { scale: 0.95 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 20,
+    },
+  },
+  hover: {
+    scale: 1.05,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 15,
+    },
+  },
+  tap: {
+    scale: 0.95,
+    transition: {
+      type: "spring",
+      stiffness: 400,
+      damping: 20,
+    },
+  },
+};
+
+const notificationVariants = {
+  hidden: { opacity: 0, x: 50 },
+  visible: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -50 },
+};
+
+const settingsVariants = {
+  hidden: { opacity: 0, scale: 0.9 },
+  visible: { opacity: 1, scale: 1 },
+  exit: { opacity: 0, scale: 0.9 },
 };
 
 type WeatherCondition =
@@ -139,39 +204,76 @@ export default function LockScreen({
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [weather, setWeather] = useState({
     temp: 25,
-    condition: "Sunny" as WeatherCondition,
+    condition: "Night" as WeatherCondition,
     humidity: 60,
     windSpeed: 10,
+    seeing: 2.5, // 视宁度
+    transparency: 3, // 透明度
+    moonPhase: "Waning Gibbous", // 月相
+    lightPollution: 4, // 光污染等级
   });
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSong, setCurrentSong] = useState({
-    title: "Awesome Song",
-    artist: "Cool Artist",
+    title: "星空夜曲",
+    artist: "天文摄影助手",
+    type: "ambient", // ambient | nature | music
+    duration: "3:45",
+    bpm: 60,
   });
+  const [audioOptions, setAudioOptions] = useState([
+    { label: "环境音效", value: "ambient" },
+    { label: "自然声音", value: "nature" },
+    { label: "背景音乐", value: "music" },
+  ]);
+  const [selectedAudio, setSelectedAudio] = useState("ambient");
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: 1,
-      title: "新消息",
-      message: "你有一条新的短信",
-      icon: <MessageSquareIcon />,
+      title: "望远镜状态",
+      message: "正在跟踪：M31",
+      icon: <Telescope className="w-4 h-4" />,
+      type: "info",
+      timestamp: Date.now() - 3600000, // 1小时前
     },
     {
       id: 2,
-      title: "未接来电",
-      message: "妈妈 (2分钟前)",
-      icon: <PhoneIcon />,
+      title: "相机状态",
+      message: "温度：-15°C (目标：-20°C)",
+      icon: <Camera className="w-4 h-4" />,
+      type: "warning",
+      timestamp: Date.now() - 1800000, // 30分钟前
     },
     {
       id: 3,
-      title: "Instagram",
-      message: "你有3条新的赞",
-      icon: <InstagramIcon />,
+      title: "赤道仪状态",
+      message: "高度：45° 方位：120°",
+      icon: <Compass className="w-4 h-4" />,
+      type: "info",
+      timestamp: Date.now() - 1200000, // 20分钟前
     },
     {
       id: 4,
-      title: "Twitter",
-      message: "你有1条新的推文",
-      icon: <TwitterIcon />,
+      title: "天气警报",
+      message: "云量增加，建议暂停拍摄",
+      icon: <CloudIcon className="w-4 h-4" />,
+      type: "alert",
+      timestamp: Date.now() - 600000, // 10分钟前
+    },
+    {
+      id: 5,
+      title: "自动导星",
+      message: '导星精度：0.5"',
+      icon: <Star className="w-4 h-4" />,
+      type: "success",
+      timestamp: Date.now() - 300000, // 5分钟前
+    },
+    {
+      id: 6,
+      title: "存储状态",
+      message: "剩余空间：120GB",
+      icon: <HardDrive className="w-4 h-4" />,
+      type: "info",
+      timestamp: Date.now() - 120000, // 2分钟前
     },
   ]);
   const [password, setPassword] = useState("");
@@ -311,10 +413,31 @@ export default function LockScreen({
                 <span>{weather.temp}°C</span>
                 <ThermometerIcon className="w-4 h-4 ml-1" />
               </div>
-              <div className="flex items-center text-xs text-white/80">
-                <span>湿度: {weather.humidity}%</span>
-                <span className="mx-1">|</span>
-                <span>风速: {weather.windSpeed} km/h</span>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1 text-xs text-white/80">
+                <div className="flex items-center">
+                  <ThermometerIcon className="w-3 h-3 mr-1" />
+                  <span>湿度: {weather.humidity}%</span>
+                </div>
+                <div className="flex items-center">
+                  <Wind className="w-3 h-3 mr-1" />
+                  <span>风速: {weather.windSpeed} km/h</span>
+                </div>
+                <div className="flex items-center">
+                  <Eye className="w-3 h-3 mr-1" />
+                  <span>视宁度: {weather.seeing}"</span>
+                </div>
+                <div className="flex items-center">
+                  <CloudIcon className="w-3 h-3 mr-1" />
+                  <span>透明度: {weather.transparency}/5</span>
+                </div>
+                <div className="flex items-center">
+                  <MoonIcon className="w-3 h-3 mr-1" />
+                  <span>月相: {weather.moonPhase}</span>
+                </div>
+                <div className="flex items-center">
+                  <Lightbulb className="w-3 h-3 mr-1" />
+                  <span>光污染: {weather.lightPollution}/9</span>
+                </div>
               </div>
             </motion.div>
           )}
@@ -358,13 +481,54 @@ export default function LockScreen({
           >
             <div className="flex items-center justify-between mb-1">
               <MusicIcon className="w-4 h-4" />
-              <div className="text-center flex-1 mx-2">
+              <div className="flex flex-col flex-1 min-w-0 mx-2">
                 <h4 className="text-sm text-white font-medium truncate">
                   {currentSong.title}
                 </h4>
                 <p className="text-xs text-white/80 truncate">
-                  {currentSong.artist}
+                  {currentSong.artist} · {currentSong.duration} ·{" "}
+                  {currentSong.bpm}BPM
                 </p>
+                <div className="mt-1 flex items-center gap-2">
+                  <Select
+                    value={selectedAudio}
+                    onValueChange={setSelectedAudio}
+                  >
+                    <SelectTrigger className="h-6 text-xs">
+                      <SelectValue placeholder="选择音效类型" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {audioOptions.map((option) => (
+                        <SelectItem
+                          key={option.value}
+                          value={option.value}
+                          className="text-xs"
+                        >
+                          <div className="flex items-center gap-2">
+                            {option.value === "ambient" && (
+                              <CloudMoonIcon className="w-3 h-3" />
+                            )}
+                            {option.value === "nature" && (
+                              <TreeDeciduous className="w-3 h-3" />
+                            )}
+                            {option.value === "music" && (
+                              <MusicIcon className="w-3 h-3" />
+                            )}
+                            <span>{option.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => setSelectedAudio("random")}
+                  >
+                    <Shuffle className="w-3 h-3" />
+                  </Button>
+                </div>
               </div>
               <Button
                 variant="ghost"
@@ -400,22 +564,52 @@ export default function LockScreen({
           {/* 解锁控制 */}
           <AnimatePresence>
             {showPasswordInput ? (
-              <motion.form
-                onSubmit={handlePasswordSubmit}
-                className="mb-2"
-                variants={itemVariants}
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
               >
-                <Input
-                  type="password"
-                  placeholder="输入密码"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-8 text-sm mb-1"
-                />
-                <Button type="submit" size="sm" className="w-full h-8">
-                  解锁
-                </Button>
-              </motion.form>
+                <motion.form
+                  onSubmit={handlePasswordSubmit}
+                  className="mb-2"
+                  variants={itemVariants}
+                >
+                  <Input
+                    type="password"
+                    placeholder="输入密码"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-8 text-sm mb-1"
+                  />
+                  <Button type="submit" size="sm" className="w-full h-8 mb-2">
+                    密码解锁
+                  </Button>
+                </motion.form>
+                <motion.div
+                  variants={itemVariants}
+                  className="flex justify-center gap-2"
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 flex-1"
+                    onClick={handleBiometricAuth}
+                  >
+                    <FingerprintIcon className="w-3 h-3 mr-1" />
+                    生物识别
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 flex-1"
+                    onClick={() => setShowPasswordInput(false)}
+                  >
+                    <ChevronLeft className="w-3 h-3 mr-1" />
+                    返回
+                  </Button>
+                </motion.div>
+              </motion.div>
             ) : (
               <motion.div variants={itemVariants} className="mb-2">
                 <div className="bg-white/20 p-1 rounded-full mb-1">
@@ -475,16 +669,32 @@ export default function LockScreen({
                   <motion.div
                     key={notification.id}
                     variants={itemVariants}
-                    className="bg-white/20 backdrop-blur-md rounded-lg p-2"
+                    className={`backdrop-blur-md rounded-lg p-2 ${
+                      notification.type === "alert"
+                        ? "bg-red-500/20 border-red-500/30"
+                        : notification.type === "warning"
+                        ? "bg-yellow-500/20 border-yellow-500/30"
+                        : notification.type === "success"
+                        ? "bg-green-500/20 border-green-500/30"
+                        : "bg-white/20 border-white/30"
+                    } border`}
                   >
                     <div className="flex items-center">
                       <div className="w-4 h-4 flex-shrink-0">
                         {notification.icon}
                       </div>
                       <div className="ml-2 min-w-0">
-                        <h4 className="text-white text-xs font-medium truncate">
-                          {notification.title}
-                        </h4>
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-white text-xs font-medium truncate">
+                            {notification.title}
+                          </h4>
+                          <span className="text-xs text-white/50 ml-2">
+                            {Math.floor(
+                              (Date.now() - notification.timestamp) / 60000
+                            )}
+                            分钟前
+                          </span>
+                        </div>
                         <p className="text-white/80 text-xs truncate">
                           {notification.message}
                         </p>
@@ -504,28 +714,34 @@ export default function LockScreen({
             >
               {[
                 {
-                  icon: <MessageSquareIcon />,
-                  action: () => handleQuickLaunch("Messages"),
+                  icon: <Telescope className="w-4 h-4" />,
+                  action: () => handleQuickLaunch("TelescopeControl"),
+                  label: "望远镜控制",
                 },
                 {
-                  icon: <PhoneIcon />,
-                  action: () => handleQuickLaunch("Phone"),
+                  icon: <Camera className="w-4 h-4" />,
+                  action: () => handleQuickLaunch("CameraControl"),
+                  label: "相机控制",
                 },
                 {
-                  icon: <InstagramIcon />,
-                  action: () => handleQuickLaunch("Instagram"),
+                  icon: <Compass className="w-4 h-4" />,
+                  action: () => handleQuickLaunch("MountControl"),
+                  label: "赤道仪控制",
                 },
                 {
-                  icon: <TwitterIcon />,
-                  action: () => handleQuickLaunch("Twitter"),
+                  icon: <CloudMoonIcon className="w-4 h-4" />,
+                  action: () => handleQuickLaunch("WeatherMonitor"),
+                  label: "天气监测",
                 },
                 {
-                  icon: <FingerprintIcon />,
-                  action: () => handleBiometricAuth(),
+                  icon: <Star className="w-4 h-4" />,
+                  action: () => handleQuickLaunch("PolarAlignment"),
+                  label: "极轴校准",
                 },
                 {
-                  icon: <AlertTriangleIcon />,
-                  action: () => handleEmergencyCall(),
+                  icon: <SettingsIcon className="w-4 h-4" />,
+                  action: () => handleQuickLaunch("Settings"),
+                  label: "系统设置",
                 },
               ].map((item, index) => (
                 <Button

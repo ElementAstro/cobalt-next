@@ -2,6 +2,8 @@
 
 import React, { useEffect } from "react";
 import { useForm, Controller, UseFormReturn } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
   FormField,
@@ -27,16 +29,57 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Terminal } from "lucide-react";
+import {
+  Terminal,
+  Eye,
+  EyeOff,
+  Shield,
+  Lock,
+  Network,
+  Settings,
+  Monitor,
+  HardDrive,
+  Key,
+  Scale,
+  Clipboard,
+  FileText,
+  Server,
+  Wifi,
+  WifiOff,
+  RefreshCw,
+  Activity,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+
+// Zod schema for validation
+const formSchema = z.object({
+  display: z.string().min(1, "Display is required"),
+  port: z.string().regex(/^\d+$/, "Must be a valid port number"),
+  viewonly: z.boolean(),
+  shared: z.boolean(),
+  forever: z.boolean(),
+  ssl: z.boolean(),
+  httpPort: z.string().regex(/^\d*$/, "Must be a valid port number").optional(),
+  passwd: z.string().optional(),
+  allowedHosts: z.string().optional(),
+  logFile: z.string().optional(),
+  clipboard: z.boolean(),
+  noxdamage: z.boolean(),
+  scale: z.string().regex(/^\d+(\.\d+)?$/, "Must be a valid scale factor"),
+  repeat: z.boolean(),
+  bg: z.boolean(),
+  rfbauth: z.string().optional(),
+});
 
 export default function X11VNCConfig() {
   const { toast } = useToast();
   const store = useX11VNCStore();
   const xvfbStore = useXvfbStore();
+
   const form = useForm({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       display: store.display,
       port: store.port,
@@ -57,15 +100,22 @@ export default function X11VNCConfig() {
     },
   });
 
-  const { control, handleSubmit, watch } = form;
+  const {
+    control,
+    handleSubmit,
+    watch,
+    formState: { isDirty },
+  } = form;
   const watchAllFields = watch();
 
   useEffect(() => {
-    Object.entries(watchAllFields).forEach(([key, value]) => {
-      store.setConfig(key, value);
-    });
-    store.generateCommand();
-  }, [watchAllFields, store]);
+    if (isDirty) {
+      Object.entries(watchAllFields).forEach(([key, value]) => {
+        store.setConfig(key, value);
+      });
+      store.generateCommand();
+    }
+  }, [watchAllFields, store, isDirty]);
 
   const onSubmit = () => {
     store.generateCommand();
@@ -94,7 +144,8 @@ export default function X11VNCConfig() {
     <motion.div className="max-w-[100vw] overflow-x-auto p-2 lg:flex lg:flex-row lg:gap-4">
       <Card className="lg:w-2/3 mb-4 lg:mb-0">
         <CardHeader>
-          <CardTitle className="text-xl font-bold">
+          <CardTitle className="text-xl font-bold flex items-center gap-2">
+            <Monitor className="w-5 h-5" />
             x11vnc Configuration
           </CardTitle>
         </CardHeader>
@@ -103,18 +154,40 @@ export default function X11VNCConfig() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <Tabs defaultValue="basic" className="w-full">
                 <TabsList className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <TabsTrigger value="basic">Basic Settings</TabsTrigger>
-                  <TabsTrigger value="advanced">Advanced</TabsTrigger>
-                  <TabsTrigger value="security">Security</TabsTrigger>
+                  <TabsTrigger
+                    value="basic"
+                    className="flex items-center gap-2"
+                  >
+                    <Settings className="w-4 h-4" />
+                    Basic Settings
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="advanced"
+                    className="flex items-center gap-2"
+                  >
+                    <HardDrive className="w-4 h-4" />
+                    Advanced
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="security"
+                    className="flex items-center gap-2"
+                  >
+                    <Shield className="w-4 h-4" />
+                    Security
+                  </TabsTrigger>
                 </TabsList>
+
+                {/* Basic Settings Tab */}
                 <TabsContent value="basic" className="mt-2">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Display Select */}
                     <FormField
                       name="display"
                       control={control}
                       render={({ field }) => (
                         <FormItem className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
-                          <FormLabel className="w-full sm:w-1/3">
+                          <FormLabel className="w-full sm:w-1/3 flex items-center gap-2">
+                            <Monitor className="w-4 h-4" />
                             Display
                           </FormLabel>
                           <FormControl>
@@ -140,18 +213,15 @@ export default function X11VNCConfig() {
                         </FormItem>
                       )}
                     />
+
+                    {/* VNC Port Input */}
                     <FormField
                       name="port"
                       control={control}
-                      rules={{
-                        pattern: {
-                          value: /^\d+$/,
-                          message: "Must be a number",
-                        },
-                      }}
                       render={({ field }) => (
                         <FormItem className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
-                          <FormLabel className="w-full sm:w-1/3">
+                          <FormLabel className="w-full sm:w-1/3 flex items-center gap-2">
+                            <Network className="w-4 h-4" />
                             VNC Port
                           </FormLabel>
                           <FormControl>
@@ -165,8 +235,10 @@ export default function X11VNCConfig() {
                         </FormItem>
                       )}
                     />
-                    <div className="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center">
+
+                    {/* Toggle Switches */}
+                    <div className="col-span-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                      <div className="flex items-center space-x-2">
                         <Controller
                           name="viewonly"
                           control={control}
@@ -176,14 +248,24 @@ export default function X11VNCConfig() {
                                 id="viewonly"
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
-                                className="mr-2"
                               />
-                              <Label htmlFor="viewonly">View Only</Label>
+                              <Label
+                                htmlFor="viewonly"
+                                className="flex items-center gap-2"
+                              >
+                                {field.value ? (
+                                  <EyeOff className="w-4 h-4" />
+                                ) : (
+                                  <Eye className="w-4 h-4" />
+                                )}
+                                View Only
+                              </Label>
                             </>
                           )}
                         />
                       </div>
-                      <div className="flex items-center">
+
+                      <div className="flex items-center space-x-2">
                         <Controller
                           name="shared"
                           control={control}
@@ -193,14 +275,20 @@ export default function X11VNCConfig() {
                                 id="shared"
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
-                                className="mr-2"
                               />
-                              <Label htmlFor="shared">Shared</Label>
+                              <Label
+                                htmlFor="shared"
+                                className="flex items-center gap-2"
+                              >
+                                <Server className="w-4 h-4" />
+                                Shared
+                              </Label>
                             </>
                           )}
                         />
                       </div>
-                      <div className="flex items-center">
+
+                      <div className="flex items-center space-x-2">
                         <Controller
                           name="forever"
                           control={control}
@@ -210,9 +298,14 @@ export default function X11VNCConfig() {
                                 id="forever"
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
-                                className="mr-2"
                               />
-                              <Label htmlFor="forever">Run Forever</Label>
+                              <Label
+                                htmlFor="forever"
+                                className="flex items-center gap-2"
+                              >
+                                <RefreshCw className="w-4 h-4" />
+                                Run Forever
+                              </Label>
                             </>
                           )}
                         />
@@ -220,48 +313,57 @@ export default function X11VNCConfig() {
                     </div>
                   </div>
                 </TabsContent>
+
+                {/* Advanced Settings Tab */}
                 <TabsContent value="advanced" className="mt-2">
-                  <div className="flex flex-col space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
-                      <Label htmlFor="httpPort" className="w-full sm:w-1/3">
-                        HTTP Port (optional)
-                      </Label>
-                      <Controller
-                        name="httpPort"
-                        control={control}
-                        rules={{
-                          pattern: {
-                            value: /^\d*$/,
-                            message: "Must be a number",
-                          },
-                        }}
-                        render={({ field }) => (
-                          <Input
-                            {...field}
-                            placeholder="5800"
-                            className="w-full"
-                          />
-                        )}
-                      />
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
-                      <Label htmlFor="logFile" className="w-full sm:w-1/3">
-                        Log File
-                      </Label>
-                      <Controller
-                        name="logFile"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            {...field}
-                            placeholder="/path/to/logfile"
-                            className="w-full"
-                          />
-                        )}
-                      />
-                    </div>
-                    <div className="flex flex-col space-y-2 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* HTTP Port */}
+                    <FormField
+                      name="httpPort"
+                      control={control}
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                          <FormLabel className="w-full sm:w-1/3 flex items-center gap-2">
+                            <Network className="w-4 h-4" />
+                            HTTP Port
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="5800"
+                              className="w-full"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Log File */}
+                    <FormField
+                      name="logFile"
+                      control={control}
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                          <FormLabel className="w-full sm:w-1/3 flex items-center gap-2">
+                            <FileText className="w-4 h-4" />
+                            Log File
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="/path/to/logfile"
+                              className="w-full"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Advanced Toggles */}
+                    <div className="col-span-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                      <div className="flex items-center space-x-2">
                         <Controller
                           name="clipboard"
                           control={control}
@@ -271,16 +373,20 @@ export default function X11VNCConfig() {
                                 id="clipboard"
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
-                                className="mr-2"
                               />
-                              <Label htmlFor="clipboard">
-                                Enable Clipboard
+                              <Label
+                                htmlFor="clipboard"
+                                className="flex items-center gap-2"
+                              >
+                                <Clipboard className="w-4 h-4" />
+                                Clipboard
                               </Label>
                             </>
                           )}
                         />
                       </div>
-                      <div className="flex items-center">
+
+                      <div className="flex items-center space-x-2">
                         <Controller
                           name="noxdamage"
                           control={control}
@@ -290,14 +396,20 @@ export default function X11VNCConfig() {
                                 id="noxdamage"
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
-                                className="mr-2"
                               />
-                              <Label htmlFor="noxdamage">No X Damage</Label>
+                              <Label
+                                htmlFor="noxdamage"
+                                className="flex items-center gap-2"
+                              >
+                                <Activity className="w-4 h-4" />
+                                No X Damage
+                              </Label>
                             </>
                           )}
                         />
                       </div>
-                      <div className="flex items-center">
+
+                      <div className="flex items-center space-x-2">
                         <Controller
                           name="repeat"
                           control={control}
@@ -307,14 +419,20 @@ export default function X11VNCConfig() {
                                 id="repeat"
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
-                                className="mr-2"
                               />
-                              <Label htmlFor="repeat">Key Repeat</Label>
+                              <Label
+                                htmlFor="repeat"
+                                className="flex items-center gap-2"
+                              >
+                                <RefreshCw className="w-4 h-4" />
+                                Key Repeat
+                              </Label>
                             </>
                           )}
                         />
                       </div>
-                      <div className="flex items-center">
+
+                      <div className="flex items-center space-x-2">
                         <Controller
                           name="bg"
                           control={control}
@@ -324,111 +442,154 @@ export default function X11VNCConfig() {
                                 id="bg"
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
-                                className="mr-2"
                               />
-                              <Label htmlFor="bg">Run in Background</Label>
+                              <Label
+                                htmlFor="bg"
+                                className="flex items-center gap-2"
+                              >
+                                <Server className="w-4 h-4" />
+                                Background
+                              </Label>
                             </>
                           )}
                         />
                       </div>
                     </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
-                      <Label htmlFor="scale" className="w-full sm:w-1/3">
-                        Scale
-                      </Label>
-                      <Controller
+
+                    {/* Scale Slider */}
+                    <div className="col-span-full">
+                      <FormField
                         name="scale"
                         control={control}
                         render={({ field }) => (
-                          <div className="flex items-center w-full">
-                            <Slider
-                              id="scale"
-                              min={0.1}
-                              max={2}
-                              step={0.1}
-                              value={[parseFloat(field.value)]}
-                              onValueChange={(value) =>
-                                field.onChange(value[0].toString())
-                              }
-                              className="flex-1 mr-2"
-                            />
-                            <span>x</span>
-                          </div>
+                          <FormItem className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                            <FormLabel className="w-full sm:w-1/3 flex items-center gap-2">
+                              <Scale className="w-4 h-4" />
+                              Scale
+                            </FormLabel>
+                            <FormControl>
+                              <div className="flex items-center w-full">
+                                <Slider
+                                  id="scale"
+                                  min={0.1}
+                                  max={2}
+                                  step={0.1}
+                                  value={[parseFloat(field.value)]}
+                                  onValueChange={(value) =>
+                                    field.onChange(value[0].toString())
+                                  }
+                                  className="flex-1 mr-2"
+                                />
+                                <span className="text-sm">x{field.value}</span>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
                         )}
                       />
                     </div>
                   </div>
                 </TabsContent>
+
+                {/* Security Settings Tab */}
                 <TabsContent value="security" className="mt-2">
-                  <div className="flex flex-col space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
-                      <Label htmlFor="passwd" className="w-full sm:w-1/3">
-                        Password File
-                      </Label>
-                      <Controller
-                        name="passwd"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            {...field}
-                            placeholder="/path/to/passwd"
-                            className="w-full"
-                          />
-                        )}
-                      />
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
-                      <Label htmlFor="rfbauth" className="w-full sm:w-1/3">
-                        RFB Auth File
-                      </Label>
-                      <Controller
-                        name="rfbauth"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            {...field}
-                            placeholder="/path/to/rfbauth"
-                            className="w-full"
-                          />
-                        )}
-                      />
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
-                      <Label htmlFor="allowedHosts" className="w-full sm:w-1/3">
-                        Allowed Hosts
-                      </Label>
-                      <Controller
-                        name="allowedHosts"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            {...field}
-                            placeholder="192.168.1.0/24,10.0.0.1"
-                            className="w-full"
-                          />
-                        )}
-                      />
-                    </div>
-                    <div className="flex items-center">
-                      <Controller
-                        name="ssl"
-                        control={control}
-                        render={({ field }) => (
-                          <>
-                            <Switch
-                              id="ssl"
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                              className="mr-2"
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Password File */}
+                    <FormField
+                      name="passwd"
+                      control={control}
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                          <FormLabel className="w-full sm:w-1/3 flex items-center gap-2">
+                            <Key className="w-4 h-4" />
+                            Password File
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="/path/to/passwd"
+                              className="w-full"
                             />
-                            <Label htmlFor="ssl">Enable SSL</Label>
-                          </>
-                        )}
-                      />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* RFB Auth File */}
+                    <FormField
+                      name="rfbauth"
+                      control={control}
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                          <FormLabel className="w-full sm:w-1/3 flex items-center gap-2">
+                            <Lock className="w-4 h-4" />
+                            RFB Auth File
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="/path/to/rfbauth"
+                              className="w-full"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Allowed Hosts */}
+                    <FormField
+                      name="allowedHosts"
+                      control={control}
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
+                          <FormLabel className="w-full sm:w-1/3 flex items-center gap-2">
+                            <Wifi className="w-4 h-4" />
+                            Allowed Hosts
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="192.168.1.0/24,10.0.0.1"
+                              className="w-full"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* SSL Switch */}
+                    <div className="col-span-full">
+                      <div className="flex items-center space-x-2">
+                        <Controller
+                          name="ssl"
+                          control={control}
+                          render={({ field }) => (
+                            <>
+                              <Switch
+                                id="ssl"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                              <Label
+                                htmlFor="ssl"
+                                className="flex items-center gap-2"
+                              >
+                                <Shield className="w-4 h-4" />
+                                Enable SSL
+                              </Label>
+                            </>
+                          )}
+                        />
+                      </div>
                     </div>
                   </div>
                 </TabsContent>
               </Tabs>
+
+              {/* Generated Command */}
               <AnimatePresence>
                 {store.command && (
                   <motion.div
@@ -452,6 +613,8 @@ export default function X11VNCConfig() {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* Submit Button */}
               <div className="flex justify-end mt-4">
                 <Button
                   type="submit"
@@ -466,10 +629,14 @@ export default function X11VNCConfig() {
         </CardContent>
       </Card>
 
+      {/* Connection Status Card */}
       <div className="lg:w-1/3 space-y-4">
         <Card>
           <CardHeader>
-            <CardTitle>Connection Status</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Wifi className="w-5 h-5" />
+              Connection Status
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">

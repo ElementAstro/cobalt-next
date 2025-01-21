@@ -52,6 +52,29 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
+
+// 添加审计日志类型定义
+interface AuditLogEntry {
+  action: string;
+  timestamp: string;
+  details: string;
+}
 
 interface EnhancedCookieConsentProps extends CookieConsentProps {
   customAnimation?: boolean;
@@ -111,6 +134,21 @@ export default function CookieConsent({
     setShowDetails,
   } = useCookieConsentStore();
   const [rememberChoice, setRememberChoice] = useState(false);
+
+  // 添加审计日志状态
+  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
+
+  // 添加审计日志函数
+  const addAuditEntry = useCallback((action: string, details: string) => {
+    setAuditLog((prev) => [
+      ...prev,
+      {
+        action,
+        timestamp: new Date().toISOString(),
+        details,
+      },
+    ]);
+  }, []);
 
   const handleRememberChoiceChange = useCallback(
     (checked: boolean) => {
@@ -183,6 +221,7 @@ export default function CookieConsent({
     }
   }, [cookieOptions, setAcceptedOptions, toast]);
 
+  // 修改现有的处理函数来包含审计
   const handleAccept = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -201,6 +240,10 @@ export default function CookieConsent({
         description: "您的 Cookie 偏好设置已成功保存",
         duration: 2000,
       });
+      addAuditEntry(
+        "accept",
+        `Accepted cookies: ${acceptedOptions.join(", ")}`
+      );
     } catch (error) {
       toast({
         title: "错误",
@@ -210,7 +253,7 @@ export default function CookieConsent({
     } finally {
       setIsLoading(false);
     }
-  }, [acceptedOptions, onAccept, rememberChoice, toast]);
+  }, [acceptedOptions, onAccept, rememberChoice, toast, addAuditEntry]);
 
   const handleDecline = useCallback(async () => {
     setIsLoading(true);
@@ -381,6 +424,138 @@ export default function CookieConsent({
       return 0;
     }
   }, [rememberExpiry, toast]);
+
+  const renderAdvancedSettings = () => (
+    <Tabs defaultValue="categories" className="w-full">
+      <TabsList className="grid w-full grid-cols-3">
+        <TabsTrigger value="categories">分类</TabsTrigger>
+        <TabsTrigger value="details">详细信息</TabsTrigger>
+        <TabsTrigger value="preferences">偏好设置</TabsTrigger>
+      </TabsList>
+      <ScrollArea className="h-[400px] w-full rounded-md border p-4">
+        <TabsContent value="categories">
+          <div className="space-y-4">
+            {cookieOptions.map((option) => (
+              <div
+                key={option.id}
+                className="flex items-center justify-between"
+              >
+                <div>
+                  <Label htmlFor={option.id}>{option.name}</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {option.description}
+                  </p>
+                </div>
+                <Switch
+                  id={option.id}
+                  checked={acceptedOptions.includes(option.id)}
+                  onCheckedChange={() => toggleOption(option.id)}
+                  disabled={option.isRequired}
+                />
+              </div>
+            ))}
+          </div>
+        </TabsContent>
+        <TabsContent value="details">
+          <div className="space-y-4">
+            <div>
+              <Label>Cookie 搜索</Label>
+              <Input
+                value={cookieSearch}
+                onChange={(e) => setCookieSearch(e.target.value)}
+                placeholder="搜索Cookie..."
+              />
+            </div>
+            <Separator />
+            <div className="space-y-2">
+              <Label>Cookie 详细信息</Label>
+              <Textarea
+                value={JSON.stringify(filteredCookies, null, 2)}
+                readOnly
+                className="h-[200px]"
+              />
+            </div>
+          </div>
+        </TabsContent>
+        <TabsContent value="preferences">
+          <div className="space-y-4">
+            <div>
+              <Label>Cookie 过期进度</Label>
+              <Progress value={cookieExpirationProgress} className="h-2" />
+              <p className="text-sm text-muted-foreground mt-2">
+                您的Cookie设置将在
+                {Math.floor(
+                  rememberExpiry -
+                    (rememberExpiry * cookieExpirationProgress) / 100
+                )}
+                天后过期
+              </p>
+            </div>
+            <Separator />
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="remember-choice"
+                checked={rememberChoice}
+                onCheckedChange={handleRememberChoiceChange}
+              />
+              <Label htmlFor="remember-choice">
+                记住我的选择 {rememberExpiry} 天
+              </Label>
+            </div>
+          </div>
+        </TabsContent>
+      </ScrollArea>
+    </Tabs>
+  );
+
+  // 添加高级设置模态框渲染函数
+  const renderSettingsModal = () => (
+    <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
+      <DialogContent className="max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>Cookie 高级设置</DialogTitle>
+          <DialogDescription>自定义您的 Cookie 偏好设置</DialogDescription>
+        </DialogHeader>
+        {renderAdvancedSettings()}
+        <DialogFooter>
+          <Button onClick={() => setShowSettingsModal(false)}>关闭</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  // 添加审计日志模态框渲染函数
+  const renderAuditModal = () => (
+    <Dialog open={showAuditModal} onOpenChange={setShowAuditModal}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Cookie 审计日志</DialogTitle>
+        </DialogHeader>
+        <ScrollArea className="h-[400px]">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>时间</TableHead>
+                <TableHead>操作</TableHead>
+                <TableHead>详情</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {auditLog.map((entry, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    {new Date(entry.timestamp).toLocaleString()}
+                  </TableCell>
+                  <TableCell>{entry.action}</TableCell>
+                  <TableCell>{entry.details}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
 
   if (!isVisible) return null;
 
@@ -590,6 +765,24 @@ export default function CookieConsent({
           <X size={20} />
         </Button>
       </motion.div>
+      {showSettingsModal && renderSettingsModal()}
+      {showAuditModal && renderAuditModal()}
+      {showPolicyModal && (
+        <Dialog open={showPolicyModal} onOpenChange={setShowPolicyModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>隐私政策预览</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="h-[400px]">
+              <div className="prose dark:prose-invert">
+                {/* Add your privacy policy content here */}
+                <h2>隐私政策</h2>
+                <p>这是您的隐私政策内容...</p>
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+      )}
     </AnimatePresence>
   );
 }

@@ -39,12 +39,49 @@ import {
   CHANNEL_OPTIONS,
 } from "@/types/extra/hostapd";
 import { motion, AnimatePresence } from "framer-motion";
-import { Wifi, Save, AlertCircle, WifiOff } from "lucide-react";
+import {
+  Wifi,
+  Save,
+  AlertCircle,
+  WifiOff,
+  Settings,
+  Info,
+  Shield,
+  Radio,
+  Signal,
+  Lock,
+  EyeOff,
+} from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDnsmasqStore } from "@/store/useExtraStore";
 import { useHostapdStore } from "@/store/useExtraStore";
 import { Progress } from "@/components/ui/progress";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+// 增强的 Zod 验证
+const enhancedHostapdSchema = hostapdConfigSchema.extend({
+  ssid: z
+    .string()
+    .min(1, "SSID 不能为空")
+    .max(32, "SSID 不能超过32个字符")
+    .regex(/^[a-zA-Z0-9_\- ]+$/, "SSID 只能包含字母、数字、下划线和连字符"),
+  wpa_passphrase: z
+    .string()
+    .min(8, "密码至少需要8个字符")
+    .max(63, "密码不能超过63个字符")
+    .regex(/[A-Z]/, "密码必须包含至少一个大写字母")
+    .regex(/[a-z]/, "密码必须包含至少一个小写字母")
+    .regex(/[0-9]/, "密码必须包含至少一个数字"),
+  country_code: z
+    .string()
+    .length(2, "国家代码必须是2个字符")
+    .regex(/^[A-Z]{2}$/, "国家代码必须是2个大写字母"),
+});
 
 export function HostapdConfigForm() {
   const dnsmasqStore = useDnsmasqStore();
@@ -57,9 +94,14 @@ export function HostapdConfigForm() {
   const [availableChannels, setAvailableChannels] = useState<number[]>(
     CHANNEL_OPTIONS["2.4GHz"]
   );
+  const [connectionStats, setConnectionStats] = useState({
+    connectedDevices: 0,
+    networkLoad: 0,
+    signalStrength: 0,
+  });
 
   const form = useForm<HostapdConfig>({
-    resolver: zodResolver(hostapdConfigSchema),
+    resolver: zodResolver(enhancedHostapdSchema),
     defaultValues: {
       ssid: "",
       wpa_passphrase: "",
@@ -83,36 +125,53 @@ export function HostapdConfigForm() {
 
   const watchHwMode = form.watch("hw_mode");
 
+  // 性能优化：使用 debounce 处理频道更新
   useEffect(() => {
-    if (watchHwMode === "a") {
-      setAvailableChannels(CHANNEL_OPTIONS["5GHz"]);
-      form.setValue("channel", 36);
-    } else {
-      setAvailableChannels(CHANNEL_OPTIONS["2.4GHz"]);
-      form.setValue("channel", 6);
-    }
+    const timeoutId = setTimeout(() => {
+      if (watchHwMode === "a") {
+        setAvailableChannels(CHANNEL_OPTIONS["5GHz"]);
+        form.setValue("channel", 36);
+      } else {
+        setAvailableChannels(CHANNEL_OPTIONS["2.4GHz"]);
+        form.setValue("channel", 6);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
   }, [watchHwMode, form]);
+
+  // 实时状态监控
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        // 模拟获取连接状态
+        const stats = await fetchConnectionStats();
+        setConnectionStats(stats);
+      } catch (error) {
+        console.error("Failed to fetch connection stats:", error);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleToggleAP = async () => {
     setIsLoading(true);
     try {
       const newStatus = status === "active" ? "inactive" : "active";
       setStatus(newStatus);
+
       toast({
-        title: `WiFi Access Point ${
-          newStatus === "active" ? "Started" : "Stopped"
-        }`,
-        description: `The access point has been ${
-          newStatus === "active" ? "activated" : "deactivated"
-        } successfully.`,
+        title: `WiFi 接入点 ${newStatus === "active" ? "已启动" : "已停止"}`,
+        description: `接入点已成功${newStatus === "active" ? "激活" : "停用"}`,
       });
 
       hostapdStore.setConfig(form.getValues());
     } catch (error) {
       setStatus("error");
       toast({
-        title: "Error",
-        description: "Failed to toggle the access point status.",
+        title: "错误",
+        description: "切换接入点状态失败",
         variant: "destructive",
       });
     } finally {
@@ -132,16 +191,18 @@ export function HostapdConfigForm() {
   async function onSubmit(values: HostapdConfig) {
     setIsLoading(true);
     try {
+      await hostapdStore.setConfig(values);
+
       toast({
-        title: "Configuration saved",
-        description: "The hostapd configuration has been updated successfully.",
+        title: "配置已保存",
+        description: "Hostapd 配置已成功更新",
       });
 
-      hostapdStore.setConfig(values);
+      syncWithDnsmasq();
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to save the hostapd configuration.",
+        title: "错误",
+        description: "保存 Hostapd 配置失败",
         variant: "destructive",
       });
     } finally {
@@ -149,8 +210,25 @@ export function HostapdConfigForm() {
     }
   }
 
+  // 模拟获取连接状态
+  const fetchConnectionStats = async () => {
+    return new Promise<{
+      connectedDevices: number;
+      networkLoad: number;
+      signalStrength: number;
+    }>((resolve) => {
+      setTimeout(() => {
+        resolve({
+          connectedDevices: Math.floor(Math.random() * 10),
+          networkLoad: Math.floor(Math.random() * 100),
+          signalStrength: Math.floor(Math.random() * 100),
+        });
+      }, 500);
+    });
+  };
+
   return (
-    <motion.div 
+    <motion.div
       className="flex flex-col lg:flex-row lg:gap-4 max-w-[100vw]"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -160,11 +238,9 @@ export function HostapdConfigForm() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Wifi className="w-6 h-6" />
-            Hostapd Configuration
+            Hostapd 配置
           </CardTitle>
-          <CardDescription>
-            Configure your WiFi access point settings
-          </CardDescription>
+          <CardDescription>配置您的 WiFi 接入点设置</CardDescription>
           <div className="flex items-center justify-between">
             <Button
               variant={status === "active" ? "destructive" : "default"}
@@ -176,7 +252,7 @@ export function HostapdConfigForm() {
               ) : (
                 <Wifi className="mr-2" />
               )}
-              {status === "active" ? "Stop Access Point" : "Start Access Point"}
+              {status === "active" ? "停止接入点" : "启动接入点"}
             </Button>
             <div className="flex items-center space-x-2">
               <Switch
@@ -184,15 +260,21 @@ export function HostapdConfigForm() {
                 checked={isAdvancedMode}
                 onCheckedChange={setIsAdvancedMode}
               />
-              <Label htmlFor="advanced-mode">Advanced Mode</Label>
+              <Label htmlFor="advanced-mode">高级模式</Label>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="basic" className="space-y-4">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="basic">Basic Settings</TabsTrigger>
-              <TabsTrigger value="security">Security</TabsTrigger>
+              <TabsTrigger value="basic">
+                <Settings className="w-4 h-4 mr-2" />
+                基本设置
+              </TabsTrigger>
+              <TabsTrigger value="security">
+                <Shield className="w-4 h-4 mr-2" />
+                安全设置
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="basic">
@@ -201,7 +283,7 @@ export function HostapdConfigForm() {
                   onSubmit={form.handleSubmit(onSubmit)}
                   className="space-y-4"
                 >
-                  <motion.div 
+                  <motion.div
                     className="grid grid-cols-1 md:grid-cols-2 gap-4"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -212,7 +294,10 @@ export function HostapdConfigForm() {
                       name="ssid"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Network Name (SSID)</FormLabel>
+                          <FormLabel className="flex items-center gap-2">
+                            <Radio className="w-4 h-4" />
+                            网络名称 (SSID)
+                          </FormLabel>
                           <FormControl>
                             <Input placeholder="MyWiFi" {...field} />
                           </FormControl>
@@ -225,7 +310,10 @@ export function HostapdConfigForm() {
                       name="country_code"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Country Code</FormLabel>
+                          <FormLabel className="flex items-center gap-2">
+                            <Info className="w-4 h-4" />
+                            国家代码
+                          </FormLabel>
                           <FormControl>
                             <Input placeholder="US" maxLength={2} {...field} />
                           </FormControl>
@@ -242,7 +330,7 @@ export function HostapdConfigForm() {
                       exit={{ opacity: 0, height: 0 }}
                       className="space-y-4"
                     >
-                      <motion.div 
+                      <motion.div
                         className="grid grid-cols-1 md:grid-cols-2 gap-4"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -253,14 +341,17 @@ export function HostapdConfigForm() {
                           name="hw_mode"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Frequency Band</FormLabel>
+                              <FormLabel className="flex items-center gap-2">
+                                <Signal className="w-4 h-4" />
+                                频段
+                              </FormLabel>
                               <Select
                                 onValueChange={field.onChange}
                                 defaultValue={field.value}
                               >
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Select band" />
+                                    <SelectValue placeholder="选择频段" />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
@@ -281,7 +372,10 @@ export function HostapdConfigForm() {
                           name="channel"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Channel</FormLabel>
+                              <FormLabel className="flex items-center gap-2">
+                                <Radio className="w-4 h-4" />
+                                信道
+                              </FormLabel>
                               <Select
                                 onValueChange={(value) =>
                                   field.onChange(Number(value))
@@ -290,7 +384,7 @@ export function HostapdConfigForm() {
                               >
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Select channel" />
+                                    <SelectValue placeholder="选择信道" />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
@@ -299,7 +393,7 @@ export function HostapdConfigForm() {
                                       key={channel}
                                       value={channel.toString()}
                                     >
-                                      Channel {channel}
+                                      信道 {channel}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -321,7 +415,7 @@ export function HostapdConfigForm() {
                   onSubmit={form.handleSubmit(onSubmit)}
                   className="space-y-4"
                 >
-                  <motion.div 
+                  <motion.div
                     className="grid grid-cols-1 gap-4"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -332,7 +426,10 @@ export function HostapdConfigForm() {
                       name="wpa_passphrase"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Security Password</FormLabel>
+                          <FormLabel className="flex items-center gap-2">
+                            <Lock className="w-4 h-4" />
+                            安全密码
+                          </FormLabel>
                           <FormControl>
                             <Input
                               type="password"
@@ -352,7 +449,7 @@ export function HostapdConfigForm() {
                         exit={{ opacity: 0, height: 0 }}
                         className="space-y-4"
                       >
-                        <motion.div 
+                        <motion.div
                           className="grid grid-cols-1 md:grid-cols-2 gap-4"
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
@@ -364,12 +461,11 @@ export function HostapdConfigForm() {
                             render={({ field }) => (
                               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                                 <div className="space-y-0.5">
-                                  <FormLabel className="text-base">
-                                    Hide Network
+                                  <FormLabel className="text-base flex items-center gap-2">
+                                    <EyeOff className="w-4 h-4" />
+                                    隐藏网络
                                   </FormLabel>
-                                  <FormDescription>
-                                    Don't broadcast SSID
-                                  </FormDescription>
+                                  <FormDescription>不广播 SSID</FormDescription>
                                 </div>
                                 <FormControl>
                                   <Switch
@@ -388,11 +484,12 @@ export function HostapdConfigForm() {
                             render={({ field }) => (
                               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                                 <div className="space-y-0.5">
-                                  <FormLabel className="text-base">
+                                  <FormLabel className="text-base flex items-center gap-2">
+                                    <Signal className="w-4 h-4" />
                                     WMM (QoS)
                                   </FormLabel>
                                   <FormDescription>
-                                    Enable WiFi Multimedia
+                                    启用 WiFi 多媒体
                                   </FormDescription>
                                 </div>
                                 <FormControl>
@@ -418,16 +515,14 @@ export function HostapdConfigForm() {
           {status === "error" && (
             <Alert variant="destructive" className="mt-4">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>
-                There was a problem with the access point configuration.
-              </AlertDescription>
+              <AlertTitle>错误</AlertTitle>
+              <AlertDescription>接入点配置出现问题</AlertDescription>
             </Alert>
           )}
         </CardContent>
       </Card>
-      
-      <motion.div 
+
+      <motion.div
         className="w-full lg:w-1/3 space-y-4"
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -435,25 +530,29 @@ export function HostapdConfigForm() {
       >
         <Card>
           <CardHeader>
-            <CardTitle>Network Statistics</CardTitle>
+            <CardTitle>网络统计</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <motion.div 
+              <motion.div
                 className="grid grid-cols-2 gap-2"
                 whileHover={{ scale: 1.02 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
                 <div>
-                  <p className="text-sm font-medium">Connected Devices</p>
-                  <p className="text-2xl font-bold">5</p>
+                  <p className="text-sm font-medium">已连接设备</p>
+                  <p className="text-2xl font-bold">
+                    {connectionStats.connectedDevices}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium">Network Load</p>
-                  <p className="text-2xl font-bold">45%</p>
+                  <p className="text-sm font-medium">网络负载</p>
+                  <p className="text-2xl font-bold">
+                    {connectionStats.networkLoad}%
+                  </p>
                 </div>
               </motion.div>
-              <Progress value={45} className="mt-2" />
+              <Progress value={connectionStats.networkLoad} className="mt-2" />
             </div>
           </CardContent>
         </Card>

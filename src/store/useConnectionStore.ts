@@ -13,6 +13,15 @@ const ConnectionFormDataSchema = z.object({
   password: z.string().min(1),
   isSSL: z.boolean(),
   rememberLogin: z.boolean(),
+  connectionType: z.enum(["direct", "proxy"]),
+  proxySettings: z.object({
+    host: z.string().min(1),
+    port: z.number().int().min(1).max(65535),
+    auth: z.object({
+      username: z.string().min(1),
+      password: z.string().min(1),
+    }).optional(),
+  }).optional(),
 });
 
 const RegistrationDataSchema = z.object({
@@ -27,6 +36,15 @@ interface ConnectionFormData {
   password: string;
   isSSL: boolean;
   rememberLogin: boolean;
+  connectionType: "direct" | "proxy"; // 新增连接类型
+  proxySettings?: {
+    host: string;
+    port: number;
+    auth?: {
+      username: string;
+      password: string;
+    };
+  }; // 可选代理设置
 }
 
 interface RegistrationData {
@@ -77,6 +95,8 @@ const initialState = {
     password: "",
     isSSL: false,
     rememberLogin: false,
+    connectionType: "direct" as const,
+    proxySettings: undefined,
   },
   isConnected: false,
   isLoading: false,
@@ -89,6 +109,11 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
     reconnectInterval: 3000,
     maxReconnectAttempts: 5,
     debug: true,
+    proxy: get().formData.connectionType === 'proxy' ? {
+      host: get().formData.proxySettings?.host || '',
+      port: get().formData.proxySettings?.port || 8080,
+      auth: get().formData.proxySettings?.auth
+    } : undefined
   });
 
   const messageBus = new MessageBus(wsClient, {
@@ -106,11 +131,16 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
   // Subscribe to connection status
   messageBus.subscribe("connection/status", (message) => {
     try {
-      const validatedData = ConnectionFormDataSchema.parse(message);
+      const validatedData = ConnectionFormDataSchema.parse({
+        ...message,
+        connectionType: message.connectionType || "direct",
+        proxySettings: message.proxySettings || undefined
+      });
       logger.info("Connection status update received:", validatedData);
       set({ isConnected: true, formData: validatedData });
     } catch (error) {
       logger.error("Error validating connection status:", error);
+      set({ isConnected: false });
     }
   });
 
@@ -302,12 +332,29 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
     connect: () => {
       try {
         const { formData } = get();
-        ConnectionFormDataSchema.parse(formData);
-        messageBus.publish("connection/connect", formData);
+        const validatedData = ConnectionFormDataSchema.parse(formData);
+        
+        const connectionConfig = {
+          ...validatedData,
+          wsConfig: {
+            url: `ws${validatedData.isSSL ? 's' : ''}://${validatedData.ip}:${validatedData.port}`,
+            reconnectInterval: 3000,
+            maxReconnectAttempts: 5,
+            debug: true,
+            proxy: validatedData.connectionType === 'proxy' ? {
+              host: validatedData.proxySettings?.host || '',
+              port: validatedData.proxySettings?.port || 8080,
+              auth: validatedData.proxySettings?.auth
+            } : undefined
+          }
+        };
+
+        messageBus.publish("connection/connect", connectionConfig);
         set({ isLoading: true });
-        logger.info("Published connection/connect message:", formData);
+        logger.info("Published connection/connect message:", connectionConfig);
       } catch (error) {
         logger.error("Invalid connection data on connect:", error);
+        set({ isLoading: false, isConnected: false });
       }
     },
 

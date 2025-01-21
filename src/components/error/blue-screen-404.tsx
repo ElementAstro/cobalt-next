@@ -3,7 +3,16 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Frown, RefreshCcw, Home, Copy, Camera } from "lucide-react";
+import {
+  Frown,
+  RefreshCcw,
+  Home,
+  Copy,
+  Camera,
+  Telescope,
+  Satellite,
+  Star,
+} from "lucide-react";
 import html2canvas from "html2canvas";
 import Link from "next/link";
 import { useMediaQuery } from "react-responsive";
@@ -13,6 +22,20 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Progress } from "@/components/ui/progress";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import {
+  TooltipProvider,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
 export const config404 = {
   errorCode: "404_PAGE_NOT_FOUND",
@@ -20,7 +43,7 @@ export const config404 = {
   collectingInfoText: "正在收集错误信息...",
   homeButtonText: "返回首页",
   reloadButtonText: "重新加载页面",
-  backgroundColor: "bg-blue-600",
+  backgroundColor: "bg-[#0b0f19]",
   textColor: "text-white",
   errorDetailsText: "查看详细错误信息",
   feedbackText: "提交错误反馈",
@@ -31,7 +54,7 @@ export const config404 = {
   screenshotText: "截图",
   screenshotSuccessText: "截图已保存",
   screenshotErrorText: "截图失败",
-  theme: "light", // light | dark
+  theme: "dark",
 };
 
 interface BlueScreen404Props {
@@ -49,11 +72,13 @@ export default function BlueScreen404({
   const [progress, setProgress] = useState(0);
   const [showContent, setShowContent] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [screenshotStatus, setScreenshotStatus] = useState<"idle" | "success" | "error">("idle");
+  const [screenshotStatus, setScreenshotStatus] = useState<
+    "idle" | "success" | "error"
+  >("idle");
   const isLandscape = useMediaQuery({ query: "(orientation: landscape)" });
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowContent(true), 1000);
+    const timer = setTimeout(() => setShowContent(true), 500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -61,7 +86,7 @@ export default function BlueScreen404({
     if (showContent) {
       const interval = setInterval(() => {
         setProgress((prev) => (prev < 100 ? prev + 1 : 100));
-      }, 50);
+      }, 30);
       return () => clearInterval(interval);
     }
   }, [showContent]);
@@ -108,101 +133,138 @@ export default function BlueScreen404({
   `.trim();
 
   return (
-    <div
-      className={`min-h-screen ${config404.backgroundColor} ${config404.textColor} p-4 sm:p-8 flex flex-col justify-center items-center transition-opacity duration-1000 ease-in-out overflow-hidden`}
-      style={{ opacity: showContent ? 1 : 0 }}
-    >
+    <TooltipProvider>
       <div
-        className={`w-full ${
-          isLandscape ? "max-w-full" : "max-w-2xl"
-        } space-y-4 sm:space-y-8`}
+        className={`min-h-screen ${config404.backgroundColor} ${config404.textColor} p-4 flex flex-col justify-center items-center transition-opacity duration-500 ease-in-out overflow-hidden relative`}
+        style={{ opacity: showContent ? 1 : 0 }}
       >
-        <div className="flex items-center space-x-4 animate-pulse">
-          <Frown className="h-8 w-8 sm:h-12 sm:w-12" />
-          <h1 className="text-2xl sm:text-4xl font-bold">:(</h1>
-        </div>
-        <div className="space-y-2 sm:space-y-4">
-          <h2 className="text-xl sm:text-2xl font-semibold">
-            {isErrorBoundary ? t("fatalAppError") : t("fatalSystemError")}
-          </h2>
-          <p className="text-base sm:text-lg">
-            {t("errorCode")}:{" "}
-            {isErrorBoundary
-              ? error?.name || "UNKNOWN_ERROR"
-              : config404.errorCode}
-          </p>
-          <p className="text-base sm:text-lg">
-            {t("errorMessage")}: {error?.message || config404.errorMessage}
-          </p>
-        </div>
-        <div className="space-y-2">
-          <div className="bg-blue-500 h-2 rounded-full overflow-hidden">
+        {/* 星空背景 */}
+        <div className="absolute inset-0 overflow-hidden">
+          {Array.from({ length: 100 }).map((_, i) => (
             <div
-              className="bg-white h-full transition-all duration-500 ease-out"
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
-          <p className="text-sm sm:text-base">
-            {t("collectingInfoText")} {progress}% {t("completed")}
-          </p>
+              key={i}
+              className="absolute w-0.5 h-0.5 bg-white rounded-full animate-twinkle"
+              style={{
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 5}s`,
+              }}
+            />
+          ))}
         </div>
-        <Accordion type="single" collapsible className="w-full">
-          <AccordionItem value="error-details">
-            <AccordionTrigger className="text-sm sm:text-base">
-              {t("viewErrorDetails")}
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="relative">
-                <pre className="whitespace-pre-wrap text-xs sm:text-sm bg-gray-800 p-4 rounded">
-                  {errorDetails}
-                </pre>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-2 right-2"
-                  onClick={handleCopyError}
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  {copied ? t("copiedText") : t("copyErrorText")}
-                </Button>
+
+        <div className={`w-full max-w-2xl space-y-4 z-10`}>
+          {/* 错误信息卡片 */}
+          <Card className="border-gray-800 bg-gray-900/50 backdrop-blur">
+            <CardHeader className="pb-2">
+              <div className="flex items-center space-x-3">
+                <Frown className="h-8 w-8 text-red-400" />
+                <CardTitle className="text-2xl font-bold">
+                  {isErrorBoundary ? t("fatalAppError") : t("fatalSystemError")}
+                </CardTitle>
               </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-        <div
-          className={`space-y-2 sm:space-y-0 ${
-            isLandscape ? "sm:space-x-4 sm:flex" : "grid grid-cols-2 gap-2"
-          }`}
-        >
-          <Button asChild className="w-full" variant="secondary">
-            <Link href="/">
-              <Home className="mr-2 h-4 w-4" />
-              {t("homeButtonText")}
-            </Link>
-          </Button>
-          <Button
-            className="w-full"
-            variant="secondary"
-            onClick={() => window.location.reload()}
-          >
-            <RefreshCcw className="mr-2 h-4 w-4" />
-            {t("reloadButtonText")}
-          </Button>
-          <Button
-            className="w-full"
-            variant="secondary"
-            onClick={handleTakeScreenshot}
-            disabled={screenshotStatus !== "idle"}
-          >
-            <Camera className="mr-2 h-4 w-4" />
-            {screenshotStatus === "success"
-              ? t("screenshotSuccessText")
-              : screenshotStatus === "error"
-              ? t("screenshotErrorText")
-              : t("screenshotText")}
-          </Button>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-1">
+                <p className="text-sm">
+                  {t("errorCode")}:{" "}
+                  <span className="font-mono text-red-400">
+                    {isErrorBoundary
+                      ? error?.name || "UNKNOWN_ERROR"
+                      : config404.errorCode}
+                  </span>
+                </p>
+                <p className="text-sm">
+                  {t("errorMessage")}:{" "}
+                  <span className="text-red-300">
+                    {error?.message || config404.errorMessage}
+                  </span>
+                </p>
+              </div>
+
+              {/* 进度条 */}
+              <div className="space-y-1">
+                <Progress value={progress} className="h-2 bg-gray-800" />
+                <p className="text-xs text-gray-400">
+                  {t("collectingInfoText")} {progress}% {t("completed")}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 错误详情 */}
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="error-details">
+              <AccordionTrigger className="text-sm">
+                <div className="flex items-center space-x-2">
+                  <Telescope className="h-4 w-4" />
+                  <span>{t("viewErrorDetails")}</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                <Card className="border-gray-800 bg-gray-900/50 backdrop-blur">
+                  <CardContent className="relative p-4">
+                    <pre className="whitespace-pre-wrap text-xs bg-gray-800 p-3 rounded">
+                      {errorDetails}
+                    </pre>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-2 right-2"
+                          onClick={handleCopyError}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {copied ? t("copiedText") : t("copyErrorText")}
+                      </TooltipContent>
+                    </Tooltip>
+                  </CardContent>
+                </Card>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+
+          {/* 操作按钮 */}
+          <div className="grid grid-cols-2 gap-2">
+            <Button asChild variant="secondary" className="h-12">
+              <Link
+                href="/"
+                className="flex items-center justify-center space-x-2"
+              >
+                <Home className="h-4 w-4" />
+                <span>{t("homeButtonText")}</span>
+              </Link>
+            </Button>
+
+            <Button
+              variant="secondary"
+              className="h-12"
+              onClick={() => window.location.reload()}
+            >
+              <RefreshCcw className="h-4 w-4 mr-2" />
+              {t("reloadButtonText")}
+            </Button>
+
+            <Button
+              variant="secondary"
+              className="h-12 col-span-2"
+              onClick={handleTakeScreenshot}
+              disabled={screenshotStatus !== "idle"}
+            >
+              <Camera className="h-4 w-4 mr-2" />
+              {screenshotStatus === "success"
+                ? t("screenshotSuccessText")
+                : screenshotStatus === "error"
+                ? t("screenshotErrorText")
+                : t("screenshotText")}
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }

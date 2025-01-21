@@ -1,81 +1,116 @@
-import { useEffect, useRef } from 'react';
-import { motion, useAnimation } from 'framer-motion';
-import { useMouseStore } from '@/store/useMouseStore';
-import { cn } from '@/lib/utils';
+"use client";
 
-type MouseFollowerProps = {
-  size?: number;
-  trailLength?: number;
-  color?: string;
-  hoverScale?: number;
-  className?: string;
-};
+import { useState, useEffect } from "react";
+import { motion, useAnimation, useMotionValue } from "framer-motion";
+import { MouseFollowerProps } from "@/types/home";
 
-export function MouseFollower({
-  size = 32,
-  trailLength = 5,
-  color = '#ffffff',
-  hoverScale = 1.2,
-  className,
+export default function MouseFollower({
+  color = "#3b82f6",
+  size = 24,
+  blur = 0,
+  trail = 5,
+  trailColor = "rgba(59, 130, 246, 0.5)",
+  trailBlur = 5,
+  animationDuration = 0.2,
+  animationType = "spring",
+  springStiffness = 500,
+  springDamping = 28,
+  scaleOnTouch = true,
+  rotateOnMove = true,
 }: MouseFollowerProps) {
-  const { x, y, isTouching, trailPositions } = useMouseStore();
-  const controls = useAnimation();
-  const trailRef = useRef<HTMLDivElement[]>([]);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [trailPositions, setTrailPositions] = useState<
+    { x: number; y: number }[]
+  >([]);
+  const [isTouching, setIsTouching] = useState(false);
 
-  // Main cursor animation
-  useEffect(() => {
-    controls.start({
-      x: x - size / 2,
-      y: y - size / 2,
-      scale: isTouching ? hoverScale : 1,
-      transition: { type: 'spring', stiffness: 500, damping: 30 },
-    });
-  }, [x, y, isTouching, controls, size, hoverScale]);
+  const cursorX = useMotionValue(0);
+  const cursorY = useMotionValue(0);
+  const cursorControls = useAnimation();
 
-  // Trail effect
   useEffect(() => {
-    trailPositions.forEach((position, i) => {
-      const trail = trailRef.current[i];
-      if (trail) {
-        trail.style.transform = `translate(${position.x}px, ${position.y}px)`;
-        trail.style.opacity = `${1 - i / trailLength}`;
+    const handleMouseMove = (e: MouseEvent | TouchEvent) => {
+      let clientX, clientY;
+      if ("touches" in e) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
       }
+      setMousePosition({ x: clientX, y: clientY });
+      cursorX.set(clientX);
+      cursorY.set(clientY);
+    };
+
+    const handleTouchStart = () => setIsTouching(true);
+    const handleTouchEnd = () => setIsTouching(false);
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("touchmove", handleMouseMove);
+    window.addEventListener("touchstart", handleTouchStart);
+    window.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("touchmove", handleMouseMove);
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [cursorX, cursorY]);
+
+  useEffect(() => {
+    setTrailPositions((prevPositions) => {
+      const newPositions = [
+        mousePosition,
+        ...prevPositions.slice(0, trail - 1),
+      ];
+      return newPositions;
     });
-  }, [trailPositions, trailLength]);
+
+    if (rotateOnMove) {
+      const angle = Math.atan2(
+        mousePosition.y - cursorY.get(),
+        mousePosition.x - cursorX.get()
+      );
+      cursorControls.start({ rotate: angle * (180 / Math.PI) });
+    }
+  }, [mousePosition, trail, rotateOnMove, cursorControls, cursorX, cursorY]);
 
   return (
     <>
-      {/* Main cursor */}
-      <motion.div
-        className={cn(
-          'fixed pointer-events-none z-50 rounded-full',
-          'backdrop-blur-sm border border-white/20',
-          className
-        )}
-        style={{
-          width: size,
-          height: size,
-          backgroundColor: color,
-        }}
-        animate={controls}
-      />
-
-      {/* Trail effect */}
-      {Array.from({ length: trailLength }).map((_, i) => (
-        <div
-          key={i}
-          ref={(el) => {
-            if (el) trailRef.current[i] = el;
-          }}
-          className="fixed pointer-events-none rounded-full"
+      {trailPositions.map((position, index) => (
+        <motion.div
+          key={index}
+          className="fixed top-0 left-0 rounded-full pointer-events-none mix-blend-difference"
           style={{
+            backgroundColor: index === 0 ? color : trailColor,
             width: size,
             height: size,
-            backgroundColor: color,
-            opacity: 1 - i / trailLength,
-            transition: 'transform 0.1s linear, opacity 0.2s ease-out',
+            filter: `blur(${index === 0 ? blur : trailBlur}px)`,
+            opacity: 1 - index / trail,
+            x: position.x - size / 2,
+            y: position.y - size / 2,
           }}
-        />
+          animate={index === 0 ? cursorControls : undefined}
+          transition={
+            animationType === "spring"
+              ? {
+                  type: "spring",
+                  stiffness: springStiffness,
+                  damping: springDamping,
+                }
+              : { type: "tween", duration: animationDuration }
+          }
+        >
+          {index === 0 && scaleOnTouch && (
+            <motion.div
+              className="w-full h-full rounded-full"
+              animate={{ scale: isTouching ? 1.5 : 1 }}
+              transition={{ duration: 0.2 }}
+            />
+          )}
+        </motion.div>
       ))}
     </>
   );

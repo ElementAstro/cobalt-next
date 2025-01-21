@@ -6,13 +6,32 @@ import log from "@/utils/logger"; // Import the logger
 interface HistoryItem {
   id: string;
   status: "success" | "error";
-  config: {
-    method: string;
-    url: string;
-    timestamp: number;
-    headers: { [key: string]: string };
-    body?: any;
-  };
+  method: string;
+  url: string;
+  headers: { [key: string]: string };
+  body?: any;
+  timestamp: number;
+  duration: number;
+  error?: string;
+  cacheEnabled?: boolean;
+  cacheDuration?: number;
+  rateLimitEnabled?: boolean;
+  rateLimitCount?: number;
+  rateLimitWindow?: number;
+}
+
+interface HistoryConfig {
+  method: string;
+  url: string;
+  headers?: { [key: string]: string };
+  body?: any;
+  status?: "success" | "error";
+  error?: string;
+  cacheEnabled?: boolean;
+  cacheDuration?: number;
+  rateLimitEnabled?: boolean;
+  rateLimitCount?: number;
+  rateLimitWindow?: number;
 }
 
 interface TemplateConfig {
@@ -34,13 +53,7 @@ interface Template {
 interface DebugState {
   // History 相关
   history: HistoryItem[];
-  addHistory: (config: {
-    method: string;
-    url: string;
-    headers?: { [key: string]: string };
-    body?: any;
-    status?: "success" | "error";
-  }) => void;
+  addHistory: (config: HistoryConfig) => void;
   removeHistory: (id: string) => void;
   clearHistory: () => void;
   selectHistory: (id: string) => HistoryItem | undefined;
@@ -82,13 +95,18 @@ export const useDebugStore = create<DebugState>()(
         const newHistory: HistoryItem = {
           id: Date.now().toString(),
           status: config.status || "success",
-          config: {
-            method: config.method,
-            url: config.url,
-            headers: config.headers || {},
-            body: config.body,
-            timestamp: Date.now(),
-          },
+          method: config.method,
+          url: config.url,
+          headers: config.headers || {},
+          body: config.body,
+          timestamp: Date.now(),
+          duration: 0,
+          error: config.error,
+          cacheEnabled: config.cacheEnabled,
+          cacheDuration: config.cacheDuration,
+          rateLimitEnabled: config.rateLimitEnabled,
+          rateLimitCount: config.rateLimitCount,
+          rateLimitWindow: config.rateLimitWindow,
         };
         log.info(`Adding history item: ${JSON.stringify(newHistory)}`);
         set({ history: [newHistory, ...get().history] });

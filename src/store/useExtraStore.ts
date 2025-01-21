@@ -30,10 +30,19 @@ export const initialApps: App[] = [
     id: "vscode",
     name: "VS Code",
     icon: "/placeholder.svg?height=32&width=32",
-    category: "tools",
+    category: "development",
     isPinned: false,
     lastOpened: "2024-01-18T09:15:00",
     url: "https://code.visualstudio.com",
+  },
+  {
+    id: "photoshop",
+    name: "Photoshop",
+    icon: "/placeholder.svg?height=32&width=32",
+    category: "media",
+    isPinned: false,
+    lastOpened: "2024-01-17T11:10:00",
+    url: "https://www.adobe.com/products/photoshop.html",
   },
   {
     id: "spotify",
@@ -324,24 +333,56 @@ export const useXvfbStore = create<XvfbStore>()(
         })),
       validateConfig: () => {
         const { config } = get();
-        let isValid = true;
-        let error = null;
+        const errors: string[] = [];
 
-        if (!config.display.startsWith(":")) {
-          error = 'Display must start with ":"';
-          isValid = false;
+        // Display validation
+        if (!/^:\d+$/.test(config.display)) {
+          errors.push('Display must be in format :99');
         }
 
+        // Resolution validation
         if (config.resolution === "custom") {
-          const resolution = config.customResolution.match(/^\d+x\d+$/);
-          if (!resolution) {
-            error = "Invalid custom resolution format";
-            isValid = false;
+          if (!/^\d+x\d+$/.test(config.customResolution || "")) {
+            errors.push("Custom resolution must be in WIDTHxHEIGHT format");
+          }
+        } else if (!["1024x768", "1280x1024", "1920x1080"].includes(config.resolution)) {
+          errors.push("Invalid resolution selection");
+        }
+
+        // Color depth validation
+        if (!["8", "16", "24", "32"].includes(config.colorDepth)) {
+          errors.push("Invalid color depth");
+        }
+
+        // Screen validation
+        if (!/^\d+$/.test(config.screen)) {
+          errors.push("Screen must be a number");
+        }
+
+        // Refresh rate validation
+        if (config.refreshRate < 30 || config.refreshRate > 240) {
+          errors.push("Refresh rate must be between 30 and 240 Hz");
+        }
+
+        // Memory validation
+        if (config.memory && (config.memory < 64 || config.memory > 1024)) {
+          errors.push("Memory must be between 64 and 1024 MB");
+        }
+
+        // Logging validation
+        if (config.logging) {
+          if (config.logging.maxLogSize && (config.logging.maxLogSize < 1 || config.logging.maxLogSize > 1000)) {
+            errors.push("Max log size must be between 1 and 1000 MB");
           }
         }
 
-        get().setError(error);
-        return isValid;
+        if (errors.length > 0) {
+          get().setError(errors.join("\n"));
+          return false;
+        }
+
+        get().setError(null);
+        return true;
       },
       restartServer: () => {
         const store = get();

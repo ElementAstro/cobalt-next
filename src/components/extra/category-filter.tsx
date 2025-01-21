@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ImageIcon, Settings, Wrench, Code } from "lucide-react";
 
 interface CategoryFilterProps {
   selectedCategory: string | null;
@@ -20,7 +21,10 @@ export function CategoryFilter({
     { id: "tools", name: "常用工具", icon: "tool" },
     { id: "development", name: "开发工具", icon: "code" },
     { id: "media", name: "媒体工具", icon: "image" },
-  ];
+  ].map(category => ({
+    ...category,
+    icon: <ImageIcon className="h-4 w-4" />,
+  }));
 
   return (
     <div

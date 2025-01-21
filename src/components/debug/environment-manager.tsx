@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -46,8 +49,36 @@ export default function EnvironmentManager() {
     resetEnvironment,
   } = useDebugStore();
 
-  const [key, setKey] = useState<string>("");
-  const [value, setValue] = useState<string>("");
+  // Zod schema for validation
+  const variableSchema = z.object({
+    key: z.string()
+      .min(2, "键名至少需要2个字符")
+      .max(50, "键名最多50个字符")
+      .regex(/^[A-Z_][A-Z0-9_]*$/i, "键名必须以字母或下划线开头，只能包含字母、数字和下划线"),
+    value: z.string()
+      .min(1, "值不能为空")
+      .max(500, "值最多500个字符"),
+    type: z.enum(["string", "number", "boolean"])
+  });
+
+  type VariableForm = z.infer<typeof variableSchema>;
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue: setFormValue,
+    watch,
+    formState: { errors }
+  } = useForm<VariableForm>({
+    resolver: zodResolver(variableSchema),
+    defaultValues: {
+      key: "",
+      value: "",
+      type: "string"
+    }
+  });
+
   const [search, setSearch] = useState<string>("");
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
@@ -55,11 +86,10 @@ export default function EnvironmentManager() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [groupingEnabled, setGroupingEnabled] = useState<boolean>(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [variableType, setVariableType] = useState<
-    "string" | "number" | "boolean"
-  >("string");
   const [history, setHistory] = useState<Array<Record<string, string>>>([]);
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   // 添加模拟数据
   useEffect(() => {
@@ -73,42 +103,33 @@ export default function EnvironmentManager() {
     Object.entries(mockData).forEach(([k, v]) => addVariable(k, v));
   }, [addVariable]);
 
-  const handleAdd = () => {
-    if (key.trim() && value.trim()) {
-      // Validate value based on selected type
-      let validatedValue = value.trim();
-      try {
-        if (variableType === "number") {
-          validatedValue = String(Number(value));
-          if (isNaN(Number(value))) {
-            throw new Error("Invalid number");
-          }
-        } else if (variableType === "boolean") {
-          const lowerValue = value.toLowerCase();
-          if (!["true", "false"].includes(lowerValue)) {
-            throw new Error("Invalid boolean");
-          }
-          validatedValue = lowerValue;
-        }
-      } catch (error) {
-        alert(
-          `类型验证失败: ${error instanceof Error ? error.message : "未知错误"}`
-        );
+  const onSubmit = (data: VariableForm) => {
+    let validatedValue = data.value.trim();
+    
+    // Additional type-specific validation
+    if (data.type === "number") {
+      if (isNaN(Number(data.value))) {
+        alert("请输入有效的数字");
         return;
       }
-
-      // Add to history
-      setHistory((prev) =>
-        [{ [key.trim()]: validatedValue }, ...prev].slice(0, 50)
-      );
-
-      addVariable(key.trim(), validatedValue);
-      setKey("");
-      setValue("");
-      alert("变量添加成功");
-    } else {
-      alert("请填写完整的键值对");
+      validatedValue = String(Number(data.value));
+    } else if (data.type === "boolean") {
+      const lowerValue = data.value.toLowerCase();
+      if (!["true", "false"].includes(lowerValue)) {
+        alert("请输入true或false");
+        return;
+      }
+      validatedValue = lowerValue;
     }
+
+    // Add to history
+    setHistory((prev) =>
+      [{ [data.key]: validatedValue }, ...prev].slice(0, 50)
+    );
+
+    addVariable(data.key, validatedValue);
+    reset();
+    alert("变量添加成功");
   };
 
   const handleExport = useCallback(() => {
@@ -166,7 +187,26 @@ export default function EnvironmentManager() {
 
   const handleUpdate = (keyToUpdate: string) => {
     if (editValue.trim()) {
-      updateVariable(keyToUpdate, editValue.trim());
+      // Validate based on variable type
+      const type = watch("type");
+      let validatedValue = editValue.trim();
+      
+      if (type === "number") {
+        if (isNaN(Number(editValue))) {
+          alert("请输入有效的数字");
+          return;
+        }
+        validatedValue = String(Number(editValue));
+      } else if (type === "boolean") {
+        const lowerValue = editValue.toLowerCase();
+        if (!["true", "false"].includes(lowerValue)) {
+          alert("请输入true或false");
+          return;
+        }
+        validatedValue = lowerValue;
+      }
+
+      updateVariable(keyToUpdate, validatedValue);
       setEditingKey(null);
       setEditValue("");
     }
@@ -284,7 +324,7 @@ export default function EnvironmentManager() {
         theme === "dark" ? "bg-gray-900" : "bg-gray-50"
       } min-h-screen transition-colors duration-300`}
     >
-      <Card className="bg-gray-800 text-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto">
+      <Card className="bg-gray-800/95 backdrop-blur-sm text-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto border border-gray-700/50">
         <CardHeader className="flex justify-between items-center">
           <CardTitle className="text-2xl flex items-center">
             <Zap className="w-6 h-6 mr-2" />
@@ -418,65 +458,97 @@ export default function EnvironmentManager() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4 mb-6">
-            <div className="relative">
-              <select
-                value={variableType}
-                onChange={(e) =>
-                  setVariableType(
-                    e.target.value as "string" | "number" | "boolean"
-                  )
-                }
-                className="bg-gray-700 text-white p-2 pr-8 rounded appearance-none focus:outline-none"
-              >
-                <option value="string">字符串</option>
-                <option value="number">数字</option>
-                <option value="boolean">布尔值</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
-                <ChevronDown className="w-4 h-4" />
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="flex flex-col md:flex-row items-center gap-4">
+              <div className="relative w-full md:w-auto">
+                <select
+                  {...register("type")}
+                  className="bg-gray-700 text-white p-2 pr-8 rounded appearance-none focus:outline-none w-full"
+                >
+                  <option value="string">字符串</option>
+                  <option value="number">数字</option>
+                  <option value="boolean">布尔值</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                  <ChevronDown className="w-4 h-4" />
+                </div>
               </div>
-            </div>
-            <Input
-              placeholder="键"
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              className="bg-gray-700 text-white"
-            />
-            <Input
-              placeholder="值"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              className="bg-gray-700 text-white"
-            />
-            <motion.div
-              whileHover="hover"
-              whileTap="tap"
-              variants={buttonVariants}
-            >
-              <Button
-                onClick={handleAdd}
-                className="bg-blue-600 hover:bg-blue-700 flex items-center"
+
+              <div className="w-full">
+                <Input
+                  placeholder="键"
+                  {...register("key")}
+                  className="bg-gray-700 text-white"
+                />
+                {errors.key && (
+                  <p className="text-red-400 text-sm mt-1">{errors.key.message}</p>
+                )}
+              </div>
+
+              <div className="w-full">
+                <Input
+                  placeholder="值"
+                  {...register("value")}
+                  className="bg-gray-700 text-white"
+                />
+                {errors.value && (
+                  <p className="text-red-400 text-sm mt-1">{errors.value.message}</p>
+                )}
+              </div>
+
+              <motion.div
+                whileHover="hover"
+                whileTap="tap"
+                variants={buttonVariants}
               >
-                <motion.span variants={iconVariants} className="inline-block">
-                  <Plus className="w-5 h-5 mr-1" />
-                </motion.span>
-                添加
-              </Button>
-            </motion.div>
-          </div>
+                <Button
+                  type="submit"
+                  className="bg-blue-600 hover:bg-blue-700 flex items-center"
+                >
+                  <motion.span variants={iconVariants} className="inline-block">
+                    <Plus className="w-5 h-5 mr-1" />
+                  </motion.span>
+                  添加
+                </Button>
+              </motion.div>
+            </div>
+          </form>
           <div className="mb-6">
-            <div className="relative w-full">
+            <motion.div
+              className="relative w-full"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
               <Input
                 placeholder="搜索变量..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="bg-gray-700 text-white pl-10"
               />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <motion.div
+                className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                animate={{
+                  rotate: search ? 10 : 0,
+                  scale: search ? 1.1 : 1,
+                }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
                 <Search className="w-5 h-5 text-gray-400" />
-              </div>
-            </div>
+              </motion.div>
+              {search && (
+                <motion.button
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setSearch("")}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <X className="w-5 h-5 text-gray-400 hover:text-gray-200 transition-colors" />
+                </motion.button>
+              )}
+            </motion.div>
           </div>
           <AnimatePresence>
             {viewMode === "list" ? (

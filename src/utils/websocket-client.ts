@@ -16,6 +16,14 @@ interface WebSocketClientOptions {
   debug?: boolean;
   autoReconnect?: boolean;
   binaryType?: "blob" | "arraybuffer";
+  proxy?: {
+    host: string;
+    port: number;
+    auth?: {
+      username: string;
+      password: string;
+    };
+  };
 }
 
 class WebSocketClient {
@@ -41,7 +49,10 @@ class WebSocketClient {
     lastDisconnectedAt: null as Date | null,
   };
 
+  private options: WebSocketClientOptions;
+
   constructor(options: WebSocketClientOptions) {
+    this.options = options;
     this.url = options.url;
     this.reconnectInterval = options.reconnectInterval || 5000;
     this.maxReconnectAttempts = options.maxReconnectAttempts || 5;
@@ -54,7 +65,15 @@ class WebSocketClient {
   }
 
   private connect() {
-    this.ws = new WebSocket(this.url);
+    let url = this.url;
+    
+    if (this.options.proxy) {
+      const { host, port, auth } = this.options.proxy;
+      const authString = auth ? `${auth.username}:${auth.password}@` : '';
+      url = `ws://${authString}${host}:${port}/proxy?target=${encodeURIComponent(this.url)}`;
+    }
+
+    this.ws = new WebSocket(url);
 
     this.ws.onopen = () => {
       this.reconnectAttempts = 0;

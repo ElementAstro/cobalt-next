@@ -29,16 +29,26 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Loader2 } from "lucide-react";
+import { Loader2, Code, ImageIcon, Settings, Wrench } from "lucide-react";
 
 const formSchema = z.object({
   name: z
     .string()
     .min(1, "应用名称不能为空")
-    .max(50, "应用名称不能超过50个字符"),
-  category: z.enum(["microsoft", "system", "tools"], {
+    .max(50, "应用名称不能超过50个字符")
+    .regex(
+      /^[a-zA-Z0-9\u4e00-\u9fa5\s\-_]+$/,
+      "名称只能包含字母、数字、中文、空格、-和_"
+    ),
+  category: z.enum(["microsoft", "system", "tools", "development", "media"], {
     required_error: "请选择应用类别",
   }),
+  url: z
+    .string()
+    .url("请输入有效的URL")
+    .refine((val) => val.startsWith("https://"), "必须使用HTTPS协议"),
+  icon: z.string().url("请输入有效的图标URL").optional(),
+  description: z.string().max(200, "描述不能超过200个字符").optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -70,10 +80,11 @@ export function AddAppDialog({
       const newApp: App = {
         id: Date.now().toString(),
         name: values.name,
-        icon: "/placeholder.svg?height=32&width=32",
         category: values.category,
         isPinned: false,
-        url: "https://www.example.com",
+        url: values.url,
+        description: values.description || "",
+        icon: values.icon || "/placeholder.svg?height=32&width=32",
       };
       await onAddApp(newApp);
       form.reset();
@@ -140,9 +151,41 @@ export function AddAppDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="microsoft">微软应用</SelectItem>
-                      <SelectItem value="system">系统工具</SelectItem>
-                      <SelectItem value="tools">常用工具</SelectItem>
+                      <SelectItem
+                        value="microsoft"
+                        className="flex items-center gap-2"
+                      >
+                        <ImageIcon className="h-4 w-4" />
+                        微软应用
+                      </SelectItem>
+                      <SelectItem
+                        value="system"
+                        className="flex items-center gap-2"
+                      >
+                        <Settings className="h-4 w-4" />
+                        系统工具
+                      </SelectItem>
+                      <SelectItem
+                        value="tools"
+                        className="flex items-center gap-2"
+                      >
+                        <Wrench className="h-4 w-4" />
+                        常用工具
+                      </SelectItem>
+                      <SelectItem
+                        value="development"
+                        className="flex items-center gap-2"
+                      >
+                        <Code className="h-4 w-4" />
+                        开发工具
+                      </SelectItem>
+                      <SelectItem
+                        value="media"
+                        className="flex items-center gap-2"
+                      >
+                        <ImageIcon className="h-4 w-4" />
+                        媒体工具
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

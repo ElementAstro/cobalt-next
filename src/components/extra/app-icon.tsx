@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Pin, PinOff, Trash2, Edit2, Heart } from "lucide-react";
+import { Pin, PinOff, Trash2, Edit2, Heart, ImageIcon, Code, Settings, Wrench } from "lucide-react";
+
+const categoryIcons = {
+  microsoft: ImageIcon,
+  system: Settings,
+  tools: Wrench,
+  development: Code,
+  media: ImageIcon,
+};
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -160,12 +168,26 @@ export function AppIcon({
                   )}
                   whileHover={{ rotate: 5 }}
                 >
-                  <Image
-                    src={icon}
-                    alt={name}
-                    fill
-                    className="object-contain"
-                  />
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={icon}
+                      alt={name}
+                      fill
+                      className="object-contain"
+                    />
+                    {category === "development" && (
+                      <Code className="absolute bottom-0 right-0 w-3 h-3 text-primary" />
+                    )}
+                    {category === "media" && (
+                      <ImageIcon className="absolute bottom-0 right-0 w-3 h-3 text-primary" />
+                    )}
+                    {category === "system" && (
+                      <Settings className="absolute bottom-0 right-0 w-3 h-3 text-primary" />
+                    )}
+                    {category === "tools" && (
+                      <Wrench className="absolute bottom-0 right-0 w-3 h-3 text-primary" />
+                    )}
+                  </div>
                   {isPinned && (
                     <motion.div
                       initial={{ opacity: 0, scale: 0 }}

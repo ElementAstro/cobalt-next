@@ -27,7 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Settings, Save, Upload, Trash2, RefreshCw } from "lucide-react";
+import { Settings, Save, Upload, Trash2, RefreshCw, Monitor, Radio, Palette } from "lucide-react";
 
 const xvfbSchema = z.object({
   display: z.string().regex(/^:\d+$/, "Display must be in format :99"),
@@ -237,22 +237,34 @@ export default function XvfbConfig() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="display">Display</Label>
+              <div className="relative">
+                <Label htmlFor="display" className="flex items-center gap-1">
+                  <Monitor className="h-4 w-4" />
+                  Display
+                </Label>
                 <Input
                   id="display"
                   value={initialConfig.display}
                   onChange={(e) => handleChange("display", e.target.value)}
                   placeholder=":99"
+                  className={errors.display ? "border-red-500" : ""}
                 />
+                {errors.display && (
+                  <span className="absolute -bottom-5 text-xs text-red-500">
+                    {errors.display.message}
+                  </span>
+                )}
               </div>
-              <div>
-                <Label htmlFor="resolution">Resolution</Label>
+              <div className="relative">
+                <Label htmlFor="resolution" className="flex items-center gap-1">
+                  <Radio className="h-4 w-4" />
+                  Resolution
+                </Label>
                 <Select
                   onValueChange={(value) => handleChange("resolution", value)}
                   value={initialConfig.resolution}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={errors.resolution ? "border-red-500" : ""}>
                     <SelectValue placeholder="Select resolution" />
                   </SelectTrigger>
                   <SelectContent>
@@ -262,6 +274,11 @@ export default function XvfbConfig() {
                     <SelectItem value="custom">Custom</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.resolution && (
+                  <span className="absolute -bottom-5 text-xs text-red-500">
+                    {errors.resolution.message}
+                  </span>
+                )}
               </div>
               {initialConfig.resolution === "custom" && (
                 <div>
@@ -276,13 +293,16 @@ export default function XvfbConfig() {
                   />
                 </div>
               )}
-              <div>
-                <Label htmlFor="colorDepth">Color Depth</Label>
+              <div className="relative">
+                <Label htmlFor="colorDepth" className="flex items-center gap-1">
+                  <Palette className="h-4 w-4" />
+                  Color Depth
+                </Label>
                 <Select
                   onValueChange={(value) => handleChange("colorDepth", value)}
                   value={initialConfig.colorDepth}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={errors.colorDepth ? "border-red-500" : ""}>
                     <SelectValue placeholder="Select color depth" />
                   </SelectTrigger>
                   <SelectContent>
@@ -292,6 +312,11 @@ export default function XvfbConfig() {
                     <SelectItem value="32">32-bit</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.colorDepth && (
+                  <span className="absolute -bottom-5 text-xs text-red-500">
+                    {errors.colorDepth.message}
+                  </span>
+                )}
               </div>
               <div>
                 <Label htmlFor="screen">Screen</Label>
