@@ -3,164 +3,134 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useGuidingStore } from "@/store/useGuidingStore";
-import { Gauge, Move, RotateCw, ZoomIn, ZoomOut } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Move } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CalibrationCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const workerRef = useRef<Worker | null>(null);
+  const { toast } = useToast();
+  const animationFrameRef = useRef<number | null>(null);
+
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [dpr, setDpr] = useState(1);
-  const [frameTime, setFrameTime] = useState(0);
-  const [showLabels, setShowLabels] = useState(true);
+  const [renderStats, setRenderStats] = useState({
+    fps: 0,
+    drawTime: 0,
+    lastFrameTime: performance.now(),
+  });
 
   const {
     showGrid,
     lineLength,
     showAnimation,
-    setLineLength,
     autoRotate,
     rotationSpeed,
     zoomLevel,
   } = useGuidingStore().calibration;
 
-  // 初始化设备像素比
-  useEffect(() => {
-    setDpr(window.devicePixelRatio || 1);
-  }, []);
-
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext("2d", { alpha: false });
-    if (!ctx) return;
+    // 初始化 DPR
+    try {
+      const newDpr = window.devicePixelRatio || 1;
+      if (newDpr < 1 || newDpr > 3) {
+        throw new Error(`Invalid device pixel ratio: ${newDpr}`);
+      }
+      setDpr(newDpr);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Device Pixel Ratio Error",
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
+      setDpr(1);
+    }
 
-    // 创建离屏canvas用于双缓冲
-    const offscreenCanvas = document.createElement("canvas");
-    const offscreenCtx = offscreenCanvas.getContext("2d");
-    if (!offscreenCtx) return;
+    // 初始化 worker
+    workerRef.current = new Worker(
+      new URL("../../workers/canvas.worker.ts", import.meta.url)
+    );
 
-    let rotation = 0;
-    let animationFrameId: number;
-    let lastTime = performance.now();
+    workerRef.current.onmessage = (event) => {
+      const { data } = event;
+      if (data.type === "render") {
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
 
-    const draw = () => {
-      const startTime = performance.now();
+        ctx.putImageData(data.imageData, 0, 0);
 
-      // 设置离屏canvas尺寸
+        // 更新渲染统计
+        const now = performance.now();
+        setRenderStats((prev) => ({
+          fps: Math.round(1000 / (now - prev.lastFrameTime)),
+          drawTime: data.drawTime,
+          lastFrameTime: now,
+        }));
+      } else if (data.type === "error") {
+        toast({
+          variant: "destructive",
+          title: "Rendering Error",
+          description: data.error,
+        });
+      }
+    };
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      workerRef.current?.terminate();
+    };
+  }, [toast]);
+
+  // 渲染循环
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !workerRef.current) return;
+
+    const render = () => {
       const width = canvas.offsetWidth;
       const height = canvas.offsetHeight;
-      offscreenCanvas.width = width * dpr;
-      offscreenCanvas.height = height * dpr;
       canvas.width = width * dpr;
       canvas.height = height * dpr;
 
-      // 缩放离屏上下文
-      offscreenCtx.scale(dpr, dpr);
-      offscreenCtx.clearRect(0, 0, width, height);
+      workerRef.current?.postMessage({
+        type: "render",
+        width,
+        height,
+        dpr,
+        offset,
+        zoomLevel,
+        rotationSpeed,
+        autoRotate,
+        showGrid,
+        lineLength,
+        celestialObjects: [],
+        calibrationStatus: "idle",
+      });
 
-      // 应用变换
-      offscreenCtx.save();
-      offscreenCtx.translate(width / 2 + offset.x, height / 2 + offset.y);
-      offscreenCtx.scale(zoomLevel, zoomLevel);
-
-      // 应用旋转
-      if (autoRotate) {
-        rotation += rotationSpeed * 0.01;
+      if (showAnimation) {
+        animationFrameRef.current = requestAnimationFrame(render);
       }
-      offscreenCtx.rotate(rotation);
-
-      // 绘制背景
-      const gradient = offscreenCtx.createRadialGradient(
-        0, 0, 50,
-        0, 0, Math.max(width, height)
-      );
-      gradient.addColorStop(0, "#1f2937");
-      gradient.addColorStop(1, "#111827");
-      offscreenCtx.fillStyle = gradient;
-      offscreenCtx.fillRect(-width / 2, -height / 2, width, height);
-
-      // 绘制坐标系
-      offscreenCtx.strokeStyle = "#4b5563";
-      offscreenCtx.lineWidth = 1;
-      offscreenCtx.beginPath();
-      offscreenCtx.moveTo(-width / 2, 0);
-      offscreenCtx.lineTo(width / 2, 0);
-      offscreenCtx.moveTo(0, -height / 2);
-      offscreenCtx.lineTo(0, height / 2);
-      offscreenCtx.stroke();
-
-      // 绘制坐标轴标签
-      if (showLabels) {
-        offscreenCtx.fillStyle = "#6b7280";
-        offscreenCtx.font = "10px Arial";
-        offscreenCtx.textAlign = "center";
-        offscreenCtx.textBaseline = "middle";
-        
-        // X轴
-        offscreenCtx.fillText("RA", width / 2 - 30, 10);
-        offscreenCtx.fillText("+", width / 2 - 40, 10);
-        
-        // Y轴
-        offscreenCtx.save();
-        offscreenCtx.rotate(-Math.PI / 2);
-        offscreenCtx.fillText("DEC", -height / 2 + 30, 10);
-        offscreenCtx.fillText("+", -height / 2 + 40, 10);
-        offscreenCtx.restore();
-      }
-
-      // 绘制网格
-      if (showGrid) {
-        offscreenCtx.strokeStyle = "#374151";
-        const gridSize = 30;
-        for (let i = -width / 2; i < width / 2; i += gridSize) {
-          offscreenCtx.beginPath();
-          offscreenCtx.moveTo(i, -height / 2);
-          offscreenCtx.lineTo(i, height / 2);
-          offscreenCtx.stroke();
-        }
-        for (let i = -height / 2; i < height / 2; i += gridSize) {
-          offscreenCtx.beginPath();
-          offscreenCtx.moveTo(-width / 2, i);
-          offscreenCtx.lineTo(width / 2, i);
-          offscreenCtx.stroke();
-        }
-      }
-
-      // 绘制校准线
-      offscreenCtx.strokeStyle = "#f87171";
-      offscreenCtx.lineWidth = 2;
-      offscreenCtx.beginPath();
-      offscreenCtx.moveTo(0, 0);
-      offscreenCtx.lineTo(lineLength, -lineLength / 2);
-      offscreenCtx.stroke();
-
-      offscreenCtx.strokeStyle = "#60a5fa";
-      offscreenCtx.beginPath();
-      offscreenCtx.moveTo(0, 0);
-      offscreenCtx.lineTo(-lineLength / 2, lineLength);
-      offscreenCtx.stroke();
-
-      offscreenCtx.restore();
-
-      // 将离屏内容绘制到主canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(offscreenCanvas, 0, 0);
-
-      // 计算帧时间
-      const currentTime = performance.now();
-      setFrameTime(currentTime - lastTime);
-      lastTime = currentTime;
-
-      animationFrameId = requestAnimationFrame(draw);
     };
 
-    draw();
+    render();
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
   }, [
     showGrid,
@@ -171,10 +141,9 @@ export default function CalibrationCanvas() {
     zoomLevel,
     offset,
     dpr,
-    showLabels,
   ]);
 
-  // 处理指针事件
+  // 指针事件处理
   const handlePointerDown = (e: React.PointerEvent) => {
     if (e.isPrimary) {
       setIsDragging(true);
@@ -218,13 +187,13 @@ export default function CalibrationCanvas() {
           imageRendering: "crisp-edges",
         }}
       />
-      
+
       <TooltipProvider>
         <div className="absolute bottom-2 right-2 flex items-center gap-2">
           <div className="text-xs text-gray-400 bg-gray-800/50 px-2 py-1 rounded">
-            FPS: {frameTime > 0 ? Math.round(1000 / frameTime) : 0}
+            FPS: {renderStats.fps}
           </div>
-          
+
           <Tooltip>
             <TooltipTrigger asChild>
               <button

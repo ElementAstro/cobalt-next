@@ -35,6 +35,7 @@ import "prismjs/plugins/line-numbers/prism-line-numbers.js";
 import "prismjs/plugins/line-numbers/prism-line-numbers.css";
 import "prismjs/plugins/line-highlight/prism-line-highlight.js";
 import "prismjs/plugins/line-highlight/prism-line-highlight.css";
+import { cn } from "@/lib/utils";
 
 interface CodeBlockProps {
   code: string;
@@ -170,186 +171,170 @@ export function CodeBlock({
 
   return (
     <div
-      className={`relative group p-4 rounded-lg shadow ${
-        customBackground ? `bg-[${customBackground}]` : "bg-gray-800"
-      } overflow-auto`}
+      className={cn(
+        "relative group rounded-lg shadow-lg overflow-hidden",
+        customBackground ? `bg-[${customBackground}]` : "bg-gray-800/95"
+      )}
     >
-      <pre
-        ref={codeRef}
-        className={`${showLineNumbersState ? "line-numbers" : ""} ${
-          fontSizes[currentFontSize]
-        } ${
-          isFullscreen ? "fixed inset-0 z-50 overflow-auto bg-gray-900 p-4" : ""
-        } ${isWordWrap ? "whitespace-pre-wrap" : "whitespace-pre"} ${
-          isFolded ? "max-h-32 overflow-hidden" : ""
-        } ${
-          currentTheme === "dark" ? "text-white" : "text-black"
-        } ${className}`}
-        data-line={highlightLines.join(",")}
-        style={{ backgroundColor: customBackground || undefined }}
-      >
-        <code className={`language-${language}`}>{code}</code>
-      </pre>
-
-      {/* Top Right Controls */}
-      <div className="absolute right-2 top-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={copyToClipboard}
-          aria-label={copied ? "Copied" : "Copy code to clipboard"}
-        >
-          {copied ? (
-            <Check className="h-4 w-4" />
-          ) : (
-            <Copy className="h-4 w-4" />
+      {/* 代码区域 */}
+      <div className="relative">
+        <pre
+          ref={codeRef}
+          className={cn(
+            "p-4",
+            showLineNumbersState && "line-numbers",
+            fontSizes[currentFontSize],
+            isWordWrap ? "whitespace-pre-wrap" : "whitespace-pre",
+            isFolded && "max-h-32",
+            currentTheme === "dark" ? "text-white" : "text-black",
+            isFullscreen &&
+              "fixed inset-0 z-50 bg-gray-900/95 overflow-auto p-6",
+            className
           )}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={resetCode}
-          aria-label="Reset code"
+          data-line={highlightLines.join(",")}
+          style={{ backgroundColor: customBackground || undefined }}
         >
-          <RotateCcw className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleFullscreen}
-          aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-        >
-          {isFullscreen ? (
-            <Minimize2 className="h-4 w-4" />
-          ) : (
-            <Maximize2 className="h-4 w-4" />
-          )}
-        </Button>
-      </div>
+          <code className={`language-${language}`}>{code}</code>
+        </pre>
 
-      {/* Bottom Left Controls */}
-      <div className="absolute left-2 bottom-2 flex items-center space-x-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gray-700 bg-opacity-80 p-2 rounded-lg">
-        {/* Line Numbers Toggle */}
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="line-numbers"
-            checked={showLineNumbersState}
-            onCheckedChange={(checked) => setShowLineNumbersState(!!checked)}
-          />
-          <Label htmlFor="line-numbers">Line Numbers</Label>
-        </div>
-
-        {/* Theme Selector */}
-        <Select
-          value={currentTheme}
-          onValueChange={(value) =>
-            setCurrentTheme(value as typeof currentTheme)
-          }
-        >
-          <SelectTrigger className="w-[100px]">
-            <SelectValue placeholder="Theme" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="light">Light</SelectItem>
-            <SelectItem value="dark">Dark</SelectItem>
-            <SelectItem value="material">Material</SelectItem>
-            <SelectItem value="coy">Coy</SelectItem>
-            <SelectItem value="twilight">Twilight</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Font Size Selector */}
-        <Select
-          value={currentFontSize}
-          onValueChange={(value) =>
-            setCurrentFontSize(value as typeof currentFontSize)
-          }
-        >
-          <SelectTrigger className="w-[100px]">
-            <SelectValue placeholder="Size" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="xs">XS</SelectItem>
-            <SelectItem value="small">Small</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="large">Large</SelectItem>
-            <SelectItem value="xl">XL</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Word Wrap Toggle */}
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="word-wrap"
-            checked={isWordWrap}
-            onCheckedChange={() => setIsWordWrap(!isWordWrap)}
-          />
-          <Label htmlFor="word-wrap">Word Wrap</Label>
-        </div>
-
-        {/* Search */}
-        {showSearch && (
-          <div className="flex items-center space-x-2">
-            <Input
-              type="text"
-              value={searchQuery}
-              onChange={handleSearch}
-              placeholder="Search..."
-              className="w-32 h-8"
-              aria-label="Search code"
-            />
-            <Search className="h-4 w-4 text-gray-300" />
-          </div>
-        )}
-
-        {/* Fold/Unfold */}
-        {showFold && (
+        {/* 顶部工具栏 - 始终可见 */}
+        <div className="absolute top-0 right-0 p-2 flex items-center space-x-2 bg-gray-800/80 backdrop-blur rounded-bl-lg">
           <Button
             variant="ghost"
-            size="sm"
-            onClick={() => setIsFolded(!isFolded)}
-            aria-label={isFolded ? "Unfold code" : "Fold code"}
-            className="flex items-center gap-1"
+            size="icon"
+            className="h-8 w-8 text-gray-400 hover:text-white"
+            onClick={copyToClipboard}
           >
-            {isFolded ? (
+            {copied ? (
               <Check className="h-4 w-4" />
             ) : (
-              <Check className="h-4 w-4" />
+              <Copy className="h-4 w-4" />
             )}
-            {isFolded ? "Unfold" : "Fold"}
           </Button>
-        )}
-
-        {/* Export */}
-        {showExport && (
           <Button
             variant="ghost"
-            size="sm"
-            onClick={() => {
-              const blob = new Blob([code], { type: "text/plain" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = `code.${language}`;
-              a.click();
-              URL.revokeObjectURL(url);
-            }}
-            aria-label="Export code"
-            className="flex items-center gap-1"
+            size="icon"
+            className="h-8 w-8 text-gray-400 hover:text-white"
+            onClick={toggleFullscreen}
           >
-            <Download className="h-4 w-4" />
-            Export
+            {isFullscreen ? (
+              <Minimize2 className="h-4 w-4" />
+            ) : (
+              <Maximize2 className="h-4 w-4" />
+            )}
           </Button>
-        )}
+        </div>
+      </div>
 
-        {/* Background Color Picker */}
-        <Input
-          type="color"
-          value={customBackground || "#1e293b"}
-          onChange={(e) => setCustomBackground(e.target.value)}
-          className="w-6 h-6 p-0 border-none"
-          aria-label="Select background color"
-        />
+      {/* 底部工具栏 - 悬停时显示 */}
+      <div className="absolute inset-x-0 bottom-0 transform translate-y-full group-hover:translate-y-0 transition-transform duration-200">
+        <div className="p-2 bg-gray-800/95 backdrop-blur flex flex-wrap gap-2 items-center justify-between">
+          {/* 左侧控件组 */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="line-numbers"
+                checked={showLineNumbersState}
+                onCheckedChange={(checked) =>
+                  setShowLineNumbersState(!!checked)
+                }
+              />
+              <Label htmlFor="line-numbers" className="text-xs text-gray-300">
+                Lines
+              </Label>
+            </div>
+
+            <Select
+              value={currentTheme}
+              onValueChange={(value) =>
+                setCurrentTheme(value as typeof currentTheme)
+              }
+            >
+              <SelectTrigger className="h-8 w-20">
+                <SelectValue placeholder="Theme" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.keys(themes).map((theme) => (
+                  <SelectItem key={theme} value={theme}>
+                    {theme.charAt(0).toUpperCase() + theme.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={currentFontSize}
+              onValueChange={(value) =>
+                setCurrentFontSize(value as typeof currentFontSize)
+              }
+            >
+              <SelectTrigger className="h-8 w-20">
+                <SelectValue placeholder="Size" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.keys(fontSizes).map((size) => (
+                  <SelectItem key={size} value={size}>
+                    {size.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* 右侧控件组 */}
+          <div className="flex flex-wrap items-center gap-2">
+            {showSearch && (
+              <div className="flex items-center gap-2 min-w-[8rem]">
+                <Input
+                  type="text"
+                  value={searchQuery}
+                  onChange={handleSearch}
+                  placeholder="Search..."
+                  className="h-8 text-sm"
+                />
+                <Search className="h-4 w-4 text-gray-400" />
+              </div>
+            )}
+
+            {showFold && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsFolded(!isFolded)}
+                className="h-8"
+              >
+                {isFolded ? "Unfold" : "Fold"}
+              </Button>
+            )}
+
+            {showExport && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const blob = new Blob([code], { type: "text/plain" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `code.${language}`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="h-8"
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Export
+              </Button>
+            )}
+
+            <Input
+              type="color"
+              value={customBackground || "#1e293b"}
+              onChange={(e) => setCustomBackground(e.target.value)}
+              className="w-8 h-8 p-0 border-none rounded-full overflow-hidden"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

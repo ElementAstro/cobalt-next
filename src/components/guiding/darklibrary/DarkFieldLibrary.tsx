@@ -91,7 +91,7 @@ export default function DarkFieldLibrary() {
     resetSettings,
     startCreation,
     cancelCreation,
-  } = store.settings;
+  } = store.darkField;
 
   const isLandscape = useMediaQuery({
     query: "(orientation: landscape) and (max-width: 1024px)",

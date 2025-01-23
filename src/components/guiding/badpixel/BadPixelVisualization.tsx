@@ -13,9 +13,11 @@ import {
   ZAxis,
 } from "recharts";
 import { useTheme } from "next-themes";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Loader2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface BadPixelVisualizationProps {
   data: {
@@ -30,6 +32,8 @@ export default function BadPixelVisualization({
   data,
 }: BadPixelVisualizationProps) {
   const { theme } = useTheme();
+  const [zoom, setZoom] = useState(1);
+  const [autoScale, setAutoScale] = useState(true);
 
   const { hotPixels, coldPixels } = useMemo(() => {
     const hot = data.hotPixels.map((pixel) => ({
@@ -49,19 +53,30 @@ export default function BadPixelVisualization({
     return { hotPixels: hot, coldPixels: cold };
   }, [data]);
 
-  const chartColors = theme === "dark" ? {
-    background: "#1f2937",
-    grid: "#374151",
-    text: "#f3f4f6",
-    hot: "#ef4444",
-    cold: "#3b82f6"
-  } : {
-    background: "#ffffff",
-    grid: "#e5e7eb",
-    text: "#111827",
-    hot: "#dc2626",
-    cold: "#2563eb"
-  };
+  const chartColors =
+    theme === "dark"
+      ? {
+          background: "#1f2937",
+          grid: "#374151",
+          text: "#f3f4f6",
+          hot: "#ef4444",
+          cold: "#3b82f6",
+        }
+      : {
+          background: "#ffffff",
+          grid: "#e5e7eb",
+          text: "#111827",
+          hot: "#dc2626",
+          cold: "#2563eb",
+        };
+
+  const zoomedDomain = useMemo(
+    () => ({
+      x: [0, data.width / zoom],
+      y: [0, data.height / zoom],
+    }),
+    [data.width, data.height, zoom]
+  );
 
   if (!data.width || !data.height) {
     return (
@@ -74,6 +89,34 @@ export default function BadPixelVisualization({
   return (
     <div className="w-full h-full min-h-[400px] relative">
       <div className="absolute top-4 right-4 z-10 flex space-x-2">
+        <div className="flex gap-2 bg-gray-800/80 backdrop-blur-sm p-2 rounded-lg">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setZoom((z) => Math.min(z * 1.2, 4))}
+            disabled={zoom >= 4}
+          >
+            <ZoomIn className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setZoom((z) => Math.max(z / 1.2, 1))}
+            disabled={zoom <= 1}
+          >
+            <ZoomOut className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setZoom(1);
+              setAutoScale(true);
+            }}
+          >
+            <RotateCcw className="w-4 h-4" />
+          </Button>
+        </div>
         <Badge variant="secondary" className="bg-red-500/20 text-red-500">
           热噪点: {data.hotPixels.length}
         </Badge>
@@ -87,17 +130,14 @@ export default function BadPixelVisualization({
           margin={{ top: 20, right: 20, bottom: 70, left: 70 }}
           style={{ background: chartColors.background }}
         >
-          <CartesianGrid 
-            strokeDasharray="3 3" 
-            stroke={chartColors.grid}
-          />
-          
+          <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+
           <XAxis
             type="number"
             dataKey="x"
             name="X坐标"
             unit="px"
-            domain={[0, data.width]}
+            domain={zoomedDomain.x}
             tick={{ fill: chartColors.text }}
             label={{
               value: "X坐标",
@@ -106,13 +146,13 @@ export default function BadPixelVisualization({
               fill: chartColors.text,
             }}
           />
-          
+
           <YAxis
             type="number"
             dataKey="y"
             name="Y坐标"
             unit="px"
-            domain={[0, data.height]}
+            domain={zoomedDomain.y}
             tick={{ fill: chartColors.text }}
             label={{
               value: "Y坐标",
@@ -168,14 +208,14 @@ export default function BadPixelVisualization({
           />
 
           {/* 添加参考线 */}
-          <ReferenceLine 
-            x={data.width / 2} 
-            stroke={chartColors.grid} 
+          <ReferenceLine
+            x={data.width / 2}
+            stroke={chartColors.grid}
             strokeDasharray="3 3"
           />
-          <ReferenceLine 
-            y={data.height / 2} 
-            stroke={chartColors.grid} 
+          <ReferenceLine
+            y={data.height / 2}
+            stroke={chartColors.grid}
             strokeDasharray="3 3"
           />
         </ScatterChart>

@@ -5,7 +5,6 @@ import { motion, AnimatePresence, Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -20,11 +19,18 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Camera, Pause, Play, RefreshCw, Settings, Save, Upload } from "lucide-react";
 import {
-  useExposureStore,
-  ExposureSettings,
-} from "@/store/useDashboardStore";
+  Camera,
+  Pause,
+  Play,
+  RefreshCw,
+  Settings,
+  Save,
+  Upload,
+} from "lucide-react";
+import { useExposureStore, ExposureSettings } from "@/store/useDashboardStore";
+import { AnimatedCircularProgressBar } from "@/components/ui/animated-circular-progress-bar";
+import { cn } from "@/lib/utils";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0, scale: 0.95 },
@@ -42,9 +48,9 @@ const containerVariants: Variants = {
     scale: 0.95,
     transition: {
       duration: 0.2,
-      ease: "easeInOut"
-    }
-  }
+      ease: "easeInOut",
+    },
+  },
 };
 
 const itemVariants: Variants = {
@@ -56,18 +62,18 @@ const itemVariants: Variants = {
     transition: {
       type: "spring",
       stiffness: 100,
-      damping: 15
-    }
+      damping: 15,
+    },
   },
   hover: {
     scale: 1.05,
     transition: {
-      duration: 0.2
-    }
+      duration: 0.2,
+    },
   },
   tap: {
-    scale: 0.95
-  }
+    scale: 0.95,
+  },
 };
 
 const progressVariants: Variants = {
@@ -76,9 +82,9 @@ const progressVariants: Variants = {
     width: "100%",
     transition: {
       duration: 1,
-      ease: "linear"
-    }
-  }
+      ease: "linear",
+    },
+  },
 };
 
 interface ExposureControlsProps {
@@ -185,7 +191,9 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
                       <Checkbox
                         id="burstMode"
                         checked={burstMode}
-                        onCheckedChange={(checked) => toggleBurstMode(checked as boolean)}
+                        onCheckedChange={(checked) =>
+                          toggleBurstMode(checked as boolean)
+                        }
                         className=""
                       />
                     </motion.div>
@@ -199,7 +207,9 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
                           min="2"
                           max="10"
                           value={burstCount}
-                          onChange={(e) => setBurstCount(Number(e.target.value))}
+                          onChange={(e) =>
+                            setBurstCount(Number(e.target.value))
+                          }
                           className="mt-1 bg-gray-700 text-white w-full"
                         />
                       </motion.div>
@@ -356,15 +366,62 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
             variants={itemVariants}
             initial="hidden"
             animate="visible"
-            className="w-full mb-4"
+            className="w-full space-y-4 flex flex-col items-center"
           >
-            <Progress value={progress} className="w-full mb-4" />
+            {/* Replace Progress with AnimatedCircularProgressBar */}
+            <motion.div
+              variants={itemVariants}
+              className="relative flex items-center justify-center"
+            >
+              <AnimatedCircularProgressBar
+                max={100}
+                min={0}
+                value={progress}
+                gaugePrimaryColor="#10B981" // Green color for primary
+                gaugeSecondaryColor="#1F2937" // Dark color for background
+                className="transform-gpu"
+              />
+              <motion.div
+                className="absolute inset-0 flex items-center justify-center text-sm text-gray-400"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                {isPaused ? (
+                  <span className="flex items-center gap-1">
+                    <Pause className="w-4 h-4" />
+                    已暂停
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1">
+                    <Camera className="w-4 h-4" />
+                    曝光中
+                  </span>
+                )}
+              </motion.div>
+            </motion.div>
+
             <motion.div variants={itemVariants} className="w-full">
               <Button
-                className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-full transition duration-200 flex items-center justify-center space-x-2"
+                className={cn(
+                  "w-full font-bold py-2 px-4 rounded-full transition duration-200 flex items-center justify-center space-x-2",
+                  isPaused
+                    ? "bg-green-500 hover:bg-green-600"
+                    : "bg-yellow-500 hover:bg-yellow-600"
+                )}
                 onClick={onPause}
               >
-                {isPaused ? <Play /> : <Pause />}
+                {isPaused ? (
+                  <>
+                    <Play className="w-4 h-4" />
+                    <span>继续</span>
+                  </>
+                ) : (
+                  <>
+                    <Pause className="w-4 h-4" />
+                    <span>暂停</span>
+                  </>
+                )}
               </Button>
             </motion.div>
           </motion.div>

@@ -1,16 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useBadPixelStore } from "@/store/guiding/useBadPixelStore";
-import { X, Settings } from "lucide-react";
+import {
+  X,
+  Settings,
+  LayoutGrid,
+  LineChart,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import SettingsPanel from "./SettingsPanel";
 import PixelInfo from "./PixelInfo";
 import ActionButtons from "./ActionButtons";
 import BadPixelVisualization from "./BadPixelVisualization";
 import { useToast } from "@/hooks/use-toast";
+import { useMediaQuery } from "react-responsive";
 
 export default function BadPixelInterface() {
   const { toast } = useToast();
@@ -23,22 +31,12 @@ export default function BadPixelInterface() {
     generateBadPixels,
     addBadPixel,
   } = useBadPixelStore();
-  const [isLandscape, setIsLandscape] = useState(false);
+  const isLandscape = useMediaQuery({ query: "(min-width: 768px)" });
+  const [isLoading, setIsLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [manualPixel, setManualPixel] = useState("");
   const [visualMode, setVisualMode] = useState<"table" | "graph">("table");
   const [expanded, setExpanded] = useState(false);
-
-  useEffect(() => {
-    const checkOrientation = () => {
-      setIsLandscape(window.innerWidth > window.innerHeight);
-    };
-
-    window.addEventListener("resize", checkOrientation);
-    checkOrientation();
-
-    return () => window.removeEventListener("resize", checkOrientation);
-  }, []);
 
   useEffect(() => {
     if (options.autoRefresh) {
@@ -57,6 +55,7 @@ export default function BadPixelInterface() {
 
   const handleGenerateBadPixels = async () => {
     try {
+      setIsLoading(true);
       await generateBadPixels();
       toast({
         title: "成功生成坏点数据",
@@ -68,6 +67,8 @@ export default function BadPixelInterface() {
         description: error instanceof Error ? error.message : "未知错误",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -105,41 +106,43 @@ export default function BadPixelInterface() {
     });
   };
 
-  const containerClass = isLandscape
-    ? "grid grid-cols-2 gap-4 p-4 max-h-screen overflow-hidden"
-    : "p-4";
-
   return (
-    <div className="min-h-screen bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
-      <div className={containerClass}>
-        <Card
-          className={`shadow-lg rounded-lg ${
-            isLandscape ? "h-[calc(100vh-2rem)]" : ""
-          }`}
-        >
-          <CardContent
-            className={`p-4 ${isLandscape ? "h-full overflow-y-auto" : ""}`}
-          >
-            <div className="flex justify-between items-center mb-4 sticky top-0 bg-white dark:bg-gray-800 z-10 py-2">
-              <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-                完善坏点映射图
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+      <div
+        className={`container mx-auto ${
+          isLandscape ? "grid grid-cols-2 gap-6" : "space-y-6"
+        } p-4`}
+      >
+        <Card className="bg-gray-800/50 backdrop-blur border-gray-700">
+          <CardContent className="p-6 space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
+                <AlertTriangle className="w-6 h-6 text-yellow-500" />
+                坏点映射管理
               </h2>
-              <div className="flex space-x-2">
+              <div className="flex gap-2">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={() =>
                     setVisualMode((v) => (v === "table" ? "graph" : "table"))
                   }
+                  className="hover:bg-gray-700"
                 >
+                  {visualMode === "table" ? (
+                    <LayoutGrid className="w-4 h-4 mr-2" />
+                  ) : (
+                    <LineChart className="w-4 h-4 mr-2" />
+                  )}
                   {visualMode === "table" ? "图表模式" : "表格模式"}
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setShowSettings(!showSettings)}
+                  className="hover:bg-gray-700"
                 >
-                  <Settings className="h-5 w-5" />
+                  <Settings className="w-5 h-5" />
                 </Button>
               </div>
             </div>
@@ -150,7 +153,7 @@ export default function BadPixelInterface() {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="mb-4 p-4 bg-white dark:bg-gray-700 rounded-md shadow-inner"
+                  className="mb-4 p-4 bg-gray-800 rounded-md shadow-inner"
                 >
                   <SettingsPanel />
                 </motion.div>
@@ -175,6 +178,12 @@ export default function BadPixelInterface() {
               manualPixel={manualPixel}
               setManualPixel={setManualPixel}
             />
+
+            {isLoading && (
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-white" />
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -184,7 +193,6 @@ export default function BadPixelInterface() {
               <div className="h-full flex flex-col">
                 <h3 className="text-lg font-medium mb-4">坏点分布图</h3>
                 <div className="flex-1 bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                  {/* 这里可以添加坏点分布的可视化图表 */}
                   <BadPixelVisualization data={data} />
                 </div>
               </div>

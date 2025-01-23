@@ -3,16 +3,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import {
-  Frown,
-  RefreshCcw,
-  Home,
-  Copy,
-  Camera,
-  Telescope,
-  Satellite,
-  Star,
-} from "lucide-react";
+import { Frown, RefreshCcw, Home, Copy, Camera, Telescope } from "lucide-react";
 import html2canvas from "html2canvas";
 import Link from "next/link";
 import { useMediaQuery } from "react-responsive";
@@ -23,19 +14,15 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
   TooltipProvider,
   Tooltip,
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { motion } from "framer-motion";
 
 export const config404 = {
   errorCode: "404_PAGE_NOT_FOUND",
@@ -204,9 +191,20 @@ export default function BlueScreen404({
               <AccordionContent>
                 <Card className="border-gray-800 bg-gray-900/50 backdrop-blur">
                   <CardContent className="relative p-4">
-                    <pre className="whitespace-pre-wrap text-xs bg-gray-800 p-3 rounded">
-                      {errorDetails}
-                    </pre>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <ScrollArea className="h-[240px] w-full rounded-md border border-gray-700 bg-gray-800/50">
+                        <div className="p-4">
+                          <pre className="text-xs text-gray-300 font-mono whitespace-pre-wrap">
+                            {errorDetails}
+                          </pre>
+                        </div>
+                        <ScrollBar orientation="vertical" />
+                      </ScrollArea>
+                    </motion.div>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button

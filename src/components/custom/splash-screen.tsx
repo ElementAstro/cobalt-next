@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LoadingAnimation } from "./loading-animation";
 import Image from "next/image";
 import useMediaQuery from "react-responsive";
-import ParticleBackground from "../about/particle-background";
+import { Particles } from "@/components/ui/particles";
 
 export default function SplashScreen() {
   const [loading, setLoading] = useState(true);
@@ -14,7 +14,7 @@ export default function SplashScreen() {
   const contentRef = useRef<HTMLDivElement>(null);
   const isLandscape = useMediaQuery({ query: "(orientation: landscape)" });
 
-  // Enhanced loading simulation
+  // 使用相同的动画和加载逻辑
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
@@ -60,6 +60,7 @@ export default function SplashScreen() {
     }
   }, [loading]);
 
+  // 动画变体
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -115,7 +116,15 @@ export default function SplashScreen() {
           animate="visible"
           exit="exit"
         >
-          <ParticleBackground />
+          <Particles
+            className="absolute inset-0"
+            quantity={50}
+            staticity={30}
+            ease={100}
+            size={0.8}
+            color="#4B5563"
+          />
+
           <AnimatePresence mode="wait">
             {loading ? (
               <motion.div
@@ -131,6 +140,7 @@ export default function SplashScreen() {
                     width={isLandscape ? 180 : 120}
                     height={isLandscape ? 180 : 120}
                     className="drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+                    priority
                   />
                 </motion.div>
                 <motion.div variants={itemVariants} className="w-full max-w-md">
@@ -146,8 +156,7 @@ export default function SplashScreen() {
               >
                 <motion.h1
                   variants={itemVariants}
-                  className="text-4xl font-bold text-gray-100 text-center
-                    md:text-5xl lg:text-6xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"
+                  className="text-4xl font-bold text-center md:text-5xl lg:text-6xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"
                 >
                   欢迎来到 Cobalt
                 </motion.h1>

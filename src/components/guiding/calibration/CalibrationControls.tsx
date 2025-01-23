@@ -7,10 +7,10 @@ import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { useGuidingStore } from "@/store/useGuidingStore";
 import { motion } from "framer-motion";
-import { 
-  Settings, 
-  RotateCcw, 
-  Play, 
+import {
+  Settings,
+  RotateCcw,
+  Play,
   Pause,
   Grid,
   Zap,
@@ -18,11 +18,16 @@ import {
   ZoomIn,
   ZoomOut,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const calibrationSchema = z.object({
   lineLength: z.number().min(50).max(150),
@@ -121,7 +126,10 @@ export default function CalibrationControls() {
                 <p>启用/禁用动画效果</p>
               </TooltipContent>
             </Tooltip>
-            <Switch checked={showAnimation} onCheckedChange={setShowAnimation} />
+            <Switch
+              checked={showAnimation}
+              onCheckedChange={setShowAnimation}
+            />
           </div>
 
           {/* 线条长度 */}
