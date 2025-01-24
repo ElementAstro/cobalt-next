@@ -273,7 +273,7 @@ export default function Dashboard() {
             isOpen={offcanvasOpen}
             onClose={handleCloseOffcanvas}
             position="right"
-            size={isMobile ? "md" : "lg"}
+            size={isMobile ? "md" : "xl"}
             backdrop={true} 
             animation={{
               duration: 0.3,

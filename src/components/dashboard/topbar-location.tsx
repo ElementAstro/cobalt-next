@@ -386,9 +386,8 @@ export default function TopbarLocation() {
             }}
           >
             <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4" />
-              <span>纬度: {location.latitude.toFixed(2)}</span>
-              <span>经度: {location.longitude.toFixed(2)}</span>
+              <span>{location.latitude.toFixed(2)}</span>
+              <span>{location.longitude.toFixed(2)}</span>
             </div>
             <motion.div
               className="text-xs text-gray-300"

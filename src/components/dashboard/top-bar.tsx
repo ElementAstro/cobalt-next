@@ -195,7 +195,7 @@ export default function TopBar({ onOpenOffcanvas }: TopBarProps) {
             <span>{batteryLevel !== null ? `${batteryLevel}%` : "N/A"}</span>
           </motion.div>
           <motion.div
-            className="flex items-center space-x-1 text-white"
+            className="flex items-center space-x-1 text-white bg-gray-900"
             variants={itemVariants}
           >
             <span>

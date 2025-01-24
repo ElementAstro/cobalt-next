@@ -116,14 +116,6 @@ export default function SplashScreen() {
           animate="visible"
           exit="exit"
         >
-          <Particles
-            className="absolute inset-0"
-            quantity={50}
-            staticity={30}
-            ease={100}
-            size={0.8}
-            color="#4B5563"
-          />
 
           <AnimatePresence mode="wait">
             {loading ? (

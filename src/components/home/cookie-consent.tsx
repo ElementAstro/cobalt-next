@@ -395,6 +395,8 @@ export default function CookieConsent({
   }, [cookieOptions, cookieSearch]);
 
   const cookieExpirationProgress = useMemo(() => {
+    if (typeof window === "undefined") return 0;
+
     const storedConsent = localStorage.getItem("cookieConsent");
     if (!storedConsent) return 0;
 

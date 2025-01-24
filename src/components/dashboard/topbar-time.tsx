@@ -76,7 +76,7 @@ export default function WindowsTaskbarClock() {
   const [timeFormat, setTimeFormat] = useState<
     "default" | "spoken" | "military" | "iso" | "relative" | "unix"
   >("default");
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   const updateTime = useCallback(() => {
     setCurrentTime(new Date());
