@@ -57,13 +57,11 @@ interface ContextMenuState {
   x: number;
   y: number;
   operations: string[];
-  theme: "light" | "dark";
   setContextMenu: (data: {
     isVisible: boolean;
     x: number;
     y: number;
     operations: string[];
-    theme: "light" | "dark";
   }) => void;
   closeContextMenu: () => void;
   handleOperation: (operation: string) => void;
@@ -71,7 +69,6 @@ interface ContextMenuState {
 
 interface TrashBinState {
   deletedFiles: File[];
-  theme: "light" | "dark";
   restoreFile: (id: number) => void;
   emptyTrash: () => void;
   toggleTheme: () => void;
@@ -79,15 +76,17 @@ interface TrashBinState {
 
 interface TagManagerState {
   tags: string[];
-  theme: "light" | "dark";
-  addTag: (tag: string) => void;
-  removeTag: (tag: string) => void;
+  addGlobalTag: (tag: string) => void;
+  removeGlobalTag: (tag: string) => void;
   setTheme: (theme: "light" | "dark") => void;
 }
 
 interface SettingsState {
   options: CustomizationOptions;
   setOptions: (options: CustomizationOptions) => void;
+  theme: "light" | "dark" | "system";
+  fontSize: number;
+  resetSettings: () => Promise<void>;
 }
 
 interface SearchState {
@@ -116,6 +115,36 @@ interface SearchState {
   reset: () => void;
 }
 
+interface FilePreviewState {
+  previewFile: File | null;
+  showPreview: boolean;
+  showProperties: boolean;
+  showVersionHistory: boolean;
+  setPreviewFile: (file: File | null) => void;
+  togglePreview: (show?: boolean) => void;
+  toggleProperties: (show?: boolean) => void;
+  toggleVersionHistory: (show?: boolean) => void;
+}
+
+interface FileBreadcrumbState {
+  path: string[];
+  history: string[][];
+  currentHistoryIndex: number;
+  setPath: (path: string[]) => void;
+  goBack: () => void;
+  goForward: () => void;
+  addToHistory: (path: string[]) => void;
+}
+
+interface FileMetadataState {
+  favorites: string[];
+  fileTags: Record<string, string[]>;
+  addToFavorites: (fileId: string) => void;
+  removeFromFavorites: (fileId: string) => void;
+  addFileTag: (fileId: string, tag: string) => void;
+  removeFileTag: (fileId: string, tag: string) => void;
+}
+
 interface AppState
   extends FileUploadState,
     FileSystemState,
@@ -126,7 +155,10 @@ interface AppState
     TrashBinState,
     TagManagerState,
     SettingsState,
-    SearchState {}
+    SearchState,
+    FilePreviewState,
+    FileBreadcrumbState,
+    FileMetadataState {}
 
 export const useFilesystemStore = create<AppState>((set, get) => ({
   // File Upload
@@ -186,9 +218,8 @@ export const useFilesystemStore = create<AppState>((set, get) => ({
   x: 0,
   y: 0,
   operations: [],
-  theme: "light",
-  setContextMenu: ({ isVisible, x, y, operations, theme }) =>
-    set({ isVisible, x, y, operations, theme }),
+  setContextMenu: ({ isVisible, x, y, operations }) =>
+    set({ isVisible, x, y, operations }),
   closeContextMenu: () => set({ isVisible: false, operations: [] }),
   handleOperation: (operation: string) => {
     console.log(`Operation selected: ${operation}`);
@@ -209,11 +240,11 @@ export const useFilesystemStore = create<AppState>((set, get) => ({
 
   // Tag Manager
   tags: ["Important", "Work", "Personal"],
-  addTag: (tag) =>
+  addGlobalTag: (tag) =>
     set((state) => ({
       tags: state.tags.includes(tag) ? state.tags : [...state.tags, tag],
     })),
-  removeTag: (tag) =>
+  removeGlobalTag: (tag) =>
     set((state) => ({
       tags: state.tags.filter((t) => t !== tag),
     })),
@@ -224,7 +255,7 @@ export const useFilesystemStore = create<AppState>((set, get) => ({
     isOpen: false,
     onClose: () => {},
     options: {
-      gridSize: "medium",
+      gridSize: "small" as const,
       showHiddenFiles: false,
       listView: "comfortable",
       sortBy: "name",
@@ -236,6 +267,34 @@ export const useFilesystemStore = create<AppState>((set, get) => ({
     setOptions: () => {},
   },
   setOptions: (options) => set({ options }),
+  theme: "system" as const,
+  fontSize: 16,
+  resetSettings: async () => {
+    try {
+      set({
+        theme: "system" as const,
+        fontSize: 16,
+        options: {
+          isOpen: false,
+          onClose: () => {},
+          options: {
+            gridSize: "small" as const,
+            showHiddenFiles: false,
+            listView: "comfortable",
+            sortBy: "name",
+            sortDirection: "asc",
+            thumbnailQuality: "medium",
+            autoBackup: false,
+            defaultView: "grid",
+          },
+          setOptions: () => {},
+        },
+      });
+      return Promise.resolve();
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  },
 
   // Search
   searchTerm: "",
@@ -271,4 +330,78 @@ export const useFilesystemStore = create<AppState>((set, get) => ({
       owner: "",
       searchTags: "",
     }),
+
+  // File Preview State
+  previewFile: null,
+  showPreview: false,
+  showProperties: false,
+  showVersionHistory: false,
+  setPreviewFile: (file) => set({ previewFile: file }),
+  togglePreview: (show) =>
+    set((state) => ({ showPreview: show ?? !state.showPreview })),
+  toggleProperties: (show) =>
+    set((state) => ({ showProperties: show ?? !state.showProperties })),
+  toggleVersionHistory: (show) =>
+    set((state) => ({ showVersionHistory: show ?? !state.showVersionHistory })),
+
+  // Breadcrumb History State
+  path: [],
+  history: [[]],
+  currentHistoryIndex: 0,
+  setPath: (path) => {
+    set({ path });
+    get().addToHistory(path);
+  },
+  goBack: () => {
+    const { currentHistoryIndex, history } = get();
+    if (currentHistoryIndex > 0) {
+      set({
+        currentHistoryIndex: currentHistoryIndex - 1,
+        path: history[currentHistoryIndex - 1],
+      });
+    }
+  },
+  goForward: () => {
+    const { currentHistoryIndex, history } = get();
+    if (currentHistoryIndex < history.length - 1) {
+      set({
+        currentHistoryIndex: currentHistoryIndex + 1,
+        path: history[currentHistoryIndex + 1],
+      });
+    }
+  },
+  addToHistory: (path) => {
+    const { currentHistoryIndex, history } = get();
+    const newHistory = [...history.slice(0, currentHistoryIndex + 1), path];
+    set({
+      history: newHistory,
+      currentHistoryIndex: newHistory.length - 1,
+    });
+  },
+
+  // Metadata State
+  favorites: [],
+  fileTags: {},
+  addToFavorites: (fileId) =>
+    set((state) => ({
+      favorites: [...new Set([...state.favorites, fileId])],
+    })),
+  removeFromFavorites: (fileId) =>
+    set((state) => ({
+      favorites: state.favorites.filter((id) => id !== fileId),
+    })),
+  addFileTag: (fileId, tag) =>
+    set((state) => ({
+      fileTags: {
+        ...state.fileTags,
+        [fileId]: [...new Set([...(state.fileTags[fileId] || []), tag])],
+      },
+    })),
+  removeFileTag: (fileId, tag) =>
+    set((state) => ({
+      fileTags: {
+        ...state.fileTags,
+        [fileId]: (state.fileTags[fileId] || []).filter((t) => t !== tag),
+      },
+    })),
 }));

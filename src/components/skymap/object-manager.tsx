@@ -30,6 +30,7 @@ import {
   Globe,
   Sparkles,
   Search,
+  Flag,
 } from "lucide-react";
 import {
   Dialog,
@@ -54,7 +55,9 @@ const FilterPanel: FC<{
   setFilterMode: React.Dispatch<React.SetStateAction<FilterMode>>;
   all_tags: string[];
   all_flags: string[];
-}> = ({ filterMode, setFilterMode, all_tags, all_flags }) => {
+  onBatchMode: () => void;
+  onExportAll: () => void;
+}> = ({ filterMode, setFilterMode, all_tags, all_flags, onBatchMode, onExportAll }) => {
   return (
     <Card className="w-64 dark:bg-gray-800/50 backdrop-blur-sm">
       <CardHeader>
@@ -168,13 +171,21 @@ const FilterPanel: FC<{
         </div>
 
         <div className="space-y-2">
-          <Button variant="outline" className="w-full flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            className="w-full flex items-center gap-2"
+            onClick={onBatchMode}
+          >
             <List className="w-4 h-4" />
             批量操作
           </Button>
-          <Button variant="outline" className="w-full flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            className="w-full flex items-center gap-2"
+            onClick={onExportAll}
+          >
             <Download className="w-4 h-4" />
-            导出列表
+            导出全部
           </Button>
         </div>
       </CardContent>
@@ -274,7 +285,19 @@ const BatchOperationToolbar: FC<{
   selectedCount: number;
   onCancel: () => void;
   onBatchDelete: () => void;
-}> = ({ selectedCount, onCancel, onBatchDelete }) => {
+  onBatchExport: () => void;
+  onBatchUpdateTag: () => void;
+  onBatchUpdateFlag: () => void;
+  onFocusTarget: () => void;
+}> = ({
+  selectedCount,
+  onCancel,
+  onBatchDelete,
+  onBatchExport,
+  onBatchUpdateTag,
+  onBatchUpdateFlag,
+  onFocusTarget,
+}) => {
   return (
     <motion.div
       initial={{ y: 100 }}
@@ -288,11 +311,25 @@ const BatchOperationToolbar: FC<{
             <X className="w-4 h-4 mr-2" />
             取消选择
           </Button>
-          <Button
-            variant="destructive"
-            onClick={onBatchDelete}
-            className="flex items-center"
-          >
+          {selectedCount === 1 && (
+            <Button variant="outline" onClick={onFocusTarget}>
+              <Search className="w-4 h-4 mr-2" />
+              聚焦目标
+            </Button>
+          )}
+          <Button variant="outline" onClick={onBatchUpdateTag}>
+            <Star className="w-4 h-4 mr-2" />
+            批量标签
+          </Button>
+          <Button variant="outline" onClick={onBatchUpdateFlag}>
+            <Flag className="w-4 h-4 mr-2" />
+            批量标记
+          </Button>
+          <Button variant="outline" onClick={onBatchExport}>
+            <Download className="w-4 h-4 mr-2" />
+            导出选中
+          </Button>
+          <Button variant="destructive" onClick={onBatchDelete}>
             <Trash2 className="w-4 h-4 mr-2" />
             批量删除
           </Button>
@@ -563,6 +600,98 @@ const ObjectManagement: FC<ObjectManagementProps> = (props) => {
     clear_all_checked();
   };
 
+  const exportSelectedTargets = () => {
+    if (selectedTargets.length === 0) {
+      setPopupText("请先选择要导出的目标！");
+      setPopupDialog(true);
+      return;
+    }
+
+    const selectedData = selectedTargets.map((index) => {
+      const target = target_store[index];
+      return {
+        name: target.name,
+        ra: target.ra,
+        dec: target.dec,
+        type: target.target_type,
+        tag: target.tag,
+        flag: target.flag,
+        rotation: target.rotation,
+        size: target.size,
+      };
+    });
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      "Name,RA,Dec,Type,Tag,Flag,Rotation,Size\n" +
+      selectedData
+        .map(
+          (row) =>
+            `${row.name},${row.ra},${row.dec},${row.type},${row.tag},${row.flag},${row.rotation},${row.size}`
+        )
+        .join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `target_export_${new Date().toISOString()}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const batchUpdateTags = (newTag: string) => {
+    if (selectedTargets.length === 0) {
+      setPopupText("请先选择要更新的目标！");
+      setPopupDialog(true);
+      return;
+    }
+
+    selectedTargets.forEach((index) => {
+      store_target_set_tag({
+        index,
+        update_string: newTag,
+      });
+    });
+
+    save_all_targets();
+    setTagDialog(false);
+    setSelectedTargets([]);
+    setBatchMode(false);
+  };
+
+  const batchUpdateFlags = (newFlag: string) => {
+    if (selectedTargets.length === 0) {
+      setPopupText("请先选择要更新的目标！");
+      setPopupDialog(true);
+      return;
+    }
+
+    selectedTargets.forEach((index) => {
+      store_target_set_flag({
+        index,
+        update_string: newFlag,
+      });
+    });
+
+    save_all_targets();
+    setFlagDialog(false);
+    setSelectedTargets([]);
+    setBatchMode(false);
+  };
+
+  // 添加批量模式切换函数
+  const toggleBatchMode = () => {
+    setBatchMode(!batchMode);
+    if(!batchMode) {
+      setSelectedTargets([]);
+      clear_all_checked();
+    }
+  };
+
   return (
     <div className="flex flex-col lg:flex-row h-[80vh] gap-4 p-4 rounded-lg dark:bg-gray-900">
       {/* 左侧过滤器面板 */}
@@ -571,6 +700,8 @@ const ObjectManagement: FC<ObjectManagementProps> = (props) => {
         setFilterMode={setFilterMode}
         all_tags={all_tags}
         all_flags={all_flags}
+        onBatchMode={toggleBatchMode}
+        onExportAll={exportTargets}
       />
 
       {/* 主要内容区域 */}
@@ -647,6 +778,10 @@ const ObjectManagement: FC<ObjectManagementProps> = (props) => {
           selectedCount={selectedTargets.length}
           onCancel={handleCancelSelection}
           onBatchDelete={handleBatchDelete}
+          onBatchExport={exportSelectedTargets}
+          onBatchUpdateTag={() => setTagDialog(true)}
+          onBatchUpdateFlag={() => setFlagDialog(true)}
+          onFocusTarget={onFocusCenterTargetClicked}
         />
       )}
 

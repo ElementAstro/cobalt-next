@@ -19,6 +19,10 @@ export interface IDSOFramingObjectInfo {
   bmag?: number;
   vmag?: number;
   type?: string;
+  notes?: string;
+  groupIds?: string[];
+  lastObserved?: Date;
+  observationCount?: number;
 }
 
 export interface IDSOObjectDetailedInfo {
@@ -203,4 +207,102 @@ export interface IObservationPlan {
   targets: IDSOFramingObjectInfo[];
   priority: number;
   weather: string;
+}
+
+export interface ISearchHistory {
+  id: string;
+  query: string;
+  timestamp: Date;
+  resultCount: number;
+}
+
+export interface IFavoriteTarget extends IDSOFramingObjectInfo {
+  addedAt: Date;
+  notes: string;
+  customTags: string[];
+  id: string;
+}
+
+export interface IAdvancedFilter {
+  angular_size_min: number;
+  angular_size_max: number;
+  magnitude_min: number;
+  magnitude_max: number;
+  type: string[];
+  constellation: string[];
+  transit_month: number[];
+  sort: {
+    field: 'name' | 'magnitude' | 'size' | 'transit_date';
+    order: 'asc' | 'desc';
+  };
+}
+
+export interface ITargetGroup {
+  id: string;
+  name: string;
+  description: string;
+  targets: string[]; // target names
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ITargetNote {
+  targetName: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ITargetStatistics {
+  totalCount: number;
+  typeDistribution: { [key: string]: number };
+  tagDistribution: { [key: string]: number };
+  flagDistribution: { [key: string]: number };
+  averageSize: number;
+  monthlyDistribution: { [key: string]: number };
+}
+
+export interface ITargetObservationData {
+  observationId: string;
+  targetId: string;
+  timestamp: Date;
+  duration: number;
+  weather: string;
+  quality: number;
+  notes: string;
+  imageUrl?: string;
+}
+
+export interface ITargetWeatherCondition {
+  date: Date;
+  cloudCover: number;
+  seeing: number;
+  temperature: number;
+  humidity: number;
+  windSpeed: number;
+  precipitation: number;
+  moonPhase: number;
+  forecast: {
+    probability: number;
+    quality: string;
+  };
+}
+
+export interface IObservationSession {
+  id: string;
+  date: Date;
+  targets: Array<{
+    target: IDSOFramingObjectInfo;
+    startTime: Date;
+    duration: number;
+    priority: number;
+  }>;
+  weather: ITargetWeatherCondition;
+  equipment: {
+    telescope: string;
+    camera: string;
+    mount: string;
+    filters: string[];
+  };
+  notes: string;
 }

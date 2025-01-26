@@ -16,6 +16,8 @@ import {
   FileAudio,
   FileArchive,
   MoreVertical,
+  Star,
+  Tag,
 } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
@@ -28,6 +30,7 @@ import {
 import { useFilesystemStore } from "@/store/useFilesystemStore";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface FileItemProps {
@@ -35,7 +38,7 @@ interface FileItemProps {
     thumbnailUrl?: string;
     url?: string;
   };
-  index: number;
+  index?: number; // Made optional since it's unused
   viewMode: "grid" | "list";
   customOptions?: CustomizationOptionsData;
   onDelete?: (id: string) => void;
@@ -43,17 +46,36 @@ interface FileItemProps {
   onFileOperation?: (operation: FileOperation, file: File) => void;
   isSelectionMode?: boolean;
   onShowMenu?: (e: React.MouseEvent, file: File) => void;
+  layoutMode: "compact" | "comfortable" | "spacious";
+}
+
+// Add type for tags store structure
+interface TagsStore {
+  [key: string]: string[];
 }
 
 export const FileItem: React.FC<FileItemProps> = ({
   file,
-  index,
   viewMode,
   isSelectionMode = false,
   onShowMenu,
+  layoutMode,
 }) => {
-  const { selectedFileId, setSelectedFileId } = useFilesystemStore();
+  const {
+    selectedFileId,
+    setSelectedFileId,
+    favorites,
+    tags,
+    addToFavorites,
+    removeFromFavorites,
+  } = useFilesystemStore();
+
   const isSelected = selectedFileId === file.id.toString();
+  const isFavorite = favorites.includes(file.id.toString());
+
+  // Fix the tags indexing with proper type casting
+  const fileTags: string[] =
+    (tags as unknown as TagsStore)[file.id.toString()] || [];
 
   const {
     attributes,
@@ -129,7 +151,16 @@ export const FileItem: React.FC<FileItemProps> = ({
     // Round to 2 decimal places
     return `${formattedSize.toFixed(2)} ${units[i]}`;
   }
-  
+
+  const toggleFavorite = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isFavorite) {
+      removeFromFavorites(file.id.toString());
+    } else {
+      addToFavorites(file.id.toString());
+    }
+  };
+
   return (
     <SortableContext
       items={[file.id.toString()]}
@@ -141,11 +172,20 @@ export const FileItem: React.FC<FileItemProps> = ({
         {...attributes}
         {...listeners}
         whileHover={{ scale: 1.02 }}
-        className={`relative group ${
+        className={cn(
+          "relative group",
           viewMode === "grid"
-            ? "bg-gray-800/50 rounded-lg p-2 hover:bg-gray-700/50 transition-colors"
-            : "flex items-center space-x-2 p-1 hover:bg-gray-700/30 rounded-md"
-        }`}
+            ? cn(
+                "bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors",
+                layoutMode === "compact" ? "p-1" : 
+                layoutMode === "comfortable" ? "p-2" : "p-4"
+              )
+            : cn(
+                "flex items-center space-x-2 hover:bg-gray-700/30 rounded-md",
+                layoutMode === "compact" ? "py-1" : 
+                layoutMode === "comfortable" ? "py-2" : "py-4"
+              )
+        )}
         onClick={handleSelect}
       >
         {isSelectionMode && (
@@ -158,18 +198,51 @@ export const FileItem: React.FC<FileItemProps> = ({
           </div>
         )}
 
+        {/* 收藏按钮 */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            "absolute top-2 right-2 z-10",
+            isFavorite ? "text-yellow-500" : "text-gray-400"
+          )}
+          onClick={toggleFavorite}
+        >
+          <Star className="h-4 w-4" />
+        </Button>
+
+        {/* 标签显示 */}
+        {fileTags.length > 0 && (
+          <div className="absolute bottom-2 left-2 flex gap-1 flex-wrap">
+            {fileTags.map((tag: string) => (
+              <Badge key={tag} variant="outline" className="text-xs py-0 h-5">
+                <Tag className="w-3 h-3 mr-1" />
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
+
         {/* 缩略图/图标 */}
         <div
           className={cn(
             "relative",
-            viewMode === "grid" ? "w-full" : "w-10 h-10"
+            viewMode === "grid" 
+              ? layoutMode === "compact" ? "w-24 h-24" :
+                layoutMode === "comfortable" ? "w-32 h-32" : "w-40 h-40"
+              : layoutMode === "compact" ? "w-8 h-8" :
+                layoutMode === "comfortable" ? "w-10 h-10" : "w-12 h-12"
           )}
         >
           {renderThumbnail()}
         </div>
 
         {/* 文件信息 */}
-        <div className="flex-1 min-w-0 text-center md:text-left">
+        <div className={cn(
+          "flex-1 min-w-0",
+          layoutMode === "compact" ? "text-xs" :
+          layoutMode === "comfortable" ? "text-sm" : "text-base"
+        )}>
           <p className="font-medium truncate text-sm">{file.name}</p>
           {viewMode === "list" && (
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-xs text-muted-foreground mt-1">

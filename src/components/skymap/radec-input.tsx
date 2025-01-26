@@ -1,21 +1,22 @@
 "use client";
 
-import React, { ChangeEvent, FC, useEffect, useState } from "react";
+import React, {
+  ChangeEvent,
+  FC,
+  useEffect,
+  useState,
+  useCallback,
+  memo,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Compass,
   Copy,
   ClipboardCheck,
-  RotateCw,
-  Target,
   MapPin,
-  Globe,
-  Sun,
-  Moon,
-  Star,
 } from "lucide-react";
 
 interface IInputProps {
@@ -58,7 +59,7 @@ const presetButtonVariants = {
   tap: { scale: 0.95 },
 };
 
-export const RaInput: FC<IInputProps> = (props) => {
+const RaInput: FC<IInputProps> = (props) => {
   const [degree, setDegree] = useState("0");
   const [minute, setMinute] = useState("0");
   const [second, setSecond] = useState("0");
@@ -68,6 +69,45 @@ export const RaInput: FC<IInputProps> = (props) => {
   const [degreeSwitch, setDegreeSwitch] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  // 添加新的动画效果
+  const inputAnimationVariants = {
+    focus: {
+      scale: 1.02,
+      boxShadow: "0 0 0 2px rgba(66, 153, 225, 0.5)",
+      transition: { type: "spring", stiffness: 400, damping: 25 },
+    },
+    blur: {
+      scale: 1,
+      boxShadow: "none",
+      transition: { type: "spring", stiffness: 400, damping: 25 },
+    },
+  };
+
+  // 添加输入验证和格式化
+  const formatInput = useCallback(
+    (value: string, type: "degree" | "minute" | "second") => {
+      let num = parseFloat(value);
+      if (isNaN(num)) return "0";
+
+      switch (type) {
+        case "degree":
+          return Math.max(-180, Math.min(180, num)).toString();
+        case "minute":
+        case "second":
+          return Math.max(0, Math.min(59, num)).toString();
+      }
+    },
+    []
+  );
+
+  // 添加实时预览
+  const getPreviewValue = useCallback(() => {
+    const deg = parseFloat(degree);
+    const min = parseFloat(minute);
+    const sec = parseFloat(second);
+    return dmsToDeg(deg, min, sec);
+  }, [degree, minute, second]);
 
   useEffect(() => {
     setDegreeValue(String(props.value));
@@ -230,6 +270,7 @@ export const RaInput: FC<IInputProps> = (props) => {
             className="relative"
             initial={false}
             animate={isEditing ? "focus" : "blur"}
+            variants={inputAnimationVariants}
           >
             {degreeSwitch ? (
               <motion.div
@@ -317,6 +358,19 @@ export const RaInput: FC<IInputProps> = (props) => {
                 </p>
               </motion.div>
             )}
+            {/* 添加实时预览 */}
+            <AnimatePresence>
+              {isEditing && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute -bottom-8 right-0 text-xs text-gray-400"
+                >
+                  预览值: {getPreviewValue().toFixed(6)}°
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </div>
         <motion.div
@@ -719,3 +773,5 @@ export const DecInput: FC<IInputProps> = (props) => {
     </motion.div>
   );
 };
+
+export default memo(RaInput);

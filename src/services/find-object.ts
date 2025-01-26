@@ -186,3 +186,71 @@ export const createObservationPlan = async (
     return handleApiError(error as AxiosError<APIErrorResponse>);
   }
 };
+
+export const getObservationSuggestions = async (
+  params: {
+    date: Date;
+    duration: number;
+    minAltitude: number;
+    weather: string[];
+  }
+): Promise<IBaseResponse<IObservationPlan>> => {
+  try {
+    return await api.request<IBaseResponse<IObservationPlan>>({
+      url: "/observation/suggestions/",
+      method: "post",
+      data: params,
+    });
+  } catch (error) {
+    return handleApiError(error as AxiosError<APIErrorResponse>);
+  }
+};
+
+export const getTargetStatistics = async (
+  targetIds: string[]
+): Promise<IBaseResponse<any>> => {
+  try {
+    return await api.request<IBaseResponse<any>>({
+      url: "/target_management/statistics/",
+      method: "post",
+      data: { targetIds },
+    });
+  } catch (error) {
+    return handleApiError(error as AxiosError<APIErrorResponse>);
+  }
+};
+
+export const exportTargets = async (
+  targetIds: string[],
+  format: string
+): Promise<IBaseResponse<Blob>> => {
+  try {
+    return await api.request<IBaseResponse<Blob>>({
+      url: `/target_management/export/${format}`,
+      method: "post",
+      data: { targetIds },
+      responseType: 'blob'
+    });
+  } catch (error) {
+    return handleApiError(error as AxiosError<APIErrorResponse>);
+  }
+};
+
+export const importTargets = async (
+  file: File
+): Promise<IBaseResponse<IDSOFramingObjectInfo[]>> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    return await api.request<IBaseResponse<IDSOFramingObjectInfo[]>>({
+      url: "/target_management/import/",
+      method: "post",
+      data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  } catch (error) {
+    return handleApiError(error as AxiosError<APIErrorResponse>);
+  }
+};

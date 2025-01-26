@@ -1,9 +1,9 @@
 "use client";
 
-import { FC, useState, useMemo, useEffect } from "react";
+import { FC, useState, useMemo, useEffect, useCallback } from "react";
 import * as AXIOSOF from "@/services/find-object";
 import TargetSmallCard from "./target-small";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,12 +55,30 @@ import {
 } from "recharts";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import debounce from "lodash/debounce";
+import { useGlobalStore } from "@/store/useSkymapStore";
+import { format } from "date-fns";
+import { v4 as uuidv4 } from "uuid";
 
 interface ObjectSearchProps {
   on_choice_maken: (() => void) | null;
 }
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+
+const searchVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      staggerChildren: 0.1
+    }
+  }
+};
 
 const ObjectSearch: FC<ObjectSearchProps> = (props) => {
   // UI 控制
@@ -91,6 +109,16 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
     sort_order: "asc",
   });
 
+  const {
+    searchHistory: globalSearchHistory,
+    favorites: globalFavorites,
+    advancedFilter,
+    addToHistory,
+    addToFavorites,
+    removeFromFavorites,
+    setAdvancedFilter
+  } = useGlobalStore();
+
   const handleFilterToggle = () => {
     setExpandFilter(!expandFilter);
   };
@@ -111,6 +139,12 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
           setFoundTargetResult(found_targets.data);
           setAlertVariant("default");
           setAlertText(`找到 ${found_targets.data.length} 个目标`);
+          addToHistory({
+            id: uuidv4(),
+            query: toSearchText,
+            timestamp: new Date(),
+            resultCount: found_targets.data.length
+          });
         } else {
           setAlertVariant("default");
           setAlertText("没有找到相关目标");
@@ -124,6 +158,31 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
       setAlertText("发生错误，请检查网络连接！");
     }
   };
+
+  const debouncedSearch = useCallback(
+    debounce(async (searchText: string) => {
+      if (searchText.length < 2) return;
+      
+      try {
+        const results = await AXIOSOF.findTargetByName(searchText);
+        if (results.success) {
+          setFoundTargetResult(results.data);
+          setCurrentPage(1);
+        }
+      } catch (err) {
+        toast({
+          title: "搜索失败",
+          description: "请稍后重试"
+        });
+      }
+    }, 300),
+    []
+  );
+
+  useEffect(() => {
+    debouncedSearch(toSearchText);
+    return () => debouncedSearch.cancel();
+  }, [toSearchText, debouncedSearch]);
 
   const paginatedResults = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -225,11 +284,102 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
     document.body.removeChild(link);
   };
 
+  const renderAdvancedSearchPanel = () => (
+    <Collapsible>
+      <CollapsibleTrigger asChild>
+        <Button variant="ghost" className="w-full">
+          高级搜索
+          <ChevronDown className="ml-2 h-4 w-4" />
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-4 p-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>最小星等</Label>
+            <Input
+              type="number"
+              value={advancedFilter.magnitude_min}
+              onChange={(e) =>
+                setAdvancedFilter({
+                  magnitude_min: parseFloat(e.target.value)
+                })
+              }
+            />
+          </div>
+          <div>
+            <Label>最大星等</Label>
+            <Input
+              type="number"
+              value={advancedFilter.magnitude_max}
+              onChange={(e) =>
+                setAdvancedFilter({
+                  magnitude_max: parseFloat(e.target.value)
+                })
+              }
+            />
+          </div>
+        </div>
+        <div>
+          <Label>天体类型</Label>
+          <ScrollArea className="h-24">
+            {["星系", "星团", "星云", "行星状星云"].map((type) => (
+              <div key={type} className="flex items-center space-x-2">
+                <Checkbox
+                  checked={advancedFilter.type.includes(type)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setAdvancedFilter({
+                        type: [...advancedFilter.type, type]
+                      });
+                    } else {
+                      setAdvancedFilter({
+                        type: advancedFilter.type.filter((t) => t !== type)
+                      });
+                    }
+                  }}
+                />
+                <Label>{type}</Label>
+              </div>
+            ))}
+          </ScrollArea>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+
+  const renderSearchHistoryPanel = () => (
+    <Card className="mt-4">
+      <CardHeader>
+        <CardTitle className="text-sm">搜索历史</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="h-[200px]">
+          {globalSearchHistory.map((item) => (
+            <div
+              key={item.id}
+              className="flex items-center justify-between p-2 hover:bg-gray-700/50 rounded-md"
+            >
+              <div>
+                <p className="text-sm font-medium">{item.query}</p>
+                <p className="text-xs text-gray-400">
+                  {format(item.timestamp, "yyyy-MM-dd HH:mm")}
+                </p>
+              </div>
+              <Badge variant="secondary">
+                {item.resultCount} 个结果
+              </Badge>
+            </div>
+          ))}
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      variants={searchVariants}
+      initial="hidden"
+      animate="visible"
       className="flex flex-col lg:flex-row w-full gap-2 p-4 bg-gradient-to-b from-gray-900 to-gray-800 min-h-[70vh] rounded-lg relative"
     >
       {/* 夜间模式切换 */}
@@ -246,18 +396,21 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
         />
       </Button>
       {/* Loading overlay */}
-      {alertText === "查询中..." && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="absolute inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center"
-        >
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm text-white">正在搜索...</span>
-          </div>
-        </motion.div>
-      )}
+      <AnimatePresence>
+        {alertText === "查询中..." && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center"
+          >
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm text-white">正在搜索...</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* 搜索工具栏 */}
       <div className="w-full lg:w-1/4 space-y-2">
         <Card className="bg-black/20 p-2">
@@ -445,6 +598,9 @@ const ObjectSearch: FC<ObjectSearchProps> = (props) => {
             </Button>
           </div>
         </Card>
+
+        {renderAdvancedSearchPanel()}
+        {renderSearchHistoryPanel()}
 
         {/* 统计图表 */}
         <Card className="bg-black/20 p-2">

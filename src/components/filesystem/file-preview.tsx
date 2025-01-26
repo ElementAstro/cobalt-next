@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
 import React from "react";
-import { X } from "lucide-react";
+import { X, ZoomIn, ZoomOut, RotateCw, Edit, Download } from "lucide-react";
 import Prism from "prismjs";
 import "prismjs/themes/prism-tomorrow.css";
 import "prismjs/components/prism-javascript";
@@ -19,54 +19,179 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog";
+import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
-import { File } from "@/types/filesystem";
+// Animation variants
+const variants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { opacity: 1, scale: 1 },
+  exit: { opacity: 0, scale: 0.95 },
+};
+
+const childVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: 20 },
+};
+
+// 扩展 File 类型
+interface ExtendedFile extends File {
+  url?: string;
+  content?: string;
+  language?: string;
+}
 
 interface FilePreviewProps {
-  file: File;
+  file: ExtendedFile;
   onClose: () => void;
 }
 
+// 下载工具函数
+const downloadFile = async (file: ExtendedFile) => {
+  if (!file.url) {
+    throw new Error("File URL not found");
+  }
+  const response = await fetch(file.url);
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = file.name;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+};
+
 export const FilePreview: React.FC<FilePreviewProps> = ({ file, onClose }) => {
+  const [zoom, setZoom] = React.useState(100);
+  const [rotation, setRotation] = React.useState(0);
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [playbackRate, setPlaybackRate] = React.useState(1);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const { toast } = useToast();
+
   React.useEffect(() => {
     Prism.highlightAll();
   }, [file]);
 
-  const getLanguageFromFileType = (fileType: string): string => {
-    switch (fileType) {
-      case "javascript":
-      case "js":
-        return "javascript";
-      case "typescript":
-      case "ts":
-        return "typescript";
-      case "jsx":
-        return "jsx";
-      case "tsx":
-        return "tsx";
-      case "css":
-        return "css";
-      case "python":
-      case "py":
-        return "python";
-      default:
-        return "none";
+  const handleZoomIn = () => setZoom((prev) => Math.min(prev + 10, 200));
+  const handleZoomOut = () => setZoom((prev) => Math.max(prev - 10, 50));
+  const handleRotate = () => setRotation((prev) => (prev + 90) % 360);
+
+  const handleDownload = async () => {
+    try {
+      await downloadFile(file);
+      toast({
+        title: "下载成功",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "下载失败",
+        variant: "destructive",
+      });
     }
   };
 
-  const variants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { staggerChildren: 0.1 },
-    },
-    exit: { opacity: 0, y: 20 },
+  const handleVideoRateChange = (value: number) => {
+    setPlaybackRate(value);
+    if (videoRef.current) {
+      videoRef.current.playbackRate = value;
+    }
   };
 
-  const childVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0 },
+  const renderPreview = () => {
+    switch (file.type) {
+      case "image":
+        return (
+          <div className="relative">
+            {file.url && (
+              <img
+                src={file.url}
+                alt={file.name}
+                style={{
+                  transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
+                  transition: "transform 0.3s ease",
+                }}
+                className="max-w-full h-auto rounded"
+              />
+            )}
+            {isEditing && (
+              <div className="absolute top-0 left-0 w-full h-full">
+                {/* 图片编辑工具 */}
+              </div>
+            )}
+          </div>
+        );
+
+      case "video":
+        return (
+          <div className="space-y-2">
+            {file.url && (
+              <>
+                <video
+                  ref={videoRef}
+                  controls
+                  className="max-w-full h-auto rounded"
+                >
+                  <source src={file.url} type="video/mp4" />
+                </video>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">播放速度:</span>
+                  <Slider
+                    value={[playbackRate]}
+                    onValueChange={([value]) => handleVideoRateChange(value)}
+                    min={0.5}
+                    max={2}
+                    step={0.1}
+                    className="w-32"
+                  />
+                  <span className="text-sm">{playbackRate}x</span>
+                </div>
+              </>
+            )}
+          </div>
+        );
+
+      case "code":
+        return (
+          <div className="relative">
+            <pre className="p-4 rounded bg-gray-900 overflow-x-auto">
+              <code className={`language-${file.language || "text"}`}>
+                {file.content}
+              </code>
+            </pre>
+            <div className="absolute top-2 right-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(file.content || "");
+                  toast({
+                    title: "代码已复制",
+                    variant: "default",
+                  });
+                }}
+              >
+                复制代码
+              </Button>
+            </div>
+          </div>
+        );
+
+      default:
+        return (
+          <div className="text-center p-8">
+            <p>暂不支持预览该类型文件</p>
+            <Button variant="outline" onClick={handleDownload}>
+              下载文件
+            </Button>
+          </div>
+        );
+    }
   };
 
   return (
@@ -84,6 +209,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ file, onClose }) => {
             animate="visible"
             exit="exit"
             variants={variants}
+            transition={{ duration: 0.2 }}
           >
             <DialogHeader>
               <DialogTitle className="flex justify-between items-center mb-4">
@@ -95,34 +221,42 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ file, onClose }) => {
                 </DialogClose>
               </DialogTitle>
             </DialogHeader>
-            <motion.div variants={childVariants}>
-              {file.type === "image" ? (
-                <img
-                  src={`/placeholder.svg?height=400&width=600`}
-                  alt={file.name}
-                  className="max-w-full h-auto mb-4 rounded"
-                />
-              ) : file.type === "video" ? (
-                <video controls className="max-w-full h-auto mb-4 rounded">
-                  <source src={`/placeholder.mp4`} type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
-              ) : file.type === "code" ? (
-                <pre className="p-4 rounded bg-gray-900 overflow-x-auto mb-4">
-                  <motion.code
-                    className={`language-${getLanguageFromFileType(
-                      file.language || ""
-                    )}`}
-                    variants={childVariants}
-                  >
-                    {file.content}
-                  </motion.code>
-                </pre>
-              ) : (
-                <pre className="whitespace-pre-wrap mb-4">
-                  {file.content || "No preview available"}
-                </pre>
-              )}
+            <motion.div
+              variants={childVariants}
+              transition={{ duration: 0.2, delay: 0.1 }}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">{file.name}</h2>
+                <div className="flex items-center gap-2">
+                  {file.type === "image" && (
+                    <>
+                      <Button variant="ghost" size="sm" onClick={handleZoomIn}>
+                        <ZoomIn className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={handleZoomOut}>
+                        <ZoomOut className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={handleRotate}>
+                        <RotateCw className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsEditing(!isEditing)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    </>
+                  )}
+                  <Button variant="ghost" size="sm" onClick={handleDownload}>
+                    <Download className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={onClose}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              {renderPreview()}
             </motion.div>
           </motion.div>
         </DialogContent>

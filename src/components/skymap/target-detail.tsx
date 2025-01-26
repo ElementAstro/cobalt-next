@@ -1,6 +1,6 @@
 "use client";
 
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect, useState, useMemo, memo } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -189,6 +189,58 @@ const TargetDetailCard: FC<TargetSmallCardProps> = (props) => {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
   };
+
+  // 添加新的状态和动画变量
+  const [selectedTab, setSelectedTab] = useState("observationData");
+  const [chartHovered, setChartHovered] = useState(false);
+
+  const tabVariants = {
+    initial: { opacity: 0, y: 10 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -10 },
+    hover: { scale: 1.05, transition: { duration: 0.2 } },
+  };
+
+  const chartVariants = {
+    initial: { scale: 0.95, opacity: 0 },
+    animate: { scale: 1, opacity: 1 },
+    hover: { scale: 1.02, transition: { duration: 0.2 } },
+  };
+
+  // 获取实时数据更新的定时器
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (props.open_dialog > 0) {
+      interval = setInterval(() => {
+        if (!props.in_updating) {
+          init_fig_data();
+        }
+      }, 30000); // 每30秒更新一次
+    }
+    return () => clearInterval(interval);
+  }, [props.open_dialog]);
+
+  // 添加图表交互动画
+  const handleChartHover = (isHovered: boolean) => {
+    setChartHovered(isHovered);
+  };
+
+  // 优化图表渲染性能
+  const memoizedCharts = useMemo(() => {
+    return (
+      <motion.div
+        variants={chartVariants}
+        initial="initial"
+        animate="animate"
+        whileHover="hover"
+        onHoverStart={() => handleChartHover(true)}
+        onHoverEnd={() => handleChartHover(false)}
+        className="relative"
+      >
+        {/* ...existing chart code... */}
+      </motion.div>
+    );
+  }, [alt_data, polar_data, bar_data, pie_data]);
 
   return (
     <motion.div
@@ -523,9 +575,23 @@ const TargetDetailCard: FC<TargetSmallCardProps> = (props) => {
             </Button>
           </motion.div>
         </motion.div>
+
+        {/* 添加新的交互动画 */}
+        <AnimatePresence mode="wait">
+          {chartHovered && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="absolute bottom-4 right-4 bg-black/80 text-white p-2 rounded"
+            >
+              <p className="text-sm">点击可查看详细数据</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </AnimatePresence>
     </motion.div>
   );
 };
 
-export default TargetDetailCard;
+export default memo(TargetDetailCard);

@@ -4,19 +4,15 @@ import React, { useEffect, useState, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import WeatherInfoHeader from "./weather-info-header";
 import WeatherControls from "./weather-controls";
-import SettingsDialog from "./weather-settings-dialog";
 import WeatherCards from "./weather-cards";
 import ForecastAccordion from "./forecast-accordion";
 import TemperatureChart from "./temperature-chart";
 import { Button } from "@/components/ui/button";
 import {
   AlertCircle,
-  MapPin,
-  Navigation,
   Map,
   Sun,
   Moon,
-  RefreshCw,
   Wind,
   Droplet,
   Cloud,
@@ -38,6 +34,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useWeatherStore } from "@/store/information/weather";
+import { toast } from "@/hooks/use-toast";
+
+// 从环境变量获取 API key
+const OPENWEATHER_API_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
+const AMAP_API_KEY = process.env.NEXT_PUBLIC_AMAP_API_KEY;
 
 interface WeatherInfoProps {
   onClose: () => void;
@@ -82,16 +84,20 @@ const DEFAULT_API = "OpenWeatherMap";
 const AVAILABLE_APIS: WeatherAPI[] = [
   {
     name: "OpenWeatherMap",
-    fetchWeather: async (city, units, apiKey) => {
+    fetchWeather: async (city, units) => {
+      if (!OPENWEATHER_API_KEY) {
+        throw new Error("未配置 OpenWeatherMap API 密钥。");
+      }
+
       const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=${units}`
+        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${OPENWEATHER_API_KEY}&units=${units}`
       );
       if (!response.ok) {
         throw new Error("无法获取天气数据，请检查城市名称或 API 密钥。");
       }
       const data = await response.json();
       const forecastResponse = await fetch(
-        `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=${units}`
+        `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${OPENWEATHER_API_KEY}&units=${units}`
       );
       const forecastData = await forecastResponse.json();
       const forecastList = forecastData.list.slice(0, 5).map((item: any) => ({
@@ -154,81 +160,57 @@ const AVAILABLE_APIS: WeatherAPI[] = [
 ];
 
 export const WeatherInfo: React.FC<WeatherInfoProps> = memo(
-  ({
-    onClose,
-    initialCity = DEFAULT_CITY,
-    initialUnits = "metric",
-    isMock = false,
-  }) => {
-    const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
-    const [loading, setLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null);
-    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-    const [city, setCity] = useState<string>(initialCity);
-    const [units, setUnits] = useState<"metric" | "imperial">(initialUnits);
-    const [apiKey, setApiKey] = useState<string>("");
-    const [selectedAPI, setSelectedAPI] = useState<WeatherAPI>(
-      AVAILABLE_APIS[0]
-    );
-    const [showSettings, setShowSettings] = useState<boolean>(false);
-    const [showMap, setShowMap] = useState<boolean>(false);
-    const [darkMode, setDarkMode] = useState<boolean>(false);
+  ({ onClose, initialCity, initialUnits, isMock = false }) => {
+    const {
+      data: weatherData,
+      loading,
+      error,
+      lastUpdated,
+      city,
+      units,
+      selectedAPI,
+      showSettings,
+      showMap,
+      darkMode,
+      autoRefresh,
+      refreshInterval,
+      favorites,
+      setCity,
+      setUnits,
+      setSelectedAPI,
+      setShowSettings,
+      setShowMap,
+      toggleDarkMode,
+      toggleAutoRefresh,
+      setRefreshInterval,
+      addToFavorites,
+      removeFromFavorites,
+      fetchWeatherData,
+    } = useWeatherStore();
 
-    const fetchWeatherData = useCallback(async () => {
-      if (isMock) {
-        setWeatherData({
-          temperature: 25,
-          humidity: 50,
-          windSpeed: 5,
-          windDirection: "NE",
-          cloudCover: 20,
-          description: "晴朗",
-          uvi: 5,
-          pressure: 1013,
-          visibility: 10,
-          sunrise: "06:00 AM",
-          sunset: "08:00 PM",
-          forecast: [
-            { date: "明天", temperature: 26, description: "多云" },
-            { date: "后天", temperature: 24, description: "小雨" },
-          ],
-        });
-        setLastUpdated(new Date());
-        return;
-      }
-
-      if (!apiKey) {
-        setError("请在设置中提供 API 密钥。");
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await selectedAPI.fetchWeather(city, units, apiKey);
-        setWeatherData(data);
-        setLastUpdated(new Date());
-      } catch (err: any) {
-        console.error("获取天气数据时出错:", err);
-        setError(err.message || "获取天气数据时出错。");
-      } finally {
-        setLoading(false);
-      }
-    }, [city, units, apiKey, selectedAPI, isMock]);
+    useEffect(() => {
+      if (initialCity) setCity(initialCity);
+      if (initialUnits) setUnits(initialUnits);
+    }, [initialCity, initialUnits]);
 
     useEffect(() => {
       fetchWeatherData();
-      if (!isMock) {
-        const interval = setInterval(fetchWeatherData, 10 * 60 * 1000);
+      if (autoRefresh && !isMock) {
+        const interval = setInterval(fetchWeatherData, refreshInterval);
         return () => clearInterval(interval);
       }
-    }, [fetchWeatherData, isMock]);
+    }, [city, units, autoRefresh, refreshInterval, isMock]);
 
     const handleGeolocation = () => {
-      if (!apiKey) {
-        setError("请在设置中提供 API 密钥。");
+      if (!AMAP_API_KEY) {
+        toast({
+          title: "错误",
+          description: "未配置高德地图 API 密钥。",
+          variant: "destructive",
+        });
         return;
       }
+
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           async (position) => {
@@ -236,7 +218,7 @@ export const WeatherInfo: React.FC<WeatherInfoProps> = memo(
             const coordinates = `${longitude},${latitude}`;
             try {
               const response = await fetch(
-                `https://restapi.amap.com/v3/geocode/regeo?key=${apiKey}&location=${coordinates}&extensions=all`
+                `https://restapi.amap.com/v3/geocode/regeo?key=${AMAP_API_KEY}&location=${coordinates}&extensions=all`
               );
               const data = await response.json();
               if (data.status === "1") {
@@ -248,26 +230,43 @@ export const WeatherInfo: React.FC<WeatherInfoProps> = memo(
                 throw new Error("无法通过坐标获取城市信息。");
               }
             } catch (err: any) {
-              setError(err.message || "获取城市信息时出错。");
+              toast({
+                title: "错误",
+                description: err.message || "获取城市信息时出错。",
+                variant: "destructive",
+              });
             }
           },
           () => {
-            setError("无法获取您的位置信息。");
+            toast({
+              title: "错误",
+              description: "无法获取您的位置信息。",
+              variant: "destructive",
+            });
           }
         );
       } else {
-        setError("浏览器不支持地理定位。");
+        toast({
+          title: "错误",
+          description: "浏览器不支持地理定位。",
+          variant: "destructive",
+        });
       }
     };
 
     const handleMapClick = async (coordinates: string) => {
-      if (!apiKey) {
-        setError("请在设置中提供 API 密钥。");
+      if (!AMAP_API_KEY) {
+        toast({
+          title: "错误",
+          description: "未配置高德地图 API 密钥。",
+          variant: "destructive",
+        });
         return;
       }
+
       try {
         const response = await fetch(
-          `https://restapi.amap.com/v3/geocode/regeo?key=${apiKey}&location=${coordinates}&extensions=all`
+          `https://restapi.amap.com/v3/geocode/regeo?key=${AMAP_API_KEY}&location=${coordinates}&extensions=all`
         );
         const data = await response.json();
         if (data.status === "1") {
@@ -280,13 +279,12 @@ export const WeatherInfo: React.FC<WeatherInfoProps> = memo(
           throw new Error("无法通过坐标获取城市信息。");
         }
       } catch (err: any) {
-        setError(err.message || "获取城市信息时出错。");
+        toast({
+          title: "错误",
+          description: err.message || "获取城市信息时出错。",
+          variant: "destructive",
+        });
       }
-    };
-
-    const toggleDarkMode = () => {
-      setDarkMode((prev) => !prev);
-      document.documentElement.classList.toggle("dark");
     };
 
     const temperatureData =
@@ -347,9 +345,6 @@ export const WeatherInfo: React.FC<WeatherInfoProps> = memo(
               setShowSettings={setShowSettings}
               AVAILABLE_APIS={AVAILABLE_APIS}
             />
-            {showSettings && (
-              <SettingsDialog apiKey={apiKey} setApiKey={setApiKey} />
-            )}
             <div className="mt-4 flex space-x-2">
               <Button
                 variant="secondary"

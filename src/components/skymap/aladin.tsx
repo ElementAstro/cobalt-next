@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useCallback, memo } from "react";
 import Script from "next/script";
 import { debounce } from "lodash";
+import { motion } from "framer-motion";
 
 interface AladinProps {
   ra: number;
@@ -122,17 +123,59 @@ const AladinComponent: React.FC<AladinProps> = ({
     });
   }, [fov_points]);
 
+  useEffect(() => {
+    if (!aladinInstance.current) return;
+
+    const updatePerformance = () => {
+      // 优化渲染性能
+      aladinInstance.current.setImageQuality('low');
+      
+      // 添加平滑过渡
+      aladinInstance.current.setTransitionParams({
+        duration: 1000,
+        ease: 'cubic-bezier(0.4, 0, 0.2, 1)'
+      });
+
+      // 添加自定义控件
+      aladinInstance.current.addCustomControl({
+        id: 'quality-toggle',
+        title: '切换图像质量',
+        position: 'top-right',
+        callback: () => {
+          const currentQuality = aladinInstance.current.getImageQuality();
+          aladinInstance.current.setImageQuality(
+            currentQuality === 'low' ? 'high' : 'low'
+          );
+        }
+      });
+    };
+
+    updatePerformance();
+  }, []);
+
   return (
     <>
       <Script
         src="https://aladin.cds.unistra.fr/AladinLite/api/v3/3.2.0/aladin.js"
         strategy="beforeInteractive"
       />
-      <div
-        ref={alaRef}
-        style={{ width: "100%", height: "100%" }}
-        className="relative rounded-lg overflow-hidden"
-      />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="relative w-full h-full"
+      >
+        <div
+          ref={alaRef}
+          className="w-full h-full rounded-lg overflow-hidden shadow-lg"
+        />
+        <motion.div
+          className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/20 via-transparent to-transparent"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        />
+      </motion.div>
     </>
   );
 };

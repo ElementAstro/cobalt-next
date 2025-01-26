@@ -17,6 +17,7 @@ interface SortableFileItemProps {
   onFileOperation: (operation: string, file: File) => void;
   isSelectionMode: boolean;
   onShowMenu: (e: React.MouseEvent) => void;
+  layoutMode: "compact" | "comfortable" | "spacious"; // 新增属性
 }
 
 export const SortableFileItem: React.FC<SortableFileItemProps> = ({
@@ -29,6 +30,7 @@ export const SortableFileItem: React.FC<SortableFileItemProps> = ({
   onFileOperation,
   isSelectionMode,
   onShowMenu,
+  layoutMode, // 新增参数
 }) => {
   const {
     attributes,
@@ -46,7 +48,22 @@ export const SortableFileItem: React.FC<SortableFileItemProps> = ({
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`
+        ${viewMode === "grid" ? "h-full" : ""}
+        ${
+          layoutMode === "compact"
+            ? "p-1"
+            : layoutMode === "comfortable"
+            ? "p-2"
+            : "p-4"
+        }
+      `}
+    >
       <FileItem
         file={file}
         viewMode={viewMode}
@@ -57,6 +74,7 @@ export const SortableFileItem: React.FC<SortableFileItemProps> = ({
         isSelectionMode={isSelectionMode}
         onShowMenu={onShowMenu}
         index={toNumber(id)}
+        layoutMode={layoutMode} // 传递到 FileItem
       />
     </div>
   );

@@ -66,6 +66,37 @@ export const TranslateTargetType = (target_type: string): string => {
   return typeMap[target_type] || "未知";
 };
 
+const cardVariants = {
+  initial: { opacity: 0, y: 20, scale: 0.95, rotate: -1 },
+  animate: {
+    opacity: 1, 
+    y: 0,
+    scale: 1,
+    rotate: 0,
+    transition: {
+      type: "spring",
+      stiffness: 200,
+      damping: 15
+    }
+  },
+  hover: {
+    scale: 1.03,
+    rotate: 0.5,
+    transition: {
+      type: "spring",
+      stiffness: 400,
+      damping: 10
+    }
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.9,
+    transition: {
+      duration: 0.2
+    }
+  }
+};
+
 const TargetSuperSimpleCard: FC<TargetSuperSimpleCardProps> = (props) => {
   const [targetIconLink, setTargetIconLink] = useState<string>("");
   const [displayType, setDisplayType] = useState<string>("未知");
@@ -126,45 +157,6 @@ const TargetSuperSimpleCard: FC<TargetSuperSimpleCardProps> = (props) => {
 
   const handleDragStart = () => setIsDragging(true);
   const handleDragEnd = () => setIsDragging(false);
-
-  // 添加新的动画变体
-  const cardVariants = {
-    initial: { opacity: 0, y: 20, scale: 0.95, rotate: -1 },
-    animate: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      rotate: 0,
-      transition: {
-        type: "spring",
-        stiffness: 120,
-        damping: 12,
-        delay: props.index * 0.05,
-        mass: 0.5
-      }
-    },
-    hover: {
-      scale: 1.03,
-      rotate: 0.5,
-      boxShadow: "0px 8px 20px rgba(0,0,0,0.25)",
-      transition: {
-        type: "spring",
-        stiffness: 250,
-        damping: 12,
-        mass: 0.8
-      }
-    },
-    tap: {
-      scale: 0.96,
-      rotate: -0.5,
-      transition: {
-        type: "spring",
-        stiffness: 350,
-        damping: 12,
-        mass: 0.5
-      }
-    }
-  };
 
   // 优化快速操作菜单动画
   const quickMenuVariants = {
@@ -242,22 +234,21 @@ const TargetSuperSimpleCard: FC<TargetSuperSimpleCardProps> = (props) => {
 
   return (
     <motion.div
-      drag={props.enableDrag}
-      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
       variants={cardVariants}
       initial="initial"
       animate="animate"
+      exit="exit"
       whileHover="hover"
-      whileTap="tap"
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
-      className={`relative ${isDragging ? "z-50" : "z-0"} ${
-        isSelected ? "ring-2 ring-primary" : ""
-      }`}
+      layoutId={`target-${props.index}`}
+      className={`relative ${isDragging ? "z-50" : "z-0"}`}
     >
       <Card className="relative overflow-hidden bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-sm border-none landscape:flex landscape:h-24">
+        <motion.div 
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+          initial={{ x: '-100%' }}
+          animate={{ x: '100%' }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        />
         <CardHeader className="flex flex-row items-center space-y-0 gap-4 p-4 landscape:w-1/3">
           <motion.div
             className="relative overflow-hidden rounded-md"

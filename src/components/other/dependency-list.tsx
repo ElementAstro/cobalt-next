@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
 import {
   Table,
   TableBody,
@@ -67,6 +68,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { DependencyGraph } from "./dependency-graph";
+import { toast } from "@/hooks/use-toast";
 
 const defaultDependencies: Dependency[] = [
   {
@@ -147,6 +149,9 @@ export function DependencyList() {
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const itemsPerPageOptions = [5, 10, 20];
 
+  useHotkeys("ctrl+e", () => exportDependencies());
+  useHotkeys("ctrl+a", () => selectAll());
+
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
     if (!darkMode) {
@@ -166,6 +171,41 @@ export function DependencyList() {
     a.download = "dependencies.json";
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const selectAll = () => {
+    if (selectedDeps.length === dependencies.length) {
+      setSelectedDeps([]);
+    } else {
+      setSelectedDeps(dependencies.map((d) => d.name));
+    }
+  };
+
+  const handleBatchUpdate = async () => {
+    const toUpdate = selectedDeps.filter(
+      (name) =>
+        dependencies.find((d) => d.name === name)?.status === "update-available"
+    );
+
+    if (toUpdate.length === 0) return;
+
+    setIsLoading(true);
+    try {
+      // 模拟批量更新
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      toast({
+        title: "批量更新成功",
+        description: `已更新 ${toUpdate.length} 个依赖`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "更新失败",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDelete = async (name: string) => {
@@ -358,6 +398,31 @@ export function DependencyList() {
     return typeof value === "string" ? value.toLowerCase() : "";
   };
 
+  const [newDependency, setNewDependency] = useState({
+    name: "",
+    version: "",
+    description: "",
+    license: "MIT",
+  });
+
+  // 添加处理函数
+  const handleAddDependency = () => {
+    const dependency: Dependency = {
+      ...newDependency,
+      status: "up-to-date",
+      latestVersion: newDependency.version,
+    };
+
+    setDependencies([...dependencies, dependency]);
+    setNewDependency({
+      name: "",
+      version: "",
+      description: "",
+      license: "MIT",
+    });
+    setIsAddDialogOpen(false);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -418,7 +483,93 @@ export function DependencyList() {
                   新增依赖
                 </Button>
               </DialogTrigger>
-              {/* Dialog content remains the same */}
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>添加新依赖</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">
+                      名称
+                    </Label>
+                    <Input
+                      id="name"
+                      value={newDependency.name}
+                      onChange={(e) =>
+                        setNewDependency({
+                          ...newDependency,
+                          name: e.target.value,
+                        })
+                      }
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="version" className="text-right">
+                      版本
+                    </Label>
+                    <Input
+                      id="version"
+                      value={newDependency.version}
+                      onChange={(e) =>
+                        setNewDependency({
+                          ...newDependency,
+                          version: e.target.value,
+                        })
+                      }
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="description" className="text-right">
+                      描述
+                    </Label>
+                    <Textarea
+                      id="description"
+                      value={newDependency.description}
+                      onChange={(e) =>
+                        setNewDependency({
+                          ...newDependency,
+                          description: e.target.value,
+                        })
+                      }
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="license" className="text-right">
+                      许可证
+                    </Label>
+                    <Select
+                      value={newDependency.license}
+                      onValueChange={(value) =>
+                        setNewDependency({ ...newDependency, license: value })
+                      }
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="选择许可证" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="MIT">MIT</SelectItem>
+                        <SelectItem value="Apache-2.0">Apache-2.0</SelectItem>
+                        <SelectItem value="GPL-3.0">GPL-3.0</SelectItem>
+                        <SelectItem value="BSD-3-Clause">
+                          BSD-3-Clause
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAddDialogOpen(false)}
+                  >
+                    取消
+                  </Button>
+                  <Button onClick={handleAddDependency}>添加</Button>
+                </div>
+              </DialogContent>
             </Dialog>
           </div>
 
@@ -444,6 +595,26 @@ export function DependencyList() {
             </Button>
           </div>
         </div>
+      </div>
+
+      <div className="flex gap-2 mb-4">
+        <Button
+          variant="outline"
+          onClick={exportDependencies}
+          disabled={selectedDeps.length === 0}
+        >
+          导出选中 ({selectedDeps.length})
+        </Button>
+        <Button
+          variant="default"
+          onClick={handleBatchUpdate}
+          disabled={selectedDeps.length === 0}
+        >
+          批量更新
+        </Button>
+        <Button variant="ghost" onClick={selectAll}>
+          {selectedDeps.length === dependencies.length ? "取消全选" : "全选"}
+        </Button>
       </div>
 
       {/* Dependency Graph */}

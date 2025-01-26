@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Calculator,
   Download,
@@ -59,6 +60,13 @@ interface FOVPreset {
   x_pixel_size: number;
   y_pixel_size: number;
   focal_length: number;
+}
+
+// 新增预设组接口
+interface PresetGroup {
+  id: string;
+  name: string;
+  presets: FOVPreset[];
 }
 
 const commonPresets: FOVPreset[] = [
@@ -163,6 +171,25 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = ({
   const [showPresetManager, setShowPresetManager] = useState(false);
   const [customPresets, setCustomPresets] = useState<FOVPreset[]>([]);
 
+  // 在 FOVSettingDialog 组件内新增状态
+  const [presetGroups, setPresetGroups] = useState<PresetGroup[]>([
+    {
+      id: "default",
+      name: "默认组",
+      presets: commonPresets,
+    },
+    {
+      id: "custom",
+      name: "自定义",
+      presets: [],
+    },
+  ]);
+
+  const [selectedGroup, setSelectedGroup] = useState<string>("default");
+  const [showGridlines, setShowGridlines] = useState(true);
+  const [showCrosshair, setShowCrosshair] = useState(true);
+  const [previewZoom, setPreviewZoom] = useState(1);
+
   useEffect(() => {
     setOpen(open_dialog);
   }, [open_dialog]);
@@ -230,6 +257,20 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = ({
       setOpen(false);
     },
     [on_fov_change, on_rotation_change]
+  );
+
+  // 添加帮助提示组件
+  const HelpTooltip: React.FC<{ content: string }> = ({ content }) => (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger>
+          <HelpCircle className="w-4 h-4 text-gray-400" />
+        </TooltipTrigger>
+        <TooltipContent>
+          <p className="text-sm">{content}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 
   return (
@@ -302,6 +343,7 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = ({
                   {/* X Pixels */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
                     <Label className="sm:w-1/3 text-sm">X像素数</Label>
+                    <HelpTooltip content="相机传感器在水平方向上的像素数量" />
                     <motion.div
                       whileHover={{ scale: 1.02 }}
                       whileFocus={{ scale: 1.02 }}
@@ -324,6 +366,7 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = ({
                   {/* X Pixel Size */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
                     <Label className="sm:w-1/3 text-sm">X像素大小</Label>
+                    <HelpTooltip content="相机传感器在水平方向上的像素大小" />
                     <motion.div
                       whileHover={{ scale: 1.02 }}
                       whileFocus={{ scale: 1.02 }}
@@ -347,6 +390,7 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = ({
                   {/* Y Pixels */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
                     <Label className="sm:w-1/3 text-sm">Y像素数</Label>
+                    <HelpTooltip content="相机传感器在垂直方向上的像素数量" />
                     <motion.div
                       whileHover={{ scale: 1.02 }}
                       whileFocus={{ scale: 1.02 }}
@@ -369,6 +413,7 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = ({
                   {/* Y Pixel Size */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
                     <Label className="sm:w-1/3 text-sm">Y像素大小</Label>
+                    <HelpTooltip content="相机传感器在垂直方向上的像素大小" />
                     <motion.div
                       whileHover={{ scale: 1.02 }}
                       whileFocus={{ scale: 1.02 }}
@@ -392,6 +437,7 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = ({
                   {/* Focal Length */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
                     <Label className="sm:w-1/3 text-sm">焦距</Label>
+                    <HelpTooltip content="相机镜头的焦距" />
                     <motion.div
                       whileHover={{ scale: 1.02 }}
                       whileFocus={{ scale: 1.02 }}
@@ -415,6 +461,7 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = ({
                   {/* Rotation */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2">
                     <Label className="sm:w-1/3 text-sm">旋转角度</Label>
+                    <HelpTooltip content="相机的旋转角度" />
                     <Controller
                       control={control}
                       name="rotation"
@@ -499,8 +546,38 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = ({
                 <div className="w-full">
                   <motion.div
                     className="relative aspect-video border border-gray-600 rounded-lg overflow-hidden"
-                    whileHover={{ scale: 1.01 }}
+                    style={{
+                      transform: `scale(${previewZoom})`,
+                      transformOrigin: "center",
+                    }}
+                    whileHover={{ scale: previewZoom * 1.01 }}
                   >
+                    {showCrosshair && (
+                      <>
+                        <div className="absolute left-1/2 top-0 bottom-0 w-px bg-yellow-400/50" />
+                        <div className="absolute top-1/2 left-0 right-0 h-px bg-yellow-400/50" />
+                      </>
+                    )}
+
+                    {showGridlines && (
+                      <motion.div
+                        className="absolute inset-0 grid grid-cols-12 grid-rows-12 opacity-20"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.2 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        {Array.from({ length: 144 }).map((_, i) => (
+                          <motion.div
+                            key={i}
+                            className="border border-gray-500"
+                            whileHover={{
+                              backgroundColor: "rgba(255,255,255,0.1)",
+                            }}
+                          />
+                        ))}
+                      </motion.div>
+                    )}
+
                     <motion.div
                       className="absolute inset-2 border-2 border-yellow-400 bg-yellow-400/50"
                       style={{
@@ -514,22 +591,6 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = ({
                         ease: "easeInOut",
                       }}
                     />
-                    <motion.div
-                      className="absolute inset-0 grid grid-cols-12 grid-rows-12 opacity-20"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 0.2 }}
-                      transition={{ delay: 0.2 }}
-                    >
-                      {Array.from({ length: 144 }).map((_, i) => (
-                        <motion.div
-                          key={i}
-                          className="border border-gray-500"
-                          whileHover={{
-                            backgroundColor: "rgba(255,255,255,0.1)",
-                          }}
-                        />
-                      ))}
-                    </motion.div>
                   </motion.div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 text-xs">
@@ -624,6 +685,33 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = ({
                   计算
                 </Button>
               </div>
+            </div>
+
+            {/* 在对话框内容中添加新的预览控制选项 */}
+            <div className="flex items-center space-x-2 mt-2">
+              <Switch
+                checked={showGridlines}
+                onCheckedChange={setShowGridlines}
+                id="grid-lines"
+              />
+              <Label htmlFor="grid-lines">网格线</Label>
+
+              <Switch
+                checked={showCrosshair}
+                onCheckedChange={setShowCrosshair}
+                id="crosshair"
+              />
+              <Label htmlFor="crosshair">十字准线</Label>
+
+              <Slider
+                value={[previewZoom]}
+                min={0.5}
+                max={2}
+                step={0.1}
+                onValueChange={(value) => setPreviewZoom(value[0])}
+                className="w-32"
+              />
+              <span className="text-xs">缩放: {previewZoom.toFixed(1)}x</span>
             </div>
           </motion.div>
         </DialogContent>
@@ -753,6 +841,92 @@ const FOVSettingDialog: React.FC<FOVDialogProps> = ({
             </div>
           </DialogContent>
         </motion.div>
+      </Dialog>
+
+      {/* 添加预设组管理对话框 */}
+      <Dialog>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>预设组管理</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {presetGroups.map((group) => (
+              <div key={group.id} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium">{group.name}</h3>
+                  {group.id !== "default" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setPresetGroups((prev) =>
+                          prev.filter((g) => g.id !== group.id)
+                        );
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {group.presets.map((preset, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-2 bg-gray-700 rounded"
+                    >
+                      <span>{preset.name}</span>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => applyPreset(preset)}
+                        >
+                          应用
+                        </Button>
+                        {group.id !== "default" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setPresetGroups((prev) =>
+                                prev.map((g) =>
+                                  g.id === group.id
+                                    ? {
+                                        ...g,
+                                        presets: g.presets.filter(
+                                          (_, i) => i !== idx
+                                        ),
+                                      }
+                                    : g
+                                )
+                              );
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <Button
+              className="w-full"
+              onClick={() => {
+                const newGroup: PresetGroup = {
+                  id: crypto.randomUUID(),
+                  name: `新预设组 ${presetGroups.length}`,
+                  presets: [],
+                };
+                setPresetGroups((prev) => [...prev, newGroup]);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              添加预设组
+            </Button>
+          </div>
+        </DialogContent>
       </Dialog>
     </Dialog>
   );

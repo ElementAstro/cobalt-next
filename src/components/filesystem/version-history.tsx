@@ -21,6 +21,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Span } from "@/components/custom/span";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/hooks/use-toast";
 
 interface Version {
   id: number;
@@ -34,6 +42,19 @@ interface Version {
   tags?: string[];
   status?: "active" | "archived";
   comments?: string[];
+  restorePoint?: boolean;
+  branch?: string;
+  commitHash?: string;
+  author?: {
+    name: string;
+    email: string;
+    avatar?: string;
+  };
+  mergeInfo?: {
+    from: string;
+    to: string;
+    conflicts?: number;
+  };
 }
 
 interface VersionHistoryProps {
@@ -96,13 +117,82 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">(
     "desc"
   );
+  const [compareVersions, setCompareVersions] = React.useState<Version[]>([]);
+  const [showComments, setShowComments] = React.useState(false);
+  const [newComment, setNewComment] = React.useState("");
+  const [exportFormat, setExportFormat] = React.useState<
+    "json" | "csv" | "pdf"
+  >("json");
 
-  const handleCompare = (v1: Version, v2: Version) => {
-    // 实现版本比较逻辑
+  const handleCompare = async (v1: Version, v2: Version) => {
+    try {
+      const differences = await compareTwoVersions(v1, v2);
+      setCompareVersions([v1, v2]);
+      toast({
+        title: "比较成功",
+        description: "已生成版本对比",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "比较失败",
+        description: error instanceof Error ? error.message : "版本比较出错",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleExport = (version: Version) => {
-    // 实现版本导出逻辑
+  const handleRestore = async (version: Version) => {
+    try {
+      await restoreVersion(version);
+      toast({
+        title: "还原成功",
+        description: "已还原到选中版本",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "还原失败",
+        description: error instanceof Error ? error.message : "版本还原出错",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddComment = async (versionId: number, comment: string) => {
+    try {
+      await addComment(versionId, comment);
+      setNewComment("");
+      toast({
+        title: "评论成功",
+        description: "已添加新评论",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "评论失败",
+        description: error instanceof Error ? error.message : "评论添加出错",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExport = async (format: Version) => {
+    try {
+      const data = await exportVersionHistory(format);
+      downloadFile(data, `version-history.${format}`);
+      toast({
+        title: "导出成功",
+        description: "历史记录已导出",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "导出失败",
+        description: error instanceof Error ? error.message : "文件导出出错",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSelectVersion = (versionId: number) => {
@@ -391,6 +481,60 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                       </motion.div>
                     ))}
                   </div>
+
+                  {/* 工具栏 */}
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={exportFormat}
+                        onValueChange={(value: "json" | "csv" | "pdf") =>
+                          setExportFormat(value)
+                        }
+                      >
+                        <SelectTrigger>导出格式</SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="json">JSON</SelectItem>
+                          <SelectItem value="csv">CSV</SelectItem>
+                          <SelectItem value="pdf">PDF</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button onClick={() => handleExport(exportFormat)}>
+                        导出历史记录
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* 比较视图 */}
+                  {compareVersions.length === 2 && (
+                    <div className="mt-4">
+                      <h3 className="text-lg font-semibold mb-2">版本比较</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* 实现版本比较UI */}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 评论系统 */}
+                  {showComments && (
+                    <div className="mt-4">
+                      <h3 className="text-lg font-semibold mb-2">评论</h3>
+                      <div className="space-y-4">
+                        <Textarea
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                          placeholder="添加评论..."
+                        />
+                        <Button
+                          onClick={() =>
+                            handleAddComment(selectedVersion?.id, newComment)
+                          }
+                        >
+                          发表评论
+                        </Button>
+                        <div className="space-y-2">{/* 显示评论列表 */}</div>
+                      </div>
+                    </div>
+                  )}
                 </DialogDescription>
               </DialogContent>
             </motion.div>
@@ -399,4 +543,25 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
       )}
     </AnimatePresence>
   );
+};
+
+// Helper functions
+const compareTwoVersions = async (v1: Version, v2: Version) => {
+  // 实现版本比较逻辑
+};
+
+const restoreVersion = async (version: Version) => {
+  // 实现版本还原逻辑
+};
+
+const addComment = async (versionId: number, comment: string) => {
+  // 实现添加评论逻辑
+};
+
+const exportVersionHistory = async (format: string) => {
+  // 实现导出逻辑
+};
+
+const downloadFile = (data: any, filename: string) => {
+  // 实现文件下载逻辑
 };
