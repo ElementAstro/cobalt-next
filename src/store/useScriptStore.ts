@@ -1,29 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { v4 as uuidv4 } from "uuid";
-
-export interface Script {
-  id: string;
-  name: string;
-  description: string;
-  content: string;
-  tags: string[];
-  category: string;
-  createdAt: Date;
-  updatedAt: Date;
-  lastExecutedAt: Date | null;
-  executionCount: number;
-  version: number;
-}
-
-interface ScriptExecution {
-  id: string;
-  scriptId: string;
-  status: "pending" | "running" | "completed" | "failed";
-  output: string[];
-  startedAt: Date | null;
-  completedAt: Date | null;
-}
+import { Script, ScriptExecution } from "@/types/script";
 
 interface ScriptStore {
   scripts: Script[];

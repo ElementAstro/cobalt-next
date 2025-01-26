@@ -25,7 +25,8 @@ interface TagManagerProps {
 }
 
 export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
-  const { tags, addTag, removeTag } = useFilesystemStore();
+  const { tags, tagColors, addGlobalTag, removeGlobalTag, setTagColor } =
+    useFilesystemStore();
   const [newTag, setNewTag] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedColor, setSelectedColor] = useState("#3B82F6");
@@ -44,7 +45,7 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
 
   const handleAddTag = () => {
     if (newTag.trim() !== "") {
-      addTag(newTag.trim());
+      addGlobalTag(newTag.trim(), selectedColor);
       setNewTag("");
     }
   };
@@ -149,16 +150,53 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
                           className="flex items-center justify-between p-2 rounded bg-gray-700"
                         >
                           <div className="flex items-center space-x-2">
-                            <TagIcon className="w-4 h-4" />
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{
+                                backgroundColor: tagColors[tag] || "#3B82F6",
+                              }}
+                            />
                             <span>{tag}</span>
                           </div>
-                          <Button
-                            variant="destructive"
-                            onClick={() => removeTag(tag)}
-                            className="p-1 rounded bg-red-600 hover:bg-red-700"
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
+                          <div className="flex items-center space-x-2">
+                            <Select
+                              value={tagColors[tag] || "#3B82F6"}
+                              onValueChange={(color) => setTagColor(tag, color)}
+                            >
+                              <SelectTrigger className="w-16 h-8 bg-gray-700/50">
+                                <div
+                                  className="w-4 h-4 rounded-full"
+                                  style={{
+                                    backgroundColor:
+                                      tagColors[tag] || "#3B82F6",
+                                  }}
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {colors.map((color) => (
+                                  <SelectItem
+                                    key={color.value}
+                                    value={color.value}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <div
+                                        className="w-4 h-4 rounded-full"
+                                        style={{ backgroundColor: color.value }}
+                                      />
+                                      <span>{color.label}</span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              variant="destructive"
+                              onClick={() => removeGlobalTag(tag)}
+                              className="p-1 rounded bg-red-600 hover:bg-red-700"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </motion.div>
                       ))
                     )}

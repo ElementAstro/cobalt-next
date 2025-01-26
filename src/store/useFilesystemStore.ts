@@ -1,6 +1,14 @@
 import { CustomizationOptions, File, Folder } from "@/types/filesystem";
 import { create } from "zustand";
 
+import { filesystemApi } from "@/services/api/filesystem";
+import { mockFilesystemApi } from "@/services/mock/filesystem";
+
+const api =
+  process.env.NEXT_PUBLIC_USE_MOCK === "true"
+    ? mockFilesystemApi
+    : filesystemApi;
+
 interface FileUploadState {
   files: File[];
   folders: Folder[];
@@ -15,14 +23,14 @@ interface FileSystemState {
   sortBy: "name" | "size" | "type" | "date";
   sortOrder: "asc" | "desc";
   loading: boolean;
-  error: string | null;
+  error: Error | null;
   setCurrentPath: (path: string) => void;
   setSelectedFiles: (files: string[] | ((prev: string[]) => string[])) => void;
   setViewMode: (mode: "grid" | "list") => void;
   setSortBy: (sort: "name" | "size" | "type" | "date") => void;
   toggleSortOrder: () => void;
   setLoading: (loading: boolean) => void;
-  setError: (error: string | null) => void;
+  setError: (error: Error | null) => void;
 }
 
 interface FileItemState {
@@ -76,8 +84,10 @@ interface TrashBinState {
 
 interface TagManagerState {
   tags: string[];
-  addGlobalTag: (tag: string) => void;
+  tagColors: Record<string, string>;
+  addGlobalTag: (tag: string, color?: string) => void;
   removeGlobalTag: (tag: string) => void;
+  setTagColor: (tag: string, color: string) => void;
   setTheme: (theme: "light" | "dark") => void;
 }
 
@@ -100,8 +110,8 @@ interface SearchState {
   ) => void;
   includeArchived: boolean;
   setIncludeArchived: (include: boolean) => void;
-  searchResults: string[];
-  setSearchResults: (results: string[]) => void;
+  searchResults: File[];
+  setSearchResults: (results: File[]) => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
   minSize: number;
@@ -158,7 +168,16 @@ interface AppState
     SearchState,
     FilePreviewState,
     FileBreadcrumbState,
-    FileMetadataState {}
+    FileMetadataState {
+  isLoading: boolean;
+  error: Error | null;
+  fetchFiles: (path: string) => Promise<void>;
+  fetchFolders: (path: string) => Promise<void>;
+  uploadFiles: (files: FormData) => Promise<void>;
+  searchFiles: (params: any) => Promise<void>;
+  getFavorites: () => Promise<void>;
+  getTags: () => Promise<void>;
+}
 
 export const useFilesystemStore = create<AppState>((set, get) => ({
   // File Upload
@@ -186,7 +205,7 @@ export const useFilesystemStore = create<AppState>((set, get) => ({
   toggleSortOrder: () =>
     set({ sortOrder: get().sortOrder === "asc" ? "desc" : "asc" }),
   setLoading: (loading) => set({ loading }),
-  setError: (error) => set({ error }),
+  setError: (error: Error | null) => set({ error }),
 
   // File Item
   selectedFileId: null,
@@ -240,13 +259,26 @@ export const useFilesystemStore = create<AppState>((set, get) => ({
 
   // Tag Manager
   tags: ["Important", "Work", "Personal"],
-  addGlobalTag: (tag) =>
+  tagColors: {
+    Important: "#EF4444",
+    Work: "#3B82F6",
+    Personal: "#10B981",
+  },
+  addGlobalTag: (tag, color = "#3B82F6") =>
     set((state) => ({
       tags: state.tags.includes(tag) ? state.tags : [...state.tags, tag],
+      tagColors: { ...state.tagColors, [tag]: color },
     })),
   removeGlobalTag: (tag) =>
     set((state) => ({
       tags: state.tags.filter((t) => t !== tag),
+      tagColors: Object.fromEntries(
+        Object.entries(state.tagColors).filter(([key]) => key !== tag)
+      ),
+    })),
+  setTagColor: (tag, color) =>
+    set((state) => ({
+      tagColors: { ...state.tagColors, [tag]: color },
     })),
   setTheme: (theme) => set({ theme }),
 
@@ -404,4 +436,82 @@ export const useFilesystemStore = create<AppState>((set, get) => ({
         [fileId]: (state.fileTags[fileId] || []).filter((t) => t !== tag),
       },
     })),
+
+  // API 操作方法
+  fetchFiles: async (path: string) => {
+    try {
+      set({ isLoading: true, error: null });
+      const response = await api.getFiles(path);
+      set({ files: response.data });
+    } catch (error) {
+      set({ error: error as Error });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  fetchFolders: async (path: string) => {
+    try {
+      set({ isLoading: true, error: null });
+      const response = await api.getFolders(path);
+      set({ folders: response.data });
+    } catch (error) {
+      set({ error: error as Error });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  uploadFiles: async (files: FormData) => {
+    try {
+      set({ isLoading: true, error: null });
+      const response = await api.uploadFiles(files);
+      set((state) => ({
+        files: [...state.files, ...response.data],
+      }));
+    } catch (error) {
+      set({ error: error as Error });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  searchFiles: async (params) => {
+    try {
+      set({ isLoading: true, error: null });
+      const response = await api.search(params);
+      set({ searchResults: response.data });
+    } catch (error) {
+      set({ error: error as Error });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  getFavorites: async () => {
+    try {
+      set({ isLoading: true, error: null });
+      const response = await api.getFavorites();
+      set({ favorites: response.data });
+    } catch (error) {
+      set({ error: error as Error });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  getTags: async () => {
+    try {
+      set({ isLoading: true, error: null });
+      const response = await api.getTags();
+      set({
+        tags: response.data.tags,
+        tagColors: response.data.colors,
+      });
+    } catch (error) {
+      set({ error: error as Error });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
 }));

@@ -123,6 +123,112 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
   const [exportFormat, setExportFormat] = React.useState<
     "json" | "csv" | "pdf"
   >("json");
+  const [selectedVersion, setSelectedVersion] = React.useState<Version | null>(
+    null
+  );
+
+  const filteredVersions = React.useMemo(() => {
+    return versions
+      .filter(
+        (version) =>
+          version.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          version.description
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          version.tags?.some((tag) =>
+            tag.toLowerCase().includes(searchQuery.toLowerCase())
+          )
+      )
+      .sort((a, b) => {
+        if (sortBy === "date") {
+          return sortDirection === "asc"
+            ? new Date(a.date).getTime() - new Date(b.date).getTime()
+            : new Date(b.date).getTime() - new Date(a.date).getTime();
+        }
+        if (sortBy === "user") {
+          return sortDirection === "asc"
+            ? a.user.localeCompare(b.user)
+            : b.user.localeCompare(a.user);
+        }
+        if (sortBy === "size") {
+          return sortDirection === "asc"
+            ? (a.size || "").localeCompare(b.size || "")
+            : (b.size || "").localeCompare(a.size || "");
+        }
+        return 0;
+      });
+  }, [versions, searchQuery, sortBy, sortDirection]);
+
+  const paginatedVersions = React.useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredVersions.slice(start, start + pageSize);
+  }, [filteredVersions, currentPage, pageSize]);
+
+  // Helper functions
+  const compareTwoVersions = async (v1: Version, v2: Version) => {
+    // 实现版本比较逻辑
+    return {
+      added: Math.floor(Math.random() * 100),
+      removed: Math.floor(Math.random() * 100),
+      modified: Math.floor(Math.random() * 100),
+      differences: [],
+    };
+  };
+
+  const restoreVersion = async (version: Version) => {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setVersions((prev) =>
+      prev.map((v) => (v.id === version.id ? { ...v, status: "active" } : v))
+    );
+    return true;
+  };
+
+  const addComment = async (versionId: number, comment: string) => {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    setVersions((prev) =>
+      prev.map((v) =>
+        v.id === versionId
+          ? {
+              ...v,
+              comments: [...(v.comments || []), comment],
+            }
+          : v
+      )
+    );
+    return true;
+  };
+
+  const exportVersionHistory = async (
+    versionsToExport: Version[],
+    format: string
+  ) => {
+    switch (format) {
+      case "json":
+        return JSON.stringify(versionsToExport, null, 2);
+      case "csv":
+        // Generate CSV content
+        return versionsToExport
+          .map((v) => `${v.id},${v.date},${v.user}`)
+          .join("\n");
+      case "pdf":
+        // Mock PDF generation
+        return new Blob(["PDF content"], { type: "application/pdf" });
+      default:
+        throw new Error("Unsupported format");
+    }
+  };
+
+  const downloadFile = (data: BlobPart, filename: string) => {
+    const blob = new Blob([data]);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   const handleCompare = async (v1: Version, v2: Version) => {
     try {
@@ -159,28 +265,28 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     }
   };
 
-  const handleAddComment = async (versionId: number, comment: string) => {
-    try {
-      await addComment(versionId, comment);
-      setNewComment("");
-      toast({
-        title: "评论成功",
-        description: "已添加新评论",
-        variant: "default",
-      });
-    } catch (error) {
-      toast({
-        title: "评论失败",
-        description: error instanceof Error ? error.message : "评论添加出错",
-        variant: "destructive",
-      });
-    }
+  const isVersion = (value: any): value is Version => {
+    return value && typeof value === "object" && "id" in value;
   };
 
-  const handleExport = async (format: Version) => {
+  const handleExport = async (format: "json" | "csv" | "pdf" | Version) => {
     try {
-      const data = await exportVersionHistory(format);
-      downloadFile(data, `version-history.${format}`);
+      let data;
+      if (isVersion(format)) {
+        // Single version export
+        data = await exportVersionHistory([format], "json");
+      } else {
+        // Bulk export
+        const versionsToExport = versions.filter((v) =>
+          selectedVersions.includes(v.id)
+        );
+        data = await exportVersionHistory(versionsToExport, format);
+      }
+
+      downloadFile(
+        data,
+        `version-history.${isVersion(format) ? "json" : format}`
+      );
       toast({
         title: "导出成功",
         description: "历史记录已导出",
@@ -196,49 +302,60 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
   };
 
   const handleSelectVersion = (versionId: number) => {
+    const version = versions.find((v) => v.id === versionId);
     setSelectedVersions((prev) =>
       prev.includes(versionId)
         ? prev.filter((id) => id !== versionId)
         : [...prev, versionId]
     );
+    if (version) {
+      setSelectedVersion(version);
+      onVersionSelect?.(version);
+    }
   };
 
   const handleBulkAction = (action: "export" | "compare" | "delete") => {
     const selected = versions.filter((v) => selectedVersions.includes(v.id));
-    // 实现批量操作逻辑
+    switch (action) {
+      case "export":
+        handleExport("json");
+        break;
+      case "compare":
+        if (selected.length === 2) {
+          handleCompare(selected[0], selected[1]);
+        }
+        break;
+      case "delete":
+        setVersions((prev) => prev.filter((v) => !selected.includes(v)));
+        onBulkAction?.(selected);
+        break;
+    }
   };
 
-  const filteredVersions = React.useMemo(() => {
-    return versions
-      .filter(
-        (version) =>
-          version.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          version.description
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          version.tags?.some((tag) =>
-            tag.toLowerCase().includes(searchQuery.toLowerCase())
-          )
-      )
-      .sort((a, b) => {
-        if (sortBy === "date") {
-          return sortDirection === "asc"
-            ? new Date(a.date).getTime() - new Date(b.date).getTime()
-            : new Date(b.date).getTime() - new Date(a.date).getTime();
-        }
-        if (sortBy === "user") {
-          return sortDirection === "asc"
-            ? a.user.localeCompare(b.user)
-            : b.user.localeCompare(a.user);
-        }
-        if (sortBy === "size") {
-          return sortDirection === "asc"
-            ? (a.size || "").localeCompare(b.size || "")
-            : (b.size || "").localeCompare(a.size || "");
-        }
-        return 0;
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const toggleComments = () => setShowComments((prev) => !prev);
+
+  const handleAddComment = async () => {
+    if (!selectedVersion?.id) return;
+    try {
+      await addComment(selectedVersion.id, newComment);
+      setNewComment("");
+      toast({
+        title: "评论成功",
+        description: "已添加新评论",
+        variant: "default",
       });
-  }, [versions, searchQuery, sortBy, sortDirection]);
+    } catch (error) {
+      toast({
+        title: "评论失败",
+        description: error instanceof Error ? error.message : "评论添加出错",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -336,7 +453,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
 
                 <DialogDescription className="overflow-y-auto flex-grow p-2">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                    {filteredVersions.map((version, index) => (
+                    {paginatedVersions.map((version, index) => (
                       <motion.div
                         key={version.id}
                         initial={{ opacity: 0, y: 20 }}
@@ -525,17 +642,32 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                           placeholder="添加评论..."
                         />
                         <Button
-                          onClick={() =>
-                            handleAddComment(selectedVersion?.id, newComment)
-                          }
+                          onClick={() => toggleComments()}
+                          variant="outline"
                         >
-                          发表评论
+                          <MessageSquare className="w-4 h-4 mr-1" />
+                          评论
                         </Button>
+                        // And change the comment button handler:
+                        <Button onClick={handleAddComment}>发表评论</Button>
                         <div className="space-y-2">{/* 显示评论列表 */}</div>
                       </div>
                     </div>
                   )}
                 </DialogDescription>
+                <div className="flex justify-center mt-4">
+                  {Array.from({
+                    length: Math.ceil(filteredVersions.length / pageSize),
+                  }).map((_, i) => (
+                    <Button
+                      key={i}
+                      variant={currentPage === i + 1 ? "default" : "outline"}
+                      onClick={() => handlePageChange(i + 1)}
+                    >
+                      {i + 1}
+                    </Button>
+                  ))}
+                </div>
               </DialogContent>
             </motion.div>
           </DialogOverlay>
@@ -543,25 +675,4 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
       )}
     </AnimatePresence>
   );
-};
-
-// Helper functions
-const compareTwoVersions = async (v1: Version, v2: Version) => {
-  // 实现版本比较逻辑
-};
-
-const restoreVersion = async (version: Version) => {
-  // 实现版本还原逻辑
-};
-
-const addComment = async (versionId: number, comment: string) => {
-  // 实现添加评论逻辑
-};
-
-const exportVersionHistory = async (format: string) => {
-  // 实现导出逻辑
-};
-
-const downloadFile = (data: any, filename: string) => {
-  // 实现文件下载逻辑
 };

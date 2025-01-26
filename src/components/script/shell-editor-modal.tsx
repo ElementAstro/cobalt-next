@@ -122,18 +122,18 @@ const ShellScriptEditorModal: React.FC<ShellScriptEditorModalProps> = ({
           initial="hidden"
           animate="visible"
           exit="exit"
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 z-50"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-1 z-50"
         >
           <motion.div
             variants={modalVariants}
-            className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full ${
-              isLandscape ? "max-w-4xl h-[90vh]" : "max-w-3xl h-[95vh]"
-            } flex flex-col overflow-hidden`}
+            className={`bg-gray-900 rounded-lg shadow-xl w-full h-[98vh] flex flex-col overflow-hidden`}
           >
-            {/* Header */}
-            <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
-              <h2 className="text-xl font-bold">Shell Script 编辑器</h2>
-              <div className="flex items-center space-x-2">
+            {/* Header - 更紧凑的头部 */}
+            <div className="flex justify-between items-center px-3 py-2 border-b border-gray-700">
+              <h2 className="text-lg font-semibold text-white">
+                Shell Script 编辑器
+              </h2>
+              <div className="flex items-center gap-1">
                 <Button
                   variant="outline"
                   size="icon"
@@ -189,7 +189,7 @@ const ShellScriptEditorModal: React.FC<ShellScriptEditorModalProps> = ({
               </div>
             </div>
 
-            {/* Content */}
+            {/* Content - 优化横屏布局 */}
             <div
               className={`flex-grow flex ${
                 isLandscape ? "flex-row" : "flex-col"
@@ -197,8 +197,8 @@ const ShellScriptEditorModal: React.FC<ShellScriptEditorModalProps> = ({
             >
               <div
                 className={`${
-                  isLandscape ? "w-1/4" : "h-auto"
-                } p-4 border-r dark:border-gray-700 overflow-y-auto bg-gray-50 dark:bg-gray-700`}
+                  isLandscape ? "w-1/4 min-w-[250px]" : "h-[30vh]"
+                } border-r border-gray-700 overflow-y-auto bg-gray-800`}
               >
                 <CustomOptions
                   options={{
@@ -226,7 +226,7 @@ const ShellScriptEditorModal: React.FC<ShellScriptEditorModalProps> = ({
                   onInsert={(template) => setCode((prev) => prev + template)}
                 />
               </div>
-              <div className="flex-grow overflow-hidden">
+              <div className="flex-grow relative">
                 <div className="h-full relative">
                   <CodeEditor
                     value={code}

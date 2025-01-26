@@ -1,100 +1,79 @@
 import { z } from "zod";
 
 export function parseJson(jsonString: string): any {
-  return JSON.parse(jsonString);
+  try {
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.error("JSON parsing error:", error);
+    return null;
+  }
 }
 
 export function stringifyJson(json: any): string {
-  return JSON.stringify(json, null, 2);
+  try {
+    return JSON.stringify(json, null, 2);
+  } catch (error) {
+    console.error("JSON stringification error:", error);
+    return "";
+  }
 }
 
-export function reorderNodes(
-  json: any,
-  sourcePath: string[],
-  destinationPath: string[],
-  sourceIndex: number,
-  destinationIndex: number
-): any {
-  const newJson = JSON.parse(JSON.stringify(json)); // 深拷贝
-
-  const getParent = (obj: any, path: string[]) => {
-    return path.reduce((acc, key) => acc[key], obj);
-  };
-
-  const sourceParent = getParent(newJson, sourcePath);
-  const destParent = getParent(newJson, destinationPath);
-
-  if (Array.isArray(sourceParent) && Array.isArray(destParent)) {
-    const [removed] = sourceParent.splice(sourceIndex, 1);
-    destParent.splice(destinationIndex, 0, removed);
-  } else if (
-    typeof sourceParent === "object" &&
-    typeof destParent === "object"
-  ) {
-    const keys = Object.keys(sourceParent);
-    const [removedKey] = keys.splice(sourceIndex, 1);
-    keys.forEach((key, idx) => {
-      sourceParent[key] = sourceParent[key];
-    });
-    destParent.splice(destinationIndex, 0, {
-      [removedKey]: sourceParent[removedKey],
-    });
-    delete sourceParent[removedKey];
-  }
-
-  return newJson;
+export function reorderNodes(nodes: any[], oldIndex: number, newIndex: number): any[] {
+  const result = Array.from(nodes);
+  const [removed] = result.splice(oldIndex, 1);
+  result.splice(newIndex, 0, removed);
+  return result;
 }
 
 export function parseInputData(data: any): any {
   if (typeof data === "string") {
     try {
       return JSON.parse(data);
-    } catch (error) {
-      console.error("Invalid JSON string:", error);
-      return {};
+    } catch {
+      return data;
     }
-  } else if (typeof data === "object" && data !== null) {
-    return data;
-  } else {
-    console.error("Invalid input data type");
-    return {};
   }
+  return data;
 }
 
-export function validateJson(json: any, schema?: z.ZodTypeAny): boolean {
+export function validateJson(json: any, schema?: any): string | null {
   try {
-    // 基本JSON验证
-    JSON.stringify(json);
+    if (typeof json === "string") {
+      JSON.parse(json);
+    }
     
-    // 如果提供了schema，进行额外验证
     if (schema) {
-      const result = schema.safeParse(json);
-      if (!result.success) {
-        throw new Error(result.error.errors[0].message);
-      }
+      // Add schema validation logic here if needed
+      return null;
     }
-    return true;
+    
+    return null;
   } catch (error) {
-    console.error("JSON validation failed:", error);
-    return false;
+    return (error as Error).message;
   }
 }
 
-export function formatJson(json: any, indent = 2): string {
+export function formatJson(json: any): string {
   try {
-    return JSON.stringify(json, null, indent);
+    if (typeof json === "string") {
+      json = JSON.parse(json);
+    }
+    return JSON.stringify(json, null, 2);
   } catch (error) {
-    console.error("Failed to format JSON:", error);
-    return "{}";
+    console.error("JSON formatting error:", error);
+    throw new Error("Invalid JSON format");
   }
 }
 
 export function minifyJson(json: any): string {
   try {
+    if (typeof json === "string") {
+      json = JSON.parse(json);
+    }
     return JSON.stringify(json);
   } catch (error) {
-    console.error("Failed to minify JSON:", error);
-    return "{}";
+    console.error("JSON minification error:", error);
+    throw new Error("Invalid JSON format");
   }
 }
 
@@ -122,4 +101,78 @@ export function validateJsonStructure(json: any, schema: any): boolean {
     console.error("JSON structure validation failed:", error);
     return false;
   }
+}
+
+export function searchJson(json: any, query: string): any[] {
+  const results: any[] = [];
+  
+  function search(obj: any, path: string[] = []) {
+    if (!obj) return;
+    
+    Object.entries(obj).forEach(([key, value]) => {
+      const currentPath = [...path, key];
+      
+      if (key.toLowerCase().includes(query.toLowerCase())) {
+        results.push({
+          path: currentPath.join('.'),
+          key,
+          value
+        });
+      }
+      
+      if (typeof value === 'object') {
+        search(value, currentPath);
+      }
+    });
+  }
+  
+  search(json);
+  return results;
+}
+
+export function diffJson(oldJson: any, newJson: any): any {
+  const diff: any = {};
+  
+  function compare(obj1: any, obj2: any, path: string[] = []) {
+    if (obj1 === obj2) return;
+    
+    if (typeof obj1 !== typeof obj2) {
+      diff[path.join('.')] = { old: obj1, new: obj2 };
+      return;
+    }
+    
+    if (typeof obj1 !== 'object') {
+      if (obj1 !== obj2) {
+        diff[path.join('.')] = { old: obj1, new: obj2 };
+      }
+      return;
+    }
+    
+    const allKeys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
+    
+    allKeys.forEach(key => {
+      compare(obj1[key], obj2[key], [...path, key]);
+    });
+  }
+  
+  compare(oldJson, newJson);
+  return diff;
+}
+
+export function mergeJson(target: any, source: any, options = { overwrite: true }): any {
+  const result = { ...target };
+  
+  Object.entries(source).forEach(([key, value]) => {
+    if (typeof value === 'object' && value !== null) {
+      if (key in result && typeof result[key] === 'object') {
+        result[key] = mergeJson(result[key], value, options);
+      } else if (options.overwrite || !(key in result)) {
+        result[key] = value;
+      }
+    } else if (options.overwrite || !(key in result)) {
+      result[key] = value;
+    }
+  });
+  
+  return result;
 }

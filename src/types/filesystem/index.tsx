@@ -20,6 +20,15 @@ export interface File {
   content?: string; // For preview purposes
   language?: string; // For code files
   path: string;
+  thumbnail?: string;
+  modified: string;
+  versions?: {
+    id: string;
+    createdAt: Date;
+    size: number;
+  }[];
+  tags?: string[];
+  isFavorite?: boolean;
 }
 
 export interface Folder {
@@ -31,6 +40,10 @@ export interface Folder {
   owner: string;
   permissions: string;
   path: string;
+  modified: string;
+  size?: number;
+  itemCount?: number;
+  parentId?: string;
 }
 
 export type CustomizationOptionsData = {
@@ -66,3 +79,10 @@ export type FileOperation =
   | "manageTags"
   | "compress"
   | "encrypt";
+
+// 添加 API 响应类型
+export interface ApiResponse<T> {
+  data: T;
+  message: string;
+  status: "success" | "error";
+}
