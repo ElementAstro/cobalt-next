@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useRef, useEffect, useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { CustomColors } from "@/types/guiding";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -13,16 +13,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Brush,
   Save,
   RotateCcw,
-  RotateCw,
-  FlipHorizontal,
-  FlipVertical,
-  ZoomIn,
-  ZoomOut,
+  ChevronRight,
+  ChevronLeft,
+  Eraser,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface Shape {
   type: "circle" | "square";
@@ -80,82 +87,98 @@ export function GuideImage({
       flip: { horizontal: boolean; vertical: boolean };
     }>
   >([]);
+  const [toolsOpen, setToolsOpen] = useState(true);
+  const [markers, setMarkers] = useState<{ x: number; y: number }[]>([]);
+  const [isMarking, setIsMarking] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState("none");
 
-  const drawImage = (ctx: CanvasRenderingContext2D, img: HTMLImageElement) => {
-    try {
-      ctx.save();
-      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-      ctx.translate(
-        offset.x + ctx.canvas.width / 2,
-        offset.y + ctx.canvas.height / 2
-      );
-      ctx.scale(
-        scale * (flip.horizontal ? -1 : 1),
-        scale * (flip.vertical ? -1 : 1)
-      );
-      ctx.rotate((rotation * Math.PI) / 180);
-      ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) ${filter}`;
-      ctx.drawImage(img, -img.width / 2, -img.height / 2);
-      ctx.restore();
+  const drawImage = useCallback(
+    (ctx: CanvasRenderingContext2D, img: HTMLImageElement) => {
+      try {
+        ctx.save();
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.translate(
+          offset.x + ctx.canvas.width / 2,
+          offset.y + ctx.canvas.height / 2
+        );
+        ctx.scale(
+          scale * (flip.horizontal ? -1 : 1),
+          scale * (flip.vertical ? -1 : 1)
+        );
+        ctx.rotate((rotation * Math.PI) / 180);
+        ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) ${filter}`;
+        ctx.drawImage(img, -img.width / 2, -img.height / 2);
+        ctx.restore();
 
-      if (showGrid) {
-        ctx.strokeStyle = `${colors.accent}40`;
-        ctx.lineWidth = 0.5;
-        for (let x = 0; x < ctx.canvas.width; x += gridSize) {
+        if (showGrid) {
+          ctx.strokeStyle = `${colors.accent}40`;
+          ctx.lineWidth = 0.5;
+          for (let x = 0; x < ctx.canvas.width; x += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, ctx.canvas.height);
+            ctx.stroke();
+          }
+          for (let y = 0; y < ctx.canvas.height; y += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(ctx.canvas.width, y);
+            ctx.stroke();
+          }
+        }
+
+        shapes.forEach((shape) => {
+          ctx.fillStyle = shape.color;
+          ctx.strokeStyle = shape.color;
+          ctx.lineWidth = 1;
+          if (shape.type === "circle" && shape.radius) {
+            ctx.beginPath();
+            ctx.arc(
+              shape.position.x,
+              shape.position.y,
+              shape.radius,
+              0,
+              2 * Math.PI
+            );
+            ctx.fill();
+          } else if (shape.type === "square" && shape.size) {
+            ctx.fillRect(
+              shape.position.x - shape.size / 2,
+              shape.position.y - shape.size / 2,
+              shape.size,
+              shape.size
+            );
+          }
+        });
+
+        if (showCrosshair) {
+          const centerX = ctx.canvas.width / 2;
+          const centerY = ctx.canvas.height / 2;
+          ctx.strokeStyle = colors.accent;
+          ctx.lineWidth = crosshairThickness;
           ctx.beginPath();
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, ctx.canvas.height);
+          ctx.moveTo(centerX - crosshairSize, centerY);
+          ctx.lineTo(centerX + crosshairSize, centerY);
+          ctx.moveTo(centerX, centerY - crosshairSize);
+          ctx.lineTo(centerX, centerY + crosshairSize);
           ctx.stroke();
         }
-        for (let y = 0; y < ctx.canvas.height; y += gridSize) {
-          ctx.beginPath();
-          ctx.moveTo(0, y);
-          ctx.lineTo(ctx.canvas.width, y);
-          ctx.stroke();
-        }
-      }
 
-      shapes.forEach((shape) => {
-        ctx.fillStyle = shape.color;
-        ctx.strokeStyle = shape.color;
-        ctx.lineWidth = 1;
-        if (shape.type === "circle" && shape.radius) {
+        // Draw markers
+        markers.forEach((marker, index) => {
           ctx.beginPath();
-          ctx.arc(
-            shape.position.x,
-            shape.position.y,
-            shape.radius,
-            0,
-            2 * Math.PI
-          );
+          ctx.arc(marker.x, marker.y, 5, 0, 2 * Math.PI);
+          ctx.fillStyle = colors.accent;
           ctx.fill();
-        } else if (shape.type === "square" && shape.size) {
-          ctx.fillRect(
-            shape.position.x - shape.size / 2,
-            shape.position.y - shape.size / 2,
-            shape.size,
-            shape.size
-          );
-        }
-      });
-
-      if (showCrosshair) {
-        const centerX = ctx.canvas.width / 2;
-        const centerY = ctx.canvas.height / 2;
-        ctx.strokeStyle = colors.accent;
-        ctx.lineWidth = crosshairThickness;
-        ctx.beginPath();
-        ctx.moveTo(centerX - crosshairSize, centerY);
-        ctx.lineTo(centerX + crosshairSize, centerY);
-        ctx.moveTo(centerX, centerY - crosshairSize);
-        ctx.lineTo(centerX, centerY + crosshairSize);
-        ctx.stroke();
+          ctx.fillText(`#${index + 1}`, marker.x + 8, marker.y + 8);
+        });
+      } catch (err) {
+        setError("绘制图像时出错");
+        console.error("绘制错误:", err);
       }
-    } catch (err) {
-      setError("绘制图像时出错");
-      console.error("绘制错误:", err);
-    }
-  };
+    },
+    [markers, colors, scale, offset, rotation, flip, filter]
+  );
 
   const validateImage = (url: string): boolean => {
     const allowedExtensions = [".jpg", ".jpeg", ".png", ".tiff", ".fits"];
@@ -355,33 +378,117 @@ export function GuideImage({
     }
   };
 
+  const handleCanvasClick = (e: React.MouseEvent) => {
+    if (!isMarking) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    setMarkers((prev) => [...prev, { x, y }]);
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5 }}
-      className="relative w-full flex items-center justify-center h-full"
-      style={{ height }}
-    >
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
-        </div>
-      )}
+    <TooltipProvider>
+      <div className="relative w-full h-full">
+        {/* Floating Tools Panel */}
+        <AnimatePresence>
+          <motion.div
+            initial={{ x: -300 }}
+            animate={{ x: toolsOpen ? 0 : -300 }}
+            exit={{ x: -300 }}
+            className="absolute left-0 top-0 z-10"
+          >
+            <Card className="w-[300px] bg-background/80 backdrop-blur">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">图像工具</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setToolsOpen(!toolsOpen)}
+                >
+                  {toolsOpen ? <ChevronLeft /> : <ChevronRight />}
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Transform Controls */}
+                <div className="space-y-2">
+                  <Label>变换</Label>
+                  <div className="flex gap-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setRotation((r) => r - 90)}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>逆时针旋转</TooltipContent>
+                    </Tooltip>
+                    {/* Add more transform controls... */}
+                  </div>
+                </div>
 
-      {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-          <div className="bg-destructive p-4 rounded">
-            <p className="text-destructive-foreground">{error}</p>
-          </div>
-        </div>
-      )}
+                {/* Filter Controls */}
+                <div className="space-y-2">
+                  <Label>滤镜</Label>
+                  <Select
+                    value={selectedFilter}
+                    onValueChange={setSelectedFilter}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择滤镜" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">无</SelectItem>
+                      <SelectItem value="grayscale(100%)">黑白</SelectItem>
+                      <SelectItem value="sepia(100%)">复古</SelectItem>
+                      <SelectItem value="invert(100%)">反色</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-      {imageUrl ? (
+                {/* Marker Tools */}
+                <div className="space-y-2">
+                  <Label>标注工具</Label>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">启用标注</span>
+                    <Switch
+                      checked={isMarking}
+                      onCheckedChange={setIsMarking}
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setMarkers([])}
+                  >
+                    <Eraser className="h-4 w-4 mr-2" />
+                    清除所有标注
+                  </Button>
+                </div>
+
+                {/* Save Button */}
+                <Button className="w-full" onClick={saveImage}>
+                  <Save className="h-4 w-4 mr-2" />
+                  保存图像
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Main Canvas */}
         <canvas
           ref={canvasRef}
           className="max-w-full max-h-full border rounded cursor-move"
           style={{ borderColor: colors.primary }}
+          onClick={handleCanvasClick}
           onWheel={handleWheel}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -391,17 +498,21 @@ export function GuideImage({
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         />
-      ) : (
-        <div className="relative w-full h-full">
-          <Image
-            src="/placeholder.png"
-            alt="占位图像"
-            layout="fill"
-            objectFit="contain"
-            className="rounded"
-          />
-        </div>
-      )}
-    </motion.div>
+
+        {/* Loading & Error States */}
+        <AnimatePresence>
+          {isLoading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 flex items-center justify-center bg-black/50"
+            >
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </TooltipProvider>
   );
 }

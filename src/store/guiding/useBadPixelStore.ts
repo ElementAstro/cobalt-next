@@ -1,100 +1,154 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 
-interface BadPixelState {
-  data: {
-    timestamp: string;
-    simulator: string;
-    mainFieldExposureTime: number;
-    mainFieldBrightness: number;
-    average: number;
-    standardDeviation: number;
-    median: number;
-    medianAbsoluteDeviation: number;
-    hotPixelCount: number;
-    coldPixelCount: number;
-    width: number;
-    height: number;
-    hotPixels: number[];
-    coldPixels: number[];
+interface PixelData {
+  width: number;
+  height: number;
+  hotPixels: number[];
+  coldPixels: number[];
+  correctionLevels: {
+    hot: number;
+    cold: number;
   };
-  options: {
-    theme: "light" | "dark";
-    language: "zh" | "en";
-    autoRefresh: boolean;
-    refreshInterval: number;
-    correctionLevelHot: number;
-    correctionLevelCold: number;
-  };
-  setData: (data: Partial<BadPixelState["data"]>) => void;
-  setOptions: (options: Partial<BadPixelState["options"]>) => void;
+}
+
+interface BadPixelOptions {
+  language: "zh" | "en";
+  theme: "light" | "dark";
+  autoRefresh: boolean;
+  refreshInterval: number;
+  displayMode: "scatter" | "heatmap" | "grid";
+  showOverlay: boolean;
+  filterThreshold: number;
+  darkFrameEnabled: boolean;
+  autoSave: boolean;
+  saveInterval: number;
+}
+
+interface BadPixelStore {
+  data: PixelData;
+  options: BadPixelOptions;
+  setData: (data: Partial<PixelData>) => void;
+  setOptions: (options: Partial<BadPixelOptions>) => void;
   resetCorrectionLevels: () => void;
   generateBadPixels: () => Promise<void>;
   addBadPixel: (pixel: number) => void;
+  removeBadPixel: (pixel: number) => void;
+  undoHistory: () => void;
+  redoHistory: () => void;
 }
 
-export const useBadPixelStore = create<BadPixelState>()(
-  devtools((set) => ({
-    data: {
-      timestamp: new Date().toISOString(),
-      simulator: "ZWO ASI294MM Pro",
-      mainFieldExposureTime: 1000,
-      mainFieldBrightness: 100,
-      average: 0,
-      standardDeviation: 0,
-      median: 0,
-      medianAbsoluteDeviation: 0,
-      hotPixelCount: 0,
-      coldPixelCount: 0,
-      width: 4144,
-      height: 2822,
-      hotPixels: [],
-      coldPixels: [],
-    },
-    options: {
-      theme: "dark",
-      language: "zh",
-      autoRefresh: false,
-      refreshInterval: 5000,
-      correctionLevelHot: 3,
-      correctionLevelCold: 3,
-    },
-    setData: (data) => set((state) => ({ data: { ...state.data, ...data } })),
-    setOptions: (options) =>
-      set((state) => ({ options: { ...state.options, ...options } })),
-    resetCorrectionLevels: () =>
+const initialData: PixelData = {
+  width: 1920,
+  height: 1080,
+  hotPixels: [],
+  coldPixels: [],
+  correctionLevels: {
+    hot: 0.8,
+    cold: 0.2,
+  },
+};
+
+const initialOptions: BadPixelOptions = {
+  language: "zh",
+  theme: "dark",
+  autoRefresh: false,
+  refreshInterval: 5000,
+  displayMode: "scatter",
+  showOverlay: true,
+  filterThreshold: 5.0,
+  darkFrameEnabled: false,
+  autoSave: false,
+  saveInterval: 30000,
+};
+
+export const useBadPixelStore = create<BadPixelStore>()(
+  devtools((set, get) => ({
+    data: initialData,
+    options: initialOptions,
+
+    setData: (newData) => {
       set((state) => ({
-        options: {
-          ...state.options,
-          correctionLevelHot: 3,
-          correctionLevelCold: 3,
-        },
-      })),
-    generateBadPixels: async () => {
-      // 模拟生成坏点数据
-      const hotPixels = Array.from({ length: 100 }, () =>
-        Math.floor(Math.random() * (4144 * 2822))
-      );
-      const coldPixels = Array.from({ length: 100 }, () =>
-        Math.floor(Math.random() * (4144 * 2822))
-      );
+        data: { ...state.data, ...newData },
+      }));
+    },
+
+    setOptions: (newOptions) => {
+      set((state) => ({
+        options: { ...state.options, ...newOptions },
+      }));
+    },
+
+    resetCorrectionLevels: () => {
       set((state) => ({
         data: {
           ...state.data,
-          hotPixels,
-          coldPixels,
-          hotPixelCount: hotPixels.length,
-          coldPixelCount: coldPixels.length,
+          correctionLevels: {
+            hot: 0.8,
+            cold: 0.2,
+          },
         },
       }));
     },
-    addBadPixel: (pixel) =>
-      set((state) => ({
-        data: {
-          ...state.data,
-          hotPixels: [...state.data.hotPixels, pixel],
-          hotPixelCount: state.data.hotPixels.length + 1,
-        },
-      })),
+
+    generateBadPixels: async () => {
+      // 模拟坏点生成过程
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const hotPixels = Array.from({ length: 50 }, () =>
+            Math.floor(Math.random() * (1920 * 1080))
+          );
+          const coldPixels = Array.from({ length: 30 }, () =>
+            Math.floor(Math.random() * (1920 * 1080))
+          );
+
+          set((state) => ({
+            data: {
+              ...state.data,
+              hotPixels,
+              coldPixels,
+            },
+          }));
+          resolve();
+        }, 1000);
+      });
+    },
+
+    addBadPixel: (pixel: number) => {
+      set((state) => {
+        const hotPixels = [...state.data.hotPixels];
+        if (!hotPixels.includes(pixel)) {
+          hotPixels.push(pixel);
+        }
+        return {
+          data: {
+            ...state.data,
+            hotPixels,
+          },
+        };
+      });
+    },
+
+    removeBadPixel: (pixel: number) => {
+      set((state) => {
+        const hotPixels = state.data.hotPixels.filter((p) => p !== pixel);
+        const coldPixels = state.data.coldPixels.filter((p) => p !== pixel);
+        return {
+          data: {
+            ...state.data,
+            hotPixels,
+            coldPixels,
+          },
+        };
+      });
+    },
+
+    undoHistory: () => {
+      // 实现撤销功能
+    },
+
+    redoHistory: () => {
+      // 实现重做功能
+    },
   }))
 );

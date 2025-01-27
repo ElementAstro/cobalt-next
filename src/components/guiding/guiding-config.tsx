@@ -14,12 +14,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -28,24 +22,20 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { CustomOptions } from "@/types/guiding";
 import { useGuidingStore } from "@/store/useGuidingStore";
 import { useMediaQuery } from "react-responsive";
 import { useEffect, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 
-export default function StarGuiding() {
+export default function GuidingConfig() {
   const {
-    isRunning,
-    setIsRunning,
-    measurePeriodical,
-    setMeasurePeriodical,
-    customOptions,
-    setCustomOptions,
-    measurements,
-    highFrequency,
-    starPosition,
-  } = useGuidingStore().tracking;
+    settings,
+    setSettings,
+    tracking,
+    setTracking,
+    calibration,
+    historyGraph,
+  } = useGuidingStore();
 
   const isLandscape = useMediaQuery({ query: "(orientation: landscape)" });
   const isMobile = useMediaQuery({ query: "(max-width: 640px)" });
@@ -56,23 +46,22 @@ export default function StarGuiding() {
     try {
       setIsLoading(true);
 
-      // Validate SNR threshold
-      if (customOptions.snrThreshold <= 0) {
-        throw new Error("SNR 阈值必须大于0");
+      // 验证基础设置
+      if (settings.radius <= 0) {
+        throw new Error("搜星半径必须大于0");
       }
 
-      // Validate measurement interval
-      if (customOptions.measurementInterval < 100) {
-        throw new Error("测量间隔不能小于100ms");
+      if (settings.exposureTime < 100) {
+        throw new Error("曝光时间不能小于100ms");
       }
 
-      // Validate auto stop duration
-      if (customOptions.autoStopDuration < 1000) {
-        throw new Error("自动停止时间不能小于1000ms");
+      // 验证跟踪参数
+      if (tracking.mod <= 0) {
+        throw new Error("修正系数必须大于0");
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate async operation
-      setIsRunning(true);
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      setSettings({ ...settings, autoGuide: true });
       toast({
         title: "启动成功",
         description: "导星程序已成功启动",
@@ -91,8 +80,8 @@ export default function StarGuiding() {
   const handleStop = async () => {
     try {
       setIsLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate async operation
-      setIsRunning(false);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      setSettings({ ...settings, autoGuide: false });
       toast({
         title: "停止成功",
         description: "导星程序已成功停止",
@@ -107,52 +96,6 @@ export default function StarGuiding() {
       setIsLoading(false);
     }
   };
-
-  const handleCustomOptionChange = (
-    option: keyof CustomOptions,
-    value: number
-  ) => {
-    try {
-      // Validate input values
-      if (value < 0) {
-        throw new Error("值不能为负数");
-      }
-
-      // Specific validation for each option
-      switch (option) {
-        case "snrThreshold":
-          if (value === 0) throw new Error("SNR 阈值不能为0");
-          break;
-        case "measurementInterval":
-          if (value < 100) throw new Error("测量间隔不能小于100ms");
-          break;
-        case "autoStopDuration":
-          if (value < 1000) throw new Error("自动停止时间不能小于1000ms");
-          break;
-      }
-
-      setCustomOptions({ [option]: value });
-      toast({
-        title: "设置成功",
-        description: `${option} 已更新为 ${value}`,
-      });
-    } catch (err) {
-      toast({
-        title: "设置失败",
-        description: err instanceof Error ? err.message : "无效的输入值",
-        variant: "destructive",
-      });
-    }
-  };
-
-  useEffect(() => {
-    if (isRunning) {
-      const timer = setTimeout(() => {
-        setIsRunning(false);
-      }, customOptions.autoStopDuration);
-      return () => clearTimeout(timer);
-    }
-  }, [isRunning, customOptions.autoStopDuration, setIsRunning]);
 
   return (
     <Card
@@ -171,65 +114,84 @@ export default function StarGuiding() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle className="text-lg">自定义选项</DialogTitle>
+                <DialogTitle className="text-lg">导星设置</DialogTitle>
               </DialogHeader>
               <div className="grid gap-3 py-3">
                 <div className="grid grid-cols-4 items-center gap-2">
-                  <Label htmlFor="snrThreshold" className="text-right text-xs">
-                    SNR 阈值
+                  <Label htmlFor="radius" className="text-right text-xs">
+                    搜星半径
                   </Label>
                   <Input
-                    id="snrThreshold"
+                    id="radius"
                     type="number"
-                    value={customOptions.snrThreshold}
+                    value={settings.radius}
                     onChange={(e) =>
-                      handleCustomOptionChange(
-                        "snrThreshold",
-                        Number(e.target.value)
-                      )
+                      setSettings({ radius: Number(e.target.value) })
                     }
                     className="col-span-3 h-8 text-xs"
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-2">
-                  <Label
-                    htmlFor="measurementInterval"
-                    className="text-right text-xs"
-                  >
-                    测量间隔 (ms)
+                  <Label htmlFor="zoom" className="text-right text-xs">
+                    缩放等级
                   </Label>
                   <Input
-                    id="measurementInterval"
+                    id="zoom"
                     type="number"
-                    value={customOptions.measurementInterval}
+                    value={settings.zoom}
                     onChange={(e) =>
-                      handleCustomOptionChange(
-                        "measurementInterval",
-                        Number(e.target.value)
-                      )
+                      setSettings({ zoom: Number(e.target.value) })
                     }
                     className="col-span-3 h-8 text-xs"
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-2">
-                  <Label
-                    htmlFor="autoStopDuration"
-                    className="text-right text-xs"
-                  >
-                    自动停止时间 (ms)
+                  <Label htmlFor="exposureTime" className="text-right text-xs">
+                    曝光时间(ms)
                   </Label>
                   <Input
-                    id="autoStopDuration"
+                    id="exposureTime"
                     type="number"
-                    value={customOptions.autoStopDuration}
+                    value={settings.exposureTime}
                     onChange={(e) =>
-                      handleCustomOptionChange(
-                        "autoStopDuration",
-                        Number(e.target.value)
-                      )
+                      setSettings({ exposureTime: Number(e.target.value) })
                     }
                     className="col-span-3 h-8 text-xs"
                   />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-2">
+                  <Label htmlFor="mod" className="text-right text-xs">
+                    修正系数
+                  </Label>
+                  <Input
+                    id="mod"
+                    type="number"
+                    value={tracking.mod}
+                    onChange={(e) =>
+                      setTracking({ mod: Number(e.target.value) })
+                    }
+                    className="col-span-3 h-8 text-xs"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="correction"
+                    checked={settings.correction}
+                    onCheckedChange={(checked) =>
+                      setSettings({ correction: checked as boolean })
+                    }
+                  />
+                  <Label htmlFor="correction">启用修正</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="trendLine"
+                    checked={settings.trendLine}
+                    onCheckedChange={(checked) =>
+                      setSettings({ trendLine: checked as boolean })
+                    }
+                  />
+                  <Label htmlFor="trendLine">显示趋势线</Label>
                 </div>
               </div>
             </DialogContent>
@@ -249,8 +211,7 @@ export default function StarGuiding() {
             className="space-y-4"
           >
             <p className="text-xs text-muted-foreground">
-              选择一个良好的非饱和的星点(SNR{">"}
-              {customOptions.snrThreshold})并开始导星。
+              选择一个良好的非饱和的星点并开始导星。
             </p>
 
             <div
@@ -260,63 +221,57 @@ export default function StarGuiding() {
                   : "grid-cols-1 md:grid-cols-2 gap-3"
               }`}
             >
-              {/* Measurement State Table */}
+              {/* 基础设置 */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5 }}
               >
-                <h3 className="text-sm font-semibold mb-1">测量状态</h3>
+                <h3 className="text-sm font-semibold mb-1">基础设置</h3>
                 <Table className="text-xs">
                   <TableBody>
                     <TableRow>
-                      <TableCell className="font-medium">开始时间</TableCell>
-                      <TableCell>{measurements.startTime}</TableCell>
-                      <TableCell className="font-medium">曝光时间</TableCell>
-                      <TableCell>{measurements.exposureTime}</TableCell>
+                      <TableCell className="font-medium">搜星半径</TableCell>
+                      <TableCell>{settings.radius.toFixed(1)}</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell className="font-medium">SNR</TableCell>
-                      <TableCell>{measurements.snr.toFixed(2)}</TableCell>
-                      <TableCell className="font-medium">星点质心</TableCell>
-                      <TableCell>{measurements.starCenter}</TableCell>
+                      <TableCell className="font-medium">缩放比例</TableCell>
+                      <TableCell>{settings.zoom}%</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell className="font-medium">已用时间</TableCell>
-                      <TableCell>{measurements.elapsedTime}</TableCell>
-                      <TableCell className="font-medium">样本数量</TableCell>
-                      <TableCell>{measurements.sampleCount}</TableCell>
+                      <TableCell className="font-medium">坐标刻度</TableCell>
+                      <TableCell>{settings.yScale}</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
               </motion.div>
 
-              {/* High Frequency Measurements */}
+              {/* 跟踪参数 */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
               >
-                <h3 className="text-sm font-semibold mb-1">高频星点侧测</h3>
+                <h3 className="text-sm font-semibold mb-1">跟踪参数</h3>
                 <Table className="text-xs">
                   <TableBody>
                     <TableRow>
-                      <TableCell className="font-medium">赤经，RMS</TableCell>
-                      <TableCell>{highFrequency.redRMS.toFixed(2)}</TableCell>
+                      <TableCell className="font-medium">修正系数</TableCell>
+                      <TableCell>{tracking.mod}</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell className="font-medium">赤纬，RMS</TableCell>
-                      <TableCell>{highFrequency.greenRMS.toFixed(2)}</TableCell>
+                      <TableCell className="font-medium">流畅度</TableCell>
+                      <TableCell>{tracking.flow}</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell className="font-medium">累计，RMS</TableCell>
-                      <TableCell>{highFrequency.blueRMS.toFixed(2)}</TableCell>
+                      <TableCell className="font-medium">导星长度</TableCell>
+                      <TableCell>{tracking.guideLength}ms</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
               </motion.div>
 
-              {/* Star Position Data */}
+              {/* 校准信息 */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -327,45 +282,23 @@ export default function StarGuiding() {
                     : "col-span-1 md:col-span-2"
                 }
               >
-                <h3 className="text-sm font-semibold mb-1">其他的星点位移</h3>
+                <h3 className="text-sm font-semibold mb-1">校准信息</h3>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <Table>
                     <TableBody>
                       <TableRow>
                         <TableCell className="font-medium">
-                          赤经，峰值
+                          赤经星点数
                         </TableCell>
-                        <TableCell>{starPosition.redPeak.toFixed(2)}</TableCell>
+                        <TableCell>{calibration.data.raStars}</TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell className="font-medium">
-                          赤经，峰峰值
-                        </TableCell>
-                        <TableCell>
-                          {starPosition.bluePeak.toFixed(2)}
-                        </TableCell>
+                        <TableCell className="font-medium">相机角度</TableCell>
+                        <TableCell>{calibration.data.cameraAngle}°</TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell className="font-medium">
-                          赤经最大漂移率
-                        </TableCell>
-                        <TableCell>
-                          {starPosition.maxDriftRate.toFixed(2)}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">
-                          赤纬漂移速率
-                        </TableCell>
-                        <TableCell>
-                          {starPosition.driftSpeed.toFixed(2)}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">极轴误差</TableCell>
-                        <TableCell>
-                          {starPosition.polarAxisError.toFixed(2)}
-                        </TableCell>
+                        <TableCell className="font-medium">赤经速度</TableCell>
+                        <TableCell>{calibration.data.raSpeed}</TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
@@ -373,33 +306,19 @@ export default function StarGuiding() {
                     <TableBody>
                       <TableRow>
                         <TableCell className="font-medium">
-                          赤纬，峰值
+                          赤纬星点数
                         </TableCell>
+                        <TableCell>{calibration.data.decStars}</TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-medium">正交误差</TableCell>
                         <TableCell>
-                          {starPosition.greenPeak.toFixed(2)}
+                          {calibration.data.orthogonalError}°
                         </TableCell>
                       </TableRow>
                       <TableRow>
-                        <TableCell className="font-medium">
-                          赤经漂移率
-                        </TableCell>
-                        <TableCell>
-                          {starPosition.driftRate.toFixed(2)}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">
-                          无导星极限曝光时间
-                        </TableCell>
-                        <TableCell>
-                          {starPosition.noStarExposureTime.toFixed(2)}
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell className="font-medium">赤纬回差</TableCell>
-                        <TableCell>
-                          {starPosition.periodicalError.toFixed(2)}
-                        </TableCell>
+                        <TableCell className="font-medium">赤纬速度</TableCell>
+                        <TableCell>{calibration.data.decSpeed}</TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
@@ -407,42 +326,40 @@ export default function StarGuiding() {
               </motion.div>
             </div>
 
-            <div className="flex items-center space-x-2 text-xs">
-              <div className="flex items-center space-x-1">
-                <Checkbox
-                  id="measure"
-                  checked={measurePeriodical}
-                  onCheckedChange={(checked) =>
-                    setMeasurePeriodical(checked as boolean)
-                  }
-                />
-                <label
-                  htmlFor="measure"
-                  className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            <div className="flex items-center justify-between space-x-2 text-xs">
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={historyGraph.exportData}
                 >
-                  测量亮纬回差
-                </label>
+                  导出数据
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => calibration.handleRecalibrate()}
+                >
+                  重新校准
+                </Button>
               </div>
-
-              <Button onClick={handleStart} disabled={isRunning} size="sm">
-                开始
-              </Button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    查看之前的
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem>历史记录 1</DropdownMenuItem>
-                  <DropdownMenuItem>历史记录 2</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <Button onClick={handleStop} disabled={!isRunning} size="sm">
-                停止
-              </Button>
+              <div className="flex items-center space-x-2">
+                <Button
+                  onClick={handleStart}
+                  disabled={settings.autoGuide || isLoading}
+                  size="sm"
+                >
+                  {isLoading ? "处理中..." : "开始导星"}
+                </Button>
+                <Button
+                  onClick={handleStop}
+                  disabled={!settings.autoGuide || isLoading}
+                  variant="destructive"
+                  size="sm"
+                >
+                  停止导星
+                </Button>
+              </div>
             </div>
           </motion.div>
         </AnimatePresence>

@@ -1,22 +1,24 @@
 "use client";
 
+import { FC } from "react";
 import {
   ScatterChart,
   Scatter,
   XAxis,
   YAxis,
+  ZAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  ReferenceLine,
-  ZAxis,
+  Cell,
 } from "recharts";
+import { useBadPixelStore } from "@/store/guiding/useBadPixelStore";
 import { useTheme } from "next-themes";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { Loader2, ZoomIn, ZoomOut, RotateCcw, LineChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface BadPixelVisualizationProps {
@@ -28,55 +30,66 @@ interface BadPixelVisualizationProps {
   };
 }
 
-export default function BadPixelVisualization({
-  data,
-}: BadPixelVisualizationProps) {
+const COLORS = {
+  hot: "#ff4444",
+  cold: "#4444ff",
+};
+
+const BadPixelVisualization: FC<BadPixelVisualizationProps> = ({ data }) => {
+  const { options } = useBadPixelStore();
   const { theme } = useTheme();
   const [zoom, setZoom] = useState(1);
   const [autoScale, setAutoScale] = useState(true);
 
-  const { hotPixels, coldPixels } = useMemo(() => {
+  const scatterData = useMemo(() => {
     const hot = data.hotPixels.map((pixel) => ({
       x: pixel % data.width,
       y: Math.floor(pixel / data.width),
-      type: "热噪点",
-      value: 1,
+      type: "hot",
     }));
 
     const cold = data.coldPixels.map((pixel) => ({
       x: pixel % data.width,
       y: Math.floor(pixel / data.width),
-      type: "冷噪点",
-      value: 1,
+      type: "cold",
     }));
 
-    return { hotPixels: hot, coldPixels: cold };
+    return [...hot, ...cold];
   }, [data]);
 
-  const chartColors =
-    theme === "dark"
-      ? {
-          background: "#1f2937",
-          grid: "#374151",
-          text: "#f3f4f6",
-          hot: "#ef4444",
-          cold: "#3b82f6",
-        }
-      : {
-          background: "#ffffff",
-          grid: "#e5e7eb",
-          text: "#111827",
-          hot: "#dc2626",
-          cold: "#2563eb",
-        };
+  const heatmapData = useMemo(() => {
+    // 将像素点按区域聚合生成热力图数据
+    const gridSize = 32; // 将图像分成 32x32 的网格
+    const grid = Array(gridSize)
+      .fill(0)
+      .map(() => Array(gridSize).fill(0));
 
-  const zoomedDomain = useMemo(
-    () => ({
-      x: [0, data.width / zoom],
-      y: [0, data.height / zoom],
-    }),
-    [data.width, data.height, zoom]
-  );
+    const cellWidth = data.width / gridSize;
+    const cellHeight = data.height / gridSize;
+
+    // 统计每个网格中的坏点数量
+    [...data.hotPixels, ...data.coldPixels].forEach((pixel) => {
+      const x = pixel % data.width;
+      const y = Math.floor(pixel / data.width);
+      const gridX = Math.floor(x / cellWidth);
+      const gridY = Math.floor(y / cellHeight);
+      if (gridX < gridSize && gridY < gridSize) {
+        grid[gridY][gridX]++;
+      }
+    });
+
+    // 转换为适合 Recharts 的数据格式
+    return grid.map((row, y) => ({
+      name: `Row${y}`,
+      ...row.reduce(
+        (acc, value, x) => ({
+          ...acc,
+          [`col${x}`]: value,
+        }),
+        {}
+      ),
+    }));
+  }, [data]);
 
   if (!data.width || !data.height) {
     return (
@@ -86,148 +99,99 @@ export default function BadPixelVisualization({
     );
   }
 
-  return (
-    <div className="w-full h-full min-h-[400px] relative">
-      <div className="absolute top-4 right-4 z-10 flex space-x-2">
-        <div className="flex gap-2 bg-gray-800/80 backdrop-blur-sm p-2 rounded-lg">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setZoom((z) => Math.min(z * 1.2, 4))}
-            disabled={zoom >= 4}
-          >
-            <ZoomIn className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setZoom((z) => Math.max(z / 1.2, 1))}
-            disabled={zoom <= 1}
-          >
-            <ZoomOut className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              setZoom(1);
-              setAutoScale(true);
-            }}
-          >
-            <RotateCcw className="w-4 h-4" />
-          </Button>
-        </div>
-        <Badge variant="secondary" className="bg-red-500/20 text-red-500">
-          热噪点: {data.hotPixels.length}
-        </Badge>
-        <Badge variant="secondary" className="bg-blue-500/20 text-blue-500">
-          冷噪点: {data.coldPixels.length}
-        </Badge>
-      </div>
-
-      <ResponsiveContainer width="100%" height="100%">
-        <ScatterChart
-          margin={{ top: 20, right: 20, bottom: 70, left: 70 }}
-          style={{ background: chartColors.background }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-
-          <XAxis
-            type="number"
-            dataKey="x"
-            name="X坐标"
-            unit="px"
-            domain={zoomedDomain.x}
-            tick={{ fill: chartColors.text }}
-            label={{
-              value: "X坐标",
-              position: "bottom",
-              offset: 40,
-              fill: chartColors.text,
-            }}
-          />
-
-          <YAxis
-            type="number"
-            dataKey="y"
-            name="Y坐标"
-            unit="px"
-            domain={zoomedDomain.y}
-            tick={{ fill: chartColors.text }}
-            label={{
-              value: "Y坐标",
-              angle: -90,
-              position: "left",
-              offset: -50,
-              fill: chartColors.text,
-            }}
-          />
-
-          <ZAxis type="number" dataKey="value" range={[10, 100]} />
-
-          <Tooltip
-            cursor={{ strokeDasharray: "3 3", stroke: chartColors.grid }}
-            content={({ payload }) => {
-              if (payload && payload.length > 0) {
-                const point = payload[0].payload;
+  if (options.displayMode === "scatter") {
+    return (
+      <div className="w-full h-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <ScatterChart margin={{ top: 20, right: 20, bottom: 60, left: 60 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis
+              type="number"
+              dataKey="x"
+              name="X"
+              domain={[0, data.width]}
+              allowDecimals={false}
+            />
+            <YAxis
+              type="number"
+              dataKey="y"
+              name="Y"
+              domain={[0, data.height]}
+              allowDecimals={false}
+            />
+            <Tooltip
+              cursor={{ strokeDasharray: "3 3" }}
+              content={({ payload }) => {
+                if (!payload?.length) return null;
+                const { x, y, type } = payload[0].payload;
                 return (
-                  <div className="bg-background p-3 border rounded-lg shadow-lg">
-                    <p className="font-medium">{`类型: ${point.type}`}</p>
-                    <p>{`X: ${point.x} px`}</p>
-                    <p>{`Y: ${point.y} px`}</p>
+                  <div className="bg-background/95 p-2 rounded-lg shadow border">
+                    <p>
+                      位置: ({x}, {y})
+                    </p>
+                    <p>类型: {type === "hot" ? "热点" : "冷点"}</p>
                   </div>
                 );
-              }
-              return null;
-            }}
-          />
+              }}
+            />
+            <Legend />
+            <Scatter name="坏点分布" data={scatterData} fill="#8884d8">
+              {scatterData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={entry.type === "hot" ? COLORS.hot : COLORS.cold}
+                />
+              ))}
+            </Scatter>
+          </ScatterChart>
+        </ResponsiveContainer>
+      </div>
+    );
+  }
 
-          <Legend
-            verticalAlign="top"
-            height={40}
-            wrapperStyle={{
-              paddingTop: "10px",
-              color: chartColors.text,
-            }}
-          />
+  if (options.displayMode === "heatmap") {
+    // 使用网格布局展示热力图数据
+    return (
+      <div className="w-full h-full grid grid-cols-[repeat(32,1fr)] gap-px bg-gray-800">
+        {heatmapData.flatMap((row, y) =>
+          Object.values(row).map((value: number, x) => {
+            if (typeof value === "number") {
+              const intensity = Math.min(value / 10, 1); // 归一化强度
+              return (
+                <div
+                  key={`${x}-${y}`}
+                  className="aspect-square"
+                  style={{
+                    backgroundColor: `rgba(255, 68, 68, ${intensity})`,
+                  }}
+                  title={`Count: ${value}`}
+                />
+              );
+            }
+            return null;
+          })
+        )}
+      </div>
+    );
+  }
 
-          <Scatter
-            name="热噪点"
-            data={hotPixels}
-            fill={chartColors.hot}
-            shape="circle"
-            animationDuration={300}
-          />
-
-          <Scatter
-            name="冷噪点"
-            data={coldPixels}
-            fill={chartColors.cold}
-            shape="circle"
-            animationDuration={300}
-          />
-
-          {/* 添加参考线 */}
-          <ReferenceLine
-            x={data.width / 2}
-            stroke={chartColors.grid}
-            strokeDasharray="3 3"
-          />
-          <ReferenceLine
-            y={data.height / 2}
-            stroke={chartColors.grid}
-            strokeDasharray="3 3"
-          />
-        </ScatterChart>
-      </ResponsiveContainer>
-
-      {data.hotPixels.length === 0 && data.coldPixels.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/50">
-          <p className="text-muted-foreground">
-            暂无坏点数据，请先生成或添加坏点
-          </p>
-        </div>
-      )}
+  // Grid mode (保持不变)
+  return (
+    <div className="w-full h-full overflow-auto grid grid-cols-[repeat(auto-fill,minmax(2px,1fr))] gap-px bg-gray-800">
+      {Array.from({ length: data.width * data.height }).map((_, i) => (
+        <div
+          key={i}
+          className={`aspect-square ${
+            data.hotPixels.includes(i)
+              ? "bg-red-500"
+              : data.coldPixels.includes(i)
+              ? "bg-green-500"
+              : "bg-gray-900"
+          }`}
+        />
+      ))}
     </div>
   );
-}
+};
+
+export default BadPixelVisualization;

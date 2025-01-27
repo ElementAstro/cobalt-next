@@ -24,7 +24,7 @@ import {
   CardDescription,
   CardFooter,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -155,13 +155,7 @@ export default function CalibrationData() {
   }, [data, settings]);
 
   return (
-    <motion.div
-      className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      {/* 校准数据趋势图表 */}
+    <motion.div className="grid grid-cols-1 gap-2 p-2">
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -321,7 +315,6 @@ export default function CalibrationData() {
         </Card>
       </motion.div>
 
-      {/* 数据详情卡片 */}
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}

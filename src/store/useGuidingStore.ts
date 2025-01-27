@@ -1,11 +1,7 @@
 import { CustomColors, GuideSettings, TrackingParams } from "@/types/guiding";
+import { CalibrationPreset, CalibrationData, CalibrationSettings } from "@/types/guiding/calibration";
+import { DarkFieldState } from "@/types/guiding/darkfield";
 import { create } from "zustand";
-import type {
-  MeasurementState,
-  HighFrequencyMeasurement,
-  StarPosition,
-  CustomOptions,
-} from "@/types/guiding";
 import { toast } from "@/hooks/use-toast";
 
 interface GuidingStore {
@@ -55,6 +51,8 @@ interface GuidingStore {
     autoRotate: boolean;
     rotationSpeed: number;
     zoomLevel: number;
+    exposure: number; // Added
+    gain: number; // Added
     updateData: (data: Partial<CalibrationData>) => void;
     updateSettings: (data: Partial<CalibrationSettings>) => void;
     handleRecalibrate: () => void;
@@ -65,57 +63,36 @@ interface GuidingStore {
     setAutoRotate: (value: boolean) => void;
     setRotationSpeed: (value: number) => void;
     setZoomLevel: (value: number) => void;
+    setExposure: (value: number) => void;
+    setGain: (value: number) => void;
+    presets: {
+      planetary: CalibrationPreset;
+      deepsky: CalibrationPreset;
+      [key: string]: CalibrationPreset;
+    };
+    currentPreset: string | null;
+    applyPreset: (presetName: string) => void;
+    saveAsPreset: (name: string, preset: Partial<CalibrationPreset>) => void;
   };
 
   // 暗场库
-  darkField: {
-    minExposure: number;
-    maxExposure: number;
-    framesPerExposure: number;
-    libraryType: "modify" | "create";
-    isoValue: number;
-    binningMode: number;
-    coolingEnabled: boolean;
-    targetTemperature: number;
-    isLoading: boolean;
-    isSuccess: boolean;
-    isError: boolean;
-    errorMessage: string;
-    progress: number;
-    isMockMode: boolean;
-    darkFrameCount: number;
-    gainValue: number;
-    offsetValue: number;
+  darkField: DarkFieldState & {
     resetSettings: () => void;
     startCreation: () => Promise<void>;
     cancelCreation: () => void;
+    setMinExposure: (value: number) => void;
+    setMaxExposure: (value: number) => void; 
+    setFramesPerExposure: (value: number) => void;
+    setLibraryType: (value: "modify" | "create") => void;
+    setIsoValue: (value: number) => void;
+    setBinningMode: (value: string) => void;
+    setCoolingEnabled: (value: boolean) => void;
+    setTargetTemperature: (value: number) => void;
+    setIsMockMode: (value: boolean) => void;
+    setDarkFrameCount: (value: number) => void;
+    setGainValue: (value: number) => void;
+    setOffsetValue: (value: number) => void;
   };
-}
-
-interface CalibrationData {
-  raStars: number;
-  decStars: number;
-  cameraAngle: number;
-  orthogonalError: number;
-  raSpeed: string;
-  decSpeed: string;
-  predictedRaSpeed: string;
-  predictedDecSpeed: string;
-  combined: number;
-  raDirection: string;
-  createdAt: string;
-}
-
-interface CalibrationSettings {
-  modifiedAt: string;
-  focalLength: string;
-  resolution: string;
-  raDirection: string;
-  combined: string;
-  raGuideSpeed: string;
-  decGuideSpeed: string;
-  decValue: string;
-  rotationAngle: string;
 }
 
 export const useGuidingStore = create<GuidingStore>((set, get) => ({
@@ -254,6 +231,80 @@ export const useGuidingStore = create<GuidingStore>((set, get) => ({
     autoRotate: false,
     rotationSpeed: 0,
     zoomLevel: 1,
+    exposure: 1000, // Added
+    gain: 0, // Added
+    presets: {
+      planetary: {
+        name: "行星摄影",
+        description: "适用于月球、行星等明亮天体的校准设置",
+        exposure: 0.5,
+        gain: 50,
+        lineLength: 80,
+        rotationSpeed: 2,
+        zoomLevel: 1.5,
+        showGrid: true,
+        autoRotate: true,
+        showAnimation: true,
+      },
+      deepsky: {
+        name: "深空摄影",
+        description: "适用于星云、星团等暗弱天体的校准设置",
+        exposure: 3.0,
+        gain: 80,
+        lineLength: 120,
+        rotationSpeed: 1,
+        zoomLevel: 1.0,
+        showGrid: true,
+        autoRotate: false,
+        showAnimation: true,
+      },
+    },
+    currentPreset: null,
+    applyPreset: (presetName) => {
+      const state = get();
+      const preset = state.calibration.presets[presetName];
+      if (!preset) return;
+
+      set((state) => ({
+        calibration: {
+          ...state.calibration,
+          exposure: preset.exposure,
+          gain: preset.gain,
+          lineLength: preset.lineLength,
+          rotationSpeed: preset.rotationSpeed,
+          zoomLevel: preset.zoomLevel,
+          showGrid: preset.showGrid,
+          autoRotate: preset.autoRotate,
+          showAnimation: preset.showAnimation,
+          currentPreset: presetName,
+        },
+      }));
+    },
+    saveAsPreset: (name, preset) => {
+      const currentState = get().calibration;
+      const newPreset: CalibrationPreset = {
+        name,
+        description: preset.description || "",
+        exposure: preset.exposure || currentState.exposure,
+        gain: preset.gain || currentState.gain,
+        lineLength: preset.lineLength || currentState.lineLength,
+        rotationSpeed: preset.rotationSpeed || currentState.rotationSpeed,
+        zoomLevel: preset.zoomLevel || currentState.zoomLevel,
+        showGrid: preset.showGrid ?? currentState.showGrid,
+        autoRotate: preset.autoRotate ?? currentState.autoRotate,
+        showAnimation: preset.showAnimation ?? currentState.showAnimation,
+      };
+
+      set((state) => ({
+        calibration: {
+          ...state.calibration,
+          presets: {
+            ...state.calibration.presets,
+            [name]: newPreset,
+          },
+        },
+      }));
+    },
     updateData: (data) =>
       set((state) => ({
         calibration: {
@@ -302,6 +353,14 @@ export const useGuidingStore = create<GuidingStore>((set, get) => ({
       set((state) => ({
         calibration: { ...state.calibration, zoomLevel: value },
       })),
+    setExposure: (value) =>
+      set((state) => ({
+        calibration: { ...state.calibration, exposure: value },
+      })),
+    setGain: (value) =>
+      set((state) => ({
+        calibration: { ...state.calibration, gain: value },
+      })),
   },
 
   darkField: {
@@ -310,7 +369,7 @@ export const useGuidingStore = create<GuidingStore>((set, get) => ({
     framesPerExposure: 10,
     libraryType: "create",
     isoValue: 800,
-    binningMode: 1,
+    binningMode: "1x1",
     coolingEnabled: true,
     targetTemperature: -10,
     isLoading: false,
@@ -323,15 +382,15 @@ export const useGuidingStore = create<GuidingStore>((set, get) => ({
     gainValue: 0,
     offsetValue: 0,
     resetSettings: () => {
-      const { resetSettings, startCreation, cancelCreation } = get().darkField;
-      set({
+      set((state) => ({
         darkField: {
+          ...state.darkField,
           minExposure: 0.5,
           maxExposure: 3.0,
           framesPerExposure: 10,
           libraryType: "create",
           isoValue: 800,
-          binningMode: 1,
+          binningMode: "1x1",
           coolingEnabled: true,
           targetTemperature: -10,
           darkFrameCount: 50,
@@ -343,11 +402,8 @@ export const useGuidingStore = create<GuidingStore>((set, get) => ({
           errorMessage: "",
           progress: 0,
           isMockMode: false,
-          resetSettings,
-          startCreation,
-          cancelCreation,
         },
-      });
+      }));
       toast({
         title: "设置已重置",
         description: "所有设置已恢复为默认值",
@@ -422,6 +478,65 @@ export const useGuidingStore = create<GuidingStore>((set, get) => ({
         description: "暗场库创建过程已中止",
       });
     },
+    setMinExposure: (value) => 
+      set((state) => ({
+        darkField: { ...state.darkField, minExposure: value }
+      })),
+      
+    setMaxExposure: (value) =>
+      set((state) => ({
+        darkField: { ...state.darkField, maxExposure: value }
+      })),
+      
+    setFramesPerExposure: (value) =>
+      set((state) => ({
+        darkField: { ...state.darkField, framesPerExposure: value }
+      })),
+      
+    setLibraryType: (value) =>
+      set((state) => ({
+        darkField: { ...state.darkField, libraryType: value }
+      })),
+      
+    setIsoValue: (value) =>
+      set((state) => ({
+        darkField: { ...state.darkField, isoValue: value }
+      })),
+      
+    setBinningMode: (value) =>
+      set((state) => ({
+        darkField: { ...state.darkField, binningMode: value }
+      })),
+      
+    setCoolingEnabled: (value) =>
+      set((state) => ({
+        darkField: { ...state.darkField, coolingEnabled: value }
+      })),
+      
+    setTargetTemperature: (value) =>
+      set((state) => ({
+        darkField: { ...state.darkField, targetTemperature: value }
+      })),
+      
+    setIsMockMode: (value) =>
+      set((state) => ({
+        darkField: { ...state.darkField, isMockMode: value }
+      })),
+      
+    setDarkFrameCount: (value) =>
+      set((state) => ({
+        darkField: { ...state.darkField, darkFrameCount: value }
+      })),
+      
+    setGainValue: (value) =>
+      set((state) => ({
+        darkField: { ...state.darkField, gainValue: value }
+      })),
+      
+    setOffsetValue: (value) =>
+      set((state) => ({
+        darkField: { ...state.darkField, offsetValue: value }
+      })),
   },
 }));
 
