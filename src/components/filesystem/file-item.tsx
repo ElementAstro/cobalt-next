@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useRef, useState } from "react";
 import {
   useSortable,
   SortableContext,
@@ -26,6 +26,7 @@ import {
   FileType,
   FileOperation,
   CustomizationOptionsData,
+  FileSystemItem,
 } from "@/types/filesystem";
 import { useFilesystemStore } from "@/store/useFilesystemStore";
 import { Button } from "@/components/ui/button";
@@ -34,19 +35,17 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface FileItemProps {
-  file: File & {
-    thumbnailUrl?: string;
-    url?: string;
-  };
-  index?: number; // Made optional since it's unused
+  file: FileSystemItem; // 更新为基础接口类型
+  index?: number;
   viewMode: "grid" | "list";
   customOptions?: CustomizationOptionsData;
   onDelete?: (id: string) => void;
-  onContextMenu?: (e: React.MouseEvent, file: File) => void;
-  onFileOperation?: (operation: FileOperation, file: File) => void;
+  onContextMenu?: (e: React.MouseEvent, file: FileSystemItem) => void;
+  onFileOperation?: (operation: FileOperation, file: FileSystemItem) => void;
   isSelectionMode?: boolean;
-  onShowMenu?: (e: React.MouseEvent, file: File) => void;
+  onShowMenu?: (e: React.MouseEvent, file: FileSystemItem) => void;
   layoutMode: "compact" | "comfortable" | "spacious";
+  isFolder?: boolean;
 }
 
 // Add type for tags store structure
@@ -60,7 +59,34 @@ export const FileItem: React.FC<FileItemProps> = ({
   isSelectionMode = false,
   onShowMenu,
   layoutMode,
+  isFolder = false,
+  onFileOperation,
+  onContextMenu,
 }) => {
+  const longPressTimeoutRef = useRef<NodeJS.Timeout>(null);
+  const [isLongPressed, setIsLongPressed] = useState(false);
+
+  const handleTouchStart = (e: React.TouchEvent, file: FileSystemItem) => {
+    longPressTimeoutRef.current = setTimeout(() => {
+      setIsLongPressed(true);
+      onContextMenu?.(
+        {
+          clientX: e.touches[0].clientX,
+          clientY: e.touches[0].clientY,
+          preventDefault: () => {},
+        } as React.MouseEvent,
+        file
+      );
+    }, 500); // 500ms 长按阈值
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+    }
+    setIsLongPressed(false);
+  };
+
   const {
     selectedFileId,
     setSelectedFileId,
@@ -68,6 +94,12 @@ export const FileItem: React.FC<FileItemProps> = ({
     tags,
     addToFavorites,
     removeFromFavorites,
+    setCurrentPath,
+    currentPath,
+    selectedFiles,
+    setSelectedFiles,
+    isMultiSelectMode,
+    
   } = useFilesystemStore();
 
   const isSelected = selectedFileId === file.id.toString();
@@ -111,21 +143,45 @@ export const FileItem: React.FC<FileItemProps> = ({
     }
   };
 
-  const handleSelect = () => {
-    setSelectedFileId(isSelected ? null : file.id.toString());
-  };
-
-  const handleCheckedChange = (checked: boolean) => {
-    setSelectedFileId(checked ? file.id.toString() : null);
+  const handleItemClick = (e: React.MouseEvent) => {
+    if (isMultiSelectMode) {
+      e.stopPropagation();
+      // 多选模式下，点击切换选中状态
+      if (isSelected) {
+        setSelectedFiles(selectedFiles.filter(id => id !== file.id.toString()));
+      } else {
+        setSelectedFiles([...selectedFiles, file.id.toString()]);
+      }
+    } else {
+      // 非多选模式下，文件夹进入，文件预览
+      if (isFolder) {
+        e.stopPropagation();
+        if (onFileOperation) {
+          onFileOperation('open', file);
+        }
+      } else if (onFileOperation) {
+        onFileOperation('preview', file);
+      }
+    }
   };
 
   const renderThumbnail = () => {
-    if (file.type === "image") {
+    if (isFolder) {
+      return (
+        <div className="relative w-full pt-[100%] bg-gray-700 rounded flex items-center justify-center">
+          <Folder className="absolute inset-0 m-auto w-12 h-12 text-blue-500" />
+        </div>
+      );
+    }
+    
+    // 类型断言确保安全访问
+    const fileItem = file as File;
+    if (fileItem.type === "image") {
       return (
         <div className="relative w-full pt-[100%]">
           <img
-            src={file.thumbnailUrl || file.url}
-            alt={file.name}
+            src={fileItem.thumbnailUrl || fileItem.url}
+            alt={fileItem.name}
             className="absolute inset-0 w-full h-full object-cover rounded"
           />
         </div>
@@ -133,7 +189,7 @@ export const FileItem: React.FC<FileItemProps> = ({
     }
     return (
       <div className="relative w-full pt-[100%] bg-gray-700 rounded flex items-center justify-center">
-        {getIconForFileType(file.type)}
+        {getIconForFileType(fileItem.type)}
       </div>
     );
   };
@@ -172,102 +228,122 @@ export const FileItem: React.FC<FileItemProps> = ({
         {...attributes}
         {...listeners}
         whileHover={{ scale: 1.02 }}
+        onContextMenu={(e) => onContextMenu?.(e, file)}
+        onTouchStart={(e) => handleTouchStart(e, file)}
+        onTouchEnd={handleTouchEnd}
+        onClick={(e) => {
+          if (!isLongPressed) {
+            handleItemClick(e);
+          }
+        }}
         className={cn(
-          "relative group",
+          "relative group cursor-pointer",
+          isFolder && "hover:bg-blue-500/10",
           viewMode === "grid"
             ? cn(
-                "bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors",
-                layoutMode === "compact" ? "p-1" : 
-                layoutMode === "comfortable" ? "p-2" : "p-4"
+                "bg-gray-800/50 rounded-lg hover:bg-gray-700/50 transition-colors flex flex-col",
+                {
+                  "p-2 gap-2": layoutMode === "compact",
+                  "p-3 gap-3": layoutMode === "comfortable",
+                  "p-4 gap-4": layoutMode === "spacious",
+                }
               )
             : cn(
-                "flex items-center space-x-2 hover:bg-gray-700/30 rounded-md",
-                layoutMode === "compact" ? "py-1" : 
-                layoutMode === "comfortable" ? "py-2" : "py-4"
+                "flex items-center gap-4 hover:bg-gray-700/30 rounded-md",
+                {
+                  "py-1 px-2": layoutMode === "compact",
+                  "py-2 px-3": layoutMode === "comfortable",
+                  "py-3 px-4": layoutMode === "spacious",
+                }
               )
         )}
-        onClick={handleSelect}
       >
-        {isSelectionMode && (
+        {/* Checkbox - 只在多选模式下显示 */}
+        {isMultiSelectMode && (
           <div className="absolute top-2 left-2 z-10">
             <Checkbox
               checked={isSelected}
-              onCheckedChange={handleCheckedChange}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  setSelectedFiles([...selectedFiles, file.id.toString()]);
+                } else {
+                  setSelectedFiles(selectedFiles.filter(id => id !== file.id.toString()));
+                }
+              }}
               className="data-[state=checked]:bg-primary"
             />
           </div>
         )}
 
-        {/* 收藏按钮 */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className={cn(
-            "absolute top-2 right-2 z-10",
-            isFavorite ? "text-yellow-500" : "text-gray-400"
-          )}
-          onClick={toggleFavorite}
-        >
-          <Star className="h-4 w-4" />
-        </Button>
-
-        {/* 标签显示 */}
-        {fileTags.length > 0 && (
-          <div className="absolute bottom-2 left-2 flex gap-1 flex-wrap">
-            {fileTags.map((tag: string) => (
-              <Badge key={tag} variant="outline" className="text-xs py-0 h-5">
-                <Tag className="w-3 h-3 mr-1" />
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        )}
-
-        {/* 缩略图/图标 */}
+        {/* Thumbnail/Icon container */}
         <div
           className={cn(
-            "relative",
-            viewMode === "grid" 
-              ? layoutMode === "compact" ? "w-24 h-24" :
-                layoutMode === "comfortable" ? "w-32 h-32" : "w-40 h-40"
-              : layoutMode === "compact" ? "w-8 h-8" :
-                layoutMode === "comfortable" ? "w-10 h-10" : "w-12 h-12"
+            "relative overflow-hidden rounded-md",
+            viewMode === "grid"
+              ? {
+                  "w-full aspect-square": true,
+                  "mt-4": isSelectionMode,
+                }
+              : {
+                  "w-10 h-10": layoutMode === "compact",
+                  "w-12 h-12": layoutMode === "comfortable",
+                  "w-14 h-14": layoutMode === "spacious",
+                }
           )}
         >
           {renderThumbnail()}
         </div>
 
-        {/* 文件信息 */}
-        <div className={cn(
-          "flex-1 min-w-0",
-          layoutMode === "compact" ? "text-xs" :
-          layoutMode === "comfortable" ? "text-sm" : "text-base"
-        )}>
-          <p className="font-medium truncate text-sm">{file.name}</p>
+        {/* File info */}
+        <div
+          className={cn(
+            "min-w-0",
+            viewMode === "grid" ? "text-center" : "flex-1",
+            {
+              "text-xs": layoutMode === "compact",
+              "text-sm": layoutMode === "comfortable",
+              "text-base": layoutMode === "spacious",
+            }
+          )}
+        >
+          <p className="font-medium truncate">{file.name}</p>
           {viewMode === "list" && (
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-xs text-muted-foreground mt-1">
-              <span>{formatFileSize(file.size)}</span>
-              <span>•</span>
-              <span>{format(file.lastModified, "yyyy-MM-dd HH:mm")}</span>
+            <div className="flex items-center gap-2 text-muted-foreground mt-0.5">
+              <span className="text-xs">{formatFileSize(file.size)}</span>
+              <span className="text-xs">•</span>
+              <span className="text-xs">
+                {format(file.lastModified, "yyyy-MM-dd HH:mm")}
+              </span>
             </div>
           )}
         </div>
 
-        {/* 操作按钮 */}
+        {/* Actions */}
         <div
           className={cn(
-            "md:absolute md:right-2",
-            viewMode === "grid"
-              ? "md:top-2 mt-2"
-              : "md:top-1/2 md:-translate-y-1/2",
-            "opacity-0 group-hover:opacity-100 transition-opacity"
+            "absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity",
+            viewMode === "grid" ? "top-2" : "top-1/2 -translate-y-1/2"
           )}
         >
+          {/* Favorite button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "h-7 w-7",
+              isFavorite ? "text-yellow-500" : "text-gray-400"
+            )}
+            onClick={toggleFavorite}
+          >
+            <Star className="h-4 w-4" />
+          </Button>
+
+          {/* Menu button */}
           {onShowMenu && (
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-7 w-7 ml-1"
               onClick={(e) => {
                 e.stopPropagation();
                 onShowMenu(e, file);
@@ -277,6 +353,36 @@ export const FileItem: React.FC<FileItemProps> = ({
             </Button>
           )}
         </div>
+
+        {/* Tags */}
+        {fileTags.length > 0 && (
+          <div
+            className={cn(
+              "flex gap-1 flex-wrap",
+              viewMode === "grid"
+                ? "absolute bottom-2 left-2 right-2"
+                : "mt-1"
+            )}
+          >
+            {fileTags.map((tag) => (
+              <Badge
+                key={tag}
+                variant="outline"
+                className="text-xs py-0 px-1.5 h-5"
+              >
+                <Tag className="w-3 h-3 mr-1" />
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        {/* Folder info */}
+        {isFolder && (
+          <div className="text-xs text-gray-400 mt-1">
+            {file.itemCount || 0} 个项目
+          </div>
+        )}
       </motion.div>
     </SortableContext>
   );

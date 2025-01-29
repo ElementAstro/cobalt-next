@@ -22,6 +22,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { ExtendedFile } from "@/types/filesystem";
 
 // Animation variants
 const variants = {
@@ -35,13 +36,6 @@ const childVariants = {
   visible: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: 20 },
 };
-
-// 扩展 File 类型
-interface ExtendedFile extends File {
-  url?: string;
-  content?: string;
-  language?: string;
-}
 
 interface FilePreviewProps {
   file: ExtendedFile;
@@ -197,13 +191,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ file, onClose }) => {
   return (
     <AnimatePresence>
       <Dialog open={true} onOpenChange={onClose}>
-        <DialogOverlay className="fixed inset-0 bg-black bg-opacity-50 z-50" />
-        <DialogContent
-          className={`
-            bg-gray-800 text-white
-            p-6 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto mx-4
-          `}
-        >
+        <DialogContent className="bg-gray-800 text-white p-6 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto mx-4">
           <motion.div
             initial="hidden"
             animate="visible"
@@ -211,33 +199,43 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ file, onClose }) => {
             variants={variants}
             transition={{ duration: 0.2 }}
           >
-            <DialogHeader>
+            <DialogHeader className="space-y-0">
               <DialogTitle className="flex justify-between items-center mb-4">
                 <span className="text-2xl font-bold">{file.name}</span>
                 <DialogClose asChild>
-                  <button className="p-1 rounded-full hover:bg-gray-700 transition duration-200">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full hover:bg-gray-700"
+                  >
                     <X className="w-6 h-6" />
-                  </button>
+                    <span className="sr-only">Close</span>
+                  </Button>
                 </DialogClose>
               </DialogTitle>
             </DialogHeader>
+
             <motion.div
               variants={childVariants}
               transition={{ duration: 0.2, delay: 0.1 }}
+              className="space-y-4"
             >
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold">{file.name}</h2>
                 <div className="flex items-center gap-2">
                   {file.type === "image" && (
                     <>
                       <Button variant="ghost" size="sm" onClick={handleZoomIn}>
                         <ZoomIn className="w-4 h-4" />
+                        <span className="sr-only">Zoom in</span>
                       </Button>
                       <Button variant="ghost" size="sm" onClick={handleZoomOut}>
                         <ZoomOut className="w-4 h-4" />
+                        <span className="sr-only">Zoom out</span>
                       </Button>
                       <Button variant="ghost" size="sm" onClick={handleRotate}>
                         <RotateCw className="w-4 h-4" />
+                        <span className="sr-only">Rotate</span>
                       </Button>
                       <Button
                         variant="ghost"
@@ -245,14 +243,13 @@ export const FilePreview: React.FC<FilePreviewProps> = ({ file, onClose }) => {
                         onClick={() => setIsEditing(!isEditing)}
                       >
                         <Edit className="w-4 h-4" />
+                        <span className="sr-only">Edit</span>
                       </Button>
                     </>
                   )}
                   <Button variant="ghost" size="sm" onClick={handleDownload}>
                     <Download className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={onClose}>
-                    <X className="w-4 h-4" />
+                    <span className="sr-only">Download</span>
                   </Button>
                 </div>
               </div>

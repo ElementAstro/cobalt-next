@@ -31,6 +31,12 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { toast } from "@/hooks/use-toast";
 
+// 添加重置设置函数
+const resetSettings = async () => {
+  // 实际项目中需要实现具体的重置逻辑
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+};
+
 export const SettingsPanel: React.FC<CustomizationOptions> = ({
   isOpen,
   onClose,
@@ -39,7 +45,9 @@ export const SettingsPanel: React.FC<CustomizationOptions> = ({
 }) => {
   const [isResetting, setIsResetting] = React.useState(false);
   const [backupLocation, setBackupLocation] = React.useState<string>("");
-  const [shortcutKeys, setShortcutKeys] = React.useState<Record<string, string>>({
+  const [shortcutKeys, setShortcutKeys] = React.useState<
+    Record<string, string>
+  >({
     copy: "ctrl+c",
     paste: "ctrl+v",
     cut: "ctrl+x",
@@ -49,11 +57,18 @@ export const SettingsPanel: React.FC<CustomizationOptions> = ({
   const handleReset = async () => {
     try {
       setIsResetting(true);
-      // 实现重置设置逻辑
       await resetSettings();
-      toast.success("设置已重置");
+      toast({
+        title: "成功",
+        description: "设置已重置",
+        variant: "default",
+      });
     } catch (error) {
-      toast.error("重置失败");
+      toast({
+        title: "错误",
+        description: "重置失败",
+        variant: "destructive",
+      });
     } finally {
       setIsResetting(false);
     }
@@ -61,7 +76,6 @@ export const SettingsPanel: React.FC<CustomizationOptions> = ({
 
   const handleBackupLocationChange = (location: string) => {
     setBackupLocation(location);
-    // 更新备份位置设置
   };
 
   const handleShortcutChange = (action: string, shortcut: string) => {
@@ -69,7 +83,6 @@ export const SettingsPanel: React.FC<CustomizationOptions> = ({
       ...prev,
       [action]: shortcut,
     }));
-    // 更新快捷键设置
   };
 
   return (
@@ -173,38 +186,6 @@ export const SettingsPanel: React.FC<CustomizationOptions> = ({
                         </div>
                       </div>
                     </div>
-                    <div>
-                      <Label>暗色模式</Label>
-                      <Select
-                        value={options.theme}
-                        onValueChange={(value) =>
-                          setOptions({
-                            ...options,
-                            theme: value as "light" | "dark" | "system",
-                          })
-                        }
-                      >
-                        <SelectContent>
-                          <SelectItem value="light">浅色</SelectItem>
-                          <SelectItem value="dark">深色</SelectItem>
-                          <SelectItem value="system">跟随系统</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>字体大小</Label>
-                      <Slider
-                        value={[options.fontSize]}
-                        onValueChange={([value]) =>
-                          setOptions({
-                            ...options,
-                            fontSize: value,
-                          })
-                        }
-                        min={12}
-                        max={24}
-                      />
-                    </div>
                   </AccordionContent>
                 </AccordionItem>
                 {/* 性能设置 */}
@@ -257,7 +238,10 @@ export const SettingsPanel: React.FC<CustomizationOptions> = ({
                     <div className="space-y-2">
                       <h3 className="text-md font-medium">快捷键</h3>
                       {Object.keys(shortcutKeys).map((action) => (
-                        <div key={action} className="flex items-center space-x-2">
+                        <div
+                          key={action}
+                          className="flex items-center space-x-2"
+                        >
                           <Label>{action}</Label>
                           <Input
                             value={shortcutKeys[action]}

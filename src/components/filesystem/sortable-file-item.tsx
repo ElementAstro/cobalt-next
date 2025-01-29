@@ -3,21 +3,25 @@
 import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { File } from "@/types/filesystem";
+import { File, Folder as FolderType, FileSystemItem } from "@/types/filesystem";
 import { FileItem } from "./file-item";
 import { toNumber } from "lodash";
+import { motion } from "framer-motion";
 
 interface SortableFileItemProps {
   id: string;
-  file: File;
+  file: FileSystemItem; // 更新为基础接口类型
   viewMode: "grid" | "list";
   customOptions: any;
   onDelete: () => void;
-  onContextMenu: (e: React.MouseEvent, file: File) => void;
-  onFileOperation: (operation: string, file: File) => void;
+  onContextMenu: (e: React.MouseEvent, file: FileSystemItem) => void;
+  onFileOperation: (operation: string, file: FileSystemItem) => void;
   isSelectionMode: boolean;
   onShowMenu: (e: React.MouseEvent) => void;
-  layoutMode: "compact" | "comfortable" | "spacious"; // 新增属性
+  layoutMode: "compact" | "comfortable" | "spacious";
+  isFolder?: boolean; // 新增属性
+  isDragging: boolean;
+  dragVariants: any;
 }
 
 export const SortableFileItem: React.FC<SortableFileItemProps> = ({
@@ -30,7 +34,10 @@ export const SortableFileItem: React.FC<SortableFileItemProps> = ({
   onFileOperation,
   isSelectionMode,
   onShowMenu,
-  layoutMode, // 新增参数
+  layoutMode,
+  isFolder = false, // 设置默认值
+  isDragging,
+  dragVariants,
 }) => {
   const {
     attributes,
@@ -38,21 +45,27 @@ export const SortableFileItem: React.FC<SortableFileItemProps> = ({
     setNodeRef,
     transform,
     transition,
-    isDragging,
-  } = useSortable({ id });
+  } = useSortable({ 
+    id,
+    // 禁用文件夹拖拽，因为可能会引起路径问题
+    disabled: isFolder 
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
   };
 
   return (
-    <div
+    <motion.div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
+      {...(isFolder ? {} : { ...attributes, ...listeners })}
+      variants={dragVariants}
+      animate={isDragging ? "dragging" : "normal"}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      layoutId={id}
       className={`
         ${viewMode === "grid" ? "h-full" : ""}
         ${
@@ -62,6 +75,7 @@ export const SortableFileItem: React.FC<SortableFileItemProps> = ({
             ? "p-2"
             : "p-4"
         }
+        ${isFolder ? "cursor-pointer" : ""}
       `}
     >
       <FileItem
@@ -72,10 +86,11 @@ export const SortableFileItem: React.FC<SortableFileItemProps> = ({
         onContextMenu={onContextMenu}
         onFileOperation={onFileOperation}
         isSelectionMode={isSelectionMode}
-        onShowMenu={onShowMenu}
+        onShowMenu={(e) => onShowMenu(e)}
         index={toNumber(id)}
-        layoutMode={layoutMode} // 传递到 FileItem
+        layoutMode={layoutMode}
+        isFolder={isFolder}
       />
-    </div>
+    </motion.div>
   );
 };

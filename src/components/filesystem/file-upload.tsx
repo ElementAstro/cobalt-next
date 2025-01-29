@@ -17,7 +17,7 @@ import {
   ToastTitle,
   ToastDescription,
 } from "@/components/ui/toast";
-import { uploadFile } from "@/services/file-upload";
+import { uploadFile, validateFile } from "@/services/file-upload";
 import {
   X,
   Upload,
@@ -30,8 +30,6 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { FormProvider, useForm } from "react-hook-form";
-
-// 添加缺失的 CardHeader 和 CardContent 组件导入
 import { CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -65,23 +63,45 @@ export function FileUpload() {
   } | null>(null);
   const abortControllerRef = useRef<{ [key: string]: AbortController }>({});
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const validFiles = acceptedFiles.filter(
-      (file) =>
-        file.size <= MAX_FILE_SIZE && ALLOWED_FILE_TYPES.includes(file.type)
-    );
+  const validateAndAddFiles = useCallback((newFiles: File[]) => {
+    const validFiles = newFiles.filter((file) => {
+      const { valid, errors } = validateFile(file, {
+        maxSize: MAX_FILE_SIZE,
+        allowedTypes: ALLOWED_FILE_TYPES,
+      });
+
+      if (!valid) {
+        setToast({
+          title: "文件验证失败",
+          description: errors.join("\n"),
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      return true;
+    });
+
     setFiles((prevFiles) => [...prevFiles, ...validFiles]);
     validFiles.forEach((file) => {
       setExpandedFiles((prev) => ({ ...prev, [file.name]: false }));
     });
-    if (validFiles.length < acceptedFiles.length) {
+
+    if (validFiles.length < newFiles.length) {
       setToast({
         title: "部分文件未添加",
-        description: "文件必须小于5MB且类型为JPEG, PNG, GIF或PDF。",
+        description: "某些文件未能通过验证，请检查文件大小和类型。",
         variant: "destructive",
       });
     }
   }, []);
+
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      validateAndAddFiles(acceptedFiles);
+    },
+    [validateAndAddFiles]
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -115,17 +135,18 @@ export function FileUpload() {
     }
   };
 
-  const handleSubmit = (data: any) => {
-    // 可以根据需要处理表单提交
-  };
-
   const handleUpload = async () => {
     setUploading(true);
-    for (const file of files) {
-      if (uploadStatus[file.name] === "success") continue;
-      await uploadSingleFile(file);
+    try {
+      await Promise.all(
+        files.map(async (file) => {
+          if (uploadStatus[file.name] === "success") return;
+          await uploadSingleFile(file);
+        })
+      );
+    } finally {
+      setUploading(false);
     }
-    setUploading(false);
   };
 
   const uploadSingleFile = async (file: File) => {
@@ -151,7 +172,7 @@ export function FileUpload() {
         setUploadStatus((prev) => ({ ...prev, [file.name]: "success" }));
         setToast({
           title: "上传成功",
-          description: `${file.name} 已成功上传。`,
+          description: `文件 ${file.name} 已成功上传`,
           variant: "default",
         });
       } else {
@@ -161,19 +182,18 @@ export function FileUpload() {
       if (error.name === "AbortError") {
         setToast({
           title: "上传取消",
-          description: `上传 ${file.name} 已被取消。`,
+          description: `文件 ${file.name} 已取消上传`,
           variant: "default",
         });
       } else {
         setUploadStatus((prev) => ({ ...prev, [file.name]: "error" }));
         setToast({
           title: "上传失败",
-          description: `上传 ${file.name} 失败。${error.message}`,
+          description: `文件 ${file.name} 上传失败: ${error.message}`,
           variant: "destructive",
         });
       }
     } finally {
-      setUploadProgress((prev) => ({ ...prev, [file.name]: 100 }));
       delete abortControllerRef.current[file.name];
     }
   };
@@ -229,40 +249,34 @@ export function FileUpload() {
 
         <CardContent className="space-y-2 sm:space-y-4 p-2 sm:p-4">
           <FormProvider {...methods}>
-            <form
-              onSubmit={methods.handleSubmit(handleSubmit)}
-              className="space-y-2 sm:space-y-4"
-            >
-              <motion.div
-                initial="hidden"
-                animate="visible"
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
+            <form className="space-y-2 sm:space-y-4">
+              <div
+                {...getRootProps()}
                 className={`
                   border-2 border-dashed rounded-lg 
-                  p-4 sm:p-8 text-center
-                  ${isDragActive ? "border-primary" : "border-gray-600"}
-                  transition-colors duration-200
+                  p-4 sm:p-8 text-center cursor-pointer
+                  ${
+                    isDragActive
+                      ? "border-primary bg-primary/10"
+                      : "border-gray-600"
+                  }
+                  transition-colors duration-200 hover:border-primary
                 `}
-                {...(getRootProps() as any)}
               >
                 <input {...getInputProps()} />
-                {isDragActive ? (
-                  <p className="text-sm sm:text-base">将文件拖放到这里...</p>
-                ) : (
-                  <>
-                    <div className="flex flex-col items-center gap-2">
-                      <Upload className="w-8 h-8 sm:w-12 sm:h-12 text-muted-foreground" />
-                      <p className="text-sm sm:text-base">
-                        拖放文件到这里，或点击选择文件
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        最大文件大小: 5MB • 支持格式: JPEG, PNG, GIF, PDF
-                      </p>
-                    </div>
-                  </>
-                )}
-              </motion.div>
+                <div className="flex flex-col items-center gap-2">
+                  <Upload className="w-8 h-8 sm:w-12 sm:h-12 text-muted-foreground" />
+                  <p className="text-sm sm:text-base">
+                    {isDragActive
+                      ? "将文件拖放到这里..."
+                      : "拖放文件到这里，或点击选择文件"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    支持的格式: JPEG, PNG, PDF • 最大文件大小:{" "}
+                    {MAX_FILE_SIZE / 1024 / 1024}MB
+                  </p>
+                </div>
+              </div>
             </form>
           </FormProvider>
 
@@ -270,7 +284,7 @@ export function FileUpload() {
             {files.length > 0 && (
               <ScrollArea className="h-[200px] sm:h-[300px] w-full rounded-md border">
                 <div className="p-2 sm:p-4 space-y-2">
-                  {files.map((file, index) => (
+                  {files.map((file) => (
                     <Collapsible
                       key={file.name}
                       open={expandedFiles[file.name]}

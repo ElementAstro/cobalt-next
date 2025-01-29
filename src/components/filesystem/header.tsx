@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   ArrowLeft,
   Search,
@@ -21,6 +21,10 @@ import {
   MoreVertical,
   Menu,
   Home,
+  CheckSquare,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
 } from "lucide-react";
 import {
   Breadcrumb,
@@ -29,6 +33,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion } from "framer-motion";
@@ -45,10 +50,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useFilesystemStore } from "@/store/useFilesystemStore";
+import { cn } from "@/lib/utils";
+import { FileOperation } from "@/types/filesystem";
 
 interface HeaderProps {
   currentPath: string[];
-  setCurrentPath: (path: string[]) => void;
+  setCurrentPath: (path: string[] | string) => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   viewMode: "grid" | "list";
@@ -75,6 +83,9 @@ interface HeaderProps {
   };
   selectedFiles: string[];
   handleDelete: () => void;
+  onBatchOperation: (operation: FileOperation) => void;
+  isBatchProcessing: boolean;
+  lastActions: string[];
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -91,8 +102,15 @@ export const Header: React.FC<HeaderProps> = ({
   openModals,
   selectedFiles,
   handleDelete,
+  onBatchOperation,
+  isBatchProcessing,
+  lastActions,
 }) => {
+  const { isMultiSelectMode, toggleMultiSelectMode } = useFilesystemStore();
+
   const [isSearchExpanded, setIsSearchExpanded] = React.useState(false);
+  const [isToolbarExpanded, setIsToolbarExpanded] = useState(false);
+  const [showMoreTools, setShowMoreTools] = useState(false);
 
   const handleSort = () => {
     if (sortBy === "name") {
@@ -102,6 +120,82 @@ export const Header: React.FC<HeaderProps> = ({
       setSortOrder("asc");
     }
   };
+
+  const handlePathClick = (index: number) => {
+    const newPath = currentPath.slice(0, index + 1);
+    setCurrentPath(newPath);
+  };
+
+  const toolbarButtons = [
+    {
+      icon: <List className="w-5 h-5" />,
+      label: "视图",
+      onClick: () => setViewMode(viewMode === "grid" ? "list" : "grid"),
+      priority: "high",
+    },
+    {
+      icon: <ArrowUpDown className="w-5 h-5" />,
+      label: "排序",
+      onClick: handleSort,
+      priority: "high",
+    },
+    {
+      icon: <Upload className="w-5 h-5" />,
+      label: "上传",
+      onClick: openModals.upload,
+      priority: "high",
+    },
+    {
+      icon: <Share2 className="w-5 h-5" />,
+      label: "分享",
+      onClick: openModals.share,
+      priority: "medium",
+    },
+    {
+      icon: <Clock className="w-5 h-5" />,
+      label: "历史",
+      onClick: openModals.versionHistory,
+      priority: "medium",
+    },
+    {
+      icon: <Tag className="w-5 h-5" />,
+      label: "标签",
+      onClick: openModals.tagManager,
+      priority: "medium",
+    },
+    {
+      icon: <RefreshCw className="w-5 h-5" />,
+      label: "同步",
+      onClick: openModals.realtimeCollaboration,
+      priority: "low",
+    },
+    {
+      icon: <Archive className="w-5 h-5" />,
+      label: "压缩",
+      onClick: openModals.fileCompression,
+      priority: "low",
+    },
+    {
+      icon: <Cloud className="w-5 h-5" />,
+      label: "云端",
+      onClick: openModals.cloudIntegration,
+      priority: "low",
+    },
+    {
+      icon: <Lock className="w-5 h-5" />,
+      label: "加密",
+      onClick: openModals.fileEncryption,
+      priority: "low",
+    },
+  ];
+
+  const visibleButtons = toolbarButtons.filter((button) =>
+    isToolbarExpanded ? true : button.priority === "high"
+  );
+
+  const moreButtons = toolbarButtons.filter(
+    (button) => !isToolbarExpanded && button.priority !== "high"
+  );
 
   return (
     <motion.div
@@ -116,7 +210,6 @@ export const Header: React.FC<HeaderProps> = ({
       className="bg-gray-800/95 backdrop-blur-sm p-2 md:p-4 flex flex-col md:flex-row gap-2 md:gap-4 items-center justify-between shadow-md sticky top-0 z-50"
     >
       <div className="flex items-center w-full md:w-auto gap-2">
-        {/* 移动端菜单 */}
         <Sheet>
           <SheetTrigger asChild>
             <Button variant="ghost" size="sm" className="md:hidden">
@@ -128,7 +221,6 @@ export const Header: React.FC<HeaderProps> = ({
               <SheetTitle>Menu</SheetTitle>
             </SheetHeader>
             <div className="grid gap-2 mt-4">
-              {/* 移动端工具栏项目 */}
               <Button
                 onClick={openModals.settings}
                 variant="ghost"
@@ -137,7 +229,6 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <Settings className="w-5 h-5 mr-2" /> Settings
               </Button>
-              {/* ... 其他工具栏项目 ... */}
             </div>
           </SheetContent>
         </Sheet>
@@ -163,11 +254,7 @@ export const Header: React.FC<HeaderProps> = ({
               {currentPath.map((folder, index) => (
                 <React.Fragment key={folder}>
                   <BreadcrumbItem>
-                    <BreadcrumbLink
-                      onClick={() =>
-                        setCurrentPath(currentPath.slice(0, index + 1))
-                      }
-                    >
+                    <BreadcrumbLink onClick={() => handlePathClick(index)}>
                       {folder}
                     </BreadcrumbLink>
                   </BreadcrumbItem>
@@ -177,6 +264,19 @@ export const Header: React.FC<HeaderProps> = ({
             </BreadcrumbList>
           </Breadcrumb>
         </ScrollArea>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            "shrink-0",
+            isMultiSelectMode && "bg-blue-500/20 text-blue-500"
+          )}
+          onClick={toggleMultiSelectMode}
+        >
+          <CheckSquare className="w-5 h-5" />
+          <span className="sr-only">Toggle multi-select</span>
+        </Button>
       </div>
 
       <div
@@ -209,85 +309,103 @@ export const Header: React.FC<HeaderProps> = ({
           </Button>
         </div>
 
-        {/* 桌面端工具栏 */}
-        <div className="hidden md:flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2 flex-wrap">
+          {visibleButtons.map((button, index) => (
+            <Button
+              key={index}
+              onClick={button.onClick}
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-2"
+              disabled={isBatchProcessing}
+            >
+              {button.icon}
+              {isToolbarExpanded && <span>{button.label}</span>}
+            </Button>
+          ))}
+
           <Button
-            onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
             variant="ghost"
             size="sm"
+            onClick={() => setIsToolbarExpanded(!isToolbarExpanded)}
           >
-            {viewMode === "grid" ? (
-              <List className="w-5 h-5" />
+            {isToolbarExpanded ? (
+              <ChevronLeft className="w-5 h-5" />
             ) : (
-              <Grid className="w-5 h-5" />
+              <ChevronRight className="w-5 h-5" />
             )}
           </Button>
-          <Button onClick={handleSort} variant="ghost" size="sm">
-            <ArrowUpDown className="w-5 h-5" />
-          </Button>
-          <Button onClick={openModals.upload} variant="ghost" size="sm">
-            <Upload className="w-5 h-5" />
-          </Button>
-          <Button onClick={openModals.search} variant="ghost" size="sm">
-            <Search className="w-5 h-5" />
-          </Button>
-          <Button onClick={openModals.share} variant="ghost" size="sm">
-            <Share2 className="w-5 h-5" />
-          </Button>
-          <Button onClick={openModals.versionHistory} variant="ghost" size="sm">
-            <Clock className="w-5 h-5" />
-          </Button>
-          <Button onClick={openModals.tagManager} variant="ghost" size="sm">
-            <Tag className="w-5 h-5" />
-          </Button>
-          <Button
-            onClick={openModals.realtimeCollaboration}
-            variant="ghost"
-            size="sm"
-          >
-            <RefreshCw className="w-5 h-5" />
-          </Button>
-          <Button
-            onClick={openModals.fileCompression}
-            variant="ghost"
-            size="sm"
-          >
-            <Archive className="w-5 h-5" />
-          </Button>
-          <Button
-            onClick={openModals.cloudIntegration}
-            variant="ghost"
-            size="sm"
-          >
-            <Cloud className="w-5 h-5" />
-          </Button>
-          <Button onClick={openModals.authModal} variant="ghost" size="sm">
-            <Lock className="w-5 h-5" />
-          </Button>
-          <Button onClick={openModals.trashBin} variant="ghost" size="sm">
-            <Trash2 className="w-5 h-5" />
-          </Button>
-          <Button onClick={openModals.fileEncryption} variant="ghost" size="sm">
-            <Lock className="w-5 h-5" />
-          </Button>
-          {selectedFiles.length > 0 && (
-            <Button onClick={handleDelete} variant="destructive" size="sm">
-              <Trash2 className="w-5 h-5" />
-            </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <MoreVertical className="w-5 h-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {moreButtons.map((button, index) => (
+                <DropdownMenuItem
+                  key={index}
+                  onClick={button.onClick}
+                  disabled={isBatchProcessing}
+                >
+                  {button.icon}
+                  <span className="ml-2">{button.label}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {isBatchProcessing && (
+            <div className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm">处理中...</span>
+            </div>
           )}
         </div>
 
-        {/* 更多选项下拉菜单 */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <MoreVertical className="w-5 h-5" />
+        {lastActions.length > 0 && (
+          <div className="hidden md:flex items-center gap-2">
+            <Separator orientation="vertical" className="h-6" />
+            <div className="flex items-center gap-1">
+              <Clock className="w-4 h-4 text-gray-400" />
+              <span className="text-sm text-gray-400">
+                最近: {lastActions[lastActions.length - 1]}
+              </span>
+            </div>
+          </div>
+        )}
+
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="sm" className="md:hidden">
+              <Menu className="w-5 h-5" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {/* ... 更多选项菜单项 ... */}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[280px]">
+            <SheetHeader>
+              <SheetTitle>工具</SheetTitle>
+            </SheetHeader>
+            <div className="grid gap-2 mt-4">
+              {toolbarButtons.map((button, index) => (
+                <Button
+                  key={index}
+                  onClick={() => {
+                    button.onClick();
+                    setShowMoreTools(false);
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="justify-start"
+                  disabled={isBatchProcessing}
+                >
+                  {button.icon}
+                  <span className="ml-2">{button.label}</span>
+                </Button>
+              ))}
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </motion.div>
   );

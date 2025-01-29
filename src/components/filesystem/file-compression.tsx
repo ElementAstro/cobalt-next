@@ -1,9 +1,8 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { X, Settings, AlertCircle, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
-  DialogOverlay,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -21,36 +20,33 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useDropzone } from "react-dropzone";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger as TabTrigger,
-  TabsContent,
-} from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Alert } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import JSZip from "jszip";
+import type { File as CustomFile } from "@/types/filesystem";
+import { mockFilesystemApi } from "@/services/mock/filesystem";
+import { filesystemApi } from "@/services/api/filesystem";
 
 interface FileCompressionProps {
   isOpen: boolean;
   onClose: () => void;
+  selectedFiles?: CustomFile[];
 }
 
 export const FileCompression: React.FC<FileCompressionProps> = ({
   isOpen,
   onClose,
+  selectedFiles = [],
 }) => {
-  // Removed unused variables from useFileCompression
-  // const {
-  //   selectedFiles,
-  //   compressionType,
-  //   isCompressing,
-  //   setSelectedFiles,
-  //   setCompressionType,
-  //   setIsCompressing,
-  // } = useFileCompression();
+  const [files, setFiles] = useState<CustomFile[]>(selectedFiles);
 
-  const [files, setFiles] = useState<File[]>([]); // Initialized as empty array
+  useEffect(() => {
+    if (selectedFiles.length) {
+      setFiles(selectedFiles);
+    }
+  }, [selectedFiles]);
+
   const [compressing, setCompressing] = useState(false);
   const [decompressing, setDecompressing] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
@@ -69,15 +65,28 @@ export const FileCompression: React.FC<FileCompressionProps> = ({
   const zipNameRef = useRef<HTMLInputElement>(null);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    setFiles((prev) => [...prev, ...acceptedFiles]);
+    const customFiles: CustomFile[] = acceptedFiles.map((file) => ({
+      id: crypto.randomUUID(),
+      name: file.name,
+      size: file.size,
+      lastModified: new Date(file.lastModified),
+      createdAt: new Date(),
+      owner: "current-user",
+      permissions: "rw",
+      path: "/",
+      type: "unknown",
+      modified: new Date().toISOString(),
+    }));
+
+    setFiles((prev) => [...prev, ...customFiles]);
     setDownloadUrl(null);
     setError(null);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
-  const removeFile = (index: number) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
+  const removeFile = (id: string | number) => {
+    setFiles((prev) => prev.filter((file) => file.id !== id));
   };
 
   const compressFiles = async () => {
@@ -92,80 +101,53 @@ export const FileCompression: React.FC<FileCompressionProps> = ({
 
     try {
       const zip = new JSZip();
+      const api =
+        process.env.NEXT_PUBLIC_USE_MOCK === "true"
+          ? mockFilesystemApi
+          : filesystemApi;
 
       if (includeFolder) {
         const folder = zip.folder("compressed_files");
         if (!folder) throw new Error("无法创建压缩文件夹");
+
         for (let i = 0; i < files.length; i++) {
           const file = files[i];
-          const arrayBuffer = await file.arrayBuffer();
-          folder.file(file.name, arrayBuffer);
-          setProgress(((i + 1) / files.length) * 50);
+          // 从后端获取文件数据
+          const response = await api.getFileData(file.id.toString());
+          if (response.status === "success") {
+            folder.file(file.name, response.data);
+            setProgress(((i + 1) / files.length) * 50);
+          } else {
+            throw new Error(`获取文件 ${file.name} 数据失败`);
+          }
         }
       } else {
         for (let i = 0; i < files.length; i++) {
           const file = files[i];
-          const arrayBuffer = await file.arrayBuffer();
-          zip.file(file.name, arrayBuffer);
-          setProgress(((i + 1) / files.length) * 50);
+          // 从后端获取文件数据
+          const response = await api.getFileData(file.id.toString());
+          if (response.status === "success") {
+            zip.file(file.name, response.data);
+            setProgress(((i + 1) / files.length) * 50);
+          } else {
+            throw new Error(`获取文件 ${file.name} 数据失败`);
+          }
         }
       }
 
-      const options: Partial<JSZip.JSZipGeneratorOptions> = {
-        type: "blob" as const,
+      const content = await zip.generateAsync({
+        type: "blob",
         compression: compressionAlgorithm,
-        compressionOptions: { level: compressionLevel },
-        encodeFileName: (fileName) => {
-          return fileNameEncoding === "UTF-8"
-            ? fileName
-            : new TextEncoder()
-                .encode(fileName)
-                .reduce((acc, byte) => acc + String.fromCharCode(byte), "");
+        compressionOptions: {
+          level: compressionLevel,
         },
-      };
+      });
 
-      // JSZip does not support password protection natively
-      // Removed password option
-      // if (password) {
-      //   options.password = password;
-      // }
-
-      const content = await zip.generateAsync(
-        options as JSZip.JSZipGeneratorOptions,
-        (metadata) => {
-          setProgress(50 + metadata.percent / 2);
-        }
-      );
-
-      // Ensure content is Blob
-      if (!(content instanceof Blob)) {
-        throw new Error("压缩内容不是Blob对象");
-      }
-
-      if (splitSize > 0 && content.size > splitSize * 1024 * 1024) {
-        const parts = Math.ceil(content.size / (splitSize * 1024 * 1024));
-        const partSize = Math.ceil(content.size / parts);
-        for (let i = 0; i < parts; i++) {
-          const start = i * partSize;
-          const end = Math.min((i + 1) * partSize, content.size);
-          const part = content.slice(start, end);
-          const partUrl = URL.createObjectURL(part);
-          const a = document.createElement("a");
-          a.href = partUrl;
-          a.download = `${zipNameRef.current?.value || "compressed"}_part${
-            i + 1
-          }.zip`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(partUrl);
-        }
-      } else {
-        const url = URL.createObjectURL(content);
-        setDownloadUrl(url);
-      }
+      const url = URL.createObjectURL(content);
+      setDownloadUrl(url);
+      setProgress(100);
     } catch (err) {
-      setError("压缩文件时发生错误");
+      setError(err instanceof Error ? err.message : "压缩文件时发生错误");
       console.error(err);
     } finally {
       setCompressing(false);
@@ -184,17 +166,40 @@ export const FileCompression: React.FC<FileCompressionProps> = ({
 
     try {
       const zip = new JSZip();
-      // JSZip does not support password; removed password option
-      const content = await zip.loadAsync(files[0]);
-      const extractedFiles: File[] = [];
+      const file = files[0];
+
+      // 从后端获取 ZIP 文件数据
+      const api =
+        process.env.NEXT_PUBLIC_USE_MOCK === "true"
+          ? mockFilesystemApi
+          : filesystemApi;
+      const response = await api.getFileData(file.id.toString());
+
+      if (response.status !== "success") {
+        throw new Error("获取 ZIP 文件数据失败");
+      }
+
+      const content = await zip.loadAsync(response.data);
+      const extractedFiles: CustomFile[] = [];
 
       let processedFiles = 0;
       const totalFiles = Object.keys(content.files).length;
 
-      for (const [filename, file] of Object.entries(content.files)) {
-        if (!file.dir) {
-          const blob = await file.async("blob");
-          extractedFiles.push(new File([blob], filename));
+      for (const [filename, zipFile] of Object.entries(content.files)) {
+        if (!zipFile.dir) {
+          const blob = await zipFile.async("blob");
+          extractedFiles.push({
+            id: crypto.randomUUID(),
+            name: filename,
+            size: blob.size,
+            lastModified: new Date(),
+            createdAt: new Date(),
+            owner: "current-user",
+            permissions: "rw",
+            path: "/",
+            type: "unknown",
+            modified: new Date().toISOString(),
+          });
         }
         processedFiles++;
         setProgress((processedFiles / totalFiles) * 100);
@@ -202,7 +207,7 @@ export const FileCompression: React.FC<FileCompressionProps> = ({
 
       setFiles(extractedFiles);
     } catch (err) {
-      setError("解压文件时发生错误");
+      setError(err instanceof Error ? err.message : "解压文件时发生错误");
       console.error(err);
     } finally {
       setDecompressing(false);
@@ -211,33 +216,53 @@ export const FileCompression: React.FC<FileCompressionProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogOverlay />
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>文件压缩</DialogTitle>
+          <DialogTitle>
+            文件压缩
+            {selectedFiles.length > 0 &&
+              ` (已选择 ${selectedFiles.length} 个文件)`}
+          </DialogTitle>
           <DialogClose />
         </DialogHeader>
         <Tabs defaultValue="compress" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabTrigger value="compress">压缩</TabTrigger>
-            <TabTrigger value="decompress">解压</TabTrigger>
+            <TabsTrigger value="compress">压缩</TabsTrigger>
+            <TabsTrigger value="decompress">解压</TabsTrigger>
           </TabsList>
           <TabsContent value="compress">
             <div className="p-6 bg-white rounded-lg shadow-md">
-              <motion.div
-                {...(getRootProps() as any)}
-                className={`p-10 border-2 border-dashed rounded-md text-center cursor-pointer 
-                  ${isDragActive ? "border-primary" : "border-gray-300"}`}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <input {...getInputProps()} />
-                {isDragActive ? (
-                  <p>将文件拖放到这里 ...</p>
-                ) : (
-                  <p>拖放文件到这里, 或点击选择文件</p>
-                )}
-              </motion.div>
+              {selectedFiles.length > 0 ? (
+                <motion.div className="mb-4">
+                  <h3 className="font-semibold mb-2">已选择的文件:</h3>
+                  <ul className="list-disc pl-5">
+                    {selectedFiles.map((file) => (
+                      <li key={file.id} className="flex justify-between">
+                        {file.name}
+                        <X
+                          className="cursor-pointer"
+                          onClick={() => removeFile(file.id)}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
+              ) : (
+                <motion.div
+                  {...(getRootProps() as any)}
+                  className={`p-10 border-2 border-dashed rounded-md text-center cursor-pointer 
+                    ${isDragActive ? "border-primary" : "border-gray-300"}`}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <input {...getInputProps()} />
+                  {isDragActive ? (
+                    <p>将文件拖放到这里 ...</p>
+                  ) : (
+                    <p>拖放文件到这里, 或点击选择文件</p>
+                  )}
+                </motion.div>
+              )}
 
               <AnimatePresence>
                 {files.length > 0 && (
@@ -339,13 +364,6 @@ export const FileCompression: React.FC<FileCompressionProps> = ({
                             <SelectItem value="ASCII">ASCII</SelectItem>
                           </SelectContent>
                         </Select>
-                        {/* <Label htmlFor="password">密码</Label>
-                        <Input 
-                          id="password"
-                          type="password" 
-                          value={password} 
-                          onChange={(e) => setPassword(e.target.value)} 
-                        /> */}
                         <Label htmlFor="split-size">分割大小 (MB)</Label>
                         <Input
                           id="split-size"

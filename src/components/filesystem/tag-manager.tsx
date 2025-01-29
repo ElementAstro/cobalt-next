@@ -18,18 +18,29 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
+import { File } from "@/types/filesystem";
 
 interface TagManagerProps {
   isOpen: boolean;
   onClose: () => void;
+  selectedFiles?: File[]; // 添加选中文件数组
 }
 
-export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
+export const TagManager: React.FC<TagManagerProps> = ({
+  isOpen,
+  onClose,
+  selectedFiles = [], // 提供默认值
+}) => {
   const { tags, tagColors, addGlobalTag, removeGlobalTag, setTagColor } =
     useFilesystemStore();
   const [newTag, setNewTag] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedColor, setSelectedColor] = useState("#3B82F6");
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  };
 
   const colors = [
     { value: "#3B82F6", label: "蓝色" },
@@ -48,6 +59,27 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
       addGlobalTag(newTag.trim(), selectedColor);
       setNewTag("");
     }
+  };
+
+  // 添加已选文件列表展示
+  const renderSelectedFiles = () => {
+    if (!selectedFiles?.length) return null;
+
+    return (
+      <motion.div variants={itemVariants} className="mt-4">
+        <h3 className="font-medium text-gray-400 mb-2">已选择的文件</h3>
+        <div className="space-y-2">
+          {selectedFiles.map((file) => (
+            <div
+              key={file.id}
+              className="flex items-center justify-between p-2 rounded bg-gray-700"
+            >
+              <span className="truncate">{file.name}</span>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+    );
   };
 
   if (!isOpen) return null;
@@ -201,6 +233,9 @@ export const TagManager: React.FC<TagManagerProps> = ({ isOpen, onClose }) => {
                       ))
                     )}
                   </div>
+
+                  {/* 添加已选文件列表显示 */}
+                  {renderSelectedFiles()}
                 </DialogDescription>
               </DialogContent>
             </motion.div>

@@ -8,41 +8,42 @@ export type FileType =
   | "archive"
   | "unknown";
 
-export interface File {
+// 添加基础接口
+export interface FileSystemItem {
   id: string | number;
   name: string;
-  type: FileType;
   size: number;
   lastModified: Date;
   createdAt: Date;
   owner: string;
   permissions: string;
-  content?: string; // For preview purposes
-  language?: string; // For code files
   path: string;
   thumbnail?: string;
   modified: string;
+  itemCount?: number;
+  thumbnailUrl?: string;
+  url?: string;
+  isFavorite?: boolean;
+  tags?: string[];
+  encrypted?: boolean;
+  rawFile?: File;
+}
+
+// 修改 File 接口继承基础接口
+export interface File extends FileSystemItem {
+  type: FileType;
+  content?: string;
+  language?: string;
   versions?: {
     id: string;
     createdAt: Date;
     size: number;
   }[];
-  tags?: string[];
-  isFavorite?: boolean;
 }
 
-export interface Folder {
-  id: string;
-  name: string;
+// 修改 Folder 接口继承基础接口
+export interface Folder extends FileSystemItem {
   files: (File | Folder)[];
-  createdAt: Date;
-  lastModified: Date;
-  owner: string;
-  permissions: string;
-  path: string;
-  modified: string;
-  size?: number;
-  itemCount?: number;
   parentId?: string;
 }
 
@@ -85,4 +86,48 @@ export interface ApiResponse<T> {
   data: T;
   message: string;
   status: "success" | "error";
+}
+
+export interface ExtendedFile extends File {
+  url?: string;
+  content?: string;
+  language?: string;
+}
+
+export interface Version {
+  id: string | number;
+  fileId: string;
+  number: number;
+  createdAt: Date;
+  author: string;
+  comment: string;
+  size: number;
+  hash: string;
+  changes: {
+    additions: number;
+    deletions: number;
+  };
+  tags?: string[];
+  status?: "active" | "archived";
+  restorePoint?: boolean;
+}
+
+export interface VersionDiff {
+  additions: number;
+  deletions: number;
+  changes: number;
+  chunks: Array<{
+    type: "added" | "removed" | "modified";
+    content: string;
+    lineNumbers: {
+      old: {
+        start: number;
+        end: number;
+      };
+      new: {
+        start: number;
+        end: number;
+      };
+    };
+  }>;
 }

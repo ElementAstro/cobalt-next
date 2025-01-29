@@ -29,33 +29,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-
-interface Version {
-  id: number;
-  date: string;
-  user: string;
-  changes?: number;
-  type?: string;
-  size?: string;
-  description?: string;
-  thumbnail?: string;
-  tags?: string[];
-  status?: "active" | "archived";
-  comments?: string[];
-  restorePoint?: boolean;
-  branch?: string;
-  commitHash?: string;
-  author?: {
-    name: string;
-    email: string;
-    avatar?: string;
-  };
-  mergeInfo?: {
-    from: string;
-    to: string;
-    conflicts?: number;
-  };
-}
+import { Version } from "@/types/filesystem";
 
 interface VersionHistoryProps {
   isOpen: boolean;

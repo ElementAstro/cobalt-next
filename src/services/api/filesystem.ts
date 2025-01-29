@@ -1,4 +1,4 @@
-import { File, Folder } from "@/types/filesystem";
+import { File, Folder, Version, VersionDiff } from "@/types/filesystem";
 import api from "../axios";
 
 export interface FileSystemResponse<T> {
@@ -24,6 +24,16 @@ export const filesystemApi = {
       headers: {
         "Content-Type": "multipart/form-data",
       },
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total) {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          if (files.get("onProgress")) {
+            (files.get("onProgress") as unknown as Function)(percentCompleted);
+          }
+        }
+      },
     }),
 
   deleteFiles: (fileIds: string[]) =>
@@ -45,6 +55,25 @@ export const filesystemApi = {
       url: `/files/${fileId}/move`,
       method: "PATCH",
       data: { path: newPath },
+    }),
+
+  // 添加获取文件数据的方法
+  getFileData: (fileId: string) =>
+    api.request<FileSystemResponse<ArrayBuffer>>({
+      url: `/files/${fileId}/data`,
+      method: "GET",
+      responseType: "arraybuffer",
+    }),
+
+  // 添加更新文件数据的方法
+  updateFileData: (fileId: string, data: Blob) =>
+    api.request<FileSystemResponse<void>>({
+      url: `/files/${fileId}/data`,
+      method: "PUT",
+      data,
+      headers: {
+        "Content-Type": "application/octet-stream",
+      },
     }),
 
   // 文件夹操作
@@ -77,7 +106,7 @@ export const filesystemApi = {
 
   // 版本控制
   getVersions: (fileId: string) =>
-    api.request<FileSystemResponse<File[]>>({
+    api.request<FileSystemResponse<Version[]>>({
       url: `/files/${fileId}/versions`,
       method: "GET",
     }),
@@ -86,6 +115,23 @@ export const filesystemApi = {
     api.request<FileSystemResponse<File>>({
       url: `/files/${fileId}/versions/${versionId}/restore`,
       method: "POST",
+    }),
+
+  createVersion: (fileId: string, comment: string) =>
+    api.request<FileSystemResponse<Version>>({
+      url: `/files/${fileId}/versions`,
+      method: "POST",
+      data: { comment },
+    }),
+
+  compareVersions: (versionId1: string, versionId2: string) =>
+    api.request<FileSystemResponse<VersionDiff>>({
+      url: `/versions/compare`,
+      method: "POST",
+      data: {
+        version1: versionId1,
+        version2: versionId2,
+      },
     }),
 
   // 收藏夹
@@ -144,7 +190,18 @@ export const filesystemApi = {
     }),
 
   // 搜索
-  search: (params: any) =>
+  search: (params: {
+    term: string;
+    type?: string;
+    dateRange?: string;
+    includeArchived?: boolean;
+    sizeRange?: {
+      min: number;
+      max: number;
+    };
+    owner?: string;
+    tags?: string[];
+  }) =>
     api.request<FileSystemResponse<File[]>>({
       url: "/search",
       method: "GET",

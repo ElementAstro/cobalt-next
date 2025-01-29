@@ -1,7 +1,16 @@
 "use client";
 
-import React from "react";
-import { X, Search } from "lucide-react";
+import React, { useEffect } from "react";
+import {
+  X,
+  Search,
+  FileText,
+  Image as ImageIcon,
+  Video,
+  File as FileIcon,
+  Tag,
+  User,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
@@ -22,7 +31,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Slider } from "@/components/ui/slider";
 import { useFilesystemStore } from "@/store/useFilesystemStore";
+import { ExtendedFile } from "@/types/filesystem";
+import { debounce } from "lodash";
+import { toast } from "@/hooks/use-toast";
+import { filesystemApi } from "@/services/api/filesystem";
+import { mockFilesystemApi } from "@/services/mock/filesystem";
 
 interface AdvancedSearchProps {
   isOpen: boolean;
@@ -37,6 +52,11 @@ interface AdvancedSearchProps {
 export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
   isOpen,
   onClose,
+  customFilters = {
+    sizeRange: true,
+    ownerFilter: true,
+    tagFilter: true,
+  },
 }) => {
   const {
     searchTerm,
@@ -61,15 +81,102 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
     setSearchTags,
   } = useFilesystemStore();
 
-  const handleSearch = async () => {
-    setIsLoading(true);
-    console.log(
-      `Searching for "${searchTerm}" with file type "${fileType}", date range "${dateRange}", include archived: ${includeArchived}`
-    );
-    setTimeout(() => {
-      setSearchResults(["Result 1", "Result 2", "Result 3"]);
+  const api = process.env.NEXT_PUBLIC_API_MOCK === "enabled" ? mockFilesystemApi : filesystemApi;
+
+  const handleSearch = async () => {    
+    try {
+      setIsLoading(true);
+  
+      // 构造搜索参数
+      const searchParams = {
+        term: searchTerm,
+        type: fileType,
+        dateRange: dateRange,
+        includeArchived: includeArchived,
+        sizeRange: {
+          min: minSize,
+          max: maxSize
+        },
+        owner: owner,
+        tags: searchTags.split(",").map(tag => tag.trim()).filter(Boolean)
+      };
+  
+      // 调用搜索 API
+      const response = await api.search(searchParams);
+      
+      if (response.status === "success") {
+        setSearchResults(response.data);
+        if (response.data.length === 0) {
+          toast({
+            title: "搜索完成",
+            description: "未找到匹配的文件",
+            variant: "default"
+          });
+        } else {
+          toast({
+            title: "搜索完成",
+            description: `找到 ${response.data.length} 个匹配文件`,
+            variant: "default"
+          });
+        }
+      } else {
+        throw new Error("Search failed");
+      }
+  
+    } catch (error) {
+      console.error("Search failed:", error);
+      toast({
+        title: "搜索失败",
+        description: error instanceof Error ? error.message : "未知错误",
+        variant: "destructive"
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
+  };
+  
+  // 添加防抖搜索
+  const debouncedSearch = debounce(handleSearch, 300);
+  
+  // 搜索条件变化时自动触发搜索
+  useEffect(() => {
+    if (searchTerm || fileType !== 'all' || dateRange !== 'any') {
+      debouncedSearch();
+    }
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [
+    searchTerm,
+    fileType,
+    dateRange,
+    includeArchived,
+    minSize,
+    maxSize,
+    owner,
+    searchTags
+  ]);
+  
+
+  const getFileIcon = (type: string) => {
+    switch (type) {
+      case "document":
+        return <FileText className="w-5 h-5 text-blue-500" />;
+      case "image":
+        return <ImageIcon className="w-5 h-5 text-green-500" />;
+      case "video":
+        return <Video className="w-5 h-5 text-purple-500" />;
+      default:
+        return <FileIcon className="w-5 h-5 text-gray-500" />;
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
   };
 
   return (
@@ -200,6 +307,72 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                   </Label>
                 </motion.div>
 
+                {/* Size Range Filter */}
+                {customFilters.sizeRange && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.45 }}
+                  >
+                    <Label className="block mb-2 font-medium">Size Range</Label>
+                    <div className="px-2">
+                      <Slider
+                        defaultValue={[minSize, maxSize]}
+                        max={100000}
+                        step={100}
+                        onValueChange={(value) => {
+                          setMinSize(value[0]);
+                          setMaxSize(value[1]);
+                        }}
+                      />
+                      <div className="flex justify-between mt-2 text-sm text-gray-400">
+                        <span>{formatFileSize(minSize)}</span>
+                        <span>{formatFileSize(maxSize)}</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Owner Filter */}
+                {customFilters.ownerFilter && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                  >
+                    <Label className="block mb-2 font-medium">Owner</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input
+                        value={owner}
+                        onChange={(e) => setOwner(e.target.value)}
+                        className="pl-9 bg-gray-700"
+                        placeholder="Filter by owner..."
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Tags Filter */}
+                {customFilters.tagFilter && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.55 }}
+                  >
+                    <Label className="block mb-2 font-medium">Tags</Label>
+                    <div className="relative">
+                      <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input
+                        value={searchTags}
+                        onChange={(e) => setSearchTags(e.target.value)}
+                        className="pl-9 bg-gray-700"
+                        placeholder="Filter by tags..."
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
                 {/* Search Button */}
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -234,30 +407,40 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
               >
                 {searchResults.length > 0 && (
                   <div>
-                    <h3 className="text-xl font-semibold mb-2">
-                      Search Results:
-                    </h3>
+                    <h3 className="text-xl font-semibold mb-2">搜索结果：</h3>
                     <ul className="grid grid-cols-1 gap-2">
-                      {searchResults.map((result, index) => (
+                      {searchResults.map((file) => (
                         <motion.div
-                          key={index}
+                          key={file.id}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{
-                            delay: 0.1 * index,
+                            delay: 0.1,
                             type: "spring",
                             stiffness: 100,
                           }}
                           className="p-3 bg-gray-600/50 rounded-lg hover:bg-gray-600/70 transition-colors duration-200"
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="text-gray-100">{result}</span>
-                            <button className="p-1 rounded-full hover:bg-gray-500/50 transition-colors duration-200">
+                          <div className="flex items-center gap-3">
+                            {getFileIcon(file.type)}
+                            <div className="flex-1">
+                              <h4 className="font-medium text-white">
+                                {file.name}
+                              </h4>
+                              <p className="text-sm text-gray-400">
+                                {formatFileSize(file.size)} ·{" "}
+                                {new Date(
+                                  file.lastModified
+                                ).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="hover:bg-gray-500/50"
+                            >
                               <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <div className="text-sm text-gray-400 mt-1">
-                            File details...
+                            </Button>
                           </div>
                         </motion.div>
                       ))}
