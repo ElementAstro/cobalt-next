@@ -104,7 +104,7 @@ export default function GuidingConfig() {
       } p-2`}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-lg font-bold">导星助手</CardTitle>
+        <CardTitle className="text-lg font-bold">导星参数</CardTitle>
         <div className="flex items-center space-x-2">
           <Dialog>
             <DialogTrigger asChild>
@@ -114,7 +114,7 @@ export default function GuidingConfig() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle className="text-lg">导星设置</DialogTitle>
+                <DialogTitle className="text-lg">导星参数设置</DialogTitle>
               </DialogHeader>
               <div className="grid gap-3 py-3">
                 <div className="grid grid-cols-4 items-center gap-2">

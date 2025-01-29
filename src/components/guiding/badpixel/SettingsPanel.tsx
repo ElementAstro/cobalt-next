@@ -12,10 +12,11 @@ import { Switch } from "@/components/ui/switch";
 import { useBadPixelStore } from "@/store/guiding/useBadPixelStore";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
-import { Globe, RefreshCcw, Clock, Save } from "lucide-react";
+import { Globe, RefreshCcw, Clock, Save, Shield, Database, Cloud, History } from "lucide-react";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
+import { Button } from "@/components/ui/button";
 
 export default function SettingsPanel() {
   const { toast } = useToast();
@@ -184,6 +185,69 @@ export default function SettingsPanel() {
               />
             </div>
           )}
+        </div>
+
+        {/* 新增：高级设置区域 */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shield className="w-4 h-4 text-purple-400" />
+              <Label>高级模式</Label>
+            </div>
+            <Switch
+              checked={options.advancedMode}
+              onCheckedChange={(checked) => setOptions({ advancedMode: checked })}
+            />
+          </div>
+
+          {options.advancedMode && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-4 pl-6"
+            >
+              <div className="space-y-2">
+                <Label>坏点检测敏感度</Label>
+                <Slider
+                  value={[options.sensitivity]}
+                  onValueChange={([value]) => setOptions({ sensitivity: value })}
+                  min={1}
+                  max={10}
+                  step={0.1}
+                  className="my-4"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>热点阈值</Label>
+                <Input
+                  type="number"
+                  value={options.hotPixelThreshold}
+                  onChange={(e) => setOptions({ hotPixelThreshold: parseInt(e.target.value) })}
+                />
+              </div>
+            </motion.div>
+          )}
+        </div>
+
+        {/* 新增：数据管理 */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Database className="w-4 h-4 text-blue-400" />
+            <Label>数据管理</Label>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" onClick={() => setOptions({ autoBackup: !options.autoBackup })}>
+              <Cloud className="w-4 h-4 mr-2" />
+              自动备份
+            </Button>
+            <Button variant="outline">
+              <History className="w-4 h-4 mr-2" />
+              历史记录
+            </Button>
+          </div>
         </div>
       </div>
     </motion.div>

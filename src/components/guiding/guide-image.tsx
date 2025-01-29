@@ -1,10 +1,9 @@
 "use client";
 
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CustomColors } from "@/types/guiding";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import {
   Select,
   SelectContent,
@@ -27,7 +26,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
@@ -37,6 +35,15 @@ interface Shape {
   radius?: number;
   size?: number;
   color: string;
+}
+
+interface Point {
+  id: string;
+  x: number;
+  y: number;
+  type: "primary" | "reference" | "calibration";
+  label?: string;
+  timestamp: number;
 }
 
 interface GuideImageProps {
@@ -51,6 +58,16 @@ interface GuideImageProps {
   shapes?: Shape[];
   showCrosshair?: boolean;
   height?: string | number;
+  markedPoints?: Point[];
+  onPointAdd?: (point: Point) => void;
+  onPointRemove?: (pointId: string) => void;
+  onPointUpdate?: (point: Point) => void;
+  measurementMode?: "distance" | "angle" | "none";
+  showMeasurements?: boolean;
+  gridStep?: number;
+  zoomToFit?: boolean;
+  quality?: "low" | "medium" | "high";
+  rendering?: "auto" | "crisp-edges" | "pixelated";
 }
 
 export function GuideImage({
@@ -64,9 +81,18 @@ export function GuideImage({
   contrast = 100,
   shapes = [],
   showCrosshair = true,
-  height = "300px",
+  markedPoints = [],
+  onPointAdd,
+  measurementMode = "none",
+  showMeasurements = true,
+  gridStep = 50,
+  zoomToFit = true,
+  quality = "high",
+  rendering = "auto",
 }: GuideImageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const animationFrameRef = useRef<number>(0);
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -91,6 +117,48 @@ export function GuideImage({
   const [markers, setMarkers] = useState<{ x: number; y: number }[]>([]);
   const [isMarking, setIsMarking] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState("none");
+  const [selectedPoint, setSelectedPoint] = useState<string | null>(null);
+  const [measurements, setMeasurements] = useState<{
+    distances: Array<{ from: string; to: string; value: number }>;
+    angles: Array<{ p1: string; center: string; p2: string; value: number }>;
+  }>({
+    distances: [],
+    angles: [],
+  });
+  const [isDrawing, setIsDrawing] = useState(false);
+  const lastRenderTimeRef = useRef(0);
+
+  const getPointColor = (type: string) => {
+    switch (type) {
+      case "primary":
+        return colors.primary;
+      case "reference":
+        return colors.accent;
+      case "calibration":
+        return colors.secondary;
+      default:
+        return colors.accent;
+    }
+  };
+
+  const getCanvasPoint = (e: React.PointerEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
+  };
+
+  const calculateAngle = (p1: Point, p2: Point, p3: Point) => {
+    const a = Math.sqrt(Math.pow(p2.x - p3.x, 2) + Math.pow(p2.y - p3.y, 2));
+    const b = Math.sqrt(Math.pow(p1.x - p3.x, 2) + Math.pow(p1.y - p3.y, 2));
+    const c = Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+
+    return (Math.acos((a * a + c * c - b * b) / (2 * a * c)) * 180) / Math.PI;
+  };
 
   const drawImage = useCallback(
     (ctx: CanvasRenderingContext2D, img: HTMLImageElement) => {
@@ -391,6 +459,228 @@ export function GuideImage({
     setMarkers((prev) => [...prev, { x, y }]);
   };
 
+  // 优化的渲染逻辑
+  const drawMarkedPoints = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      markedPoints.forEach((point) => {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+        ctx.fillStyle =
+          point.id === selectedPoint
+            ? colors.accent
+            : getPointColor(point.type);
+        ctx.fill();
+
+        if (point.label) {
+          ctx.fillStyle = colors.text;
+          ctx.font = "12px monospace";
+          ctx.fillText(point.label, point.x + 8, point.y + 8);
+        }
+      });
+    },
+    [markedPoints, selectedPoint, colors]
+  );
+
+  // 创建网格图案
+  const createGridPattern = useCallback((size: number, color: string) => {
+    const patternCanvas = new OffscreenCanvas(size, size);
+    const patternCtx = patternCanvas.getContext("2d");
+    if (!patternCtx) return patternCanvas;
+
+    patternCtx.strokeStyle = color;
+    patternCtx.lineWidth = 1;
+
+    patternCtx.beginPath();
+    patternCtx.moveTo(size, 0);
+    patternCtx.lineTo(size, size);
+    patternCtx.lineTo(0, size);
+    patternCtx.stroke();
+
+    return patternCanvas;
+  }, []);
+
+  const drawMeasurements = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      measurements.distances.forEach(({ from, to, value }) => {
+        const fromPoint = markedPoints.find((p) => p.id === from);
+        const toPoint = markedPoints.find((p) => p.id === to);
+        if (!fromPoint || !toPoint) return;
+
+        ctx.beginPath();
+        ctx.moveTo(fromPoint.x, fromPoint.y);
+        ctx.lineTo(toPoint.x, toPoint.y);
+        ctx.strokeStyle = colors.accent;
+        ctx.stroke();
+
+        const midX = (fromPoint.x + toPoint.x) / 2;
+        const midY = (fromPoint.y + toPoint.y) / 2;
+        ctx.fillStyle = colors.text;
+        ctx.fillText(`${value.toFixed(2)}px`, midX, midY);
+      });
+    },
+    [measurements, markedPoints, colors]
+  );
+
+  // 网格绘制优化
+  const drawGrid = useCallback(
+    (ctx: CanvasRenderingContext2D) => {
+      const pattern = ctx.createPattern(
+        createGridPattern(gridStep, colors.accent + "20"),
+        "repeat"
+      );
+      if (!pattern) return;
+
+      ctx.fillStyle = pattern;
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    },
+    [gridStep, colors]
+  );
+
+  // 性能优化：使用防抖处理重绘
+  const debouncedDraw = useCallback(
+    (ctx: CanvasRenderingContext2D, timestamp: number) => {
+      if (timestamp - lastRenderTimeRef.current < 16) {
+        animationFrameRef.current = requestAnimationFrame((t) =>
+          debouncedDraw(ctx, t)
+        );
+        return;
+      }
+      lastRenderTimeRef.current = timestamp;
+
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = ctx.canvas.width;
+      tempCanvas.height = ctx.canvas.height;
+      const tempCtx = tempCanvas.getContext("2d");
+      if (!tempCtx) return;
+
+      tempCtx.imageSmoothingEnabled = quality !== "low";
+      tempCtx.imageSmoothingQuality = quality === "high" ? "high" : "medium";
+
+      if (imageRef.current) {
+        tempCtx.drawImage(imageRef.current, 0, 0);
+      }
+
+      if (showGrid) {
+        drawGrid(tempCtx);
+      }
+
+      drawMarkedPoints(tempCtx);
+      if (showMeasurements) {
+        drawMeasurements(tempCtx);
+      }
+
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      ctx.drawImage(tempCanvas, 0, 0);
+    },
+    [
+      showGrid,
+      markedPoints,
+      showMeasurements,
+      measurements,
+      quality,
+      drawGrid,
+      drawMarkedPoints,
+      drawMeasurements,
+    ]
+  );
+
+  // 处理测量功能
+  const handleMeasurement = useCallback(
+    (point: Point) => {
+      if (measurementMode === "distance") {
+        setMeasurements((prev) => {
+          const lastPoint = markedPoints[markedPoints.length - 1];
+          if (!lastPoint) return prev;
+
+          const distance = Math.sqrt(
+            Math.pow(point.x - lastPoint.x, 2) +
+              Math.pow(point.y - lastPoint.y, 2)
+          );
+
+          return {
+            ...prev,
+            distances: [
+              ...prev.distances,
+              { from: lastPoint.id, to: point.id, value: distance },
+            ],
+          };
+        });
+      } else if (measurementMode === "angle") {
+        setMeasurements((prev) => {
+          const lastTwoPoints = markedPoints.slice(-2);
+          if (lastTwoPoints.length !== 2) return prev;
+
+          const angle = calculateAngle(
+            lastTwoPoints[0],
+            lastTwoPoints[1],
+            point
+          );
+
+          return {
+            ...prev,
+            angles: [
+              ...prev.angles,
+              {
+                p1: lastTwoPoints[0].id,
+                center: lastTwoPoints[1].id,
+                p2: point.id,
+                value: angle,
+              },
+            ],
+          };
+        });
+      }
+    },
+    [measurementMode, markedPoints]
+  );
+
+  // 缩放适配
+  useEffect(() => {
+    if (!zoomToFit || !imageRef.current || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const image = imageRef.current;
+    const scale = Math.min(
+      canvas.width / image.width,
+      canvas.height / image.height
+    );
+
+    setScale(scale);
+    setOffset({
+      x: (canvas.width - image.width * scale) / 2,
+      y: (canvas.height - image.height * scale) / 2,
+    });
+  }, [zoomToFit, imageUrl]);
+
+  // 优化的事件处理
+  const handlePointerEvents = useMemo(
+    () => ({
+      onPointerDown: (e: React.PointerEvent) => {
+        const point = getCanvasPoint(e);
+        if (measurementMode !== "none") {
+          const newPoint: Point = {
+            id: `p${Date.now()}`,
+            ...point,
+            type: "reference",
+            timestamp: Date.now(),
+          };
+          onPointAdd?.(newPoint);
+          handleMeasurement(newPoint);
+        }
+        setIsDrawing(true);
+      },
+      onPointerMove: (e: React.PointerEvent) => {
+        if (!isDrawing) return;
+        const point = getCanvasPoint(e);
+        // 处理绘制逻辑
+      },
+      onPointerUp: () => {
+        setIsDrawing(false);
+      },
+    }),
+    [measurementMode, isDrawing, handleMeasurement]
+  );
+
   return (
     <TooltipProvider>
       <div className="relative w-full h-full">
@@ -487,7 +777,11 @@ export function GuideImage({
         <canvas
           ref={canvasRef}
           className="max-w-full max-h-full border rounded cursor-move"
-          style={{ borderColor: colors.primary }}
+          style={{
+            borderColor: colors.primary,
+            imageRendering: rendering,
+            touchAction: "none",
+          }}
           onClick={handleCanvasClick}
           onWheel={handleWheel}
           onMouseDown={handleMouseDown}
@@ -497,6 +791,7 @@ export function GuideImage({
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          {...handlePointerEvents}
         />
 
         {/* Loading & Error States */}

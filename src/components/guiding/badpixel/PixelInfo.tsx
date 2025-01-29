@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FC } from "react";
+import { FC, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -35,7 +35,10 @@ import {
   ScatterChart,
   Scatter,
   ZAxis,
+  LineChart,
+  Line,
 } from "recharts";
+import { calculateDensityMap, trendData } from "@/utils/pixelDensity";
 
 const pixelSchema = z
   .number()
@@ -103,6 +106,22 @@ const PixelInfo: FC<PixelInfoProps> = ({
     }
   };
 
+  const statistics = useMemo(
+    () => ({
+      totalBadPixels: data.hotPixels.length + data.coldPixels.length,
+      badPixelRatio: (
+        ((data.hotPixels.length + data.coldPixels.length) /
+          (data.width * data.height)) *
+        100
+      ).toFixed(4),
+      hotToColdRatio: (
+        data.hotPixels.length / (data.coldPixels.length || 1)
+      ).toFixed(2),
+      densityMap: calculateDensityMap(data),
+    }),
+    [data]
+  );
+
   if (!data) {
     return (
       <div className="space-y-4">
@@ -144,6 +163,44 @@ const PixelInfo: FC<PixelInfoProps> = ({
 
   return (
     <motion.div className="space-y-4">
+      {/* 新增：快速概览卡片 */}
+      <Card className="bg-gradient-to-br from-gray-800 to-gray-900">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-red-400">
+                {statistics.totalBadPixels}
+              </div>
+              <div className="text-xs text-gray-400">总坏点数</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-400">
+                {statistics.badPixelRatio}%
+              </div>
+              <div className="text-xs text-gray-400">坏点率</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 新增：坏点趋势图 */}
+      <Card className="bg-gray-900/50">
+        <CardContent className="p-4">
+          <CardTitle className="text-sm mb-4">坏点变化趋势</CardTitle>
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={trendData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="time" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="hot" stroke={COLORS.hot} />
+              <Line type="monotone" dataKey="cold" stroke={COLORS.cold} />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
       {/* 相机信息卡片 */}
       <Card className="bg-gray-900/50">
         <CardContent className="p-3">

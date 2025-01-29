@@ -23,6 +23,10 @@ interface BadPixelOptions {
   darkFrameEnabled: boolean;
   autoSave: boolean;
   saveInterval: number;
+  advancedMode: boolean;
+  sensitivity: number;
+  hotPixelThreshold: number;
+  autoBackup: boolean;
 }
 
 interface BadPixelStore {
@@ -60,6 +64,10 @@ const initialOptions: BadPixelOptions = {
   darkFrameEnabled: false,
   autoSave: false,
   saveInterval: 30000,
+  advancedMode: false,
+  sensitivity: 5,
+  hotPixelThreshold: 1000,
+  autoBackup: false,
 };
 
 export const useBadPixelStore = create<BadPixelStore>()(

@@ -10,6 +10,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CalibrationCanvas() {
@@ -36,6 +38,13 @@ export default function CalibrationCanvas() {
     rotationSpeed,
     zoomLevel,
   } = useGuidingStore().calibration;
+
+  const [viewMode, setViewMode] = useState<"normal" | "3d">("normal");
+  const [filters, setFilters] = useState({
+    brightness: 100,
+    contrast: 100,
+    saturation: 100,
+  });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -209,6 +218,33 @@ export default function CalibrationCanvas() {
           </Tooltip>
         </div>
       </TooltipProvider>
+
+      <div className="absolute top-2 left-2 flex flex-col gap-2">
+        <Select
+          value={viewMode}
+          onValueChange={(value: "normal" | "3d") => setViewMode(value)}
+        >
+          <SelectTrigger className="w-[120px] bg-gray-800/80">
+            <SelectValue placeholder="查看模式" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="normal">普通模式</SelectItem>
+            <SelectItem value="3d">3D模式</SelectItem>
+          </SelectContent>
+        </Select>
+        
+        <div className="bg-gray-800/80 p-2 rounded-lg">
+          <Slider
+            value={[filters.brightness]}
+            min={0}
+            max={200}
+            step={1}
+            onValueChange={([value]) =>
+              setFilters(prev => ({ ...prev, brightness: value }))
+            }
+          />
+        </div>
+      </div>
     </div>
   );
 }

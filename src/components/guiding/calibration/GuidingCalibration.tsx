@@ -18,6 +18,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, Battery, Signal, Wifi } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import PreviewMode from "./PreviewMode";
 
 export default function GuidingCalibration() {
   const { isLandscape, setIsLandscape } = useGuidingStore().calibration;
@@ -27,6 +29,8 @@ export default function GuidingCalibration() {
     "calibration-layout-sizes",
     [60, 40]
   );
+  const [activePanel, setActivePanel] = useState<"calibration" | "preview">("calibration");
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -124,42 +128,59 @@ export default function GuidingCalibration() {
           </div>
         </div>
 
-        <Card className="bg-gray-800/95 border-gray-700 shadow-lg rounded-lg backdrop-blur-sm">
-          {layout === "split" ? (
-            <ResizablePanelGroup
-              direction={isLandscape || isMobileLandscape ? "horizontal" : "vertical"}
-              className="min-h-[80vh]"
-              onLayout={handleLayoutChange}
-            >
-              <ResizablePanel defaultSize={panelSizes[0]} minSize={40}>
-                <div className="h-full flex flex-col">
-                  <div className="flex-grow p-2">
-                    <CalibrationCanvas />
-                  </div>
-                  <div className="p-2">
+        <Tabs value={activePanel} onValueChange={(value) => setActivePanel(value as "calibration" | "preview")}>
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="calibration">校准模式</TabsTrigger>
+            <TabsTrigger value="preview">预览模式</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="calibration">
+            <Card className="bg-gray-800/95 border-gray-700 shadow-lg rounded-lg backdrop-blur-sm">
+              {layout === "split" ? (
+                <ResizablePanelGroup
+                  direction={isLandscape || isMobileLandscape ? "horizontal" : "vertical"}
+                  className="min-h-[80vh]"
+                  onLayout={handleLayoutChange}
+                >
+                  <ResizablePanel defaultSize={panelSizes[0]} minSize={40}>
+                    <div className="h-full flex flex-col">
+                      <div className="flex-grow p-2">
+                        <CalibrationCanvas />
+                      </div>
+                      <div className="p-2">
+                        <CalibrationControls />
+                      </div>
+                    </div>
+                  </ResizablePanel>
+                  <ResizableHandle withHandle />
+                  <ResizablePanel defaultSize={panelSizes[1]} minSize={30}>
+                    <div className="h-full overflow-auto">
+                      <CalibrationData />
+                    </div>
+                  </ResizablePanel>
+                </ResizablePanelGroup>
+              ) : (
+                <div className="p-2 sm:p-4">
+                  <CalibrationCanvas />
+                  <div className="mt-4">
                     <CalibrationControls />
                   </div>
+                  <div className="mt-4">
+                    <CalibrationData />
+                  </div>
                 </div>
-              </ResizablePanel>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={panelSizes[1]} minSize={30}>
-                <div className="h-full overflow-auto">
-                  <CalibrationData />
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          ) : (
-            <div className="p-2 sm:p-4">
-              <CalibrationCanvas />
-              <div className="mt-4">
-                <CalibrationControls />
+              )}
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="preview">
+            <Card className="bg-gray-800/95 border-gray-700 shadow-lg rounded-lg backdrop-blur-sm">
+              <div className="p-4">
+                <PreviewMode />
               </div>
-              <div className="mt-4">
-                <CalibrationData />
-              </div>
-            </div>
-          )}
-        </Card>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </motion.div>
   );

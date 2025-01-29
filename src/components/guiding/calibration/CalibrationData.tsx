@@ -73,6 +73,11 @@ export default function CalibrationData() {
   const [timeRange, setTimeRange] = useState("1h");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDataPoint, setSelectedDataPoint] = useState(null);
+  const [advancedStats, setAdvancedStats] = useState({
+    successRate: 0,
+    averageError: 0,
+    calibrationTime: 0,
+  });
 
   // 数据验证
   const validateData = useCallback(() => {
@@ -156,6 +161,27 @@ export default function CalibrationData() {
 
   return (
     <motion.div className="grid grid-cols-1 gap-2 p-2">
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+      >
+        <Card className="border-gray-700 bg-gray-800/90 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="text-sm">校准统计</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold">{advancedStats.successRate}%</div>
+                <div className="text-xs text-gray-400">成功率</div>
+              </div>
+              {/* Add more stats */}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
       <motion.div
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}

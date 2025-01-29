@@ -2,17 +2,27 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { CustomColors } from "@/types/guiding";
+import { CustomColors, GuidePoint } from "@/types/guiding";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Download, FileJson, RefreshCw, Info } from "lucide-react";
 import { PeakChart } from "./peak-chart";
 import { useToast } from "@/hooks/use-toast";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface TargetDiagramProps {
   radius: number;
-  currentPosition: { x: number; y: number };
+  currentPosition: GuidePoint;
   colors: CustomColors;
   animationSpeed: number;
   circleCount?: number;
@@ -48,8 +58,11 @@ export function TargetDiagram({
   const calculateStats = () => {
     const centerX = canvasSize.width / 2;
     const centerY = canvasSize.height / 2;
-    const distance = Math.sqrt(
-      Math.pow(currentPosition.x, 2) + Math.pow(currentPosition.y, 2)
+
+    // 计算相对于中心点的距离
+    const distanceFromCenter = Math.sqrt(
+      Math.pow(currentPosition.x - centerX, 2) +
+        Math.pow(currentPosition.y - centerY, 2)
     );
 
     positionHistory.current.push(currentPosition);
@@ -58,11 +71,11 @@ export function TargetDiagram({
     }
 
     const deviations = positionHistory.current.map((pos) =>
-      Math.sqrt(Math.pow(pos.x, 2) + Math.pow(pos.y, 2))
+      Math.sqrt(Math.pow(pos.x - centerX, 2) + Math.pow(pos.y - centerY, 2))
     );
 
     setStats({
-      distance: distance,
+      distance: distanceFromCenter,
       maxDeviation: Math.max(...deviations),
       avgDeviation:
         deviations.reduce((a, b) => a + b, 0) / deviations.length || 0,
@@ -82,7 +95,7 @@ export function TargetDiagram({
       link.download = "target-diagram.png";
       link.href = canvas.toDataURL();
       link.click();
-      
+
       toast({
         title: "导出成功",
         description: "图像已成功导出",
@@ -91,7 +104,8 @@ export function TargetDiagram({
     } catch (error) {
       toast({
         title: "导出失败",
-        description: error instanceof Error ? error.message : "导出图像时发生错误",
+        description:
+          error instanceof Error ? error.message : "导出图像时发生错误",
         variant: "destructive",
       });
     }
@@ -123,7 +137,8 @@ export function TargetDiagram({
     } catch (error) {
       toast({
         title: "导出失败",
-        description: error instanceof Error ? error.message : "导出数据时发生错误",
+        description:
+          error instanceof Error ? error.message : "导出数据时发生错误",
         variant: "destructive",
       });
     }
@@ -143,35 +158,6 @@ export function TargetDiagram({
     });
   };
 
-  const confirmReset = () => {
-    return (
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="重置"
-            className="h-6 w-6"
-          >
-            <RefreshCw className="h-3 w-3 text-white" />
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>确认重置统计数据？</AlertDialogTitle>
-            <AlertDialogDescription>
-              此操作将清除所有历史数据，且无法恢复。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleReset}>确认</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    );
-  };
-
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -180,7 +166,7 @@ export function TargetDiagram({
     const context = canvas.getContext("2d", {
       alpha: true,
       desynchronized: true,
-      willReadFrequently: false
+      willReadFrequently: false,
     });
     if (!context) return;
 
@@ -202,12 +188,12 @@ export function TargetDiagram({
 
     const drawFrame = (timestamp: number) => {
       const deltaTime = timestamp - lastTime;
-      
+
       if (deltaTime < frameInterval) {
         animationFrame = requestAnimationFrame(drawFrame);
         return;
       }
-      
+
       lastTime = timestamp - (deltaTime % frameInterval);
 
       // Clear canvas with optimized method
@@ -368,7 +354,7 @@ export function TargetDiagram({
       animationFrame = requestAnimationFrame(drawFrame);
     };
 
-    drawFrame();
+    drawFrame(0);
 
     return () => cancelAnimationFrame(animationFrame);
   }, [
@@ -396,17 +382,34 @@ export function TargetDiagram({
           height={canvasSize.height}
           className="rounded-md border border-gray-700 mb-2"
         />
-        <PeakChart  />
+        <PeakChart />
         {showInfo && (
-          <Button
-        variant="ghost"
-        size="icon"
-        aria-label="刷新"
-        onClick={handleReset}
-        className="h-6 w-6"
-          >
-        <RefreshCw className="h-3 w-3 text-white" />
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="重置"
+                className="h-6 w-6"
+              >
+                <RefreshCw className="h-3 w-3 text-white" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>确认重置统计数据？</AlertDialogTitle>
+                <AlertDialogDescription>
+                  此操作将清除所有历史数据，且无法恢复。
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction onClick={handleReset}>
+                  确认
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
       </div>
 

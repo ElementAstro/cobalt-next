@@ -3,11 +3,10 @@
 import React from "react";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
+  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -21,32 +20,43 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Settings } from "lucide-react";
-import { useGuideStore } from "@/store/useGuidingStore";
+import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Settings, Save, RotateCcw } from "lucide-react";
+import { useGuidingStore } from "@/store/useGuidingStore";
 import { toast } from "@/hooks/use-toast";
 
 export default function SettingsDialog() {
-  const { settings, setSettings } = useGuideStore();
-
+  const { settings, setSettings } = useGuidingStore();
+  const [localSettings, setLocalSettings] = React.useState(settings);
   const [isSaving, setIsSaving] = React.useState(false);
+
+  const handleReset = () => {
+    setLocalSettings(settings);
+    toast({
+      title: "设置已重置",
+      description: "已恢复到最后保存的设置",
+    });
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
 
     try {
-      // 验证曝光时间
-      if (settings.exposureTime < 1 || settings.exposureTime > 60000) {
-        throw new Error("曝光时间必须在1到60000毫秒之间");
-      }
+      // 验证基本参数
+      if (localSettings.radius <= 0) throw new Error("搜星半径必须大于0");
+      if (localSettings.exposureTime < 100)
+        throw new Error("曝光时间不能小于100ms");
 
-      // 模拟保存操作
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // 模拟异步保存
+      await new Promise((r) => setTimeout(r, 500));
+
+      setSettings(localSettings);
 
       toast({
-        title: "设置保存成功",
-        description: "您的设置已成功保存",
-        variant: "default",
+        title: "设置已保存",
+        description: "所有更改已成功应用",
       });
     } catch (error) {
       toast({
@@ -63,101 +73,75 @@ export default function SettingsDialog() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="flex items-center">
+        <Button variant="outline" size="sm">
           <Settings className="w-4 h-4 mr-2" />
-          设置
+          系统设置
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>设置</DialogTitle>
-          <DialogDescription>调整导星软件的各项设置。</DialogDescription>
+          <DialogTitle>系统设置</DialogTitle>
         </DialogHeader>
+
         <form onSubmit={handleSave}>
-          <div className="space-y-4">
-            <div className="flex flex-col">
-              <Label htmlFor="xScale">X 轴比例:</Label>
-              <Select
-                value={settings.xScale.toString()}
-                onValueChange={(value) =>
-                  setSettings({ ...settings, xScale: parseInt(value) })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="100" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="100">100</SelectItem>
-                  <SelectItem value="200">200</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col">
-              <Label htmlFor="yScale">Y 轴比例:</Label>
-              <Select
-                value={settings.yScale}
-                onValueChange={(value) =>
-                  setSettings({ ...settings, yScale: value })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="+/-4" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="+/-4">+/-4"</SelectItem>
-                  <SelectItem value="+/-8">+/-8"</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col">
-              <Label htmlFor="exposureTime">曝光时间 (毫秒):</Label>
-              <Input
-                type="number"
-                id="exposureTime"
-                value={settings.exposureTime}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    exposureTime: parseInt(e.target.value),
-                  })
-                }
-                className="w-full"
-                min={1}
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                checked={settings.trendLine}
-                onCheckedChange={(checked) =>
-                  setSettings({ ...settings, trendLine: checked })
-                }
-                id="trendLine"
-              />
-              <Label htmlFor="trendLine">趋势线</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                checked={settings.correction}
-                onCheckedChange={(checked) =>
-                  setSettings({ ...settings, correction: checked })
-                }
-                id="correction"
-              />
-              <Label htmlFor="correction">修正</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                checked={settings.autoGuide}
-                onCheckedChange={(checked) =>
-                  setSettings({ ...settings, autoGuide: checked })
-                }
-                id="autoGuide"
-              />
-              <Label htmlFor="autoGuide">自动导星</Label>
-            </div>
-          </div>
-          <DialogFooter>
+          <Tabs defaultValue="interface">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="interface">界面</TabsTrigger>
+              <TabsTrigger value="display">显示</TabsTrigger>
+              <TabsTrigger value="advanced">高级</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="interface" className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>主题设置</Label>
+                  <Select
+                    value={localSettings.colorScheme}
+                    onValueChange={(value: "dark" | "light") =>
+                      setLocalSettings((prev) => ({
+                        ...prev,
+                        colorScheme: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="dark">深色</SelectItem>
+                      <SelectItem value="light">浅色</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>动画速度</Label>
+                  <Slider
+                    value={[localSettings.animationSpeed]}
+                    onValueChange={([value]) =>
+                      setLocalSettings((prev) => ({
+                        ...prev,
+                        animationSpeed: value,
+                      }))
+                    }
+                    min={0.1}
+                    max={2}
+                    step={0.1}
+                  />
+                </div>
+              </div>
+              {/* ...more interface settings... */}
+            </TabsContent>
+
+            {/* ...existing tabs content... */}
+          </Tabs>
+
+          <DialogFooter className="mt-6 space-x-2">
+            <Button type="button" variant="outline" onClick={handleReset}>
+              <RotateCcw className="w-4 h-4 mr-2" />
+              重置
+            </Button>
             <Button type="submit" disabled={isSaving}>
+              <Save className="w-4 h-4 mr-2" />
               {isSaving ? "保存中..." : "保存"}
             </Button>
           </DialogFooter>

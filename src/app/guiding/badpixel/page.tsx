@@ -130,9 +130,11 @@ export default function BadPixelInterface() {
       coldPixels: data.coldPixels,
       timestamp: new Date().toISOString(),
     };
-    const blob = new Blob([JSON.stringify(exportData)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(exportData)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `badpixels-${new Date().toISOString()}.json`;
     document.body.appendChild(a);
@@ -169,7 +171,9 @@ export default function BadPixelInterface() {
                         <Upload className="w-4 h-4 mr-2" />
                         导入数据
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setShowHistory(!showHistory)}>
+                      <DropdownMenuItem
+                        onClick={() => setShowHistory(!showHistory)}
+                      >
                         <History className="w-4 h-4 mr-2" />
                         操作历史
                       </DropdownMenuItem>
@@ -192,13 +196,29 @@ export default function BadPixelInterface() {
                   />
 
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => {/* 撤销逻辑 */}}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        /* 撤销逻辑 */
+                      }}
+                    >
                       <Undo className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => {/* 重做逻辑 */}}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        /* 重做逻辑 */
+                      }}
+                    >
                       <Redo className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={handleResetCorrectionLevels}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleResetCorrectionLevels}
+                    >
                       <RotateCcw className="w-4 h-4" />
                     </Button>
                   </div>
@@ -216,13 +236,18 @@ export default function BadPixelInterface() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setVisualMode(v => v === 'table' ? 'graph' : 'table')}
-                    >
-                      {visualMode === 'table' ? 
-                        <LayoutGrid className="w-4 h-4 mr-2" /> : 
-                        <LineChart className="w-4 h-4 mr-2" />
+                      onClick={() =>
+                        setVisualMode((v) =>
+                          v === "table" ? "graph" : "table"
+                        )
                       }
-                      {visualMode === 'table' ? '图表模式' : '表格模式'}
+                    >
+                      {visualMode === "table" ? (
+                        <LayoutGrid className="w-4 h-4 mr-2" />
+                      ) : (
+                        <LineChart className="w-4 h-4 mr-2" />
+                      )}
+                      {visualMode === "table" ? "图表模式" : "表格模式"}
                     </Button>
                   </div>
                 </div>
@@ -249,9 +274,7 @@ export default function BadPixelInterface() {
           onClick={handleGenerateBadPixels}
           disabled={isLoading}
         >
-          {isLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin mr-2" />
-          ) : null}
+          {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
           生成坏点
         </Button>
         <Button
@@ -274,11 +297,11 @@ export default function BadPixelInterface() {
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 20 }}
           >
-            <SettingsPanel onClose={() => setShowSettings(false)} />
+            <SettingsPanel />
           </motion.div>
         )}
       </AnimatePresence>
-      
+
       {/* 历史记录面板 */}
       <AnimatePresence>
         {showHistory && (

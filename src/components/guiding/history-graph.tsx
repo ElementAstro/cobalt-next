@@ -35,6 +35,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings2, ChevronDown, ChevronUp } from "lucide-react";
+import { useGuidingStore } from "@/store/useGuidingStore";
 
 interface DataPoint {
   x: number;
@@ -45,6 +46,15 @@ interface DataPoint {
 }
 
 const HistoryGraph: React.FC = () => {
+  const { historyGraph } = useGuidingStore();
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      historyGraph.refreshData();
+    }, 5000);
+    return () => window.clearInterval(intervalId);
+  }, []);
+
   const [isLoading, setIsLoading] = useState(false);
   const [zoomLevel, setZoomLevel] = useState("×100");
   const [yAxis, setYAxis] = useState("-/+4°");

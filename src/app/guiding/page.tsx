@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { getColorScheme, useGuideStore } from "@/store/useGuidingStore";
+import { getColorScheme, useGuidingStore } from "@/store/useGuidingStore";
 
 import { GuideImage } from "@/components/guiding/guide-image";
 import { PeakChart } from "@/components/guiding/peak-chart";
@@ -35,24 +35,19 @@ import SettingsDialog from "@/components/guiding/settings-dialog";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function TelescopeGuiding() {
-  const {
-    settings,
-    setSettings,
-    tracking,
-    setTracking,
-    currentPosition,
-    setCurrentPosition,
-    colors,
-    setColors,
-    guideImage,
-    setGuideImage,
-  } = useGuideStore();
-
+  const { settings, setSettings, tracking, darkField, calibration, historyGraph } = useGuidingStore();
+  const [currentPosition, setCurrentPosition] = useState({
+    x: 0,
+    y: 0,
+    timestamp: Date.now(),
+  });
+  const [guideImage, setGuideImage] = useState<string | null>(null);
+  const [colors, setColors] = useState(getColorScheme("dark"));
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     setColors(getColorScheme(settings.colorScheme));
-  }, [settings.colorScheme, setColors]);
+  }, [settings.colorScheme]);
 
   useEffect(() => {
     if (!guideImage) {
@@ -63,28 +58,21 @@ export default function TelescopeGuiding() {
       const newPosition = {
         x: currentPosition.x + (Math.random() * 0.4 - 0.2),
         y: currentPosition.y + (Math.random() * 0.4 - 0.2),
+        timestamp: Date.now(),
       };
       setCurrentPosition(newPosition);
-
-      setTracking({ value: tracking.value + (Math.random() * 0.2 - 0.1) });
 
       if (settings.autoGuide) {
         setCurrentPosition({
           x: currentPosition.x * 0.95,
           y: currentPosition.y * 0.95,
+          timestamp: Date.now(),
         });
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [
-    currentPosition,
-    settings.autoGuide,
-    setCurrentPosition,
-    setTracking,
-    guideImage,
-    setGuideImage,
-  ]);
+  }, [currentPosition, settings.autoGuide, guideImage]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -120,6 +108,22 @@ export default function TelescopeGuiding() {
     window.addEventListener("keypress", handleKeyPress);
     return () => window.removeEventListener("keypress", handleKeyPress);
   }, [settings]);
+
+  // 计算FWHM和相关指标
+  const stats = useMemo(() => {
+    const peakSNR = 10 * Math.log10(Math.abs(tracking.value));
+    const hfd = calibration.data.raSpeed ? 
+      parseFloat(calibration.data.raSpeed.split(" ")[0]) / tracking.flow : 
+      0;
+
+    return {
+      fwhm: (2.355 * hfd).toFixed(2),
+      peak: Math.round(tracking.value * 1000),
+      background: Math.round(tracking.mod * 10),
+      snr: peakSNR.toFixed(2),
+      hfd: hfd.toFixed(2)
+    };
+  }, [tracking, calibration]);
 
   return (
     <motion.div
@@ -163,35 +167,59 @@ export default function TelescopeGuiding() {
           </div>
           <div className="w-full md:w-1/3 flex flex-col space-y-4 p-4">
             <TargetDiagram
-              radius={50}
+              radius={settings.radius || 50}
               currentPosition={currentPosition}
               colors={colors}
-              animationSpeed={1}
+              animationSpeed={settings.animationSpeed || 1}
               showStats={true}
               enableExport={true}
               canvasSize={{ width: 100, height: 100 }}
+              showInfo={true}
+              crosshairColor={colors.secondary}
+              circleCount={3}
+              pointSize={4}
             />
             <Card>
               <CardContent className="text-xs space-y-1.5 font-mono items-center p-2">
                 <div className="flex justify-between">
                   <span>Mid row FWHM:</span>
-                  <span>2.79</span>
+                  <span>{stats.fwhm}"</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Peak:</span>
-                  <span>12523</span>
+                  <span>{stats.peak}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Background:</span>
-                  <span>2890</span>
+                  <span>{stats.background}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>SNR:</span>
-                  <span>4.33</span>
+                  <span>{stats.snr}db</span>
                 </div>
                 <div className="flex justify-between">
                   <span>HFD:</span>
-                  <span className="text-2xl font-bold">2.56</span>
+                  <span className="text-2xl font-bold">{stats.hfd}"</span>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* 添加跟踪状态指示器 */}
+            <Card>
+              <CardContent className="text-xs space-y-1.5 font-mono items-center p-2">
+                <div className="flex justify-between">
+                  <span>跟踪状态:</span>
+                  <span className={`font-bold ${settings.autoGuide ? 'text-green-500' : 'text-yellow-500'}`}>
+                    {settings.autoGuide ? '自动跟踪中' : '待机'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>曝光时间:</span>
+                  <span>{settings.exposureTime}ms</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>累计时间:</span>
+                  <span>{historyGraph.points.length * settings.exposureTime / 1000}s</span>
                 </div>
               </CardContent>
             </Card>
