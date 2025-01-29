@@ -29,8 +29,20 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Version } from "@/types/filesystem";
+import { Version as BaseVersion } from "@/types/filesystem";
 
+// Extend the base Version interface with UI-specific fields
+interface UIVersion extends BaseVersion {
+  id: number; // Enforce number type for id
+  description?: string;
+  thumbnail?: string;
+  type?: string;
+  user?: string;
+  date?: string;
+  comments?: string[];
+}
+
+// Update component props interface
 interface VersionHistoryProps {
   isOpen: boolean;
   onClose: () => void;
@@ -39,9 +51,37 @@ interface VersionHistoryProps {
   showThumbnails?: boolean;
   showFilters?: boolean;
   pageSize?: number;
-  onVersionSelect?: (version: Version) => void;
-  onBulkAction?: (versions: Version[]) => void;
+  onVersionSelect?: (version: UIVersion) => void;
+  onBulkAction?: (versions: UIVersion[]) => void;
 }
+
+// Initialize mock data with correct types
+const mockVersions: UIVersion[] = [
+  {
+    id: 1,
+    fileId: "file-1",
+    number: 1,
+    createdAt: new Date("2023-06-01 14:30"),
+    author: "John Doe",
+    comment: "更新了图像处理算法",
+    size: 1200000, // 1.2MB in bytes
+    hash: "abc123",
+    changes: {
+      additions: 15,
+      deletions: 5,
+    },
+    // UI specific fields
+    date: "2023-06-01 14:30",
+    user: "John Doe",
+    type: "修改",
+    description: "更新了图像处理算法",
+    thumbnail: "/images/version1-thumb.jpg",
+    tags: ["algorithm", "image-processing"],
+    status: "active",
+    comments: ["Improved performance by 20%"],
+  },
+  // ... other versions with proper typing
+];
 
 export const VersionHistory: React.FC<VersionHistoryProps> = ({
   isOpen,
@@ -54,102 +94,41 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
   onVersionSelect,
   onBulkAction,
 }) => {
-  const [versions, setVersions] = React.useState<Version[]>([
-    {
-      id: 1,
-      date: "2023-06-01 14:30",
-      user: "John Doe",
-      changes: 15,
-      type: "修改",
-      size: "1.2MB",
-      description: "更新了图像处理算法",
-      thumbnail: "/images/version1-thumb.jpg",
-      tags: ["algorithm", "image-processing"],
-      status: "active",
-      comments: ["Improved performance by 20%"],
-    },
-    {
-      id: 2,
-      date: "2023-06-02 09:15",
-      user: "Jane Smith",
-      tags: ["bugfix"],
-      status: "active",
-    },
-    {
-      id: 3,
-      date: "2023-06-03 16:45",
-      user: "Alice Johnson",
-      tags: ["feature"],
-      status: "active",
-    },
-  ]);
-
+  // Update state types
+  const [versions, setVersions] = React.useState<UIVersion[]>(mockVersions);
   const [selectedVersions, setSelectedVersions] = React.useState<number[]>([]);
+  const [selectedVersion, setSelectedVersion] = React.useState<UIVersion | null>(
+    null
+  );
+
+  // Update compare versions state
+  const [compareVersions, setCompareVersions] = React.useState<UIVersion[]>([]);
+
   const [currentPage, setCurrentPage] = React.useState(1);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [sortBy, setSortBy] = React.useState<"date" | "user" | "size">("date");
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">(
     "desc"
   );
-  const [compareVersions, setCompareVersions] = React.useState<Version[]>([]);
   const [showComments, setShowComments] = React.useState(false);
   const [newComment, setNewComment] = React.useState("");
   const [exportFormat, setExportFormat] = React.useState<
     "json" | "csv" | "pdf"
   >("json");
-  const [selectedVersion, setSelectedVersion] = React.useState<Version | null>(
-    null
-  );
 
-  const filteredVersions = React.useMemo(() => {
-    return versions
-      .filter(
-        (version) =>
-          version.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          version.description
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          version.tags?.some((tag) =>
-            tag.toLowerCase().includes(searchQuery.toLowerCase())
-          )
-      )
-      .sort((a, b) => {
-        if (sortBy === "date") {
-          return sortDirection === "asc"
-            ? new Date(a.date).getTime() - new Date(b.date).getTime()
-            : new Date(b.date).getTime() - new Date(a.date).getTime();
-        }
-        if (sortBy === "user") {
-          return sortDirection === "asc"
-            ? a.user.localeCompare(b.user)
-            : b.user.localeCompare(a.user);
-        }
-        if (sortBy === "size") {
-          return sortDirection === "asc"
-            ? (a.size || "").localeCompare(b.size || "")
-            : (b.size || "").localeCompare(a.size || "");
-        }
-        return 0;
-      });
-  }, [versions, searchQuery, sortBy, sortDirection]);
-
-  const paginatedVersions = React.useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredVersions.slice(start, start + pageSize);
-  }, [filteredVersions, currentPage, pageSize]);
-
-  // Helper functions
-  const compareTwoVersions = async (v1: Version, v2: Version) => {
-    // 实现版本比较逻辑
-    return {
-      added: Math.floor(Math.random() * 100),
-      removed: Math.floor(Math.random() * 100),
-      modified: Math.floor(Math.random() * 100),
+  // Update version comparison function
+  const compareTwoVersions = async (v1: UIVersion, v2: UIVersion) => {
+    const comparisonResult = {
+      added: v1.changes.additions - v2.changes.additions,
+      removed: v1.changes.deletions - v2.changes.deletions,
+      modified: Math.abs(v1.changes.additions - v2.changes.additions),
       differences: [],
     };
+    return comparisonResult;
   };
 
-  const restoreVersion = async (version: Version) => {
+  // Update restore version function
+  const restoreVersion = async (version: UIVersion) => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     setVersions((prev) =>
       prev.map((v) => (v.id === version.id ? { ...v, status: "active" } : v))
@@ -163,9 +142,9 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
       prev.map((v) =>
         v.id === versionId
           ? {
-              ...v,
-              comments: [...(v.comments || []), comment],
-            }
+            ...v,
+            comments: [...(v.comments || []), comment],
+          }
           : v
       )
     );
@@ -173,7 +152,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
   };
 
   const exportVersionHistory = async (
-    versionsToExport: Version[],
+    versionsToExport: UIVersion[],
     format: string
   ) => {
     switch (format) {
@@ -204,13 +183,14 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  const handleCompare = async (v1: Version, v2: Version) => {
+  const handleCompare = async (v1: UIVersion, v2: UIVersion) => {
     try {
-      const differences = await compareTwoVersions(v1, v2);
+      const comparisonResult = await compareTwoVersions(v1, v2);
       setCompareVersions([v1, v2]);
+      // Use the comparison result
       toast({
         title: "比较成功",
-        description: "已生成版本对比",
+        description: `新增: ${comparisonResult.added}, 删除: ${comparisonResult.removed}, 修改: ${comparisonResult.modified}`,
         variant: "default",
       });
     } catch (error) {
@@ -222,7 +202,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     }
   };
 
-  const handleRestore = async (version: Version) => {
+  const handleRestore = async (version: UIVersion) => {
     try {
       await restoreVersion(version);
       toast({
@@ -239,11 +219,11 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     }
   };
 
-  const isVersion = (value: any): value is Version => {
+  const isVersion = (value: any): value is UIVersion => {
     return value && typeof value === "object" && "id" in value;
   };
 
-  const handleExport = async (format: "json" | "csv" | "pdf" | Version) => {
+  const handleExport = async (format: "json" | "csv" | "pdf" | UIVersion) => {
     try {
       let data;
       if (isVersion(format)) {
@@ -289,19 +269,19 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
   };
 
   const handleBulkAction = (action: "export" | "compare" | "delete") => {
-    const selected = versions.filter((v) => selectedVersions.includes(v.id));
+    const selectedItems = versions.filter((v) => selectedVersions.includes(v.id));
     switch (action) {
       case "export":
         handleExport("json");
         break;
       case "compare":
-        if (selected.length === 2) {
-          handleCompare(selected[0], selected[1]);
+        if (selectedItems.length === 2) {
+          handleCompare(selectedItems[0], selectedItems[1]);
         }
         break;
       case "delete":
-        setVersions((prev) => prev.filter((v) => !selected.includes(v)));
-        onBulkAction?.(selected);
+        setVersions((prev) => prev.filter((v) => !selectedVersions.includes(v.id)));
+        onBulkAction?.(selectedItems);
         break;
     }
   };
@@ -315,7 +295,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
   const handleAddComment = async () => {
     if (!selectedVersion?.id) return;
     try {
-      await addComment(selectedVersion.id, newComment);
+      await addComment(Number(selectedVersion.id), newComment);
       setNewComment("");
       toast({
         title: "评论成功",
@@ -331,6 +311,43 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
     }
   };
 
+  // Update filteredVersions memo with correct type checking
+  const filteredVersions = React.useMemo(() => {
+    return versions
+      .filter((version) =>
+        (version.user || version.author || "")
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        (version.description || version.comment || "")
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        (version.tags || []).some((tag) =>
+          tag.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      )
+      .sort((a, b) => {
+        if (sortBy === "date") {
+          return sortDirection === "asc"
+            ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        }
+        if (sortBy === "user") {
+          return sortDirection === "asc"
+            ? (a.author || "").localeCompare(b.author || "")
+            : (b.author || "").localeCompare(a.author || "");
+        }
+        if (sortBy === "size") {
+          return sortDirection === "asc" ? a.size - b.size : b.size - a.size;
+        }
+        return 0;
+      });
+  }, [versions, searchQuery, sortBy, sortDirection]);
+
+  const paginatedVersions = React.useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredVersions.slice(start, start + pageSize);
+  }, [filteredVersions, currentPage, pageSize]);
+
   if (!isOpen) return null;
 
   return (
@@ -343,13 +360,11 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
-              className={`${
-                theme === "light"
-                  ? "bg-white/95 text-gray-900"
-                  : "bg-gray-800/95 text-white"
-              } p-3 rounded-xl ${
-                maxWidth || "max-w-4xl"
-              } w-[95%] max-h-[90vh] overflow-hidden flex flex-col`}
+              className={`${theme === "light"
+                ? "bg-white/95 text-gray-900"
+                : "bg-gray-800/95 text-white"
+                } p-3 rounded-xl ${maxWidth || "max-w-4xl"
+                } w-[95%] max-h-[90vh] overflow-hidden flex flex-col`}
             >
               <DialogContent className="h-full p-0">
                 <div
@@ -433,11 +448,10 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        className={`p-2 rounded-lg backdrop-blur-sm border transition-all ${
-                          theme === "light"
-                            ? "bg-gray-100/50 border-gray-200 hover:border-gray-300"
-                            : "bg-gray-700/50 border-gray-600 hover:border-gray-500"
-                        }`}
+                        className={`p-2 rounded-lg backdrop-blur-sm border transition-all ${theme === "light"
+                          ? "bg-gray-100/50 border-gray-200 hover:border-gray-300"
+                          : "bg-gray-700/50 border-gray-600 hover:border-gray-500"
+                          }`}
                       >
                         <div
                           className="flex items-start gap-2 cursor-pointer"
@@ -445,11 +459,10 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                         >
                           {showThumbnails && version.thumbnail && (
                             <div
-                              className={`w-12 h-12 rounded-lg overflow-hidden ${
-                                selectedVersions.includes(version.id)
-                                  ? "ring-2 ring-blue-500"
-                                  : ""
-                              }`}
+                              className={`w-12 h-12 rounded-lg overflow-hidden ${selectedVersions.includes(version.id)
+                                ? "ring-2 ring-blue-500"
+                                : ""
+                                }`}
                             >
                               <img
                                 src={version.thumbnail}
@@ -464,11 +477,10 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                                 {version.type && (
                                   <Badge
                                     variant="outline"
-                                    className={`${
-                                      theme === "light"
-                                        ? "bg-blue-500/10 text-blue-700"
-                                        : "bg-blue-500/20 text-blue-300"
-                                    } text-xs`}
+                                    className={`${theme === "light"
+                                      ? "bg-blue-500/10 text-blue-700"
+                                      : "bg-blue-500/20 text-blue-300"
+                                      } text-xs`}
                                   >
                                     {version.type}
                                   </Badge>
@@ -477,11 +489,10 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                                   <Badge
                                     key={tag}
                                     variant="outline"
-                                    className={`${
-                                      theme === "light"
-                                        ? "bg-gray-500/10 text-gray-700"
-                                        : "bg-gray-500/20 text-gray-300"
-                                    } text-xs`}
+                                    className={`${theme === "light"
+                                      ? "bg-gray-500/10 text-gray-700"
+                                      : "bg-gray-500/20 text-gray-300"
+                                      } text-xs`}
                                   >
                                     {tag}
                                   </Badge>
@@ -524,11 +535,10 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className={`flex-1 text-xs ${
-                                  theme === "light"
-                                    ? "bg-gray-100/50 hover:bg-gray-200"
-                                    : "bg-gray-700/50 hover:bg-gray-600"
-                                }`}
+                                className={`flex-1 text-xs ${theme === "light"
+                                  ? "bg-gray-100/50 hover:bg-gray-200"
+                                  : "bg-gray-700/50 hover:bg-gray-600"
+                                  }`}
                                 onClick={() =>
                                   handleCompare(version, versions[0])
                                 }
@@ -538,11 +548,10 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                               </Button>
                               <Button
                                 size="sm"
-                                className={`flex-1 text-xs ${
-                                  theme === "light"
-                                    ? "bg-blue-500 hover:bg-blue-600 text-white"
-                                    : "bg-blue-600 hover:bg-blue-700"
-                                }`}
+                                className={`flex-1 text-xs ${theme === "light"
+                                  ? "bg-blue-500 hover:bg-blue-600 text-white"
+                                  : "bg-blue-600 hover:bg-blue-700"
+                                  }`}
                                 onClick={() => handleExport(version)}
                               >
                                 <ArrowDownToLine className="w-4 h-4 mr-1" />
@@ -553,11 +562,10 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className={`flex-1 text-xs ${
-                                      theme === "light"
-                                        ? "bg-gray-100/50 hover:bg-gray-200"
-                                        : "bg-gray-700/50 hover:bg-gray-600"
-                                    }`}
+                                    className={`flex-1 text-xs ${theme === "light"
+                                      ? "bg-gray-100/50 hover:bg-gray-200"
+                                      : "bg-gray-700/50 hover:bg-gray-600"
+                                      }`}
                                     onClick={() => {
                                       // 显示评论
                                     }}
