@@ -50,6 +50,9 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { StatusBar } from "./StatusBar";
+import { ProgressDialog } from "./ProgressDialog";
+import { ValidationWarnings } from "./ValidationWarnings";
 
 export default function DarkFieldLibrary() {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
@@ -77,6 +80,10 @@ export default function DarkFieldLibrary() {
     darkFrameCount,
     gainValue,
     offsetValue,
+    validationErrors,
+    validationWarnings,
+    isPaused,
+    progress: darkFieldProgress,
   } = store.darkField;
 
   const {
@@ -243,332 +250,358 @@ export default function DarkFieldLibrary() {
     setFramesPerExposure(settings.framesPerExposure);
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 24
+      }
+    }
+  };
+
+  const [currentTemp, setCurrentTemp] = useState(store.darkField.targetTemperature);
+
   return (
-    <TooltipProvider>
-      <div className="min-h-screen bg-gradient-to-r from-gray-900 to-gray-800 p-4">
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          variants={cardVariants}
-          className="max-w-7xl mx-auto"
-        >
-          <Card className="shadow-xl border-gray-700">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div className="flex items-center gap-4">
-                <CardTitle className="text-2xl font-bold">创建暗场库</CardTitle>
-                {isLoading && (
-                  <Badge variant="default" className="animate-pulse">
-                    处理中
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div>
-                      <Keyboard className="h-4 w-4 text-gray-400" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>快捷键: Ctrl+S 开始, Ctrl+R 重置</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Button variant="ghost" size="icon" onClick={cancelCreation}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="w-full space-y-6"
+    >
+      {/* Status Bar */}
+      <motion.div 
+        variants={itemVariants}
+        className="sticky top-0 z-10 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+      >
+        <StatusBar
+          isLoading={isLoading}
+          progress={progress}
+          stage={progress.stage}
+          warnings={progress.warnings}
+        />
+      </motion.div>
 
-            <CardContent>
-              <Tabs defaultValue="basic" className="space-y-4">
-                <TabsList className="grid grid-cols-2">
-                  <TabsTrigger value="basic">基本设置</TabsTrigger>
-                  <TabsTrigger value="advanced">高级选项</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="basic" className="space-y-4">
-                  {/* Status Alerts */}
-                  <AnimatePresence>
-                    {(isSuccess || isError || isLoading) && (
-                      <>
-                        {isSuccess && (
-                          <Alert className="bg-green-100 border-green-500 dark:bg-green-700 dark:border-green-600">
-                            <AlertTitle>成功</AlertTitle>
-                            <AlertDescription>
-                              暗场库创建成功！
-                            </AlertDescription>
-                          </Alert>
-                        )}
-                        {isError && (
-                          <Alert variant="destructive">
-                            <AlertTitle>错误</AlertTitle>
-                            <AlertDescription>{errorMessage}</AlertDescription>
-                          </Alert>
-                        )}
-                        {isLoading && (
-                          <div className="space-y-2">
-                            <Progress value={progress} className="w-full" />
-                            <p className="text-sm text-center">{`进度: ${progress.toFixed(
-                              1
-                            )}%`}</p>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Presets */}
-                  <div className="grid grid-cols-3 gap-2">
-                    {presets.map((preset) => (
-                      <div className="grid grid-cols-3 gap-2">
-                        {presets.map((preset) => (
-                          <Button
-                            key={preset.name}
-                            variant={
-                              activePreset === preset.name
-                                ? "default"
-                                : "outline"
-                            }
-                            size="sm"
-                            onClick={() => {
-                              setActivePreset(preset.name);
-                              applyPreset(preset.settings);
-                            }}
-                            disabled={isLoading}
-                          >
-                            {preset.name}
-                          </Button>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Main Settings */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>最小曝光时间:</Label>
-                      <Select
-                        value={minExposure.toString()}
-                        onValueChange={(value) => setMinExposure(Number(value))}
-                        disabled={isLoading}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[0.5, 1.0, 1.5, 2.0].map((value) => (
-                            <SelectItem key={value} value={value.toString()}>
-                              {value.toFixed(1)} 秒
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>最大曝光时间:</Label>
-                      <Select
-                        value={maxExposure.toString()}
-                        onValueChange={(value) => setMaxExposure(Number(value))}
-                        disabled={isLoading}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[3.0, 4.0, 5.0, 6.0].map((value) => (
-                            <SelectItem key={value} value={value.toString()}>
-                              {value.toFixed(1)} 秒
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>每种曝光时间拍摄帧数:</Label>
-                      <Input
-                        type="number"
-                        value={framesPerExposure}
-                        onChange={(e) => handleFramesChange(e.target.value)}
-                        className="w-full"
-                        min={1}
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>暗场总数:</Label>
-                      <Input
-                        type="number"
-                        value={darkFrameCount}
-                        onChange={(e) =>
-                          setDarkFrameCount(parseInt(e.target.value))
-                        }
-                        className="w-full"
-                        min={1}
-                        disabled={isLoading}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>库类型:</Label>
-                    <RadioGroup
-                      value={libraryType}
-                      onValueChange={setLibraryType}
-                      disabled={isLoading}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="modify" id="modify" />
-                        <Label htmlFor="modify">修改/扩充已存在的暗场库</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="create" id="create" />
-                        <Label htmlFor="create">创建全新的暗场库</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="advanced">
-                  <AdvancedOptions {...store.darkField} isLoading={isLoading} />
-                </TabsContent>
-              </Tabs>
-
-              {/* Action Buttons */}
-              <div className="flex flex-wrap gap-2 justify-end mt-6">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      onClick={exportConfig}
-                      disabled={isLoading}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      导出配置
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>导出当前配置到文件</p>
-                  </TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" disabled={isLoading}>
-                      <Upload className="h-4 w-4 mr-2" />
-                      导入配置
-                      <input
-                        type="file"
-                        hidden
-                        onChange={importConfig}
-                        accept=".json"
-                      />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>从文件导入配置</p>
-                  </TooltipContent>
-                </Tooltip>
-
-                {isLoading && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowProgressDetails(true)}
-                      >
-                        <Info className="h-4 w-4 mr-2" />
-                        查看详情
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>查看创建进度详情</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      onClick={resetSettings}
-                      disabled={isLoading}
-                    >
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      重置
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>重置所有设置为默认值</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button onClick={handleStart} disabled={isLoading}>
-                      {isLoading ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Play className="h-4 w-4 mr-2" />
-                      )}
-                      {isLoading ? "创建中..." : "开始"}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>开始创建暗场库</p>
-                  </TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      onClick={cancelCreation}
-                      disabled={isLoading}
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      取消
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>取消并关闭窗口</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-
-              <p className="text-sm text-center text-muted-foreground">
-                设置你的参数，点击"开始"按钮。
+      {/* Main Content */}
+      <motion.div variants={itemVariants}>
+        <Card className="shadow-xl border-gray-700">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <div className="flex flex-col gap-1">
+              <CardTitle className="text-2xl font-bold">创建暗场库</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                配置并生成用于减少图像噪声的暗场库
               </p>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Keyboard className="h-4 w-4 text-gray-400" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>快捷键: Ctrl+S 开始, Ctrl+R 重置</p>
+                </TooltipContent>
+              </Tooltip>
+              <Button variant="ghost" size="icon" onClick={cancelCreation}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
 
-      {/* 添加进度详情对话框 */}
-      <Dialog open={showProgressDetails} onOpenChange={setShowProgressDetails}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>创建进度详情</DialogTitle>
-            <DialogDescription>
-              <div className="space-y-2 mt-4">
-                <p>
-                  已完成帧数: {Math.floor((progress * darkFrameCount) / 100)}/
-                  {darkFrameCount}
-                </p>
-                <p>当前曝光时间: {minExposure}s</p>
-                <p>
-                  预计剩余时间:{" "}
-                  {Math.ceil(
-                    ((100 - progress) *
-                      darkFrameCount *
-                      parseFloat(minExposure.toString())) /
-                      100
+          <CardContent>
+            <Tabs defaultValue="basic" className="space-y-4">
+              <TabsList className="grid grid-cols-2">
+                <TabsTrigger value="basic">基本设置</TabsTrigger>
+                <TabsTrigger value="advanced">高级选项</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="basic" className="space-y-4">
+                {/* Status Alerts */}
+                <AnimatePresence>
+                  {(isSuccess || isError) && (
+                    <>
+                      {isSuccess && (
+                        <Alert className="bg-green-100 border-green-500 dark:bg-green-700 dark:border-green-600">
+                          <AlertTitle>成功</AlertTitle>
+                          <AlertDescription>
+                            暗场库创建成功！
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                      {isError && (
+                        <Alert variant="destructive">
+                          <AlertTitle>错误</AlertTitle>
+                          <AlertDescription>{errorMessage}</AlertDescription>
+                        </Alert>
+                      )}
+                    </>
                   )}
-                  s
-                </p>
-              </div>
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
-    </TooltipProvider>
+                </AnimatePresence>
+
+                {/* Presets */}
+                <div className="grid grid-cols-3 gap-2">
+                  {presets.map((preset) => (
+                    <div className="grid grid-cols-3 gap-2">
+                      {presets.map((preset) => (
+                        <Button
+                          key={preset.name}
+                          variant={
+                            activePreset === preset.name
+                              ? "default"
+                              : "outline"
+                          }
+                          size="sm"
+                          onClick={() => {
+                            setActivePreset(preset.name);
+                            applyPreset(preset.settings);
+                          }}
+                          disabled={isLoading}
+                        >
+                          {preset.name}
+                        </Button>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Main Settings */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>最小曝光时间:</Label>
+                    <Select
+                      value={minExposure.toString()}
+                      onValueChange={(value) => setMinExposure(Number(value))}
+                      disabled={isLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[0.5, 1.0, 1.5, 2.0].map((value) => (
+                          <SelectItem key={value} value={value.toString()}>
+                            {value.toFixed(1)} 秒
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>最大曝光时间:</Label>
+                    <Select
+                      value={maxExposure.toString()}
+                      onValueChange={(value) => setMaxExposure(Number(value))}
+                      disabled={isLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[3.0, 4.0, 5.0, 6.0].map((value) => (
+                          <SelectItem key={value} value={value.toString()}>
+                            {value.toFixed(1)} 秒
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>每种曝光时间拍摄帧数:</Label>
+                    <Input
+                      type="number"
+                      value={framesPerExposure}
+                      onChange={(e) => handleFramesChange(e.target.value)}
+                      className="w-full"
+                      min={1}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>暗场总数:</Label>
+                    <Input
+                      type="number"
+                      value={darkFrameCount}
+                      onChange={(e) =>
+                        setDarkFrameCount(parseInt(e.target.value))
+                      }
+                      className="w-full"
+                      min={1}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>库类型:</Label>
+                  <RadioGroup
+                    value={libraryType}
+                    onValueChange={setLibraryType}
+                    disabled={isLoading}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="modify" id="modify" />
+                      <Label htmlFor="modify">修改/扩充已存在的暗场库</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="create" id="create" />
+                      <Label htmlFor="create">创建全新的暗场库</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="advanced">
+                <AdvancedOptions {...store.darkField} isLoading={isLoading} />
+              </TabsContent>
+            </Tabs>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-2 justify-end mt-6">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    onClick={exportConfig}
+                    disabled={isLoading}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    导出配置
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>导出当前配置到文件</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" disabled={isLoading}>
+                    <Upload className="h-4 w-4 mr-2" />
+                    导入配置
+                    <input
+                      type="file"
+                      hidden
+                      onChange={importConfig}
+                      accept=".json"
+                    />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>从文件导入配置</p>
+                </TooltipContent>
+              </Tooltip>
+
+              {isLoading && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowProgressDetails(true)}
+                    >
+                      <Info className="h-4 w-4 mr-2" />
+                      查看详情
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>查看创建进度详情</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    onClick={resetSettings}
+                    disabled={isLoading}
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    重置
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>重置所有设置为默认值</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button onClick={handleStart} disabled={isLoading}>
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Play className="h-4 w-4 mr-2" />
+                    )}
+                    {isLoading ? "创建中..." : "开始"}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>开始创建暗场库</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    onClick={cancelCreation}
+                    disabled={isLoading}
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    取消
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>取消并关闭窗口</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+
+            <p className="text-sm text-center text-muted-foreground">
+              设置你的参数，点击"开始"按钮。
+            </p>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Advanced Settings */}
+      <AnimatePresence>
+        {isAdvancedOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <AdvancedOptions {...store.darkField} isLoading={isLoading} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Progress Details Dialog */}
+      <ProgressDialog
+        open={showProgressDetails}
+        onOpenChange={setShowProgressDetails}
+        progress={darkFieldProgress}
+        currentTemp={currentTemp}
+      />
+
+      {/* Validation Warnings */}
+      <ValidationWarnings 
+        errors={validationErrors}
+        warnings={validationWarnings}
+      />
+    </motion.div>
   );
 }

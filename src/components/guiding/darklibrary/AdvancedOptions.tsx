@@ -24,22 +24,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { DarkFieldStore } from "@/types/guiding/darkfield";
 
-interface Props {
-  isoValue: number;
-  setIsoValue: (value: number) => void;
-  binningMode: string;
-  setBinningMode: (value: string) => void;
-  coolingEnabled: boolean;
-  setCoolingEnabled: (value: boolean) => void;
-  targetTemperature: number;
-  setTargetTemperature: (value: number) => void;
-  gainValue: number;
-  setGainValue: (value: number) => void;
-  offsetValue: number;
-  setOffsetValue: (value: number) => void;
+type Props = Pick<DarkFieldStore, 
+  | "isoValue" 
+  | "setIsoValue"
+  | "binningMode"
+  | "setBinningMode"
+  | "coolingEnabled"
+  | "setCoolingEnabled"
+  | "targetTemperature"
+  | "setTargetTemperature"
+  | "gainValue"
+  | "setGainValue"
+  | "offsetValue"
+  | "setOffsetValue"
+  | "validateSettings"
+> & {
   isLoading: boolean;
-}
+};
 
 const AdvancedOptions = memo(({ ...props }: Props) => {
   const [isMockMode, setIsMockMode] = useState(false);
