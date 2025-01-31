@@ -34,7 +34,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { useGuidingStore } from "@/store/useGuidingStore";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
@@ -60,6 +60,20 @@ export default function DarkFieldLibrary() {
   const [showProgressDetails, setShowProgressDetails] = useState(false);
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [activePreset, setActivePreset] = useState<string | null>(null);
+  const [presets, setPresets] = useState([
+    {
+      name: "快速测试",
+      settings: { minExposure: 0.5, maxExposure: 2.0, framesPerExposure: 5 },
+    },
+    {
+      name: "标准质量",
+      settings: { minExposure: 1.0, maxExposure: 4.0, framesPerExposure: 10 },
+    },
+    {
+      name: "高质量",
+      settings: { minExposure: 1.5, maxExposure: 6.0, framesPerExposure: 20 },
+    },
+  ]);
 
   const store = useGuidingStore();
   const {
@@ -226,24 +240,6 @@ export default function DarkFieldLibrary() {
     framesPerExposure: number;
   };
 
-  const presets: Array<{
-    name: string;
-    settings: PresetSetting;
-  }> = [
-    {
-      name: "快速测试",
-      settings: { minExposure: 0.5, maxExposure: 2.0, framesPerExposure: 5 },
-    },
-    {
-      name: "标准质量",
-      settings: { minExposure: 1.0, maxExposure: 4.0, framesPerExposure: 10 },
-    },
-    {
-      name: "高质量",
-      settings: { minExposure: 1.5, maxExposure: 6.0, framesPerExposure: 20 },
-    },
-  ];
-
   const applyPreset = (settings: PresetSetting) => {
     setMinExposure(settings.minExposure);
     setMaxExposure(settings.maxExposure);
@@ -255,35 +251,56 @@ export default function DarkFieldLibrary() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
-      }
-    }
+        staggerChildren: 0.1,
+      },
+    },
   };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { 
+    visible: {
       opacity: 1,
       y: 0,
       transition: {
         type: "spring",
         stiffness: 300,
-        damping: 24
-      }
-    }
+        damping: 24,
+      },
+    },
   };
 
-  const [currentTemp, setCurrentTemp] = useState(store.darkField.targetTemperature);
+  const [currentTemp, setCurrentTemp] = useState(
+    store.darkField.targetTemperature
+  );
+
+  const pageVariants = {
+    initial: { opacity: 0, y: 20 },
+    animate: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.4,
+        when: "beforeChildren",
+        staggerChildren: 0.1,
+      },
+    },
+    exit: {
+      opacity: 0,
+      y: -20,
+      transition: { duration: 0.3 },
+    },
+  };
 
   return (
     <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
       className="w-full space-y-6"
     >
       {/* Status Bar */}
-      <motion.div 
+      <motion.div
         variants={itemVariants}
         className="sticky top-0 z-10 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60"
       >
@@ -337,9 +354,7 @@ export default function DarkFieldLibrary() {
                       {isSuccess && (
                         <Alert className="bg-green-100 border-green-500 dark:bg-green-700 dark:border-green-600">
                           <AlertTitle>成功</AlertTitle>
-                          <AlertDescription>
-                            暗场库创建成功！
-                          </AlertDescription>
+                          <AlertDescription>暗场库创建成功！</AlertDescription>
                         </Alert>
                       )}
                       {isError && (
@@ -353,16 +368,25 @@ export default function DarkFieldLibrary() {
                 </AnimatePresence>
 
                 {/* Presets */}
-                <div className="grid grid-cols-3 gap-2">
+                <Reorder.Group
+                  axis="x"
+                  values={presets}
+                  onReorder={setPresets}
+                  className="flex gap-2 overflow-x-auto pb-2"
+                >
                   {presets.map((preset) => (
-                    <div className="grid grid-cols-3 gap-2">
-                      {presets.map((preset) => (
+                    <Reorder.Item
+                      key={preset.name}
+                      value={preset}
+                      className="flex-shrink-0"
+                    >
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
                         <Button
-                          key={preset.name}
                           variant={
-                            activePreset === preset.name
-                              ? "default"
-                              : "outline"
+                            activePreset === preset.name ? "default" : "outline"
                           }
                           size="sm"
                           onClick={() => {
@@ -370,13 +394,21 @@ export default function DarkFieldLibrary() {
                             applyPreset(preset.settings);
                           }}
                           disabled={isLoading}
+                          className="relative"
                         >
                           {preset.name}
+                          {activePreset === preset.name && (
+                            <motion.div
+                              layoutId="activePreset"
+                              className="absolute inset-0 bg-primary/20 rounded-md"
+                              transition={{ type: "spring", bounce: 0.2 }}
+                            />
+                          )}
                         </Button>
-                      ))}
-                    </div>
+                      </motion.div>
+                    </Reorder.Item>
                   ))}
-                </div>
+                </Reorder.Group>
 
                 {/* Main Settings */}
                 <div className="grid grid-cols-2 gap-4">
@@ -598,7 +630,7 @@ export default function DarkFieldLibrary() {
       />
 
       {/* Validation Warnings */}
-      <ValidationWarnings 
+      <ValidationWarnings
         errors={validationErrors}
         warnings={validationWarnings}
       />

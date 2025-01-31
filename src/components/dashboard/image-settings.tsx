@@ -166,116 +166,124 @@ export default function ImageSettingsPanel() {
   return (
     <div
       className={cn(
-        "w-full mx-auto space-y-6 rounded-lg shadow transition-colors duration-300",
-        "lg:max-w-4xl lg:grid ",
-        "md:max-w-3xl",
-        isMobile ? "flex flex-col" : ""
+        "w-full space-y-4",
+        "rounded-lg transition-colors duration-300",
+        isLandscape ? "max-h-[calc(100vh-12rem)]" : ""
       )}
     >
-      <ScrollArea className="max-h-[calc(100vh-12rem)] w-full overflow-auto">
+      <ScrollArea className="h-full pr-4">
         <div className="space-y-6">
           <motion.div
-            className="space-y-4"
+            className="grid gap-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
+            transition={{ duration: 0.3 }}
           >
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">保存图片为</Label>
-              <Select defaultValue="FITS">
-                <SelectTrigger>
-                  <SelectValue placeholder="选择格式" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="FITS">FITS</SelectItem>
-                  <SelectItem value="RAW">RAW</SelectItem>
-                  <SelectItem value="TIFF">TIFF</SelectItem>
-                </SelectContent>
-              </Select>
-              <Span className="text-sm text-muted-foreground">
-                此设置在使用原生驱动时对DSLR相机无效。相机的RAW格式将被保存！
-              </Span>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">图片文件路径</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={filePath}
-                  onChange={(e) => setFilePath(e.target.value)}
-                  className="flex-1"
-                />
-                <Button variant="outline">浏览</Button>
+            {/* File Format Settings */}
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">保存图片为</Label>
+                <Select defaultValue="FITS">
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择格式" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FITS">FITS</SelectItem>
+                    <SelectItem value="RAW">RAW</SelectItem>
+                    <SelectItem value="TIFF">TIFF</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Span className="text-sm text-muted-foreground">
+                  此设置在使用原生驱动时对DSLR相机无效。相机的RAW格式将被保存！
+                </Span>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">图片文件模式</Label>
-              <Input
-                value={filePattern}
-                onChange={(e) => setFilePattern(e.target.value)}
-              />
-              <div className="mt-2">
-                <Reorder.Group
-                  axis="x"
-                  values={tags}
-                  onReorder={reorderTags}
-                  className="flex flex-wrap gap-2"
-                >
-                  {tags.map((tag, index) => (
-                    <Reorder.Item key={tag.value} value={tag}>
-                      <DraggableTag
-                        tag={tag}
-                        onRemove={() => removeTag(index)}
-                      />
-                    </Reorder.Item>
-                  ))}
-                </Reorder.Group>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="auto-save"
-                checked={autoSave}
-                onCheckedChange={setAutoSave}
-              />
-              <Label htmlFor="auto-save">自动保存设置</Label>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">压缩级别 (1-10)</Label>
-              <Slider
-                defaultValue={[compressionLevel]}
-                min={1}
-                max={10}
-                step={1}
-                onValueChange={(value) => setCompressionLevel(value[0])}
-                className="bg-white"
-              />
-              <Span className="text-sm text-muted-foreground">
-                当前级别: {compressionLevel}
-              </Span>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">上传预览图片</Label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-              />
-              {imagePreview && (
-                <div className="mt-2">
-                  <Image
-                    src={imagePreview}
-                    alt="Image Preview"
-                    width={200}
-                    height={200}
-                    className="rounded-md"
+            {/* File Pattern Settings */}
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">图片文件路径</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={filePath}
+                    onChange={(e) => setFilePath(e.target.value)}
+                    className="flex-1"
                   />
+                  <Button variant="outline">浏览</Button>
                 </div>
-              )}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">图片文件模式</Label>
+                <Input
+                  value={filePattern}
+                  onChange={(e) => setFilePattern(e.target.value)}
+                />
+                <div className="mt-2">
+                  <Reorder.Group
+                    axis="x"
+                    values={tags}
+                    onReorder={reorderTags}
+                    className="flex flex-wrap gap-2"
+                  >
+                    {tags.map((tag, index) => (
+                      <Reorder.Item key={tag.value} value={tag}>
+                        <DraggableTag
+                          tag={tag}
+                          onRemove={() => removeTag(index)}
+                        />
+                      </Reorder.Item>
+                    ))}
+                  </Reorder.Group>
+                </div>
+              </div>
+            </div>
+
+            {/* Advanced Settings */}
+            <div className="grid gap-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="auto-save"
+                  checked={autoSave}
+                  onCheckedChange={setAutoSave}
+                />
+                <Label htmlFor="auto-save">自动保存设置</Label>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">压缩级别 (1-10)</Label>
+                <Slider
+                  defaultValue={[compressionLevel]}
+                  min={1}
+                  max={10}
+                  step={1}
+                  onValueChange={(value) => setCompressionLevel(value[0])}
+                  className="bg-white"
+                />
+                <Span className="text-sm text-muted-foreground">
+                  当前级别: {compressionLevel}
+                </Span>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">上传预览图片</Label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                />
+                {imagePreview && (
+                  <div className="mt-2">
+                    <Image
+                      src={imagePreview}
+                      alt="Image Preview"
+                      width={200}
+                      height={200}
+                      className="rounded-md"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
 

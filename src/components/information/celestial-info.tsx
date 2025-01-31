@@ -144,54 +144,36 @@ export function CelestialInfo() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="w-full h-[calc(100vh-8rem)] mx-auto p-4"
+      className="w-full h-[calc(100vh-4rem)] p-2 lg:p-4"
     >
-      <Card className="bg-gray-900 dark:bg-gray-800 h-full">
-        <CardHeader className="border-b border-gray-700">
-          <CardTitle className="text-xl sm:text-2xl font-bold text-white dark:text-gray-200">
-            当前条件
+      <Card className="bg-gray-900/80 backdrop-blur-sm h-full border-gray-800">
+        <CardHeader className="border-b border-gray-800 py-2 lg:py-4">
+          <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
+            <Star className="w-5 h-5 text-purple-400" />
+            观测条件
           </CardTitle>
         </CardHeader>
-        <CardContent className="h-[calc(100%-4rem)] overflow-y-auto">
-          <div className="overflow-x-auto -mx-6 sm:mx-0 h-full">
-            <div className="inline-block min-w-full align-middle h-full">
-              <Table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 h-full">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
-                      指标
-                    </TableHead>
-                    <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400">
-                      值
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <AnimatePresence>
-                    {metrics.map((metric, index) => (
-                      <motion.tr
-                        key={metric.label}
-                        custom={index}
-                        variants={tableVariants}
-                        initial="hidden"
-                        animate="visible"
-                        exit="hidden"
-                        whileHover="hover"
-                        className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                      >
-                        <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 flex items-center">
-                          {metric.icon}
-                          <span className="ml-2">{metric.label}</span>
-                        </TableCell>
-                        <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                          {metric.value}
-                        </TableCell>
-                      </motion.tr>
-                    ))}
-                  </AnimatePresence>
-                </TableBody>
-              </Table>
-            </div>
+        <CardContent className="p-2 lg:p-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2 lg:gap-4">
+            {metrics.map((metric, index) => (
+              <motion.div
+                key={metric.label}
+                variants={tableVariants}
+                initial="hidden"
+                animate="visible"
+                custom={index}
+                whileHover="hover"
+                className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-3 border border-gray-700/50"
+              >
+                <div className="flex items-center gap-2 text-gray-400 text-sm mb-1">
+                  {metric.icon}
+                  {metric.label}
+                </div>
+                <div className="text-white font-medium text-lg ml-7">
+                  {metric.value}
+                </div>
+              </motion.div>
+            ))}
           </div>
         </CardContent>
       </Card>

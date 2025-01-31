@@ -208,145 +208,149 @@ export default function ConnectionPage({
   const [showSystemInfo, setShowSystemInfo] = useState(false);
 
   return (
-    <div
-      className={`h-screen w-screen bg-background flex ${
-        isMobile ? "flex-row" : "flex-col"
-      } dark overflow-hidden max-h-screen`}
-    >
+    <div className="h-screen w-screen bg-background dark overflow-hidden">
       <ConnectionAlert showAlert={showAlert} alertType={alertType} />
 
-      {!isMobile ? (
-        <div className="flex-grow grid grid-cols-2 gap-8 p-8 h-full">
-          {/* 添加背景动画 */}
+      <div className="container mx-auto h-full p-4 lg:p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 h-full">
+          {/* Background Effects */}
           <motion.div
-            className="absolute inset-0 -z-10"
+            className="fixed inset-0 -z-10"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1 }}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-900/20 to-purple-900/20"></div>
-            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-900/20 to-purple-900/20" />
+            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
           </motion.div>
-          {/* 左侧连接面板 */}
-          <Card className="shadow-lg h-full relative">
-            <CardHeader className="flex flex-row items-center justify-between pb-6">
-              <CardTitle className="text-2xl font-semibold flex items-center gap-3 text-white">
-                <Plug className="w-7 h-7 text-blue-400" />
-                连接控制面板（桌面）
-              </CardTitle>
-              <div className="flex items-center gap-3">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setShowSystemInfo(true)}
-                        className="text-purple-400 hover:text-purple-300"
-                      >
-                        <Info className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>系统信息</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setShowNotifications(true)}
-                        className="text-purple-400 hover:text-purple-300"
-                      >
-                        <Bell className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>通知</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                {isConnected && (
-                  <Badge
-                    variant={connectionStrength > 50 ? "default" : "secondary"}
-                    className="px-3 py-1"
-                  >
-                    {connectionStrength > 50 ? (
-                      <Wifi className="w-5 h-5 mr-2 text-green-400" />
-                    ) : (
-                      <WifiOff className="w-5 h-5 mr-2 text-red-400" />
-                    )}
-                    {connectionStrength}%
-                  </Badge>
-                )}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setShowHistory(!showHistory)}
-                        className="text-purple-400 hover:text-purple-300"
-                      >
-                        <History className="h-5 w-5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>连接历史</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+
+          {/* Connection Panel */}
+          <Card className="h-full flex flex-col">
+            <CardHeader className="space-y-0 pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                  <Plug className="w-5 h-5 text-blue-400" />
+                  连接控制面板
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setShowSystemInfo(true)}
+                          className="text-purple-400 hover:text-purple-300"
+                        >
+                          <Info className="h-5 w-5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>系统信息</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setShowNotifications(true)}
+                          className="text-purple-400 hover:text-purple-300"
+                        >
+                          <Bell className="h-5 w-5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>通知</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  {isConnected && (
+                    <Badge
+                      variant={
+                        connectionStrength > 50 ? "default" : "secondary"
+                      }
+                      className="px-3 py-1"
+                    >
+                      {connectionStrength > 50 ? (
+                        <Wifi className="w-5 h-5 mr-2 text-green-400" />
+                      ) : (
+                        <WifiOff className="w-5 h-5 mr-2 text-red-400" />
+                      )}
+                      {connectionStrength}%
+                    </Badge>
+                  )}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setShowHistory(!showHistory)}
+                          className="text-purple-400 hover:text-purple-300"
+                        >
+                          <History className="h-5 w-5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>连接历史</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </div>
+              <NetworkStatus status={networkStatus} />
             </CardHeader>
 
-            <CardContent className="space-y-6">
-              <NetworkStatus status={networkStatus} />
-
+            <CardContent className="flex-1 overflow-auto">
               <Form {...form}>
                 <form
                   onSubmit={form.handleSubmit(handleConnect)}
-                  className="space-y-6"
+                  className="space-y-4"
                 >
-                  <ConnectionDetails
-                    form={form}
-                    isSSL={formData.isSSL}
-                    setIsSSL={(val) => updateFormData({ isSSL: val })}
-                  />
-                  <LoginForm
-                    form={form}
-                    showPassword={showPassword}
-                    togglePasswordVisibility={() =>
-                      setShowPassword(!showPassword)
-                    }
-                  />
-
-                  <div className="flex items-center gap-3 py-2">
-                    <Switch
-                      id="remember"
-                      checked={formData.rememberLogin}
-                      onCheckedChange={(checked) =>
-                        updateFormData({ rememberLogin: checked })
+                  {/* Form content with tighter spacing */}
+                  <div className="grid gap-4">
+                    <ConnectionDetails
+                      form={form}
+                      isSSL={formData.isSSL}
+                      setIsSSL={(val) => updateFormData({ isSSL: val })}
+                    />
+                    <LoginForm
+                      form={form}
+                      showPassword={showPassword}
+                      togglePasswordVisibility={() =>
+                        setShowPassword(!showPassword)
                       }
                     />
-                    <Label htmlFor="remember" className="text-white text-lg">
-                      记住登录数据
-                    </Label>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 pt-4">
-                    <Button
-                      onClick={() => setIsPortScanModalOpen(true)}
-                      className="text-lg py-6"
-                      variant="outline"
-                    >
-                      端口扫描
-                    </Button>
+                  {/* Actions with more compact layout */}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id="remember"
+                          checked={formData.rememberLogin}
+                          onCheckedChange={(checked) =>
+                            updateFormData({ rememberLogin: checked })
+                          }
+                        />
+                        <Label htmlFor="remember">记住登录</Label>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={togglePortScanModal}
+                      >
+                        端口扫描
+                      </Button>
+                    </div>
+
                     <Button
                       type="submit"
-                      className="text-lg py-6"
+                      className="w-full"
                       disabled={isConnected || isLoading}
                     >
                       {isLoading ? (
@@ -369,8 +373,9 @@ export default function ConnectionPage({
                 </form>
               </Form>
 
+              {/* Connection status with optimized spacing */}
               {isConnected && (
-                <div className="space-y-3 pt-4">
+                <div className="mt-4 space-y-2">
                   <Label className="text-white text-lg">连接强度</Label>
                   <Progress value={connectionStrength} className="h-3" />
                   <Button
@@ -386,8 +391,8 @@ export default function ConnectionPage({
             </CardContent>
           </Card>
 
-          {/* 右侧配置面板 */}
-          <Card className="shadow-lg h-full">
+          {/* Configuration Panel */}
+          <Card className="h-full flex flex-col">
             <CardHeader>
               <CardTitle className="text-2xl font-semibold text-white flex items-center gap-3">
                 <Settings className="w-7 h-7 text-blue-400" />
@@ -431,166 +436,8 @@ export default function ConnectionPage({
             </CardContent>
           </Card>
         </div>
-      ) : (
-        <div className="flex-grow flex flex-col items-center justify-center h-full space-y-4">
-          <Card className="w-full p-4 bg-gray-800/90 backdrop-blur-sm shadow-lg">
-            {/* 移动端添加背景动画 */}
-            <motion.div
-              className="absolute inset-0 -z-10"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 1 }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-900/20 to-purple-900/20"></div>
-              <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
-            </motion.div>
-            <CardHeader className="flex flex-col items-center">
-              <CardTitle className="text-xl font-semibold text-white">
-                移动端连接
-              </CardTitle>
-              <div className="mt-2">
-                {isConnected && (
-                  <Badge
-                    variant={connectionStrength > 50 ? "default" : "secondary"}
-                  >
-                    {connectionStrength > 50 ? (
-                      <Wifi className="w-4 h-4 mr-1 text-green-400" />
-                    ) : (
-                      <WifiOff className="w-4 h-4 mr-1 text-red-400" />
-                    )}
-                    {connectionStrength}%
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <NetworkStatus status={networkStatus} />
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(handleConnect)}
-                  className="space-y-3"
-                >
-                  <ConnectionDetails
-                    form={form}
-                    isSSL={formData.isSSL}
-                    setIsSSL={(val) => updateFormData({ isSSL: val })}
-                  />
-                  <LoginForm
-                    form={form}
-                    showPassword={showPassword}
-                    togglePasswordVisibility={() =>
-                      setShowPassword(!showPassword)
-                    }
-                  />
+      </div>
 
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="remember"
-                      checked={formData.rememberLogin}
-                      onCheckedChange={(checked) =>
-                        updateFormData({ rememberLogin: checked === true })
-                      }
-                    />
-                    <Label
-                      htmlFor="remember"
-                      className="text-white text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      记住登录数据
-                    </Label>
-                  </div>
-
-                  <div className="flex flex-col space-y-2">
-                    <Button
-                      type="submit"
-                      className="text-lg py-6 relative overflow-hidden"
-                      disabled={isConnected || isLoading}
-                    >
-                      {/* 添加按钮动画 */}
-                      {isLoading && (
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500"
-                          initial={{ x: "-100%" }}
-                          animate={{ x: "100%" }}
-                          transition={{
-                            duration: 1.5,
-                            repeat: Infinity,
-                            ease: "linear",
-                          }}
-                        />
-                      )}
-                      打开端口扫描
-                    </Button>
-                    <div className="flex gap-2">
-                      <Button
-                        type="submit"
-                        className="flex-1 flex items-center justify-center text-white relative overflow-hidden"
-                        disabled={isConnected || isLoading}
-                      >
-                        {/* 移动端按钮动画 */}
-                        {isLoading && (
-                          <motion.div
-                            className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500"
-                            initial={{ x: "-100%" }}
-                            animate={{ x: "100%" }}
-                            transition={{
-                              duration: 1.5,
-                              repeat: Infinity,
-                              ease: "linear",
-                            }}
-                          />
-                        )}
-                        {isLoading ? (
-                          <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{
-                              duration: 1,
-                              repeat: Infinity,
-                              ease: "linear",
-                            }}
-                          >
-                            <Upload className="w-4 h-4 mr-2" />
-                          </motion.div>
-                        ) : (
-                          <Upload className="w-4 h-4 mr-2" />
-                        )}
-                        {isLoading ? "连接中..." : "连接"}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        className="flex-1 flex items-center justify-center text-white"
-                        onClick={handleDisconnect}
-                        disabled={!isConnected}
-                      >
-                        <Link2Off className="w-4 h-4 mr-2" />
-                        断开连接
-                      </Button>
-                    </div>
-                  </div>
-                </form>
-              </Form>
-              <div className="mt-4 flex justify-between">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsConfigManagerOpen(true)}
-                  className="flex items-center"
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  配置管理
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleExportConfig}
-                  className="flex items-center"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  导出配置
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
       <ConfigurationManager
         isOpen={showConfigManager}
         onClose={() => setShowConfigManager(false)}

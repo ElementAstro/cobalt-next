@@ -74,25 +74,16 @@ export function PlanetCard({
   return viewMode === "grid" ? (
     <motion.div
       layout
-      className="relative p-4 rounded-lg bg-gray-900/50 transition-all duration-300 ease-in-out hover:bg-gray-800/50"
+      className="relative p-3 rounded-lg bg-gray-900/50 transition-all duration-300 hover:bg-gray-800/50 flex flex-col"
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      whileHover={{ y: -5 }}
-      transition={{ duration: 0.3 }}
+      whileHover={{ y: -2 }}
     >
-      {/* Add orbit effect */}
-      <motion.div
-        className="absolute inset-0 rounded-lg border border-gray-500/10"
-        variants={planetOrbitVariants}
-        animate="animate"
-        custom={Math.floor(Math.random() * 5)}
-      />
-
-      <div className="flex flex-col sm:flex-row items-start gap-4 landscape:flex-row">
+      <div className="flex items-start gap-3">
         <motion.div
-          className="relative w-16 h-16 sm:w-20 sm:h-20 landscape:w-24 landscape:h-24"
-          whileHover={{ scale: 1.1, rotate: 360 }}
+          className="relative w-16 h-16 flex-shrink-0"
+          whileHover={{ scale: 1.05, rotate: 360 }}
           transition={{ duration: 0.8 }}
           onClick={() => onShowDetail?.(planet)}
         >
@@ -108,77 +99,72 @@ export function PlanetCard({
           />
         </motion.div>
 
-        <div className="flex flex-col flex-1 landscape:flex-row landscape:items-center landscape:justify-between">
-          <h3 className="text-xl sm:text-2xl font-bold text-white">
-            {planet.name}
-          </h3>
-          <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2 landscape:grid-cols-4">
-            <div className="flex items-center">
-              <Sunrise size={14} className="mr-1 text-yellow-500" />
-              <span className="text-xs text-gray-300">{planet.rise}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between">
+            <h3 className="text-lg font-bold text-white truncate">
+              {planet.name}
+            </h3>
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${getStatusColor(
+                planet.altitude
+              )}`}
+            >
+              {getStatus(planet.altitude)}
+            </span>
+          </div>
+
+          <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+            <div className="flex items-center space-x-1">
+              <Sunrise size={12} className="text-yellow-500 flex-shrink-0" />
+              <span className="text-xs text-gray-300 truncate">
+                {planet.rise}
+              </span>
             </div>
-            <div className="flex items-center">
-              <Sunset size={14} className="mr-1 text-blue-300" />
-              <span className="text-xs text-gray-300">{planet.set}</span>
+            <div className="flex items-center space-x-1">
+              <Sunset size={12} className="text-blue-300 flex-shrink-0" />
+              <span className="text-xs text-gray-300 truncate">
+                {planet.set}
+              </span>
             </div>
-            <div className="flex items-center">
-              <Navigation size={14} className="mr-1 text-green-400" />
-              <span className="text-xs text-gray-300">
+            <div className="flex items-center space-x-1">
+              <Navigation size={12} className="text-green-400 flex-shrink-0" />
+              <span className="text-xs text-gray-300 truncate">
                 {planet.altitude.toFixed(1)}°
               </span>
             </div>
-            <div className="flex items-center">
-              <CircleDot size={14} className="mr-1 text-purple-400" />
-              <span className="text-xs text-gray-300">
+            <div className="flex items-center space-x-1">
+              <CircleDot size={12} className="text-purple-400 flex-shrink-0" />
+              <span className="text-xs text-gray-300 truncate">
                 {planet.magnitude.toFixed(1)}
               </span>
             </div>
           </div>
         </div>
-
-        <motion.button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="text-white hover:bg-gray-700 rounded-full p-1"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-        </motion.button>
       </div>
-
-      <motion.div
-        className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-          planet.altitude
-        )}`}
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        {getStatus(planet.altitude)}
-      </motion.div>
 
       <AnimatePresence>
         {isExpanded && (
           <motion.div
-            className="mt-4 text-sm text-gray-300 grid grid-cols-2 gap-2"
+            className="mt-3 pt-3 border-t border-gray-800"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
           >
-            <p>方位角: {planet.azimuth.toFixed(1)}°</p>
-            <p>高度角: {planet.altitude.toFixed(1)}°</p>
-            <p>视星等: {planet.magnitude.toFixed(1)}</p>
-            <p>距离: {formatDistance(planet.distance)}</p>
-            {planet.phase !== undefined && (
-              <p className="col-span-2">相位: {formatPhase(planet.phase)}</p>
-            )}
-            <p className="col-span-2">中天时间: {planet.transit}</p>
+            <div className="grid grid-cols-2 gap-2 text-xs text-gray-300">
+              <p>方位角: {planet.azimuth.toFixed(1)}°</p>
+              <p>高度角: {planet.altitude.toFixed(1)}°</p>
+              <p>视星等: {planet.magnitude.toFixed(1)}</p>
+              <p>距离: {formatDistance(planet.distance)}</p>
+              {planet.phase !== undefined && (
+                <p className="col-span-2">相位: {formatPhase(planet.phase)}</p>
+              )}
+              <p className="col-span-2">中天时间: {planet.transit}</p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="flex justify-between w-full mt-4">
+      <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-800">
         {onToggleFavorite && (
           <Button
             onClick={() => onToggleFavorite(planet.name)}
@@ -202,7 +188,7 @@ export function PlanetCard({
   ) : (
     <motion.div
       layout
-      className="flex items-center p-2 rounded-lg bg-gray-900/50 hover:bg-gray-800/50"
+      className="flex items-center p-2 rounded-lg bg-gray-900/50 hover:bg-gray-800/50 gap-2"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}

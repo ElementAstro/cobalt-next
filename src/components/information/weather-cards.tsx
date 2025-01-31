@@ -29,83 +29,83 @@ interface WeatherCardsProps {
 
 const WeatherCards: React.FC<WeatherCardsProps> = ({ weatherData, units }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-4 h-[calc(100vh-4rem)] overflow-y-auto">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       <Card className="bg-gray-700 text-white">
-        <CardHeader>
-          <CardTitle>温度</CardTitle>
+        <CardHeader className="p-3">
+          <CardTitle className="text-sm">温度</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center space-x-2">
-          <Thermometer className="w-6 h-6" />
-          <span>
+        <CardContent className="p-3 pt-0 flex items-center space-x-2">
+          <Thermometer className="w-4 h-4" />
+          <span className="text-lg">
             {weatherData.temperature.toFixed(1)}°
             {units === "metric" ? "C" : "F"}
           </span>
         </CardContent>
       </Card>
-      <Card className="bg-gray-700 text-white hover:scale-105 transition-transform duration-300 ease-in-out">
-        <CardHeader>
-          <CardTitle>湿度</CardTitle>
+      <Card className="bg-gray-700 text-white">
+        <CardHeader className="p-3">
+          <CardTitle className="text-sm">湿度</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center space-x-2">
-          <Droplet className="w-6 h-6" />
-          <span>{weatherData.humidity}%</span>
+        <CardContent className="p-3 pt-0 flex items-center space-x-2">
+          <Droplet className="w-4 h-4" />
+          <span className="text-lg">{weatherData.humidity}%</span>
         </CardContent>
       </Card>
       <Card className="bg-gray-700 text-white">
-        <CardHeader>
-          <CardTitle>风速</CardTitle>
+        <CardHeader className="p-3">
+          <CardTitle className="text-sm">风速</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center space-x-2">
-          <Wind className="w-6 h-6" />
-          <span>
+        <CardContent className="p-3 pt-0 flex items-center space-x-2">
+          <Wind className="w-4 h-4" />
+          <span className="text-lg">
             {weatherData.windSpeed.toFixed(1)}{" "}
             {units === "metric" ? "m/s" : "mph"}
           </span>
         </CardContent>
       </Card>
       <Card className="bg-gray-700 text-white">
-        <CardHeader>
-          <CardTitle>云量</CardTitle>
+        <CardHeader className="p-3">
+          <CardTitle className="text-sm">云量</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center space-x-2">
-          <Cloud className="w-6 h-6" />
-          <span>{weatherData.cloudCover}%</span>
+        <CardContent className="p-3 pt-0 flex items-center space-x-2">
+          <Cloud className="w-4 h-4" />
+          <span className="text-lg">{weatherData.cloudCover}%</span>
         </CardContent>
       </Card>
-      <Card className="bg-gray-700 text-white hover:scale-105 transition-transform duration-300 ease-in-out">
-        <CardHeader>
-          <CardTitle>紫外线指数</CardTitle>
+      <Card className="bg-gray-700 text-white">
+        <CardHeader className="p-3">
+          <CardTitle className="text-sm">紫外线指数</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center space-x-2">
-          <Sun className="w-6 h-6" />
-          <span>{weatherData.uvi}</span>
+        <CardContent className="p-3 pt-0 flex items-center space-x-2">
+          <Sun className="w-4 h-4" />
+          <span className="text-lg">{weatherData.uvi}</span>
         </CardContent>
       </Card>
-      <Card className="bg-gray-700 text-white hover:scale-105 transition-transform duration-300 ease-in-out">
-        <CardHeader>
-          <CardTitle>气压</CardTitle>
+      <Card className="bg-gray-700 text-white">
+        <CardHeader className="p-3">
+          <CardTitle className="text-sm">气压</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center space-x-2">
-          <ThermometerSun className="w-6 h-6" />
-          <span>{weatherData.pressure} hPa</span>
+        <CardContent className="p-3 pt-0 flex items-center space-x-2">
+          <ThermometerSun className="w-4 h-4" />
+          <span className="text-lg">{weatherData.pressure} hPa</span>
         </CardContent>
       </Card>
-      <Card className="bg-gray-700 text-white hover:scale-105 transition-transform duration-300 ease-in-out">
-        <CardHeader>
-          <CardTitle>日出</CardTitle>
+      <Card className="bg-gray-700 text-white">
+        <CardHeader className="p-3">
+          <CardTitle className="text-sm">日出</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center space-x-2">
-          <Sunrise className="w-6 h-6" />
-          <span>{weatherData.sunrise}</span>
+        <CardContent className="p-3 pt-0 flex items-center space-x-2">
+          <Sunrise className="w-4 h-4" />
+          <span className="text-lg">{weatherData.sunrise}</span>
         </CardContent>
       </Card>
-      <Card className="bg-gray-700 text-white hover:scale-105 transition-transform duration-300 ease-in-out">
-        <CardHeader>
-          <CardTitle>日落</CardTitle>
+      <Card className="bg-gray-700 text-white">
+        <CardHeader className="p-3">
+          <CardTitle className="text-sm">日落</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center space-x-2">
-          <Sunset className="w-6 h-6" />
-          <span>{weatherData.sunset}</span>
+        <CardContent className="p-3 pt-0 flex items-center space-x-2">
+          <Sunset className="w-4 h-4" />
+          <span className="text-lg">{weatherData.sunset}</span>
         </CardContent>
       </Card>
     </div>

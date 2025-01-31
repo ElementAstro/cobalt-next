@@ -130,7 +130,7 @@ export default function TopbarLocation() {
                 onHoverStart={() => controls.start({ scale: 1.02 })}
                 onHoverEnd={() => controls.start({ scale: 1 })}
               >
-                <TooltipContent className="w-80 p-4 bg-gray-800 text-white rounded-md shadow-lg">
+                <TooltipContent className="w-full p-4 bg-gray-800 text-white rounded-md shadow-lg">
                   <motion.div
                     className="w-full mb-4 rounded-lg overflow-hidden shadow-2xl"
                     initial={{ opacity: 0, y: 10 }}
@@ -156,7 +156,7 @@ export default function TopbarLocation() {
 
                   {manualInputVisible ? (
                     <motion.div
-                      className="space-y-4"
+                      className="space-y-4 w-full"
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
@@ -166,7 +166,7 @@ export default function TopbarLocation() {
                         damping: 30,
                       }}
                     >
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-4 w-full">
                         <div className="space-y-2">
                           <Label htmlFor="latitude">纬度</Label>
                           <Input

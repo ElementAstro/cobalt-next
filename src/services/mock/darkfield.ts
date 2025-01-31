@@ -15,6 +15,11 @@ export class MockDarkFieldAPI implements DarkFieldAPI {
     currentTemperature: 0,
     stage: "preparing",
     warnings: [],
+    performance: {
+      frameRate: 0, // 修改为正确的性能指标
+      processingTime: 0, // 处理时间
+      savingTime: 0, // 保存时间
+    },
   };
 
   async getStatistics(): Promise<DarkFieldState["statistics"]> {
@@ -67,6 +72,11 @@ export class MockDarkFieldAPI implements DarkFieldAPI {
       currentTemperature: -15,
       stage: "capturing",
       warnings: [],
+      performance: {
+        frameRate: 30, // 每秒帧数
+        processingTime: 100, // 处理时间(毫秒)
+        savingTime: 50, // 保存时间(毫秒)
+      },
     };
 
     this.creationInterval = setInterval(() => {
@@ -94,6 +104,11 @@ export class MockDarkFieldAPI implements DarkFieldAPI {
         currentTemperature: 0,
         stage: "preparing",
         warnings: [],
+        performance: {
+          frameRate: 0,
+          processingTime: 0,
+          savingTime: 0,
+        },
       };
     }
     return Promise.resolve();

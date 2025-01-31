@@ -168,131 +168,139 @@ export function DnsmasqConfigPanel() {
   };
 
   return (
-    <Card className="w-full max-w-2xl">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Settings className="w-5 h-5" />
-          <span>Dnsmasq Configuration</span>
-        </CardTitle>
-        <CardDescription>
-          Configure your local DNS and DHCP server settings
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <motion.div
-            variants={staggerChildren}
-            initial="initial"
-            animate="animate"
-            className="grid grid-cols-1 md:grid-cols-2 gap-4"
-          >
-            {formFields.slice(0, 4).map((field) => (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 p-2 max-w-[100vw] h-[calc(100vh-4rem)]">
+      <motion.div 
+        className="lg:col-span-8 lg:col-start-3 h-full"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <Card className="h-full flex flex-col">
+          <CardHeader className="flex-none">
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              <span>Dnsmasq Configuration</span>
+            </CardTitle>
+            <CardDescription>
+              Configure your local DNS and DHCP server settings
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 overflow-auto">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <motion.div
-                key={field.name}
-                variants={fadeInOut}
-                className="space-y-2"
-              >
-                <div className="flex items-center gap-2">
-                  {field.icon && React.createElement(field.icon, { className: "w-4 h-4 text-muted-foreground" })}
-                  <Label htmlFor={field.name}>{field.label}</Label>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Info className="w-4 h-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{field.description}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Controller
-                  name={field.name as keyof DnsmasqConfig}
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ field: { value, ...fieldProps } }) => (
-                    <Input
-                      {...fieldProps}
-                      id={field.name}
-                      value={String(value)}
-                      className={cn(
-                        errors[field.name as keyof DnsmasqConfig] &&
-                          "border-red-500"
-                      )}
-                    />
-                  )}
-                />
-                {errors[field.name as keyof DnsmasqConfig] && (
-                  <p className="text-red-500 text-xs">
-                    {errors[field.name as keyof DnsmasqConfig]?.message}
-                  </p>
-                )}
-              </motion.div>
-            ))}
-          </motion.div>
-
-          <div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={toggleAdvanced}
-              className="w-full justify-between"
-            >
-              <span>Advanced Options</span>
-              <motion.span
-                variants={rotateChevron}
-                animate={isAdvancedOpen ? "animate" : "initial"}
-                transition={springTransition}
-              >
-                {isAdvancedOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </motion.span>
-            </Button>
-          </div>
-
-          <AnimatePresence>
-            {isAdvancedOpen && (
-              <motion.div
-                variants={slideUpDown}
+                variants={staggerChildren}
                 initial="initial"
                 animate="animate"
-                exit="exit"
-                transition={springTransition}
-                className="space-y-4"
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
               >
-                {formFields.slice(4).map((field) => (
+                {formFields.slice(0, 4).map((field) => (
                   <motion.div
                     key={field.name}
                     variants={fadeInOut}
-                    className="flex items-center space-x-2 p-2 rounded-lg hover:bg-accent/50 transition-colors"
+                    className="space-y-2"
                   >
+                    <div className="flex items-center gap-2">
+                      {field.icon && React.createElement(field.icon, { className: "w-4 h-4 text-muted-foreground" })}
+                      <Label htmlFor={field.name}>{field.label}</Label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="w-4 h-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{field.description}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <Controller
                       name={field.name as keyof DnsmasqConfig}
                       control={control}
-                      render={({ field: { onChange, value } }) => (
-                        <Checkbox
+                      rules={{ required: true }}
+                      render={({ field: { value, ...fieldProps } }) => (
+                        <Input
+                          {...fieldProps}
                           id={field.name}
-                          checked={value as boolean}
-                          onCheckedChange={onChange}
+                          value={String(value)}
+                          className={cn(
+                            errors[field.name as keyof DnsmasqConfig] &&
+                              "border-red-500"
+                          )}
                         />
                       )}
                     />
-                    <div className="flex-1">
-                      <Label htmlFor={field.name}>{field.label}</Label>
-                      <p className="text-xs text-muted-foreground">
-                        {field.description}
+                    {errors[field.name as keyof DnsmasqConfig] && (
+                      <p className="text-red-500 text-xs">
+                        {errors[field.name as keyof DnsmasqConfig]?.message}
                       </p>
-                    </div>
+                    )}
                   </motion.div>
                 ))}
               </motion.div>
-            )}
-          </AnimatePresence>
 
-          <Button type="submit" className="w-full">
-            Save Configuration
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={toggleAdvanced}
+                  className="w-full justify-between"
+                >
+                  <span>Advanced Options</span>
+                  <motion.span
+                    variants={rotateChevron}
+                    animate={isAdvancedOpen ? "animate" : "initial"}
+                    transition={springTransition}
+                  >
+                    {isAdvancedOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </motion.span>
+                </Button>
+              </div>
+
+              <AnimatePresence>
+                {isAdvancedOpen && (
+                  <motion.div
+                    variants={slideUpDown}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    transition={springTransition}
+                    className="space-y-4"
+                  >
+                    {formFields.slice(4).map((field) => (
+                      <motion.div
+                        key={field.name}
+                        variants={fadeInOut}
+                        className="flex items-center space-x-2 p-2 rounded-lg hover:bg-accent/50 transition-colors"
+                      >
+                        <Controller
+                          name={field.name as keyof DnsmasqConfig}
+                          control={control}
+                          render={({ field: { onChange, value } }) => (
+                            <Checkbox
+                              id={field.name}
+                              checked={value as boolean}
+                              onCheckedChange={onChange}
+                            />
+                          )}
+                        />
+                        <div className="flex-1">
+                          <Label htmlFor={field.name}>{field.label}</Label>
+                          <p className="text-xs text-muted-foreground">
+                            {field.description}
+                          </p>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <Button type="submit" className="w-full">
+                Save Configuration
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
   );
 }

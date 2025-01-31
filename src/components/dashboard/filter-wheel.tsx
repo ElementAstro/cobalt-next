@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +26,20 @@ import {
   StopCircle,
   PlayCircle,
   Settings2,
+  Filter,
+  RotateCw,
+  Settings,
+  Save,
+  AlertTriangle,
+  CheckCircle,
+  Info,
+  CircleDot,
+  MinusCircle,
+  PlusCircle,
+  History,
+  Disc,
+  RotateCcw,
+  XCircle,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
@@ -32,6 +47,23 @@ import { Badge } from "@/components/ui/badge";
 import { useMediaQuery } from "react-responsive";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+} from "@/components/ui/context-menu";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -143,16 +175,21 @@ export function FilterWheelPage() {
     }
   };
 
+  const getFilterPositionProgress = () => {
+    const { position, maxPosition, minPosition } = filterWheelInfo;
+    return ((position - minPosition) / (maxPosition - minPosition)) * 100;
+  };
+
   return (
     <AnimatePresence>
       <motion.div
-        className="h-[calc(100vh-4rem)] overflow-y-auto"
+        className="container mx-auto h-[calc(100vh-4rem)] flex flex-col"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        transition={{ duration: 0.5 }}
+        exit="hidden"
       >
-        <div className="max-w-7xl mx-auto p-4 grid grid-rows-[auto_1fr] h-full gap-4">
+        <div className="flex-none p-4">
           <DeviceSelector
             deviceType="FilterWheel"
             onDeviceChange={(device) =>
@@ -163,393 +200,313 @@ export function FilterWheelPage() {
               })
             }
           />
+        </div>
 
-          {isDesktop ? (
-            <div className="grid grid-cols-2 gap-6">
-              {/* 控制面板 */}
-              <motion.div variants={itemVariants}>
-                <Card className="border-white shadow-xl rounded-2xl p-4">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Compass className="h-6 w-6 animate-pulse" />
-                      滤镜控制
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-col space-y-4">
-                      {/* 选择滤镜 */}
-                      <div>
-                        <Label htmlFor="filter-select">选择滤镜</Label>
-                        <div className="flex gap-4 mt-2">
-                          <Select
-                            value={selectedFilter}
-                            onValueChange={setSelectedFilter}
-                            disabled={!isConnected || isLoading}
-                          >
-                            <SelectTrigger id="filter-select">
-                              <SelectValue placeholder="请选择滤镜" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {filterWheelInfo.filters.map((filter, index) => (
-                                <SelectItem
-                                  key={index}
-                                  value={(index + 1).toString()}
-                                >
-                                  {filter}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            onClick={handleFilterChange}
-                            disabled={!isConnected || isLoading}
-                            className="min-w-[120px]"
-                          >
-                            {isLoading && (
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            )}
-                            更换滤镜
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* 连接/断开按钮 */}
-                      <div className="flex items-center justify-between">
-                        {isConnected ? (
-                          <Button
-                            onClick={handleDisconnect}
-                            disabled={isLoading}
-                            variant="destructive"
-                          >
-                            {isLoading ? (
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            ) : (
-                              <Power className="w-4 h-4 mr-2" />
-                            )}
-                            断开连接
-                          </Button>
-                        ) : (
-                          <Button
-                            onClick={handleConnect}
-                            disabled={isLoading}
-                            variant="default"
-                          >
-                            {isLoading ? (
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            ) : (
-                              <Power className="w-4 h-4 mr-2" />
-                            )}
-                            连接设备
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* 移动进度条 */}
-                    {filterWheelInfo.isMoving && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="mt-6"
-                      >
-                        <Progress value={50} className="h-2" />
-                      </motion.div>
+        <div className="flex-1 p-4 overflow-y-auto">
+          <div
+            className={`grid ${
+              isDesktop ? "grid-cols-2" : "grid-cols-1"
+            } gap-6`}
+          >
+            {/* 左侧控制面板 */}
+            <Card className="bg-background/95 supports-[backdrop-filter]:bg-background/60 shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-6 w-6" />
+                    滤镜控制
+                  </div>
+                  <Badge variant={isConnected ? "default" : "destructive"}>
+                    {isConnected ? (
+                      <CheckCircle className="w-4 h-4 mr-1" />
+                    ) : (
+                      <XCircle className="w-4 h-4 mr-1" />
                     )}
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              {/* 信息面板 */}
-              <motion.div variants={itemVariants}>
+                    {isConnected ? "已连接" : "未连接"}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-6">
-                  {/* 滤镜轮信息 */}
-                  <Card className="border-white shadow-xl rounded-2xl p-4">
-                    <CardHeader>
-                      <CardTitle>滤镜轮信息</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <motion.div
-                        className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-                        variants={containerVariants}
-                        initial="hidden"
-                        animate="visible"
-                      >
-                        <motion.div
-                          variants={itemVariants}
-                          className="space-y-2"
-                        >
-                          <Label>名称</Label>
-                          <div className="text-sm">{filterWheelInfo.name}</div>
-                        </motion.div>
-                        <motion.div
-                          variants={itemVariants}
-                          className="space-y-2"
-                        >
-                          <Label>驱动信息</Label>
-                          <div className="text-sm">
-                            {filterWheelInfo.driverInfo}
-                          </div>
-                        </motion.div>
-                        <motion.div
-                          variants={itemVariants}
-                          className="space-y-2"
-                        >
-                          <Label>驱动版本</Label>
-                          <div className="text-sm">
-                            {filterWheelInfo.driverVersion}
-                          </div>
-                        </motion.div>
-                        <motion.div
-                          variants={itemVariants}
-                          className="space-y-2"
-                        >
-                          <Label>当前滤镜</Label>
-                          <div className="text-sm">
-                            {filterWheelInfo.currentFilter}
-                          </div>
-                        </motion.div>
-                        <motion.div
-                          variants={itemVariants}
-                          className="space-y-2"
-                        >
-                          <Label>描述</Label>
-                          <div className="text-sm">
-                            {filterWheelInfo.description}
-                          </div>
-                        </motion.div>
-                        <motion.div
-                          variants={itemVariants}
-                          className="space-y-2"
-                        >
-                          <Label>当前位置</Label>
-                          <div className="text-sm">
-                            {filterWheelInfo.position} /{" "}
-                            {filterWheelInfo.maxPosition}
-                          </div>
-                        </motion.div>
-                      </motion.div>
-                    </CardContent>
-                  </Card>
-
-                  {/* 移动历史记录 */}
-                  <Card className="border-white shadow-xl rounded-2xl p-4">
-                    <CardHeader>
-                      <CardTitle>移动历史记录</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {filterWheelInfo.isMoving ? (
-                          <Alert>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            <AlertTitle>正在移动...</AlertTitle>
-                            <AlertDescription>请稍候。</AlertDescription>
-                          </Alert>
-                        ) : (
-                          <div className="text-sm">暂无移动记录。</div>
-                        )}
-                        {moveHistory.map((move, index) => (
-                          <Badge key={index} variant="outline">
-                            {move}
-                          </Badge>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* 设备状态 */}
-                  <Card className="border-white shadow-xl rounded-2xl p-4">
-                    <CardHeader>
-                      <CardTitle>设备状态</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center space-x-2">
-                        <Badge className="flex items-center p-2 bg-blue-600 rounded-full shadow-lg">
-                          <Compass className="w-4 h-4 mr-1 animate-spin-slow" />
-                          方向感应中
-                        </Badge>
-                        <div className="text-sm">
-                          {isConnected
-                            ? "设备已连接，正常运行。"
-                            : "设备未连接，请连接设备。"}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </motion.div>
-            </div>
-          ) : (
-            <div className="h-[calc(100vh-4rem)] overflow-y-auto p-4 space-y-4">
-              {/* 移动端布局 */}
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 400, damping: 10 }}
-              >
-                <Card className="border-white shadow-xl rounded-2xl">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Compass className="h-6 w-6 animate-pulse" />
-                      滤镜控制
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-col space-y-4">
-                      {/* 选择滤镜 */}
-                      <div>
-                        <Label htmlFor="filter-select">选择滤镜</Label>
-                        <div className="flex gap-4 mt-2">
-                          <Select
-                            value={selectedFilter}
-                            onValueChange={setSelectedFilter}
-                            disabled={!isConnected || isLoading}
-                          >
-                            <SelectTrigger id="filter-select">
-                              <SelectValue placeholder="请选择滤镜" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {filterWheelInfo.filters.map((filter, index) => (
-                                <SelectItem
-                                  key={index}
-                                  value={(index + 1).toString()}
-                                >
-                                  {filter}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            onClick={handleFilterChange}
-                            disabled={!isConnected || isLoading}
-                            className="min-w-[120px]"
-                          >
-                            {isLoading && (
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            )}
-                            更换滤镜
-                          </Button>
-                        </div>
-                      </div>
+                  {/* Filter Selection */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <CircleDot className="h-4 w-4" />
+                      当前滤镜位置
+                    </Label>
+                    <Progress value={getFilterPositionProgress()} />
+                    <div className="flex justify-between text-sm">
+                      <span>{filterWheelInfo.minPosition}</span>
+                      <span>{filterWheelInfo.position}</span>
+                      <span>{filterWheelInfo.maxPosition}</span>
                     </div>
+                  </div>
 
-                    {/* 移动进度条 */}
-                    {filterWheelInfo.isMoving && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="mt-6"
+                  {/* Filter Controls */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Settings2 className="h-4 w-4" />
+                      滤镜选择
+                    </Label>
+                    <div className="flex items-center gap-4">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        disabled={
+                          !isConnected ||
+                          filterWheelInfo.position <=
+                            filterWheelInfo.minPosition
+                        }
+                        onClick={() =>
+                          changeFilter(filterWheelInfo.position - 1)
+                        }
                       >
-                        <Progress value={50} className="h-2" />
-                      </motion.div>
-                    )}
-                  </CardContent>
-                </Card>
+                        <MinusCircle className="h-4 w-4" />
+                      </Button>
+                      <Select
+                        value={selectedFilter}
+                        onValueChange={setSelectedFilter}
+                        disabled={!isConnected || isLoading}
+                      >
+                        <SelectTrigger className="w-[200px]">
+                          <SelectValue placeholder="选择滤镜" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filterWheelInfo.filters.map((filter, index) => (
+                            <SelectItem
+                              key={index}
+                              value={(index + 1).toString()}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Disc className="h-4 w-4" />
+                                {filter}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        disabled={
+                          !isConnected ||
+                          filterWheelInfo.position >=
+                            filterWheelInfo.maxPosition
+                        }
+                        onClick={() =>
+                          changeFilter(filterWheelInfo.position + 1)
+                        }
+                      >
+                        <PlusCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
 
-                {/* 滤镜轮信息 */}
-                <Card className="border-white shadow-xl rounded-2xl p-4">
-                  <CardHeader>
-                    <CardTitle>滤镜轮信息</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <motion.div
-                      className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-                      variants={containerVariants}
-                      initial="hidden"
-                      animate="visible"
+                  {/* Moving Status */}
+                  {filterWheelInfo.isMoving && (
+                    <Alert>
+                      <RotateCw className="h-4 w-4 animate-spin" />
+                      <AlertTitle>滤镜移动中</AlertTitle>
+                      <AlertDescription>
+                        正在移动至位置 {selectedFilter}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {/* Movement History */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <History className="h-4 w-4" />
+                      移动历史
+                    </Label>
+                    <div className="flex flex-wrap gap-2">
+                      {moveHistory.length === 0 ? (
+                        <div className="text-sm text-muted-foreground">
+                          暂无移动记录
+                        </div>
+                      ) : (
+                        moveHistory.map((position, index) => (
+                          <Badge key={index} variant="secondary">
+                            {filterWheelInfo.filters[position - 1]}
+                          </Badge>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Connect/Disconnect Button */}
+                  <div className="flex justify-between items-center">
+                    <Button
+                      variant={isConnected ? "destructive" : "default"}
+                      onClick={isConnected ? handleDisconnect : handleConnect}
+                      disabled={isLoading}
                     >
-                      <motion.div variants={itemVariants} className="space-y-2">
-                        <Label>名称</Label>
-                        <div className="text-sm">{filterWheelInfo.name}</div>
-                      </motion.div>
-                      <motion.div variants={itemVariants} className="space-y-2">
-                        <Label>驱动信息</Label>
-                        <div className="text-sm">
-                          {filterWheelInfo.driverInfo}
-                        </div>
-                      </motion.div>
-                      <motion.div variants={itemVariants} className="space-y-2">
-                        <Label>驱动版本</Label>
-                        <div className="text-sm">
-                          {filterWheelInfo.driverVersion}
-                        </div>
-                      </motion.div>
-                      <motion.div variants={itemVariants} className="space-y-2">
-                        <Label>当前滤镜</Label>
-                        <div className="text-sm">
-                          {filterWheelInfo.currentFilter}
-                        </div>
-                      </motion.div>
-                      <motion.div variants={itemVariants} className="space-y-2">
-                        <Label>描述</Label>
-                        <div className="text-sm">
-                          {filterWheelInfo.description}
-                        </div>
-                      </motion.div>
-                      <motion.div variants={itemVariants} className="space-y-2">
-                        <Label>当前位置</Label>
-                        <div className="text-sm">
-                          {filterWheelInfo.position} /{" "}
-                          {filterWheelInfo.maxPosition}
-                        </div>
-                      </motion.div>
+                      {isLoading ? (
+                        <RotateCw className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Power className="w-4 h-4 mr-2" />
+                      )}
+                      {isConnected ? "断开连接" : "连接设备"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => fetchStatus()}
+                      disabled={!isConnected}
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 右侧信息面板 */}
+            <div className="space-y-4">
+              {/* Device Status Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Info className="h-5 w-5" />
+                    设备信息
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <motion.div
+                    className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                  >
+                    <motion.div variants={itemVariants} className="space-y-2">
+                      <Label>名称</Label>
+                      <div className="text-sm">{filterWheelInfo.name}</div>
                     </motion.div>
-                  </CardContent>
-                </Card>
+                    <motion.div variants={itemVariants} className="space-y-2">
+                      <Label>驱动信息</Label>
+                      <div className="text-sm">
+                        {filterWheelInfo.driverInfo}
+                      </div>
+                    </motion.div>
+                    <motion.div variants={itemVariants} className="space-y-2">
+                      <Label>驱动版本</Label>
+                      <div className="text-sm">
+                        {filterWheelInfo.driverVersion}
+                      </div>
+                    </motion.div>
+                    <motion.div variants={itemVariants} className="space-y-2">
+                      <Label>当前滤镜</Label>
+                      <div className="text-sm">
+                        {filterWheelInfo.currentFilter}
+                      </div>
+                    </motion.div>
+                    <motion.div variants={itemVariants} className="space-y-2">
+                      <Label>描述</Label>
+                      <div className="text-sm">
+                        {filterWheelInfo.description}
+                      </div>
+                    </motion.div>
+                    <motion.div variants={itemVariants} className="space-y-2">
+                      <Label>当前位置</Label>
+                      <div className="text-sm">
+                        {filterWheelInfo.position} /{" "}
+                        {filterWheelInfo.maxPosition}
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                </CardContent>
+              </Card>
 
-                <Card className="border-white shadow-xl rounded-2xl">
-                  <CardContent>
-                    <Tabs defaultValue="control" className="w-full">
-                      <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="settings">设置</TabsTrigger>
-                        <TabsTrigger value="history">历史</TabsTrigger>
-                        <TabsTrigger value="advanced">高级</TabsTrigger>
-                      </TabsList>
+              {/* 移动历史记录 */}
+              <Card className="border-white shadow-xl rounded-2xl p-4">
+                <CardHeader>
+                  <CardTitle>移动历史记录</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {filterWheelInfo.isMoving ? (
+                      <Alert>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <AlertTitle>正在移动...</AlertTitle>
+                        <AlertDescription>请稍候。</AlertDescription>
+                      </Alert>
+                    ) : (
+                      <div className="text-sm">暂无移动记录。</div>
+                    )}
+                    {moveHistory.map((move, index) => (
+                      <Badge key={index} variant="outline">
+                        {move}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
 
-                      <TabsContent value="settings">
-                        <div className="space-y-4">
-                          {/* 其他设置 */}
-                          <div className="space-y-2">
-                            <Label>其他设置</Label>
-                            {/* 添加更多设置项 */}
-                          </div>
-                        </div>
-                      </TabsContent>
+              {/* 设备状态 */}
+              <Card className="border-white shadow-xl rounded-2xl p-4">
+                <CardHeader>
+                  <CardTitle>设备状态</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center space-x-2">
+                    <Badge className="flex items-center p-2 bg-blue-600 rounded-full shadow-lg">
+                      <Compass className="w-4 h-4 mr-1 animate-spin-slow" />
+                      方向感应中
+                    </Badge>
+                    <div className="text-sm">
+                      {isConnected
+                        ? "设备已连接，正常运行。"
+                        : "设备未连接，请连接设备。"}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-                      <TabsContent value="history">
-                        <div className="space-y-4">
-                          {/* 移动历史记录 */}
-                          <Card className="bg-gray-700 border-gray-600 shadow-md rounded-md p-4">
-                            <Label>移动历史记录</Label>
-                            <div className="mt-2 space-y-2">
-                              {filterWheelInfo.isMoving ? (
-                                <Alert>
-                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                  <AlertTitle>正在移动...</AlertTitle>
-                                  <AlertDescription>请稍候。</AlertDescription>
-                                </Alert>
-                              ) : moveHistory.length === 0 ? (
-                                <div className="text-sm">暂无移动记录。</div>
-                              ) : (
-                                moveHistory.map((move, index) => (
-                                  <Badge key={index} variant="outline">
-                                    {move}
-                                  </Badge>
-                                ))
-                              )}
-                            </div>
-                          </Card>
-                        </div>
-                      </TabsContent>
+              {/* 滤镜设置 */}
+              <ContextMenu>
+                <ContextMenuTrigger className="block">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>滤镜设置</CardTitle>
+                    </CardHeader>
+                    <CardContent>{/* 现有内容 */}</CardContent>
+                  </Card>
+                </ContextMenuTrigger>
+                <ContextMenuContent>
+                  <ContextMenuItem>
+                    <Save className="mr-2 h-4 w-4" />
+                    保存设置
+                  </ContextMenuItem>
+                  <ContextMenuItem>
+                    <RotateCw className="mr-2 h-4 w-4" />
+                    重置设置
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
 
-                      <TabsContent value="advanced">
-                        <div className="space-y-4"></div>
-                      </TabsContent>
-                    </Tabs>
-                  </CardContent>
-                </Card>
-              </motion.div>
+              {/* 重要操作 */}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline">
+                    <AlertTriangle className="mr-2 h-4 w-4" />
+                    重要操作
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>确认操作</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      此操作将重置所有滤镜设置，确认继续吗？
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>取消</AlertDialogCancel>
+                    <AlertDialogAction>确认</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
-          )}
+          </div>
         </div>
       </motion.div>
     </AnimatePresence>

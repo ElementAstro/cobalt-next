@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Pin, PinOff, Trash2, Edit2, Heart, ImageIcon, Code, Settings, Wrench } from "lucide-react";
+import { animationVariants } from '@/config/icons';
 
 const categoryIcons = {
   microsoft: ImageIcon,
@@ -90,30 +91,28 @@ export function AppIcon({
     setIsEditing(false);
   };
 
-  const iconVariants = {
-    hover: { scale: 1.1, rotate: 5 },
-    tap: { scale: 0.95 },
-  };
-
   return (
     <ContextMenu>
       <ContextMenuTrigger>
         <Tooltip>
           <TooltipTrigger asChild>
             <motion.div
-              initial={false}
-              animate={{ scale: 1 }}
+              initial="initial"
               whileHover="hover"
               whileTap="tap"
-              variants={iconVariants}
+              variants={animationVariants.card}
+              className={cn(
+                "relative group transition-all duration-200",
+                isCompact ? "p-1.5" : "p-2",
+                view === "list" && "max-w-md",
+                isSelected && "ring-1 ring-primary ring-offset-1"
+              )}
+              style={{
+                width: view === "list" ? "100%" : size,
+                height: view === "list" ? "auto" : size,
+              }}
               onHoverStart={() => setIsHovered(true)}
               onHoverEnd={() => setIsHovered(false)}
-              className={cn(
-                "relative group",
-                isCompact ? "p-2" : "p-4",
-                isSelected && "ring-2 ring-primary ring-offset-2"
-              )}
-              style={{ width: size, height: size }}
             >
               {isSelectionMode && (
                 <div
@@ -130,8 +129,22 @@ export function AppIcon({
                 {isHovered && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
+                    animate={{ 
+                      opacity: 1, 
+                      scale: 1,
+                      transition: {
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 15
+                      }
+                    }}
+                    exit={{ 
+                      opacity: 0, 
+                      scale: 0.8,
+                      transition: {
+                        duration: 0.2
+                      }
+                    }}
                     className="absolute -top-2 -right-2 flex gap-1"
                   >
                     <Button
@@ -162,6 +175,7 @@ export function AppIcon({
                 onClick={() => onLaunch({ id, name, icon, isPinned, category })}
               >
                 <motion.div
+                  variants={animationVariants.icon}
                   className={cn(
                     "relative",
                     view === "grid" ? "w-12 h-12" : "w-8 h-8"

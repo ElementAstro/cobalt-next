@@ -26,23 +26,20 @@ export function ConnectionDetails({
   setIsSSL,
 }: ConnectionDetailsProps) {
   return (
-    <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <FormField
         control={form.control}
         name="ip"
         render={({ field }) => (
-          <FormItem className="flex-1">
-            <FormLabel>
-              <Server className="inline-block w-4 h-4 mr-2" />
+          <FormItem>
+            <FormLabel className="flex items-center gap-1 text-sm">
+              <Server className="w-3 h-3" />
               IP / Hostname
             </FormLabel>
             <FormControl>
-              <Input placeholder="Write here address" {...field} />
+              <Input placeholder="服务器地址" {...field} className="h-9" />
             </FormControl>
             <FormMessage />
-            <p className="text-sm text-muted-foreground">
-              Insert IP or Hostname - leave blank for localhost
-            </p>
           </FormItem>
         )}
       />
@@ -51,25 +48,31 @@ export function ConnectionDetails({
         control={form.control}
         name="port"
         render={({ field }) => (
-          <FormItem className="flex-1">
-            <FormLabel>
-              <Server className="inline-block w-4 h-4 mr-2" />
-              Port
+          <FormItem>
+            <FormLabel className="flex items-center gap-1 text-sm">
+              <Server className="w-3 h-3" />
+              端口
             </FormLabel>
             <div className="flex items-center gap-2">
               <FormControl>
-                <Input type="number" className="w-24" {...field} />
+                <Input
+                  type="number"
+                  className="w-24 h-9"
+                  {...field}
+                  placeholder="端口"
+                />
               </FormControl>
               <div className="flex items-center gap-1">
-                <Checkbox id="ssl" checked={isSSL} onCheckedChange={setIsSSL} />
-                <Label htmlFor="ssl" className="text-sm flex items-center">
-                  <Shield className="inline-block w-4 h-4 mr-1" />
-                  SSL
-                </Label>
+                <Checkbox
+                  id="ssl"
+                  checked={isSSL}
+                  onCheckedChange={setIsSSL}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="ssl" className="text-sm">SSL</Label>
               </div>
             </div>
             <FormMessage />
-            <p className="text-sm text-muted-foreground">Port number</p>
           </FormItem>
         )}
       />

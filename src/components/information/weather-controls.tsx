@@ -39,10 +39,10 @@ const WeatherControls: React.FC<WeatherControlsProps> = ({
   AVAILABLE_APIS,
 }) => {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 space-y-4 sm:space-y-0">
-      <div className="flex items-center space-x-2">
+    <div className="flex flex-wrap gap-2 items-center">
+      <div className="flex-1 min-w-[200px] flex items-center space-x-2">
         <Select value={city} onValueChange={(value) => setCity(value)}>
-          <SelectTrigger className="w-32">
+          <SelectTrigger className="h-9">
             <SelectValue placeholder="选择城市" />
           </SelectTrigger>
           <SelectContent>
@@ -52,45 +52,40 @@ const WeatherControls: React.FC<WeatherControlsProps> = ({
             {/* 添加更多城市 */}
           </SelectContent>
         </Select>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleGeolocation}
-          aria-label="获取当前位置天气"
-        >
-          <Locate className="h-5 w-5 text-white" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={fetchWeatherData}
-          aria-label="刷新天气数据"
-          disabled={loading}
-        >
-          <RefreshCcw
-            className={`h-5 w-5 text-white ${loading ? "animate-spin" : ""}`}
-          />
-        </Button>
+        <div className="flex space-x-1">
+          <Button variant="ghost" size="sm" onClick={handleGeolocation}>
+            <Locate className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={fetchWeatherData}
+            disabled={loading}
+          >
+            <RefreshCcw
+              className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+            />
+          </Button>
+        </div>
       </div>
+
       <div className="flex items-center space-x-2">
         <Select
           value={units}
           onValueChange={(value) => setUnits(value as "metric" | "imperial")}
         >
-          <SelectTrigger className="w-24">
-            <SelectValue placeholder="选择单位" />
+          <SelectTrigger className="h-9 w-20">
+            <SelectValue placeholder="单位" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="metric">公制</SelectItem>
             <SelectItem value="imperial">英制</SelectItem>
           </SelectContent>
         </Select>
-        <Select
-          value={selectedAPI}
-          onValueChange={(value) => setSelectedAPI(value)}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="选择 API" />
+
+        <Select value={selectedAPI} onValueChange={setSelectedAPI}>
+          <SelectTrigger className="h-9 w-32">
+            <SelectValue placeholder="API" />
           </SelectTrigger>
           <SelectContent>
             {AVAILABLE_APIS.map((api) => (
@@ -100,13 +95,9 @@ const WeatherControls: React.FC<WeatherControlsProps> = ({
             ))}
           </SelectContent>
         </Select>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setShowSettings(true)}
-          aria-label="设置"
-        >
-          <Settings className="h-5 w-5 text-white" />
+
+        <Button variant="ghost" size="sm" onClick={() => setShowSettings(true)}>
+          <Settings className="h-4 w-4" />
         </Button>
       </div>
     </div>

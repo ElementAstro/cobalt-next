@@ -171,49 +171,46 @@ export function DeviceSelector({
   return (
     <AnimatePresence>
       <motion.div
-        className={`space-y-4 ${customClassName}`}
-        initial={{ opacity: 0, y: -20 }}
+        className={`${customClassName}`}
+        initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.3 }}
       >
         {error && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            className="mb-2"
           >
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="py-2">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription className="ml-2 text-sm">
+                {error}
+              </AlertDescription>
             </Alert>
           </motion.div>
         )}
 
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 bg-gradient-to-br rounded-xl shadow-xl border border-white p-4"
-          whileHover={{ scale: 1.01 }}
-          transition={{ type: "spring", stiffness: 300 }}
+          className="relative flex flex-row items-center gap-2 bg-gradient-to-br from-gray-900/90 to-gray-800/90 rounded-lg border border-white/10 p-2 shadow-lg backdrop-blur-sm"
+          whileHover={{ scale: 1.005 }}
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
         >
-          <div className="col-span-2">
+          <div className="flex-1 min-w-0">
             <Select onValueChange={debouncedDeviceChange}>
-              <SelectTrigger className="w-full bg-gray-800/50 backdrop-blur-sm text-white hover:bg-gray-700/50 transition-colors">
+              <SelectTrigger className="h-9 w-full bg-gray-800/50 border-0 text-white hover:bg-gray-700/50 transition-colors">
                 <SelectValue placeholder={`选择${deviceType}`} />
               </SelectTrigger>
-              <SelectContent className="text-white">
+              <SelectContent className="max-h-[280px] overflow-y-auto bg-gray-800/95 border-gray-700">
                 {devices.map((device) => (
-                  <motion.div
+                  <SelectItem
                     key={device.id}
-                    whileHover={{ scale: 1.02 }}
-                    transition={{ type: "spring", stiffness: 300 }}
+                    value={device.id}
+                    className="text-white hover:bg-gray-700 focus:bg-gray-700"
                   >
-                    <SelectItem
-                      value={device.id}
-                      className="hover:bg-gray-700 focus:bg-gray-700"
-                    >
-                      {device.name}
-                    </SelectItem>
-                  </motion.div>
+                    {device.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -221,40 +218,38 @@ export function DeviceSelector({
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
+                className="absolute left-0 right-0 -bottom-1"
               >
-                <Progress value={connectionProgress} className="h-1 mt-2" />
+                <Progress
+                  value={connectionProgress}
+                  className="h-0.5 bg-gray-700"
+                />
               </motion.div>
             )}
           </div>
 
-          <motion.div
-            className="flex justify-end items-center space-x-2"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
+          <div className="flex items-center gap-1">
             <Button
-              variant="outline"
-              size="icon"
-              className="bg-gray-800/50 backdrop-blur-sm border-white text-white hover:bg-gray-700/50 transition-all hover:scale-105"
+              variant="ghost"
+              size="sm"
+              className="h-9 w-9 p-0 bg-gray-800/50 hover:bg-gray-700/50 text-white"
               disabled={!selectedDevice}
               onClick={() => onSettingsClick?.()}
             >
               <Settings className="h-4 w-4" />
               {showAdvancedOptions && (
                 <motion.span
-                  className="absolute -top-1 -right-1 h-2 w-2 bg-blue-500 rounded-full"
+                  className="absolute -top-0.5 -right-0.5 h-2 w-2 bg-blue-500 rounded-full"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                  transition={{ type: "spring", stiffness: 300 }}
                 />
               )}
             </Button>
             <Button
-              variant="outline"
-              size="icon"
-              className="bg-gray-800/50 backdrop-blur-sm border-white text-white hover:bg-gray-700/50 transition-all hover:scale-105"
+              variant="ghost"
+              size="sm"
+              className="h-9 w-9 p-0 bg-gray-800/50 hover:bg-gray-700/50 text-white"
               onClick={() => debouncedScan()}
               disabled={isScanning}
             >
@@ -265,9 +260,9 @@ export function DeviceSelector({
               )}
             </Button>
             <Button
-              variant="outline"
-              size="icon"
-              className="bg-gray-800/50 backdrop-blur-sm border-white text-white hover:bg-gray-700/50 transition-all hover:scale-105"
+              variant="ghost"
+              size="sm"
+              className="h-9 w-9 p-0 bg-gray-800/50 hover:bg-gray-700/50 text-white"
               onClick={() => debouncedConnect()}
               disabled={!selectedDevice || isConnecting}
             >
@@ -275,13 +270,13 @@ export function DeviceSelector({
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Power
-                  className={`h-4 w-4 ${
+                  className={`h-4 w-4 transition-colors ${
                     isConnected ? "text-green-400" : "text-red-400"
                   }`}
                 />
               )}
             </Button>
-          </motion.div>
+          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>

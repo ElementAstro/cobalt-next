@@ -2,11 +2,10 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { NetworkStatus } from "./network-status";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { useMediaQuery } from "react-responsive";
 import {
   Telescope,
@@ -149,43 +148,40 @@ export default function TopBar({ onOpenOffcanvas }: TopBarProps) {
   }, []);
 
   return (
-    <TooltipProvider>
-      <motion.div
-        className="h-14 border-b border-gray-700 flex items-center justify-between px-2"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <motion.div
-          className="flex items-center space-x-2"
-          variants={itemVariants}
+    <div className="h-12 border-b border-gray-700/50 bg-gray-900/90 backdrop-blur-sm flex items-center justify-between px-2 sticky top-0 z-50">
+      {/* Logo Section */}
+      <motion.div className="flex items-center gap-1.5" variants={itemVariants}>
+        <svg
+          className="w-6 h-6 text-blue-500"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
         >
-          <svg
-            className="w-6 h-6 text-blue-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"
-            />
-          </svg>
-          <span
-            className="text-xl font-bold text-white"
-            onClick={() => (window.location.href = "/about")}
-          >
-            Cobalt
-          </span>
-        </motion.div>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"
+          />
+        </svg>
+        <span
+          className="text-xl font-bold text-white"
+          onClick={() => (window.location.href = "/about")}
+        >
+          Cobalt
+        </span>
+      </motion.div>
+
+      {/* Controls Section */}
+      <motion.div
+        className="flex items-center gap-2 md:gap-3"
+        variants={containerVariants}
+      >
+        {/* Device Status Section */}
         <motion.div
-          className="flex items-center space-x-4"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
+          className="hidden sm:flex items-center gap-2"
+          variants={itemVariants}
         >
           <motion.div
             className="flex items-center space-x-1 text-white"
@@ -216,30 +212,45 @@ export default function TopBar({ onOpenOffcanvas }: TopBarProps) {
           <motion.div>
             <TopbarLocation />
           </motion.div>
-          {devices.map((device) => (
-            <motion.div key={device.id} variants={itemVariants}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onOpenOffcanvas(device.id)}
-                    className="flex items-center gap-1"
-                  >
-                    <device.icon className="w-5 h-5" />
-                    {isShowDeviceName && (
-                      <span className="hidden md:inline">{device.name}</span>
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>{device.description}</p>
-                </TooltipContent>
-              </Tooltip>
-            </motion.div>
-          ))}
         </motion.div>
+
+        {/* Devices Section */}
+        {devices.map((device) => (
+          <motion.div key={device.id} variants={itemVariants}>
+            <HoverCard openDelay={200} closeDelay={100}>
+              <HoverCardTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onOpenOffcanvas(device.id)}
+                  className="h-8 px-2 hover:bg-gray-800 transition-colors"
+                >
+                  <device.icon className="h-4 w-4 text-gray-400" />
+                  {isShowDeviceName && (
+                    <span className="hidden lg:inline ml-1.5 text-xs text-gray-300">
+                      {device.name}
+                    </span>
+                  )}
+                </Button>
+              </HoverCardTrigger>
+              <HoverCardContent
+                side="bottom"
+                align="start"
+                className="w-[240px] p-3"
+              >
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <device.icon className="h-5 w-5 text-gray-400" />
+                    <span className="font-medium">{device.name}</span>
+                  </div>
+                  <p className="text-sm text-gray-500">{device.description}</p>
+                  <div className="text-xs text-gray-500 mt-2">点击进行设置</div>
+                </div>
+              </HoverCardContent>
+            </HoverCard>
+          </motion.div>
+        ))}
       </motion.div>
-    </TooltipProvider>
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import DarkFieldLibrary from "@/components/guiding/darklibrary/DarkFieldLibrary";
 import { useGuidingStore } from "@/store/useGuidingStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,6 +21,7 @@ import {
   Settings2,
   Calendar,
   FileDown,
+  Plus,
 } from "lucide-react";
 import StatsCard from "@/components/guiding/darklibrary/StatsCard";
 import {
@@ -70,21 +71,64 @@ export default function DarkLibraryPage() {
   };
 
   return (
-    <div className="container p-4 mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold">暗场库管理</h1>
-          <p className="text-muted-foreground">管理和分析天文摄影暗场库</p>
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }}
+      className="container p-4 mx-auto space-y-6 min-h-[100vh] pb-24"
+    >
+      <motion.div
+        initial={{ y: -20 }}
+        animate={{ y: 0 }}
+        className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b"
+      >
+        <div className="container flex justify-between items-center py-4">
+          <div className="flex items-center gap-4">
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              className="flex flex-col"
+            >
+              <h1 className="text-3xl font-bold tracking-tight">暗场库管理</h1>
+              <p className="text-sm text-muted-foreground">优化您的天文摄影暗场收集</p>
+            </motion.div>
+            <div className="flex gap-2">
+              <Badge 
+                variant="outline" 
+                className="animate-in fade-in slide-in-from-top-1"
+              >
+                专业版
+              </Badge>
+              <Badge 
+                className="bg-gradient-to-r from-blue-500 to-purple-500 animate-in fade-in slide-in-from-top-2"
+              >
+                实时同步
+              </Badge>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {/* Add system status indicators */}
+            <motion.div 
+              className="flex items-center gap-2"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+            >
+              {store.darkField.systemStatus.isCameraConnected && (
+                <Badge variant="outline" className="bg-green-500/10">
+                  <div className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse" />
+                  相机已连接
+                </Badge>
+              )}
+              {store.darkField.systemStatus.isTemperatureStable && (
+                <Badge variant="outline" className="bg-blue-500/10">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 mr-2" />
+                  温度稳定
+                </Badge>
+              )}
+            </motion.div>
+          </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <Badge variant="outline">版本 2.0</Badge>
-          <Badge variant="secondary">专业版</Badge>
-          <Button variant="outline" size="sm">
-            <FileDown className="mr-2 h-4 w-4" />
-            导出报告
-          </Button>
-        </div>
-      </div>
+      </motion.div>
 
       <Tabs defaultValue="library" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
@@ -244,6 +288,23 @@ export default function DarkLibraryPage() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+
+      {/* Add floating action button for quick actions */}
+      <motion.div
+        className="fixed bottom-8 right-8"
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        whileHover={{ scale: 1.1 }}
+      >
+        <Button 
+          size="lg" 
+          className="rounded-full shadow-lg"
+          onClick={store.darkField.startCreation}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          快速创建
+        </Button>
+      </motion.div>
+    </motion.div>
   );
 }

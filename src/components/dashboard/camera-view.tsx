@@ -14,6 +14,7 @@ import {
   Loader2,
   X,
   Image as ImageIcon,
+  Settings,
 } from "lucide-react";
 import {
   Tooltip,
@@ -195,11 +196,11 @@ export default function CameraViewfinder({
   };
 
   return (
-    <div className={`relative h-full`}>
-      {/* Viewfinder Area */}
+    <div className="relative h-[calc(100vh-3rem)] flex flex-col">
+      {/* Viewfinder with improved aspect ratio */}
       <div
         ref={viewfinderRef}
-        className="relative w-full h-[calc(100%-64px)] cursor-crosshair"
+        className="relative flex-1 overflow-hidden bg-black cursor-crosshair"
         onClick={handleViewfinderClick}
         style={{
           transform: `scale(${zoom}) rotate(${rotation}deg)`,
@@ -226,10 +227,10 @@ export default function CameraViewfinder({
         />
       </div>
 
-      {/* Controls Toolbar */}
-      <div className="absolute bottom-0 left-0 right-0 h-16 bg-black/50 backdrop-blur-sm flex items-center justify-center gap-4 p-2">
-        {/* Zoom Controls */}
-        <div className="flex items-center gap-2">
+      {/* Compact Controls Bar */}
+      <div className="h-12 bg-gray-900/90 backdrop-blur-sm flex items-center justify-between px-2 border-t border-gray-700/50">
+        <div className="flex items-center gap-1.5">
+          {/* Zoom Controls */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -263,8 +264,7 @@ export default function CameraViewfinder({
           </TooltipProvider>
         </div>
 
-        {/* Settings Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -292,8 +292,7 @@ export default function CameraViewfinder({
           </TooltipProvider>
         </div>
 
-        {/* Save Image Button */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -315,8 +314,7 @@ export default function CameraViewfinder({
           </TooltipProvider>
         </div>
 
-        {/* LightBox Button */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -330,11 +328,11 @@ export default function CameraViewfinder({
         </div>
       </div>
 
-      {/* Settings Panel */}
+      {/* Settings Panel - More Compact */}
       <Collapsible open={showSettings} onOpenChange={setShowSettings}>
         <div ref={settingsRef}>
-          <CollapsibleTrigger className="absolute top-0 right-0 bg-black/50 backdrop-blur-sm p-2">
-            设置
+          <CollapsibleTrigger className="absolute top-2 right-2 bg-gray-900/90 backdrop-blur-sm p-1.5 rounded-md">
+            <Settings className="h-4 w-4" />
           </CollapsibleTrigger>
           <AnimatePresence>
             {showSettings && (

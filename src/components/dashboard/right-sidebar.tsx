@@ -31,6 +31,7 @@ import {
 import { useExposureStore, ExposureSettings } from "@/store/useDashboardStore";
 import { AnimatedCircularProgressBar } from "@/components/ui/animated-circular-progress-bar";
 import { cn } from "@/lib/utils";
+import { ExposureTimeSlider } from "./exposure-slider";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0, scale: 0.95 },
@@ -340,6 +341,10 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
             </div>
           </motion.div>
         )}
+
+        <motion.div variants={itemVariants} className="w-full mb-4">
+          <ExposureTimeSlider />
+        </motion.div>
 
         <motion.div
           variants={containerVariants}

@@ -188,9 +188,9 @@ export default function GeocodingComponent({
             damping: 10,
           }}
           whileHover={{ scale: 1.02 }}
-          className="lg:w-[calc(50%-0.5rem)]"
+          className="w-full lg:w-1/2 p-2"
         >
-          <Card className="mt-4 bg-gray-800 text-white">
+          <Card className="bg-gray-800 text-white h-full">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
@@ -251,8 +251,9 @@ export default function GeocodingComponent({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          className="w-full p-2"
         >
-          <Card className="mt-4 bg-gray-800 text-white">
+          <Card className="bg-gray-800 text-white">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Navigation className="h-5 w-5" />
@@ -294,16 +295,16 @@ export default function GeocodingComponent({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="w-full h-[calc(100vh-4rem)] flex flex-col lg:flex-row lg:space-x-4 p-4"
+      className="w-full h-full flex flex-col lg:flex-row lg:space-x-4 p-4"
     >
-      <Card className="bg-gray-900 text-white h-full flex flex-col lg:w-1/2">
+      <Card className="bg-gray-900 text-white flex flex-col flex-1">
         <CardHeader className="flex-none">
           <CardTitle>地理编码 / 逆地理编码</CardTitle>
           <CardDescription>
             输入地址获取坐标，或输入坐标获取地址信息
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex-1 overflow-y-auto">
+        <CardContent className="flex-1 overflow-y-auto space-y-4">
           <Tabs defaultValue="search" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="search">
@@ -327,6 +328,7 @@ export default function GeocodingComponent({
                     pressed={isReverseGeocoding}
                     onPressedChange={setIsReverseGeocoding}
                     aria-label="切换地理编码模式"
+                    className="flex items-center justify-center px-3 py-1 bg-gray-700 rounded"
                   >
                     {isReverseGeocoding ? "逆地理编码" : "地理编码"}
                   </Toggle>
@@ -349,7 +351,7 @@ export default function GeocodingComponent({
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    className="w-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center"
                     aria-label="提交查询"
                   >
                     {isLoading ? (
@@ -375,24 +377,28 @@ export default function GeocodingComponent({
               </form>
             </TabsContent>
             <TabsContent value="history">
-              <ScrollArea className="h-[calc(100%-4rem)] w-full rounded-md border p-4 bg-gray-800">
-                {recentSearches.map((search, index) => (
-                  <Button
-                    key={index}
-                    variant="ghost"
-                    className="w-full justify-start text-white flex items-center"
-                    onClick={() => {
-                      setInput(search);
-                      setIsReverseGeocoding(
-                        validateAndFormatCoordinates(search) !== null
-                      );
-                    }}
-                    aria-label={`加载历史搜索 ${search}`}
-                  >
-                    <Search className="mr-2 h-4 w-4" />
-                    {search}
-                  </Button>
-                ))}
+              <ScrollArea className="h-60 w-full rounded-md border p-4 bg-gray-800">
+                {recentSearches.length === 0 ? (
+                  <div className="text-gray-400">暂无历史记录</div>
+                ) : (
+                  recentSearches.map((search, index) => (
+                    <Button
+                      key={index}
+                      variant="ghost"
+                      className="w-full justify-start text-white flex items-center mb-2"
+                      onClick={() => {
+                        setInput(search);
+                        setIsReverseGeocoding(
+                          validateAndFormatCoordinates(search) !== null
+                        );
+                      }}
+                      aria-label={`加载历史搜索 ${search}`}
+                    >
+                      <Search className="mr-2 h-4 w-4" />
+                      {search}
+                    </Button>
+                  ))
+                )}
               </ScrollArea>
             </TabsContent>
           </Tabs>
@@ -406,6 +412,29 @@ export default function GeocodingComponent({
           {renderResult()}
         </CardContent>
       </Card>
+      {result && result.geocodes && (
+        <div className="lg:w-1/2 h-full">
+          <StaticMap
+            location={
+              result.geocodes[0]
+                ? {
+                    longitude: parseFloat(result.geocodes[0].location.split(",")[0]),
+                    latitude: parseFloat(result.geocodes[0].location.split(",")[1]),
+                  }
+                : undefined
+            }
+            zoom={12}
+            size="100%"
+            showControls={true}
+            showZoomButtons={true}
+            allowFullscreen={true}
+            showScale={true}
+            theme="dark"
+            features={["road", "building", "point"]}
+            key="geocoding-map"
+          />
+        </div>
+      )}
     </motion.div>
   );
 }

@@ -195,19 +195,15 @@ export default function XvfbConfig() {
   };
 
   return (
-    <motion.div
-      className="flex flex-col lg:flex-row lg:space-x-4 max-w-[100vw] p-4"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
-      <motion.div
-        className="lg:w-2/3 mb-4 lg:mb-0"
-        whileHover={{ scale: 1.02 }}
-        transition={{ type: "spring", stiffness: 300 }}
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 p-2 max-w-[100vw] h-[calc(100vh-4rem)]">
+      <motion.div 
+        className="lg:col-span-8 h-full"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
       >
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+        <Card className="h-full flex flex-col">
+          <CardHeader className="flex-none">
             <CardTitle>Xvfb Configuration</CardTitle>
             <div className="flex items-center space-x-2">
               <motion.div
@@ -235,7 +231,7 @@ export default function XvfbConfig() {
               </DropdownMenu>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 overflow-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="relative">
                 <Label htmlFor="display" className="flex items-center gap-1">
@@ -464,11 +460,11 @@ export default function XvfbConfig() {
         </Card>
       </motion.div>
 
-      <motion.div
-        className="lg:w-1/3 space-y-4"
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.3 }}
+      <motion.div 
+        className="lg:col-span-4 space-y-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
       >
         <Card>
           <CardHeader>
@@ -510,6 +506,6 @@ export default function XvfbConfig() {
           </CardContent>
         </Card>
       </motion.div>
-    </motion.div>
+    </div>
   );
 }

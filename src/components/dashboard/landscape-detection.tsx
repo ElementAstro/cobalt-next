@@ -283,7 +283,9 @@ export default function LandscapeDetector({
   };
 
   const dialogClasses = cn(
-    "bg-background/95 backdrop-blur-sm border-none shadow-2xl w-full max-w-md",
+    "bg-background/95 backdrop-blur-sm border-none shadow-2xl",
+    "w-[90vw] max-w-[380px] p-4",
+    "rounded-xl",
     {
       "fixed top-4 left-1/2 -translate-x-1/2": layout === "top",
       "fixed bottom-4 left-1/2 -translate-x-1/2": layout === "bottom",
@@ -293,71 +295,63 @@ export default function LandscapeDetector({
     className
   );
 
-  const iconClasses = cn("w-full h-full transform text-foreground/80", {
-    "animate-rotate": iconRotation,
-    "animate-bounce": bounceEffect,
-  });
-
   return (
     <>
       <Dialog open={isVisible && isMobile} onOpenChange={() => {}}>
-        <DialogContent
-          className={dialogClasses}
-          style={{
-            backgroundImage: backgroundImage
-              ? `url(${backgroundImage})`
-              : undefined,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">
-              {customMessage || t("pleaseRotate")}
-            </DialogTitle>
-            <DialogDescription>{t("bestExperience")}</DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6 py-4">
-            <div className="relative w-16 h-16 mx-auto">
-              {customIcon || (
-                <svg
-                  className={iconClasses}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
-                  <line x1="12" y1="18" x2="12" y2="18" />
-                </svg>
-              )}
-            </div>
+        <DialogContent className={dialogClasses}>
+          <div className="space-y-4">
+            <DialogHeader className="space-y-2 text-center">
+              <div className="relative w-12 h-12 mx-auto">
+                {customIcon || (
+                  <motion.svg
+                    className={cn("w-full h-full text-foreground/80", {
+                      "animate-rotate": iconRotation,
+                      "animate-bounce": bounceEffect,
+                    })}
+                    animate={{
+                      rotate: iconRotation ? [0, 90] : 0,
+                      y: bounceEffect ? [0, -5, 0] : 0,
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
+                    <line x1="12" y1="18" x2="12" y2="18" />
+                  </motion.svg>
+                )}
+              </div>
+              <DialogTitle className="text-lg font-semibold">
+                {customMessage || t("pleaseRotate")}
+              </DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground">
+                {t("bestExperience")}
+              </DialogDescription>
+            </DialogHeader>
 
             <Progress
               value={progress}
-              className="w-full h-2"
+              className="h-1.5 rounded-full"
               style={{
                 transition: `width ${duration}ms ${easing}`,
               }}
             />
 
-            <DialogDescription className="text-center">
-              {isFullscreen ? t("fullscreenEnabled") : t("fullscreenDisabled")}
-            </DialogDescription>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label
-                  htmlFor="sensitivity"
-                  className="text-sm font-medium text-foreground"
-                >
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between text-sm">
+                <Label htmlFor="sensitivity" className="font-medium">
                   {t("sensitivity")}
                 </Label>
                 <motion.span
-                  className="text-sm font-medium rounded-md bg-primary/10 px-2 py-1"
+                  className="px-2 py-0.5 rounded bg-primary/10 font-medium"
                   initial={{ scale: 0.9 }}
                   animate={{ scale: 1 }}
                   key={sensitivity}
@@ -376,24 +370,28 @@ export default function LandscapeDetector({
                 aria-label={t("sensitivity")}
               />
             </div>
-          </div>
 
-          <DialogFooter className="grid grid-cols-2 gap-4 sm:grid-cols-2">
-            <Button
-              variant="outline"
-              onClick={ignoreWarning}
-              className="w-full"
-            >
-              {t("ignore")}
-            </Button>
-            <Button
-              variant="default"
-              onClick={isFullscreen ? exitFullscreen : enterFullscreen}
-              className="w-full"
-            >
-              {isFullscreen ? t("exitFullscreen") : t("enterFullscreen")}
-            </Button>
-          </DialogFooter>
+            <p className="text-xs text-center text-muted-foreground">
+              {isFullscreen ? t("fullscreenEnabled") : t("fullscreenDisabled")}
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                onClick={ignoreWarning}
+                className="w-full text-sm h-9"
+              >
+                {t("ignore")}
+              </Button>
+              <Button
+                variant="default"
+                onClick={isFullscreen ? exitFullscreen : enterFullscreen}
+                className="w-full text-sm h-9"
+              >
+                {isFullscreen ? t("exitFullscreen") : t("enterFullscreen")}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
       {!isVisible && children}

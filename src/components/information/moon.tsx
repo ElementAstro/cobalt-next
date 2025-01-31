@@ -52,8 +52,7 @@ export function Moon({ data }: MoonProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="bg-gradient-to-br from-indigo-950/90 to-gray-900/95 p-4 rounded-xl shadow-xl border border-indigo-800/20 backdrop-blur-sm relative overflow-hidden"
+      className="bg-gradient-to-br from-indigo-950/90 to-gray-900/95 rounded-lg border border-indigo-800/20 backdrop-blur-sm p-2 lg:p-4 h-[calc(100vh-4rem)]"
     >
       {/* Add stars background */}
       <div className="absolute inset-0 pointer-events-none">
@@ -78,14 +77,9 @@ export function Moon({ data }: MoonProps) {
         ))}
       </div>
 
-      <Card className="bg-transparent border-0 shadow-none">
+      <Card className="bg-transparent border-0 shadow-none h-full">
         <CardHeader className="pb-2">
-          <motion.div
-            className="flex items-start gap-6"
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.5 }}
-          >
+          <motion.div className="flex flex-col lg:flex-row items-start gap-4">
             <div className="relative w-28 h-28">
               <motion.div
                 className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 blur-lg opacity-20"
@@ -135,83 +129,55 @@ export function Moon({ data }: MoonProps) {
           </motion.div>
         </CardHeader>
 
-        <CardContent className="pt-4">
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <InfoCard
-              icon={<Clock className="w-4 h-4 text-sky-400" />}
-              label="过境时间"
-              value={data.transit || "N/A"}
-              className="from-blue-950/40 to-indigo-950/40"
-            />
-            <InfoCard
-              icon={<Compass className="w-4 h-4 text-amber-400" />}
-              label="方位角"
-              value={`${data.az || "N/A"}°`}
-              className="from-indigo-950/40 to-violet-950/40"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <InfoCard
-              icon={<AlignCenter className="w-4 h-4 text-purple-400" />}
-              label="高度角"
-              value={`${data.alt || "N/A"}°`}
-              className="from-violet-950/40 to-purple-950/40"
-            />
-            <InfoCard
-              icon={<BarChart2 className="w-4 h-4 text-cyan-400" />}
-              label="照明度"
-              value={`${data.light}%`}
-              className="from-purple-950/40 to-blue-950/40"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <InfoCard
-              icon={<Calendar className="w-4 h-4 text-indigo-400" />}
-              label="新月时间"
-              value={data.new || "N/A"}
-              className="from-blue-950/40 to-indigo-950/40"
-            />
-            <InfoCard
-              icon={<SunDim className="w-4 h-4 text-yellow-400" />}
-              label="满月时间"
-              value={data.full || "N/A"}
-              className="from-indigo-950/40 to-violet-950/40"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <InfoCard
-              icon={<Crosshair className="w-4 h-4 text-emerald-400" />}
-              label="赤经"
-              value={data.ra || "N/A"}
-              className="from-violet-950/40 to-purple-950/40"
-            />
-            <InfoCard
-              icon={<Crosshair className="w-4 h-4 text-pink-400" />}
-              label="赤纬"
-              value={data.dec || "N/A"}
-              className="from-purple-950/40 to-blue-950/40"
-            />
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-4 p-3 bg-indigo-500/10 rounded-lg border border-indigo-500/20"
-          >
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="text-indigo-200 text-sm">月相</div>
-                <div className="text-white font-semibold">{data.phase}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-indigo-200 text-sm">月亮照明度</div>
-                <div className="text-white font-semibold">{data.light}%</div>
-              </div>
-            </div>
-          </motion.div>
+        <CardContent className="grid grid-cols-2 lg:grid-cols-4 gap-2 pt-2">
+          <InfoCard
+            icon={<Clock className="w-4 h-4 text-sky-400" />}
+            label="过境时间"
+            value={data.transit || "N/A"}
+            className="from-blue-950/40 to-indigo-950/40"
+          />
+          <InfoCard
+            icon={<Compass className="w-4 h-4 text-amber-400" />}
+            label="方位角"
+            value={`${data.az || "N/A"}°`}
+            className="from-indigo-950/40 to-violet-950/40"
+          />
+          <InfoCard
+            icon={<AlignCenter className="w-4 h-4 text-purple-400" />}
+            label="高度角"
+            value={`${data.alt || "N/A"}°`}
+            className="from-violet-950/40 to-purple-950/40"
+          />
+          <InfoCard
+            icon={<BarChart2 className="w-4 h-4 text-cyan-400" />}
+            label="照明度"
+            value={`${data.light}%`}
+            className="from-purple-950/40 to-blue-950/40"
+          />
+          <InfoCard
+            icon={<Calendar className="w-4 h-4 text-indigo-400" />}
+            label="新月时间"
+            value={data.new || "N/A"}
+            className="from-blue-950/40 to-indigo-950/40"
+          />
+          <InfoCard
+            icon={<SunDim className="w-4 h-4 text-yellow-400" />}
+            label="满月时间"
+            value={data.full || "N/A"}
+            className="from-indigo-950/40 to-violet-950/40"
+          />
+          <InfoCard
+            icon={<Crosshair className="w-4 h-4 text-emerald-400" />}
+            label="赤经"
+            value={data.ra || "N/A"}
+            className="from-violet-950/40 to-purple-950/40"
+          />
+          <InfoCard
+            icon={<Crosshair className="w-4 h-4 text-pink-400" />}
+            label="赤纬"
+            value={data.dec || "N/A"}
+            className="from-purple-950/40 to-blue-950/40"
+          />
         </CardContent>
       </Card>
     </motion.div>

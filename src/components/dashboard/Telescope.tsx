@@ -5,21 +5,22 @@ import { motion } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
 import {
   Home,
-  Power,
   ChevronUp,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Compass,
-  Settings2,
   Activity,
   Timer,
-  Target,
   StopCircle,
   ParkingSquare,
   Moon,
   Sun,
-  RefreshCw,
+  Telescope,
+  CircleOff,
+  RotateCcw,
+  Sliders,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import { useTelescopeStore } from "@/store/useTelescopeStore";
 import { Button } from "@/components/ui/button";
@@ -32,15 +33,13 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import { DeviceSelector } from "./device-selector";
 import { useMediaQuery } from "react-responsive";
 import { AnimatePresence } from "framer-motion";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -280,13 +279,65 @@ export function TelescopePage() {
   return (
     <AnimatePresence>
       <motion.div
-        className="h-screen flex flex-col text-white"
+        className="container mx-auto h-[calc(100vh-4rem)] flex flex-col"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
         exit="hidden"
       >
-        <div className="flex-none p-2">
+        {/* Header with connection status */}
+        <div className="flex-none p-4 flex items-center justify-between bg-background/95">
+          <div className="flex items-center gap-2">
+            <Telescope className="h-6 w-6" />
+            <h1 className="text-xl font-bold">望远镜控制</h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={isConnected ? "default" : "outline"}
+                    size="icon"
+                    onClick={isConnected ? handleDisconnect : handleConnect}
+                  >
+                    {isConnected ? (
+                      <Wifi className="h-4 w-4" />
+                    ) : (
+                      <WifiOff className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isConnected ? "断开连接" : "连接设备"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleToggleNightMode}
+                  >
+                    {nightMode ? (
+                      <Moon className="h-4 w-4" />
+                    ) : (
+                      <Sun className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{nightMode ? "切换日间模式" : "切换夜间模式"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
+
+        {/* Device selector and main content */}
+        <div className="flex-none p-4">
           <DeviceSelector
             deviceType="Telescope"
             onDeviceChange={(device) =>
@@ -294,37 +345,31 @@ export function TelescopePage() {
             }
           />
         </div>
-        <motion.div
-          className={`flex-1 grid ${
-            isDesktop
-              ? "grid-cols-[1fr_1.2fr] gap-4 p-2"
-              : "grid-cols-1 gap-2 p-1"
-          }`}
-          variants={{
-            hidden: { opacity: 0 },
-            visible: {
-              opacity: 1,
-              transition: { staggerChildren: 0.1, delayChildren: 0.2 },
-            },
-          }}
-        >
-          {/* Control Panels */}
-          <motion.div variants={itemVariants}>
-            <Card className="bg-gradient-to-br border-white shadow-xl backdrop-blur-md h-full flex flex-col">
+
+        {/* Main control grid */}
+        <div className="flex-1 p-4 overflow-y-auto">
+          <div className={`grid ${isDesktop ? 'grid-cols-2' : 'grid-cols-1'} gap-6`}>
+            {/* Control Panel */}
+            <Card className="bg-background/95 supports-[backdrop-filter]:bg-background/60 shadow-xl">
               <CardHeader>
-                <CardTitle>移动控制</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Sliders className="h-6 w-6" />
+                  控制面板
+                </CardTitle>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col">
-                {/* Direction Controls */}
-                <div className="flex justify-center items-center space-x-4 mb-4">
+              <CardContent>
+                {/* Direction Controls with better visual feedback */}
+                <div className="relative flex justify-center items-center space-x-4 mb-8">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-accent/10 to-transparent rounded-lg -z-10" />
                   <Button
                     variant="outline"
                     onMouseDown={() => handleManualMove("left")}
                     onMouseUp={() => handleManualMove("stop")}
                     disabled={!isConnected}
-                    aria-label="向左移动"
+                    className="relative group"
                   >
-                    <ChevronLeft className="w-6 h-6" />
+                    <ChevronLeft className="w-6 h-6 group-active:scale-90 transition-transform" />
+                    <span className="absolute -bottom-6 text-xs opacity-50">西</span>
                   </Button>
                   <div className="flex flex-col space-y-2">
                     <Button
@@ -332,18 +377,29 @@ export function TelescopePage() {
                       onMouseDown={() => handleManualMove("up")}
                       onMouseUp={() => handleManualMove("stop")}
                       disabled={!isConnected}
-                      aria-label="向上移动"
+                      className="relative group"
                     >
-                      <ChevronUp className="w-6 h-6" />
+                      <ChevronUp className="w-6 h-6 group-active:scale-90 transition-transform" />
+                      <span className="absolute -top-6 text-xs opacity-50">北</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleManualMove("stop")}
+                      disabled={!isConnected}
+                      className="relative"
+                    >
+                      <StopCircle className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="outline"
                       onMouseDown={() => handleManualMove("down")}
                       onMouseUp={() => handleManualMove("stop")}
                       disabled={!isConnected}
-                      aria-label="向下移动"
+                      className="relative group"
                     >
-                      <ChevronDown className="w-6 h-6" />
+                      <ChevronDown className="w-6 h-6 group-active:scale-90 transition-transform" />
+                      <span className="absolute -bottom-6 text-xs opacity-50">南</span>
                     </Button>
                   </div>
                   <Button
@@ -351,15 +407,24 @@ export function TelescopePage() {
                     onMouseDown={() => handleManualMove("right")}
                     onMouseUp={() => handleManualMove("stop")}
                     disabled={!isConnected}
-                    aria-label="向右移动"
+                    className="relative group"
                   >
-                    <ChevronRight className="w-6 h-6" />
+                    <ChevronRight className="w-6 h-6 group-active:scale-90 transition-transform" />
+                    <span className="absolute -bottom-6 text-xs opacity-50">东</span>
                   </Button>
                 </div>
 
-                {/* Speed Controls */}
-                <div className="mb-4">
-                  <Label>移动速度</Label>
+                {/* Speed Controls with visual indicator */}
+                <div className="space-y-4 mb-6">
+                  <div className="flex items-center justify-between">
+                    <Label className="flex items-center gap-2">
+                      <Activity className="w-4 h-4" />
+                      移动速度
+                    </Label>
+                    <Badge variant="outline" className="text-xs">
+                      {speedTotalNum[speedNum]}x
+                    </Badge>
+                  </div>
                   <div className="flex items-center space-x-2">
                     <Slider
                       value={[speedNum]}
@@ -367,53 +432,36 @@ export function TelescopePage() {
                       max={speedTotalNum.length - 1}
                       step={1}
                       className="flex-1"
-                      aria-label="移动速度滑块"
                     />
-                    <div className="w-20 text-center">
-                      {speedTotalNum[speedNum]}x
-                    </div>
-                  </div>
-                  {/* Increment and Decrement Speed */}
-                  <div className="flex justify-between mt-2">
-                    <Button
-                      variant="secondary"
-                      onClick={handleDecrementSpeed}
-                      disabled={!isConnected || speedNum === 0}
-                      aria-label="降低速度"
-                    >
-                      -
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={handleIncrementSpeed}
-                      disabled={
-                        !isConnected || speedNum === speedTotalNum.length - 1
-                      }
-                      aria-label="提高速度"
-                    >
-                      +
-                    </Button>
                   </div>
                 </div>
 
-                {/* Park & Home Controls */}
-                <div className="flex justify-between space-x-2">
+                {/* Action Buttons */}
+                <div className="grid grid-cols-2 gap-4">
                   <Button
-                    variant="outline"
+                    variant={parkSwitch ? "default" : "outline"}
                     onClick={toggleParkSwitch}
                     disabled={!isConnected}
-                    aria-label={parkSwitch ? "取消停靠" : "停靠"}
+                    className="flex items-center gap-2"
                   >
-                    <ParkingSquare className="w-4 h-4 mr-2" />
-                    {parkSwitch ? "取消停靠" : "停靠"}
+                    {parkSwitch ? (
+                      <CircleOff className="w-4 h-4" />
+                    ) : (
+                      <ParkingSquare className="w-4 h-4" />
+                    )}
+                    {parkSwitch ? "取消停靠" : "停靠位置"}
                   </Button>
                   <Button
-                    variant="outline"
+                    variant={homeSwitch ? "default" : "outline"}
                     onClick={toggleHomeSwitch}
                     disabled={!isConnected}
-                    aria-label={homeSwitch ? "取消归位" : "归位"}
+                    className="flex items-center gap-2"
                   >
-                    <Home className="w-4 h-4 mr-2" />
+                    {homeSwitch ? (
+                      <RotateCcw className="w-4 h-4" />
+                    ) : (
+                      <Home className="w-4 h-4" />
+                    )}
                     {homeSwitch ? "取消归位" : "归位"}
                   </Button>
                 </div>
@@ -421,7 +469,7 @@ export function TelescopePage() {
             </Card>
 
             {/* Tracking Settings */}
-            <Card className="bg-gradient-to-br border-white shadow-xl backdrop-blur-md mt-6">
+            <Card className="bg-background/95 supports-[backdrop-filter]:bg-background/60 shadow-xl mt-6">
               <CardHeader>
                 <CardTitle>追踪设置</CardTitle>
               </CardHeader>
@@ -456,7 +504,7 @@ export function TelescopePage() {
             </Card>
 
             {/* Advanced Options */}
-            <Card className="bg-gradient-to-br border-white shadow-xl backdrop-blur-md mt-6">
+            <Card className="bg-background/95 supports-[backdrop-filter]:bg-background/60 shadow-xl mt-6">
               <CardHeader>
                 <CardTitle>高级选项</CardTitle>
               </CardHeader>
@@ -476,12 +524,12 @@ export function TelescopePage() {
                 </p>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
 
-          {/* Information Panels */}
-          <motion.div variants={itemVariants}>
+          {/* 右侧信息面板 */}
+          <div className="space-y-6">
             {/* Current Position */}
-            <Card className="bg-gradient-to-br border-white shadow-xl backdrop-blur-md">
+            <Card className="bg-background/95 supports-[backdrop-filter]:bg-background/60 shadow-xl">
               <CardHeader>
                 <CardTitle>当前位置</CardTitle>
               </CardHeader>
@@ -508,7 +556,7 @@ export function TelescopePage() {
             </Card>
 
             {/* Telescope Info */}
-            <Card className="bg-gradient-to-br border-white shadow-xl backdrop-blur-md mt-6">
+            <Card className="bg-background/95 supports-[backdrop-filter]:bg-background/60 shadow-xl">
               <CardHeader>
                 <CardTitle>望远镜信息</CardTitle>
               </CardHeader>
@@ -543,7 +591,7 @@ export function TelescopePage() {
             </Card>
 
             {/* Status Info */}
-            <Card className="bg-gradient-to-br border-white shadow-xl backdrop-blur-md mt-6">
+            <Card className="bg-background/95 supports-[backdrop-filter]:bg-background/60 shadow-xl">
               <CardHeader>
                 <CardTitle>状态信息</CardTitle>
               </CardHeader>
@@ -584,8 +632,8 @@ export function TelescopePage() {
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </motion.div>
     </AnimatePresence>
   );

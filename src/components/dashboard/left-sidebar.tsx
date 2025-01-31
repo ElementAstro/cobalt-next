@@ -20,7 +20,7 @@ export interface SidebarItem {
 }
 
 interface SidebarProps {
-  devices: SidebarItem [];
+  devices: SidebarItem[];
   onToggle: (id: string) => void;
 }
 
@@ -72,43 +72,37 @@ export default function Sidebar({ devices, onToggle }: SidebarProps) {
   return (
     <TooltipProvider>
       <motion.div
-        className="p-2 border-r border-gray-700 flex flex-col items-center justify-start space-y-4 text-white max-h-screen bg-gray-900"
+        className="w-12 md:w-14 p-1.5 border-r border-gray-700/50 bg-gray-900/90 backdrop-blur-sm flex flex-col items-center justify-start gap-2 h-[calc(100vh-3rem)] sticky top-12"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        whileHover={{ width: "5rem" }}
-        transition={{ type: "spring", stiffness: 300 }}
       >
         <motion.div
-          className="flex-1 w-full overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800"
+          className="flex-1 w-full overflow-y-auto scrollbar-none"
           variants={scrollVariants}
-          initial="hidden"
-          animate="visible"
         >
           {devices.map((device) => {
-            const Icon = getIconComponent(device.icon.toLowerCase());
+            const DeviceIcon = getIconComponent(device.icon);
             return (
-              <motion.div key={device.id} variants={itemVariants}>
+              <motion.div key={device.id} className="mb-1.5" variants={itemVariants}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <motion.div
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      transition={{ type: "spring", stiffness: 300 }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                     >
                       <Button
-                        variant={device.active ? "default" : "secondary"}
+                        variant={device.active ? "default" : "ghost"}
                         size="icon"
                         onClick={() => {
                           onToggle(device.id);
                           router.push(device.route);
                         }}
-                        className={`w-12 h-12 relative ${
-                          device.active ? "bg-primary text-primary-foreground" : ""
+                        className={`w-9 h-9 relative ${
+                          device.active ? "bg-primary/20" : ""
                         }`}
-                        aria-label={device.name}
                       >
-                        <Icon className="h-6 w-6" />
+                        <DeviceIcon className="h-6 w-6" />
                         {device.active && (
                           <motion.span
                             className="absolute -bottom-1 w-2 h-2 bg-green-500 rounded-full"

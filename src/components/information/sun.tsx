@@ -75,7 +75,7 @@ export function Sun() {
       variants={sunInfoVariants}
       initial="hidden"
       animate="visible"
-      className="bg-gradient-to-br from-amber-950/90 to-gray-900/95 p-4 rounded-xl shadow-xl border border-amber-800/20 backdrop-blur-sm relative overflow-hidden"
+      className="bg-gradient-to-br from-amber-950/90 to-gray-900/95 rounded-lg border border-amber-800/20 backdrop-blur-sm p-2 lg:p-4 h-[calc(100vh-4rem)]"
     >
       <motion.div
         className="absolute inset-0 pointer-events-none"
@@ -94,89 +94,74 @@ export function Sun() {
         ))}
       </motion.div>
 
-      <Card className="bg-transparent border-0 shadow-none">
+      <Card className="bg-transparent border-0 shadow-none h-full">
         <CardHeader className="pb-2">
-          <motion.div className="relative">
-            <motion.div
-              className="absolute -inset-4 bg-amber-500/20 rounded-full blur-2xl"
-              variants={glowVariants}
-              initial="initial"
-              animate="animate"
-            />
-            <motion.div
-              className="flex items-start gap-6"
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <div className="relative w-28 h-28">
-                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 blur-lg opacity-20" />
-                <Image
-                  src="/assets/img/sun.png"
-                  alt="Sun"
-                  layout="fill"
-                  objectFit="contain"
-                  className="relative z-10 drop-shadow-2xl"
-                />
-              </div>
-              <div className="flex-1">
-                <CardTitle className="text-2xl font-bold text-amber-100 mb-2 flex items-center gap-2">
-                  <SunIcon className="w-6 h-6 text-amber-400" />
-                  太阳信息
-                </CardTitle>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-center gap-2">
-                    <Sunrise className="w-5 h-5 text-amber-400" />
-                    <div>
-                      <div className="text-amber-200 text-sm">日出时间</div>
-                      <div className="text-white font-semibold">
-                        {celestialData.sun.rise}
-                      </div>
+          <div className="flex flex-col lg:flex-row items-start gap-4">
+            <motion.div className="relative w-20 h-20 lg:w-28 lg:h-28">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 blur-lg opacity-20" />
+              <Image
+                src="/assets/img/sun.png"
+                alt="Sun"
+                layout="fill"
+                objectFit="contain"
+                className="relative z-10 drop-shadow-2xl"
+              />
+            </motion.div>
+            <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-2">
+              <CardTitle className="text-2xl font-bold text-amber-100 mb-2 flex items-center gap-2">
+                <SunIcon className="w-6 h-6 text-amber-400" />
+                太阳信息
+              </CardTitle>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center gap-2">
+                  <Sunrise className="w-5 h-5 text-amber-400" />
+                  <div>
+                    <div className="text-amber-200 text-sm">日出时间</div>
+                    <div className="text-white font-semibold">
+                      {celestialData.sun.rise}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Sunset className="w-5 h-5 text-amber-400" />
-                    <div>
-                      <div className="text-amber-200 text-sm">日落时间</div>
-                      <div className="text-white font-semibold">
-                        {celestialData.sun.set}
-                      </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Sunset className="w-5 h-5 text-amber-400" />
+                  <div>
+                    <div className="text-amber-200 text-sm">日落时间</div>
+                    <div className="text-white font-semibold">
+                      {celestialData.sun.set}
                     </div>
                   </div>
                 </div>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </CardHeader>
 
-        <CardContent className="pt-4">
-          <div className="grid grid-cols-3 gap-2">
-            <TimeCard
-              label="天文晨光"
-              time={celestialData.sun.at_start}
-              type="dawn"
-            />
-            <TimeCard
-              label="民用晨光"
-              time={celestialData.sun.ct_start}
-              type="dawn"
-            />
-            <TimeCard
-              label="中天"
-              time={celestialData.sun.transit}
-              type="noon"
-            />
-            <TimeCard
-              label="民用暮光"
-              time={celestialData.sun.ct_end}
-              type="dusk"
-            />
-            <TimeCard
-              label="天文暮光"
-              time={celestialData.sun.at_end}
-              type="dusk"
-            />
-          </div>
+        <CardContent className="grid grid-cols-2 lg:grid-cols-5 gap-2 pt-2">
+          <TimeCard
+            label="天文晨光"
+            time={celestialData.sun.at_start}
+            type="dawn"
+          />
+          <TimeCard
+            label="民用晨光"
+            time={celestialData.sun.ct_start}
+            type="dawn"
+          />
+          <TimeCard
+            label="中天"
+            time={celestialData.sun.transit}
+            type="noon"
+          />
+          <TimeCard
+            label="民用暮光"
+            time={celestialData.sun.ct_end}
+            type="dusk"
+          />
+          <TimeCard
+            label="天文暮光"
+            time={celestialData.sun.at_end}
+            type="dusk"
+          />
         </CardContent>
       </Card>
     </motion.div>

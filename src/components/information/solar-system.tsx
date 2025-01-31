@@ -120,7 +120,7 @@ export function SolarSystem() {
   return (
     <>
       <motion.div
-        className="relative bg-gradient-to-br from-purple-950/90 to-gray-900/95 rounded-xl shadow-xl border border-purple-800/20 backdrop-blur-sm p-4 overflow-hidden min-h-[calc(100vh-4rem)]"
+        className="bg-gradient-to-br from-purple-950/90 to-gray-900/95 rounded-lg border border-purple-800/20 backdrop-blur-sm p-2 lg:p-4 h-[calc(100vh-4rem)]"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -158,11 +158,11 @@ export function SolarSystem() {
             />
           ))}
         </motion.div>
-        <Card className="bg-transparent border-0 shadow-none">
+        <Card className="bg-transparent border-0 shadow-none h-full">
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl font-bold text-purple-100 flex items-center gap-2">
+            <CardTitle className="text-lg font-bold text-purple-100 flex items-center gap-2">
               <motion.div
-                className="w-6 h-6 text-purple-400"
+                className="w-5 h-5 text-purple-400"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
               >
@@ -171,8 +171,8 @@ export function SolarSystem() {
               太阳系行星
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <CardContent className="h-[calc(100%-4rem)] overflow-y-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 lg:gap-4">
               {data.solarSystem.planets.map((planet, index) => (
                 <motion.div
                   key={planet.name}

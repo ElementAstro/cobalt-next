@@ -254,57 +254,32 @@ export function NetworkStatus() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <motion.div
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          className="relative"
+        <motion.button
+          className="flex items-center space-x-2 px-2 py-1 rounded-md bg-gray-800/40 backdrop-blur hover:bg-gray-700/40"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          <Button
-            className={cn(
-              "p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors group relative",
-              statusColors[status]
-            )}
-            aria-label="Network Status"
-            disabled={isRefreshing}
-          >
-            <AnimatePresence mode="wait">
-              {isRefreshing ? (
-                <motion.div
-                  key="loading"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="absolute inset-0 flex items-center justify-center"
-                >
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="icon"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="flex items-center"
-                >
-                  {getStatusIcon()}
-                  <RefreshCw
-                    className="h-4 w-4 ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={handleRefresh}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </Button>
-        </motion.div>
+          <div className={cn("flex items-center space-x-1", statusColors[status])}>
+            {getStatusIcon()}
+            <div className="text-xs font-medium text-gray-200">
+              {currentSpeed.download.toFixed(1)} Mb/s
+            </div>
+          </div>
+        </motion.button>
       </PopoverTrigger>
-      <PopoverContent className="w-[90vw] max-w-[400px] p-4">
-        <Tabs defaultValue="speed">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="speed">Speed</TabsTrigger>
-            <TabsTrigger value="info">Info</TabsTrigger>
-            <TabsTrigger value="usage">Usage</TabsTrigger>
-          </TabsList>
 
+      <PopoverContent 
+        className="w-[340px] p-3" 
+        sideOffset={5}
+        align="end"
+      >
+        <Tabs defaultValue="speed" className="w-full">
+          <TabsList className="grid grid-cols-3 h-8 mb-2">
+            <TabsTrigger value="speed" className="text-xs">速度</TabsTrigger>
+            <TabsTrigger value="info" className="text-xs">信息</TabsTrigger>
+            <TabsTrigger value="usage" className="text-xs">用量</TabsTrigger>
+          </TabsList>
+          
           <TabsContent value="speed">
             <motion.div
               initial={{ opacity: 0, y: 10 }}

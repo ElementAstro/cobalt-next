@@ -19,6 +19,7 @@ import {
   Pause,
   StopCircle,
   Clock12,
+  Clock,
 } from "lucide-react";
 import { Howl } from "howler";
 import { motion, AnimatePresence } from "framer-motion";
@@ -364,27 +365,30 @@ export default function WindowsTaskbarClock() {
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <motion.div
-          className={`flex items-center justify-center ${
-            isDarkMode ? "bg-gray-800 text-white" : "bg-gray-200 text-black"
-          } px-3 py-1 rounded-sm hover:bg-opacity-80 transition-colors duration-200 cursor-default select-none`}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          className="flex items-center space-x-2 px-2 py-1 rounded-md bg-gray-800/40 backdrop-blur hover:bg-gray-700/40 cursor-default select-none"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          <div className="text-xs font-semibold">
-            <div>{formatTime(currentTime)}</div>
-            <div>{formatDate(currentTime).split(",")[0]}</div>
+          <Clock className="h-4 w-4 text-gray-400" />
+          <div className="text-xs font-medium text-gray-200">
+            <div>{formatTime(currentTime, timeFormat)}</div>
+            <div className="text-gray-400">{formatDate(currentTime)}</div>
           </div>
         </motion.div>
       </PopoverTrigger>
-      <PopoverContent className="w-96">
+      <PopoverContent 
+        className="w-[340px] p-3" 
+        sideOffset={5}
+        align="end"
+      >
         <Tabs defaultValue="datetime" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="datetime">日期时间</TabsTrigger>
-            <TabsTrigger value="alarms">闹钟</TabsTrigger>
-            <TabsTrigger value="stopwatch">秒表</TabsTrigger>
-            <TabsTrigger value="settings">设置</TabsTrigger>
-            <TabsTrigger value="worldclock">世界时钟</TabsTrigger>
+          <TabsList className="grid grid-cols-4 h-8 mb-2">
+            <TabsTrigger value="datetime" className="text-xs">时间</TabsTrigger>
+            <TabsTrigger value="alarms" className="text-xs">闹钟</TabsTrigger>
+            <TabsTrigger value="stopwatch" className="text-xs">秒表</TabsTrigger>
+            <TabsTrigger value="settings" className="text-xs">设置</TabsTrigger>
           </TabsList>
+          
           <TabsContent value="datetime">
             <AnimatePresence>
               <motion.div

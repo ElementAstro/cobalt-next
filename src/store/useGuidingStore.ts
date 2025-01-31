@@ -1,5 +1,9 @@
 import { CustomColors, GuideSettings, TrackingParams } from "@/types/guiding";
-import { CalibrationPreset, CalibrationData, CalibrationSettings } from "@/types/guiding/calibration";
+import {
+  CalibrationPreset,
+  CalibrationData,
+  CalibrationSettings,
+} from "@/types/guiding/calibration";
 import { DarkFieldState } from "@/types/guiding/darkfield";
 import { create } from "zustand";
 import { toast } from "@/hooks/use-toast";
@@ -82,7 +86,7 @@ interface GuidingStore {
     startCreation: () => Promise<void>;
     cancelCreation: () => void;
     setMinExposure: (value: number) => void;
-    setMaxExposure: (value: number) => void; 
+    setMaxExposure: (value: number) => void;
     setFramesPerExposure: (value: number) => void;
     setLibraryType: (value: "modify" | "create") => void;
     setIsoValue: (value: number) => void;
@@ -122,16 +126,21 @@ const defaultDarkFieldState: DarkFieldState = {
     currentExposure: 0,
     estimatedTimeLeft: 0,
     currentTemperature: 0,
-    stage: 'preparing',
-    warnings: []
+    stage: "preparing",
+    warnings: [],
+    performance: {
+      frameRate: 0,
+      processingTime: 0,
+      savingTime: 0,
+    },
   },
   isPaused: false,
   validationErrors: [],
   validationWarnings: [],
   diskSpace: {
     total: 0,
-    used: 0, 
-    available: 0
+    used: 0,
+    available: 0,
   },
   isMockMode: false,
   darkFrameCount: 50,
@@ -140,20 +149,37 @@ const defaultDarkFieldState: DarkFieldState = {
   statistics: {
     totalFrames: 0,
     averageExposure: 0,
-    lastCreated: '',
+    lastCreated: "",
     librarySize: 0,
     totalTime: 0,
     avgTemperature: 0,
     successRate: 0,
-    compression: 0
+    compression: 0,
   },
-  history: []
+  history: [],
+  performance: {
+    cpuUsage: 0,
+    memoryUsage: 0,
+    diskActivity: 0,
+    networkSpeed: 0,
+  },
+  calibration: {
+    isCalibrated: false,
+    lastCalibration: "",
+    calibrationData: {},
+  },
+  systemStatus: {
+    isCameraConnected: false,
+    isTemperatureStable: false,
+    isFocusLocked: false,
+    batteryLevel: 0,
+  },
 };
 
 export const useGuidingStore = create<GuidingStore>((set, get) => {
   const api = APIFactory.createDarkFieldAPI();
   let progressTimer: NodeJS.Timeout | null = null;
-  
+
   return {
     settings: {
       radius: 2.0,
@@ -433,14 +459,21 @@ export const useGuidingStore = create<GuidingStore>((set, get) => {
             isError: false,
             progress: {
               currentFrame: 0,
-              totalFrames: state.darkField.darkFrameCount * state.darkField.framesPerExposure,
+              totalFrames:
+                state.darkField.darkFrameCount *
+                state.darkField.framesPerExposure,
               currentExposure: state.darkField.minExposure,
               estimatedTimeLeft: 0,
               currentTemperature: 0,
-              stage: 'preparing',
-              warnings: []
-            }
-          }
+              stage: "preparing",
+              warnings: [],
+              performance: {
+                frameRate: 0,
+                processingTime: 0,
+                savingTime: 0,
+              },
+            },
+          },
         }));
         toast({
           title: "设置已重置",
@@ -452,110 +485,146 @@ export const useGuidingStore = create<GuidingStore>((set, get) => {
           toast({
             title: "创建已在进行中",
             description: "请稍后再试",
-            variant: "destructive"
+            variant: "destructive",
           });
           return;
         }
 
         set((state) => ({
           darkField: {
-            ...state.darkField, 
+            ...state.darkField,
             isLoading: true,
             isSuccess: false,
             isError: false,
             progress: {
               currentFrame: 0,
-              totalFrames: state.darkField.darkFrameCount * state.darkField.framesPerExposure,
+              totalFrames:
+                state.darkField.darkFrameCount *
+                state.darkField.framesPerExposure,
               currentExposure: state.darkField.minExposure,
               estimatedTimeLeft: 0,
               currentTemperature: state.darkField.targetTemperature,
-              stage: 'preparing',
-              warnings: []
-            }
-          }
+              stage: "preparing",
+              warnings: [],
+              performance: {
+                frameRate: 0,
+                processingTime: 0,
+                savingTime: 0,
+              },
+            },
+          },
         }));
-      
+
         try {
-          const { 
-            minExposure, maxExposure, framesPerExposure,
-            libraryType, isoValue, binningMode,
-            targetTemperature, gainValue, offsetValue 
-          } = get().darkField;
-      
-          await api.createDarkField({
+          const {
             minExposure,
-            maxExposure, 
+            maxExposure,
             framesPerExposure,
             libraryType,
             isoValue,
             binningMode,
             targetTemperature,
             gainValue,
-            offsetValue
+            offsetValue,
+          } = get().darkField;
+
+          await api.createDarkField({
+            minExposure,
+            maxExposure,
+            framesPerExposure,
+            libraryType,
+            isoValue,
+            binningMode,
+            targetTemperature,
+            gainValue,
+            offsetValue,
           });
-      
+
           // 进度模拟实现
           const totalTime = maxExposure * framesPerExposure * 1000; // 假设 maxExposure 是以秒为单位
           let currentTime = 0;
           const updateInterval = 1000; // 每秒更新一次
-      
+
           progressTimer = setInterval(() => {
             currentTime += updateInterval;
             const progress = currentTime / totalTime;
-            
+
             if (progress >= 1) {
               if (progressTimer) {
                 clearInterval(progressTimer);
                 progressTimer = null;
               }
-              set(state => ({
+              set((state) => ({
                 darkField: {
                   ...state.darkField,
                   isLoading: false,
                   isSuccess: true,
                   progress: {
-                    currentFrame: state.darkField.darkFrameCount * state.darkField.framesPerExposure,
-                    totalFrames: state.darkField.darkFrameCount * state.darkField.framesPerExposure,
+                    currentFrame:
+                      state.darkField.darkFrameCount *
+                      state.darkField.framesPerExposure,
+                    totalFrames:
+                      state.darkField.darkFrameCount *
+                      state.darkField.framesPerExposure,
                     currentExposure: maxExposure,
                     estimatedTimeLeft: 0,
                     currentTemperature: targetTemperature,
-                    stage: 'completed',
-                    warnings: []
-                  }
-                }
+                    stage: "completed",
+                    warnings: [],
+                    performance: {
+                      frameRate: 0,
+                      processingTime: 0,
+                      savingTime: 0,
+                    },
+                  },
+                },
               }));
-      
+
               toast({
                 title: "创建成功",
-                description: "暗场库创建完成"
+                description: "暗场库创建完成",
               });
-      
+
               return;
             }
-      
-            set(state => ({
+
+            set((state) => ({
               darkField: {
                 ...state.darkField,
                 progress: {
-                  currentFrame: Math.floor(progress * state.darkField.darkFrameCount * state.darkField.framesPerExposure),
-                  totalFrames: state.darkField.darkFrameCount * state.darkField.framesPerExposure,
-                  currentExposure: minExposure + (maxExposure - minExposure) * progress,
-                  estimatedTimeLeft: Math.max(0, (totalTime - currentTime) / 1000), // 以秒为单位
+                  currentFrame: Math.floor(
+                    progress *
+                      state.darkField.darkFrameCount *
+                      state.darkField.framesPerExposure
+                  ),
+                  totalFrames:
+                    state.darkField.darkFrameCount *
+                    state.darkField.framesPerExposure,
+                  currentExposure:
+                    minExposure + (maxExposure - minExposure) * progress,
+                  estimatedTimeLeft: Math.max(
+                    0,
+                    (totalTime - currentTime) / 1000
+                  ), // 以秒为单位
                   currentTemperature: targetTemperature,
-                  stage: 'capturing',
-                  warnings: progress > 0.8 ? ['即将完成'] : []
-                }
-              }
+                  stage: "capturing",
+                  warnings: progress > 0.8 ? ["即将完成"] : [],
+                  performance: {
+                    frameRate: 0,
+                    processingTime: 0,
+                    savingTime: 0,
+                  },
+                },
+              },
             }));
           }, updateInterval);
-      
         } catch (error) {
           if (progressTimer) {
             clearInterval(progressTimer);
             progressTimer = null;
           }
 
-          set(state => ({
+          set((state) => ({
             darkField: {
               ...state.darkField,
               isLoading: false,
@@ -563,16 +632,16 @@ export const useGuidingStore = create<GuidingStore>((set, get) => {
               errorMessage: error instanceof Error ? error.message : "创建失败",
               progress: {
                 ...state.darkField.progress,
-                stage: 'error',
-                warnings: [error instanceof Error ? error.message : "未知错误"]
-              }
-            }
+                stage: "error",
+                warnings: [error instanceof Error ? error.message : "未知错误"],
+              },
+            },
           }));
-      
+
           toast({
             title: "创建失败",
             description: error instanceof Error ? error.message : "未知错误",
-            variant: "destructive"
+            variant: "destructive",
           });
         }
       },
@@ -580,7 +649,7 @@ export const useGuidingStore = create<GuidingStore>((set, get) => {
         if (progressTimer) {
           clearInterval(progressTimer);
           progressTimer = null;
-          set(state => ({
+          set((state) => ({
             darkField: {
               ...state.darkField,
               isLoading: false,
@@ -588,97 +657,97 @@ export const useGuidingStore = create<GuidingStore>((set, get) => {
               errorMessage: "创建已取消",
               progress: {
                 ...state.darkField.progress,
-                stage: 'cancelled',
-                warnings: ["创建已取消"]
-              }
-            }
+                stage: "cancelled",
+                warnings: ["创建已取消"],
+              },
+            },
           }));
           toast({
             title: "创建已取消",
             description: "暗场库创建已被取消",
-            variant: "destructive"
+            variant: "destructive",
           });
         } else {
           toast({
             title: "没有正在进行的创建任务",
             description: "当前没有暗场库创建任务可以取消",
-            variant: "default"
+            variant: "default",
           });
         }
       },
-      setMinExposure: (value) => 
+      setMinExposure: (value) =>
         set((state) => ({
-          darkField: { ...state.darkField, minExposure: value }
+          darkField: { ...state.darkField, minExposure: value },
         })),
-        
+
       setMaxExposure: (value) =>
         set((state) => ({
-          darkField: { ...state.darkField, maxExposure: value }
+          darkField: { ...state.darkField, maxExposure: value },
         })),
-        
+
       setFramesPerExposure: (value) =>
         set((state) => ({
-          darkField: { ...state.darkField, framesPerExposure: value }
+          darkField: { ...state.darkField, framesPerExposure: value },
         })),
-        
+
       setLibraryType: (value) =>
         set((state) => ({
-          darkField: { ...state.darkField, libraryType: value }
+          darkField: { ...state.darkField, libraryType: value },
         })),
-        
+
       setIsoValue: (value) =>
         set((state) => ({
-          darkField: { ...state.darkField, isoValue: value }
+          darkField: { ...state.darkField, isoValue: value },
         })),
-        
+
       setBinningMode: (value) =>
         set((state) => ({
-          darkField: { ...state.darkField, binningMode: value }
+          darkField: { ...state.darkField, binningMode: value },
         })),
-        
+
       setCoolingEnabled: (value) =>
         set((state) => ({
-          darkField: { ...state.darkField, coolingEnabled: value }
+          darkField: { ...state.darkField, coolingEnabled: value },
         })),
-        
+
       setTargetTemperature: (value) =>
         set((state) => ({
-          darkField: { ...state.darkField, targetTemperature: value }
+          darkField: { ...state.darkField, targetTemperature: value },
         })),
-        
+
       setIsMockMode: (value) =>
         set((state) => ({
-          darkField: { ...state.darkField, isMockMode: value }
+          darkField: { ...state.darkField, isMockMode: value },
         })),
-        
+
       setDarkFrameCount: (value) =>
         set((state) => ({
-          darkField: { ...state.darkField, darkFrameCount: value }
+          darkField: { ...state.darkField, darkFrameCount: value },
         })),
-        
+
       setGainValue: (value) =>
         set((state) => ({
-          darkField: { ...state.darkField, gainValue: value }
+          darkField: { ...state.darkField, gainValue: value },
         })),
-        
+
       setOffsetValue: (value) =>
         set((state) => ({
-          darkField: { ...state.darkField, offsetValue: value }
+          darkField: { ...state.darkField, offsetValue: value },
         })),
       fetchStatistics: async () => {
         try {
           const response = await api.getStatistics();
-          set(state => ({
+          set((state) => ({
             darkField: {
               ...state.darkField,
-              statistics: response
-            }
+              statistics: response,
+            },
           }));
         } catch (error) {
           toast({
             title: "获取统计数据失败",
             description: error instanceof Error ? error.message : "未知错误",
-            variant: "destructive"
+            variant: "destructive",
           });
         }
       },
@@ -686,17 +755,17 @@ export const useGuidingStore = create<GuidingStore>((set, get) => {
       fetchHistory: async (days: number) => {
         try {
           const response = await api.getHistory(days);
-          set(state => ({
+          set((state) => ({
             darkField: {
               ...state.darkField,
-              history: response
-            }
+              history: response,
+            },
           }));
         } catch (error) {
           toast({
             title: "获取历史数据失败",
             description: error instanceof Error ? error.message : "未知错误",
-            variant: "destructive"
+            variant: "destructive",
           });
         }
       },
@@ -705,38 +774,40 @@ export const useGuidingStore = create<GuidingStore>((set, get) => {
         try {
           const blob = await api.exportReport();
           const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
+          const a = document.createElement("a");
           a.href = url;
-          a.download = `darkfield-report-${new Date().toISOString().split('T')[0]}.json`;
+          a.download = `darkfield-report-${
+            new Date().toISOString().split("T")[0]
+          }.json`;
           a.click();
           URL.revokeObjectURL(url);
-          
+
           toast({
             title: "导出成功",
-            description: "报告已成功导出"
+            description: "报告已成功导出",
           });
         } catch (error) {
           toast({
             title: "导出失败",
             description: error instanceof Error ? error.message : "未知错误",
-            variant: "destructive"
+            variant: "destructive",
           });
         }
       },
       pauseCreation: async () => {
         try {
           await api.pauseCreation();
-          set(state => ({
+          set((state) => ({
             darkField: {
               ...state.darkField,
-              isPaused: true
-            }
+              isPaused: true,
+            },
           }));
         } catch (error) {
           toast({
             title: "暂停失败",
             description: error instanceof Error ? error.message : "未知错误",
-            variant: "destructive"
+            variant: "destructive",
           });
         }
       },
@@ -744,17 +815,17 @@ export const useGuidingStore = create<GuidingStore>((set, get) => {
       resumeCreation: async () => {
         try {
           await api.resumeCreation();
-          set(state => ({
+          set((state) => ({
             darkField: {
-              ...state.darkField, 
-              isPaused: false
-            }
+              ...state.darkField,
+              isPaused: false,
+            },
           }));
         } catch (error) {
           toast({
             title: "恢复失败",
-            description: error instanceof Error ? error.message : "未知错误", 
-            variant: "destructive"
+            description: error instanceof Error ? error.message : "未知错误",
+            variant: "destructive",
           });
         }
       },
@@ -767,20 +838,19 @@ export const useGuidingStore = create<GuidingStore>((set, get) => {
             maxExposure: state.maxExposure,
             // ...other settings
           });
-          
-          set(state => ({
+
+          set((state) => ({
             darkField: {
               ...state.darkField,
               validationErrors: result.errors,
-              validationWarnings: result.warnings
-            }
+              validationWarnings: result.warnings,
+            },
           }));
-
         } catch (error) {
           toast({
             title: "验证失败",
             description: error instanceof Error ? error.message : "未知错误",
-            variant: "destructive" 
+            variant: "destructive",
           });
         }
       },
@@ -788,21 +858,21 @@ export const useGuidingStore = create<GuidingStore>((set, get) => {
       getDiskSpace: async () => {
         try {
           const space = await api.getDiskSpace();
-          set(state => ({
+          set((state) => ({
             darkField: {
               ...state.darkField,
-              diskSpace: space
-            }
+              diskSpace: space,
+            },
           }));
         } catch (error) {
           toast({
             title: "获取磁盘空间失败",
             description: error instanceof Error ? error.message : "未知错误",
-            variant: "destructive"
+            variant: "destructive",
           });
         }
-      }
-    }
+      },
+    },
   };
 });
 

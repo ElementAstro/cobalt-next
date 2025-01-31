@@ -42,6 +42,23 @@ export interface DarkFieldState {
     used: number;
     available: number;
   };
+  performance: {
+    cpuUsage: number;
+    memoryUsage: number;
+    diskActivity: number;
+    networkSpeed: number;
+  };
+  calibration: {
+    isCalibrated: boolean;
+    lastCalibration: string;
+    calibrationData: Record<string, unknown>;
+  };
+  systemStatus: {
+    isCameraConnected: boolean;
+    isTemperatureStable: boolean;
+    isFocusLocked: boolean;
+    batteryLevel: number;
+  };
 }
 
 export interface DarkFieldActions {
@@ -127,6 +144,11 @@ export interface DarkFieldProgress {
   currentExposure: number;
   estimatedTimeLeft: number;
   currentTemperature: number;
-  stage: 'preparing' | 'capturing' | 'processing' | 'saving' | 'completed' | 'error' | 'cancelled';
+  stage: 'preparing' | 'capturing' | 'processing' | 'saving' | 'completed' | 'error' | 'cancelled' | 'paused';
   warnings: string[];
+  performance: {
+    frameRate: number;
+    processingTime: number;
+    savingTime: number;
+  };
 }
