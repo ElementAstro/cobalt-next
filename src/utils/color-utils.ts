@@ -1,32 +1,28 @@
 export function generateAnalogousPalette(baseColor: string): string[] {
-  // Convert hex to HSL
-  let hsl = hexToHsl(baseColor);
+  const hsl = hexToHSL(baseColor);
+  const colors: string[] = [];
 
-  // Generate analogous colors
-  return [
-    hslToHex({ h: (hsl.h + 330) % 360, s: hsl.s, l: hsl.l }),
-    hslToHex({ h: (hsl.h + 345) % 360, s: hsl.s, l: hsl.l }),
-    baseColor,
-    hslToHex({ h: (hsl.h + 15) % 360, s: hsl.s, l: hsl.l }),
-    hslToHex({ h: (hsl.h + 30) % 360, s: hsl.s, l: hsl.l }),
-  ];
+  for (let i = -2; i <= 2; i++) {
+    const h = (hsl.h + i * 30 + 360) % 360;
+    colors.push(hslToHex({ h, s: hsl.s, l: hsl.l }));
+  }
+
+  return colors;
 }
 
 export function generateMonochromaticPalette(baseColor: string): string[] {
-  // Convert hex to HSL
-  let hsl = hexToHsl(baseColor);
+  const hsl = hexToHSL(baseColor);
+  const colors: string[] = [];
 
-  // Generate monochromatic colors
-  return [
-    hslToHex({ h: hsl.h, s: hsl.s, l: Math.max(0, hsl.l - 0.2) }),
-    hslToHex({ h: hsl.h, s: hsl.s, l: Math.max(0, hsl.l - 0.1) }),
-    baseColor,
-    hslToHex({ h: hsl.h, s: hsl.s, l: Math.min(1, hsl.l + 0.1) }),
-    hslToHex({ h: hsl.h, s: hsl.s, l: Math.min(1, hsl.l + 0.2) }),
-  ];
+  for (let i = 0; i < 5; i++) {
+    const l = Math.max(0, Math.min(100, hsl.l - 20 + i * 10));
+    colors.push(hslToHex({ h: hsl.h, s: hsl.s, l }));
+  }
+
+  return colors;
 }
 
-function hexToHsl(hex: string): { h: number; s: number; l: number } {
+function hexToHSL(hex: string): { h: number; s: number; l: number } {
   let r = parseInt(hex.slice(1, 3), 16) / 255;
   let g = parseInt(hex.slice(3, 5), 16) / 255;
   let b = parseInt(hex.slice(5, 7), 16) / 255;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Icons from "lucide-react";
 import { Label } from "@/components/ui/label";
@@ -23,28 +23,33 @@ import {
 import { Setting, SettingValue } from "@/types/config";
 import { useSettingsStore } from "@/store/useConfigStore";
 
-interface FileInputProps {
-  onChange: (files: FileList | null) => void;
-  accept?: string;
-  disabled?: boolean;
-  ariaLabel?: string;
-}
+// Helper function to get setting by path
+const getSettingByPath = (
+  settings: Record<string, any>,
+  path: string[]
+): Setting | null => {
+  let current: Record<string, Setting> | Setting = settings;
 
-const FileInput: React.FC<FileInputProps> = ({
-  onChange,
-  accept,
-  disabled,
-  ariaLabel,
-}) => {
-  return (
-    <input
-      type="file"
-      onChange={(e) => onChange(e.target.files)}
-      accept={accept}
-      disabled={disabled}
-      aria-label={ariaLabel}
-      className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
-    />
+  for (let i = 0; i < path.length; i++) {
+    const key = path[i];
+    if (!current || typeof current !== "object") return null;
+
+    if (i === path.length - 1) {
+      // Last item in path should be a Setting
+      return (current as Record<string, Setting>)[key] || null;
+    } else {
+      // Interior items should be Record<string, Setting>
+      current = (current as Record<string, Setting>)[key];
+    }
+  }
+
+  return null;
+};
+
+// Helper function for restart confirmation
+const showRestartConfirmation = async (): Promise<boolean> => {
+  return window.confirm(
+    "This setting requires a restart. Do you want to continue?"
   );
 };
 
@@ -65,11 +70,24 @@ const SettingItem: React.FC<SettingItemProps> = ({
   onError,
   onSuccess,
 }) => {
-  const [isFocused, setIsFocused] = useState(false);
+  const previousValue = useRef<SettingValue>(item.value);
   const [isValidating, setIsValidating] = useState(false);
-  const { updateSetting, isLoading } = useSettingsStore();
+  const { updateSetting, isLoading, debouncedUpdate, settings } =
+    useSettingsStore();
   const [error, setError] = useState<string | null>(null);
-  const [isHovered, setIsHovered] = useState(false);
+
+  // Check dependencies
+  useEffect(() => {
+    if (item.dependsOn && settings) {
+      const parentSetting = getSettingByPath(
+        settings,
+        item.dependsOn.setting.split(".")
+      );
+      if (parentSetting?.value !== item.dependsOn.value) {
+        setError("Dependency condition not met");
+      }
+    }
+  }, [item.dependsOn, settings]);
 
   const validateSetting = (
     setting: Setting,
@@ -115,42 +133,41 @@ const SettingItem: React.FC<SettingItemProps> = ({
           return null;
       }
     }
-
     return null;
   };
 
-  const handleChange = async (value: SettingValue) => {
-    // Debounce validation for better UX
-    setIsValidating(true);
-    setError(null);
+  const handleChange = useCallback(
+    async (value: SettingValue) => {
+      setIsValidating(true);
+      setError(null);
 
-    const validationError = validateSetting(item, value);
-
-    // Only show validation error after user stops typing
-    const debounceTimeout = setTimeout(
-      async () => {
-        setError(validationError);
-        setIsValidating(false);
-
-        if (!validationError) {
-          try {
-            await updateSetting(path, value);
-            onSuccess?.();
-          } catch (error) {
-            const errorMessage =
-              typeof error === "string" ? error : "Failed to update setting";
-            setError(errorMessage);
-            onError?.(errorMessage);
-          }
-        } else {
+      try {
+        const validationError = validateSetting(item, value);
+        if (validationError) {
+          setError(validationError);
           onError?.(validationError);
+          return;
         }
-      },
-      item.type === "number" ? 1000 : 500
-    ); // Longer debounce for numbers
 
-    return () => clearTimeout(debounceTimeout);
-  };
+        if (item.requiresRestart) {
+          const confirmed = await showRestartConfirmation();
+          if (!confirmed) return;
+        }
+
+        await debouncedUpdate(path, value);
+        previousValue.current = value;
+        onSuccess?.();
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error occurred";
+        setError(errorMessage);
+        onError?.(errorMessage);
+      } finally {
+        setIsValidating(false);
+      }
+    },
+    [item, path, debouncedUpdate, onError, onSuccess]
+  );
 
   const renderInput = () => {
     switch (item.type) {
@@ -168,8 +185,6 @@ const SettingItem: React.FC<SettingItemProps> = ({
               className={error ? "border-red-500" : ""}
               disabled={isLoading}
               aria-label={item.label}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
             />
           </motion.div>
         );
@@ -187,8 +202,6 @@ const SettingItem: React.FC<SettingItemProps> = ({
               className={error ? "border-red-500" : ""}
               disabled={isLoading}
               aria-label={item.label}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
             />
           </motion.div>
         );
@@ -278,8 +291,6 @@ const SettingItem: React.FC<SettingItemProps> = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.2 }}
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
     >
       <div className="flex items-center justify-between">
         <Label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

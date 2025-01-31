@@ -1,68 +1,54 @@
-import { create } from "zustand";
-import WebSocketClient from "@/utils/websocket-client";
-import Cookies from "js-cookie";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { WebSocketConfig, WebSocketStatus } from '@/types/websocket';
 
-type WebSocketEvent =
-  | "open"
-  | "message"
-  | "error"
-  | "close"
-  | "reconnect"
-  | "statechange";
-
-interface WebSocketClientOptions {
-  url: string;
-  reconnectInterval?: number;
-  maxReconnectAttempts?: number;
-  heartbeatInterval?: number;
-  messageSerializer?: (data: any) => string;
-  messageDeserializer?: (data: string) => any;
-  debug?: boolean;
-  autoReconnect?: boolean;
-  binaryType?: "blob" | "arraybuffer";
+interface WebSocketState {
+  config: WebSocketConfig;
+  status: WebSocketStatus;
+  setConfig: (config: Partial<WebSocketConfig>) => void;
+  updateStatus: (status: Partial<WebSocketStatus>) => void;
 }
 
-interface WebSocketStore {
-  config: WebSocketClientOptions;
-  setConfig: (config: WebSocketClientOptions) => void;
-  client: WebSocketClient | null;
-}
+const defaultConfig: WebSocketConfig = {
+  url: 'ws://localhost:8080/config',
+  reconnectInterval: 3000,
+  maxReconnectAttempts: 5,
+  heartbeatInterval: 30000,
+  debug: false,
+  binaryType: 'blob',
+  queueSize: 100,
+  timeout: 5000,
+  compression: false,
+  autoReconnect: true,
+  messageFormat: 'json',
+};
 
-const useWebSocketStore = create<WebSocketStore>((set, get) => {
-  // 从 Cookies 中加载已保存的配置
-  const savedConfig = Cookies.get("websocketConfig");
-  const initialConfig: WebSocketClientOptions = savedConfig
-    ? JSON.parse(savedConfig)
-    : {
-        url: "ws://localhost:8080",
-        reconnectInterval: 5000,
-        maxReconnectAttempts: 5,
-        heartbeatInterval: 30000,
-        debug: false,
-        binaryType: "blob",
-      };
+const defaultStatus: WebSocketStatus = {
+  connected: false,
+  latency: 0,
+  lastMessage: null,
+  messageCount: 0,
+  errors: 0,
+  connectionAttempts: 0,
+};
 
-  // 初始化 WebSocketClient 实例
-  const client = new WebSocketClient(initialConfig);
-
-  return {
-    config: initialConfig,
-    setConfig: (config: WebSocketClientOptions) => {
-      // 保存配置到 Cookies
-      Cookies.set("websocketConfig", JSON.stringify(config));
-      // 更新状态
-      set({ config });
-      // 关闭旧的客户端
-      const oldClient = get().client;
-      if (oldClient) {
-        oldClient.close();
-      }
-      // 创建新的 WebSocketClient 实例
-      const newClient = new WebSocketClient(config);
-      set({ client: newClient });
-    },
-    client,
-  };
-});
-
-export default useWebSocketStore;
+export const useWebSocketStore = create<WebSocketState>()(
+  persist(
+    (set) => ({
+      config: defaultConfig,
+      status: defaultStatus,
+      setConfig: (newConfig) =>
+        set((state) => ({
+          config: { ...state.config, ...newConfig },
+        })),
+      updateStatus: (newStatus) =>
+        set((state) => ({
+          status: { ...state.status, ...newStatus },
+        })),
+    }),
+    {
+      name: 'websocket-storage',
+      partialize: (state) => ({ config: state.config }),
+    }
+  )
+);

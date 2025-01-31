@@ -1,3 +1,5 @@
+import { debounce, throttle, isEqual, merge, cloneDeep } from "lodash";
+
 type WebSocketEvent =
   | "open"
   | "message"
@@ -47,12 +49,29 @@ class WebSocketClient {
     connectionAttempts: 0,
     lastConnectedAt: null as Date | null,
     lastDisconnectedAt: null as Date | null,
+    lastMessageAt: null as Date | null,
   };
 
   private options: WebSocketClientOptions;
 
+  // 使用debounce优化重连逻辑
+  private debouncedReconnect = debounce(
+    () => {
+      this.handleReconnect();
+    },
+    1000,
+    { leading: true, trailing: false }
+  );
+
+  // 使用throttle优化心跳发送
+  private throttledHeartbeat = throttle(() => {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: "ping" }));
+    }
+  }, 1000);
+
   constructor(options: WebSocketClientOptions) {
-    this.options = options;
+    this.options = cloneDeep(options); // 深拷贝配置
     this.url = options.url;
     this.reconnectInterval = options.reconnectInterval || 5000;
     this.maxReconnectAttempts = options.maxReconnectAttempts || 5;
@@ -66,11 +85,13 @@ class WebSocketClient {
 
   private connect() {
     let url = this.url;
-    
+
     if (this.options.proxy) {
       const { host, port, auth } = this.options.proxy;
-      const authString = auth ? `${auth.username}:${auth.password}@` : '';
-      url = `ws://${authString}${host}:${port}/proxy?target=${encodeURIComponent(this.url)}`;
+      const authString = auth ? `${auth.username}:${auth.password}@` : "";
+      url = `ws://${authString}${host}:${port}/proxy?target=${encodeURIComponent(
+        this.url
+      )}`;
     }
 
     this.ws = new WebSocket(url);
@@ -87,21 +108,25 @@ class WebSocketClient {
 
     this.ws.binaryType = this.binaryType;
 
-    this.ws.onmessage = (event) => {
+    // 使用throttle优化消息处理
+    const throttledMessageHandler = throttle((event: MessageEvent) => {
       const message =
         typeof event.data === "string"
           ? this.handleMessage(event.data)
           : event.data;
 
       if (message !== null) {
+        this.stats.lastMessageAt = new Date();
         this.emit("message", message);
         this.resetHeartbeat();
       }
-    };
+    }, 50);
+
+    this.ws.onmessage = throttledMessageHandler;
 
     this.ws.onerror = (error) => {
       this.emit("error", error);
-      this.handleReconnect();
+      this.debouncedReconnect();
     };
 
     this.ws.onclose = () => {
@@ -110,7 +135,7 @@ class WebSocketClient {
       this.emit("statechange", "closed");
       this.stopHeartbeat();
       if (!this.isExplicitClose) {
-        this.handleReconnect();
+        this.debouncedReconnect();
       }
     };
   }
@@ -133,9 +158,7 @@ class WebSocketClient {
 
   private startHeartbeat() {
     this.heartbeatTimer = setInterval(() => {
-      if (this.ws?.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify({ type: "ping" }));
-      }
+      this.throttledHeartbeat();
     }, this.heartbeatInterval);
   }
 
@@ -163,7 +186,8 @@ class WebSocketClient {
     }
   }
 
-  public send(message: any) {
+  // 使用debounce优化消息发送
+  public send = debounce((message: any) => {
     const serialized = this.messageSerializer(message);
 
     if (this.debug) {
@@ -173,10 +197,11 @@ class WebSocketClient {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(serialized);
       this.stats.messagesSent++;
+      this.stats.lastMessageAt = new Date();
     } else {
       this.messageQueue.push(serialized);
     }
-  }
+  }, 50);
 
   private handleMessage(data: string) {
     try {
@@ -192,6 +217,21 @@ class WebSocketClient {
       console.error("[WebSocket] Message deserialization error:", error);
       return null;
     }
+  }
+
+  // 使用merge合并配置
+  public updateConfig(newConfig: Partial<WebSocketClientOptions>) {
+    this.options = merge({}, this.options, newConfig);
+    // 如果需要重新连接则重连
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.close();
+      this.connect();
+    }
+  }
+
+  // 比较消息是否相同
+  private isMessageEqual(msg1: any, msg2: any): boolean {
+    return isEqual(msg1, msg2);
   }
 
   public getStats() {

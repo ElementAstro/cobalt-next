@@ -60,7 +60,7 @@ export default function SplashScreen() {
     }
   }, [loading]);
 
-  // 动画变体
+  // 优化动画变体配置
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -68,13 +68,16 @@ export default function SplashScreen() {
       transition: {
         staggerChildren: 0.3,
         when: "beforeChildren",
+        duration: 0.8,
+        ease: "easeOut",
       },
     },
     exit: {
       opacity: 0,
       transition: {
-        duration: 0.8,
+        duration: 0.6,
         ease: "easeInOut",
+        when: "afterChildren",
       },
     },
   };
@@ -110,32 +113,44 @@ export default function SplashScreen() {
     <AnimatePresence>
       {visible && (
         <motion.div
-          className="fixed inset-0 z-50 bg-gradient-to-b from-gray-900 to-gray-950"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-b from-gray-900 to-gray-950"
           variants={containerVariants}
           initial="hidden"
           animate="visible"
           exit="exit"
         >
+          <Particles
+            className="absolute inset-0 z-0"
+            quantity={100}
+            staticity={30}
+          />
 
           <AnimatePresence mode="wait">
             {loading ? (
               <motion.div
                 key="splash"
-                className={`flex flex-col items-center justify-center min-h-screen
-                  ${isLandscape ? "lg:flex-row lg:space-x-12" : "space-y-8"}`}
+                className={`relative z-10 flex ${
+                  isLandscape
+                    ? "lg:flex-row lg:items-center lg:space-x-12"
+                    : "flex-col items-center space-y-8"
+                } justify-center w-full max-w-4xl mx-auto px-6`}
                 variants={containerVariants}
               >
-                <motion.div variants={logoVariants}>
+                <motion.div variants={logoVariants} className="relative">
+                  <div className="absolute -inset-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-xl opacity-50 animate-pulse" />
                   <Image
                     src="/atom.png"
                     alt="Logo"
                     width={isLandscape ? 180 : 120}
                     height={isLandscape ? 180 : 120}
-                    className="drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+                    className="relative drop-shadow-[0_0_30px_rgba(59,130,246,0.5)]"
                     priority
                   />
                 </motion.div>
-                <motion.div variants={itemVariants} className="w-full max-w-md">
+                <motion.div
+                  variants={itemVariants}
+                  className="w-full max-w-md mx-auto"
+                >
                   <LoadingAnimation progress={progress} />
                 </motion.div>
               </motion.div>
@@ -143,7 +158,7 @@ export default function SplashScreen() {
               <motion.div
                 key="content"
                 ref={contentRef}
-                className="flex flex-col items-center justify-center min-h-screen p-6"
+                className="relative z-10 flex flex-col items-center justify-center w-full max-w-4xl mx-auto px-6 space-y-8"
                 variants={containerVariants}
               >
                 <motion.h1

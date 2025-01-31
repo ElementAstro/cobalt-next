@@ -97,14 +97,17 @@ export const SettingGroup: React.FC<SettingGroupProps> = ({
   return (
     <AccordionItem
       value={group.id}
-      className={cn("border-b border-muted/20", className)}
+      className={cn(
+        "border-b border-muted/20 last:border-0",
+        className
+      )}
       data-value={group.id}
     >
-      <AccordionTrigger className="hover:no-underline group">
+      <AccordionTrigger className="hover:no-underline group px-2">
         <motion.div
-          className="flex items-center w-full"
-          whileHover={{ scale: mergedConfig.hoverScale }}
-          transition={{ type: "spring", stiffness: 300 }}
+          className="flex items-center w-full py-2"
+          whileHover={{ scale: 1.01 }}
+          transition={{ type: "spring", stiffness: 400 }}
         >
           {group.icon &&
             React.createElement(
@@ -128,60 +131,51 @@ export const SettingGroup: React.FC<SettingGroupProps> = ({
           )}
         </motion.div>
       </AccordionTrigger>
-      <AccordionContent className="overflow-hidden">
-        <AnimatePresence mode="wait">
+      <AccordionContent>
+        <div className="pl-4 pr-2 pb-2">
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{
-              duration: mergedConfig.transitionDuration,
-              ease: "easeInOut",
-            }}
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid gap-3"
           >
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              {group.settings.map((item, index) =>
-                "settings" in item ? (
-                  <Accordion key={item.id} type="single" collapsible>
-                    <SettingGroup
-                      group={item}
-                      path={[...path, group.id]}
-                      animationConfig={mergedConfig}
-                    />
-                  </Accordion>
-                ) : (
-                  <motion.div
-                    key={item.id}
-                    variants={itemVariants}
-                    className="mb-4"
-                  >
-                    <SettingItem
-                      item={item}
-                      path={[...path, group.id]}
-                      onError={(err) => {
-                        toast({
-                          variant: "destructive",
-                          title: "Error",
-                          description: err,
-                        });
-                      }}
-                      onSuccess={() => {
-                        toast({
-                          title: "Success",
-                          description: "Settings saved successfully!",
-                        });
-                      }}
-                    />
-                  </motion.div>
-                )
-              )}
-            </motion.div>
+            {group.settings.map((item, index) =>
+              "settings" in item ? (
+                <Accordion key={item.id} type="single" collapsible>
+                  <SettingGroup
+                    group={item}
+                    path={[...path, group.id]}
+                    animationConfig={mergedConfig}
+                  />
+                </Accordion>
+              ) : (
+                <motion.div
+                  key={item.id}
+                  variants={itemVariants}
+                  className="mb-4"
+                >
+                  <SettingItem
+                    item={item}
+                    path={[...path, group.id]}
+                    onError={(err) => {
+                      toast({
+                        variant: "destructive",
+                        title: "Error",
+                        description: err,
+                      });
+                    }}
+                    onSuccess={() => {
+                      toast({
+                        title: "Success",
+                        description: "Settings saved successfully!",
+                      });
+                    }}
+                  />
+                </motion.div>
+              )
+            )}
           </motion.div>
-        </AnimatePresence>
+        </div>
       </AccordionContent>
     </AccordionItem>
   );

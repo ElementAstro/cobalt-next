@@ -4,6 +4,8 @@ export type ValidationRule = {
   type: "required" | "minLength" | "maxLength" | "pattern" | "min" | "max";
   value?: number | string | RegExp;
   message: string;
+  custom?: (value: SettingValue) => boolean | Promise<boolean>;
+  dependsOn?: string[];
 };
 
 export interface HistoryEntry {
@@ -28,6 +30,19 @@ export interface Setting {
   preview?: boolean;
   category?: string;
   filter: (setting: Setting) => boolean;
+  unit?: string;
+  defaultValue?: SettingValue;
+  requiresRestart?: boolean;
+  dependsOn?: {
+    setting: string;
+    value: SettingValue;
+  };
+  isAdvanced?: boolean;
+  formatValue?: (value: SettingValue) => string;
+  validationRules?: ValidationRule[];
+  autoSync?: boolean;
+  lastModified?: number;
+  modifiedBy?: string;
 }
 
 export interface SettingGroup {
@@ -49,12 +64,24 @@ export interface SettingHistoryEntry {
   path: string[];
   oldValue: SettingValue | null;
   newValue: SettingValue;
+  user?: string;
+  device?: string;
+  revertible?: boolean;
 }
 
 export interface SettingTag {
   id: string;
   label: string;
   color: string;
+}
+
+export interface SettingBatch {
+  settings: Array<{
+    path: string[];
+    value: SettingValue;
+  }>;
+  timestamp: number;
+  user?: string;
 }
 
 export interface SettingsState {
@@ -76,4 +103,23 @@ export interface SettingsState {
   setActiveTags: (tags: string[]) => void;
   exportSettings: () => Promise<void>;
   importSettings: (data: SettingsData) => Promise<void>;
+  batchUpdate: (batch: SettingBatch) => Promise<void>;
+  validateSettings: () => Promise<boolean>;
+  subscribeToChanges: (callback: (changes: SettingHistoryEntry) => void) => () => void;
+  getSettingsDiff: (timestamp: number) => Promise<SettingHistoryEntry[]>;
+}
+
+export interface HistoryItem {
+  id: string;
+  timestamp: number;
+  path: string[];
+  oldValue: SettingValue | null;
+  newValue: SettingValue;
+  user?: string;
+  device?: string;
+  revertible: boolean;
+  changeType: 'update' | 'reset' | 'batch' | 'import';
+  status: 'pending' | 'success' | 'failed';
+  error?: string;
+  metadata?: Record<string, any>;
 }

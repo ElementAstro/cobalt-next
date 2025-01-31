@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { Accordion } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,34 +10,71 @@ import {
   Undo2,
   Redo2,
   Download,
-  Upload,
   Sun,
   Moon,
-  Power,
-  RefreshCw,
   Activity,
 } from "lucide-react";
-import { useMediaQuery } from "react-responsive";
 import { useSettingsStore } from "@/store/useConfigStore";
 import { getSettingByPath } from "@/utils/config-utils";
 import { SettingGroup } from "@/components/config/setting-group";
 import { motion } from "framer-motion";
-import { Setting } from "@/types/config";
+import { Setting, SettingValue, HistoryItem } from "@/types/config";
 import { toast } from "@/hooks/use-toast";
-import WebSocketConfig from "@/components/config/websocket-config"; // 导入 WebSocketConfig 组件
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import WebSocketConfig from "@/components/config/websocket-config";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+// Mock data
+const MOCK_SETTINGS = {
+  settings: [
+    {
+      id: "camera",
+      label: "相机设置",
+      icon: "Camera",
+      settings: [
+        {
+          id: "exposure",
+          label: "曝光时间",
+          type: "range",
+          value: 1000,
+          min: 100,
+          max: 5000,
+          step: 100,
+        },
+        {
+          id: "iso",
+          label: "感光度",
+          type: "select",
+          value: "800",
+          options: ["100", "200", "400", "800", "1600", "3200"],
+        },
+      ],
+    },
+    {
+      id: "system",
+      label: "系统设置",
+      icon: "Settings",
+      settings: [
+        {
+          id: "darkMode",
+          label: "暗色模式",
+          type: "checkbox",
+          value: true,
+        },
+        {
+          id: "autoSave",
+          label: "自动保存",
+          type: "checkbox",
+          value: true,
+        },
+      ],
+    },
+  ],
+};
+
+interface WebSocketStatusProps {
+  latency?: number;
+  isConnected?: boolean;
+}
 
 const SettingsInterface: React.FC = () => {
   const {
@@ -47,48 +84,149 @@ const SettingsInterface: React.FC = () => {
     isLoading,
     error,
     fetchSettings,
+    updateSetting,
   } = useSettingsStore();
-  const isMobile = useMediaQuery({ query: "(max-width: 640px)" });
-  const [primaryColor, setPrimaryColor] = useState<string>("");
+
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [darkMode, setDarkMode] = useState<boolean>(false);
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
+  const [selectedCategory] = useState<string | null>(null);
+  const [viewMode] = useState<"basic" | "advanced">("basic");
 
-  const filteredSettings = settings.filter(
-    (group) =>
-      group.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      group.settings.some((setting: Setting) =>
-        setting.label.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+  // Optimized: Cache filtered settings
+  const filteredSettings = useMemo(() => {
+    return settings.filter((group) => {
+      if (selectedCategory && group.id !== selectedCategory) return false;
+      if (viewMode === "basic" && group.isAdvanced) return false;
+
+      return (
+        group.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        group.settings.some((setting: Setting) =>
+          setting.label.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      );
+    });
+  }, [settings, searchQuery, selectedCategory, viewMode]);
+
+  // Optimized: Cache event handlers
+  const handleSettingChange = useCallback(
+    async (path: string[], value: SettingValue) => {
+      try {
+        await updateSetting(path, value);
+        toast({
+          title: "设置已更新",
+          description: "更改已成功保存",
+        });
+      } catch (err) {
+        const error = err as Error;
+        toast({
+          title: "更新失败",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    },
+    [updateSetting]
   );
 
   const handleSave = useCallback(async () => {
     try {
       await exportSettings();
       toast({ title: "成功", description: "设置已成功导出为JSON文件" });
-    } catch (error) {
+    } catch (err) {
+      const error = err as Error;
       toast({
         title: "错误",
-        description: "导出设置时出错",
+        description: error.message,
         variant: "destructive",
       });
     }
   }, [exportSettings]);
 
-  const handleUndo = () => {
+  const handleUndo = useCallback(() => {
     if (historyIndex > 0) {
-      setHistoryIndex((prev) => prev - 1);
-      // Apply previous state logic here
+      const historyItem = history[historyIndex - 1];
+      if (historyItem.revertible) {
+        updateSetting(historyItem.path, historyItem.oldValue as SettingValue)
+          .then(() => {
+            setHistoryIndex((prev) => prev - 1);
+            toast({
+              title: "撤销成功",
+              description: "已恢复到之前的设置",
+            });
+          })
+          .catch((error) => {
+            toast({
+              title: "撤销失败",
+              description: error.message,
+              variant: "destructive",
+            });
+          });
+      }
     }
-  };
+  }, [historyIndex, history, updateSetting]);
 
-  const handleRedo = () => {
+  const handleRedo = useCallback(() => {
     if (historyIndex < history.length - 1) {
-      setHistoryIndex((prev) => prev + 1);
-      // Apply next state logic here
+      const historyItem = history[historyIndex + 1];
+      if (historyItem.revertible) {
+        updateSetting(historyItem.path, historyItem.newValue)
+          .then(() => {
+            setHistoryIndex((prev) => prev + 1);
+            toast({
+              title: "重做成功",
+              description: "已应用更改",
+            });
+          })
+          .catch((error) => {
+            toast({
+              title: "重做失败",
+              description: error.message,
+              variant: "destructive",
+            });
+          });
+      }
     }
-  };
+  }, [historyIndex, history, updateSetting]);
+
+  // 添加历史记录
+  const addHistoryItem = useCallback((item: Omit<HistoryItem, "id">) => {
+    const newItem: HistoryItem = {
+      ...item,
+      id: crypto.randomUUID(),
+      revertible: true,
+      status: "success",
+      timestamp: Date.now(),
+    };
+
+    setHistory((prev) => [...prev, newItem]);
+    setHistoryIndex((prev) => prev + 1);
+  }, []);
+
+  // 监听设置更改以添加历史记录
+  useEffect(() => {
+    const unsubscribe = useSettingsStore.subscribe((state, prevState) => {
+      if (state.settings !== prevState.settings) {
+        // Find changed settings
+        const changes = findChangedSettings(prevState.settings, state.settings);
+        changes.forEach((change) => {
+          addHistoryItem({
+            path: change.path,
+            oldValue: change.oldValue,
+            newValue: change.newValue,
+            changeType: "update",
+            device: navigator.userAgent,
+            timestamp: Date.now(),
+            status: "success",
+            revertible: true,
+          });
+        });
+      }
+    });
+
+    return () => unsubscribe();
+  }, [addHistoryItem]);
 
   const toggleDarkMode = () => {
     setDarkMode((prev) => !prev);
@@ -96,28 +234,14 @@ const SettingsInterface: React.FC = () => {
   };
 
   useEffect(() => {
-    try {
+    if (process.env.NEXT_PUBLIC_USE_MOCK === "true") {
+      setTimeout(() => {
+        useSettingsStore.setState({ settings: MOCK_SETTINGS.settings });
+      }, 1000);
+    } else {
       fetchSettings();
-    } catch (error: unknown) {
-      toast({
-        title: "错误",
-        description: "获取设置时出错",
-        variant: "destructive",
-      });
     }
   }, [fetchSettings]);
-
-  useEffect(() => {
-    const root = window.document.documentElement;
-    const colorSetting = getSettingByPath(settings, [
-      "appearance",
-      "primaryColor",
-    ]);
-    if (colorSetting && typeof colorSetting.value === "string") {
-      root.style.setProperty("--primary", colorSetting.value);
-      setPrimaryColor(colorSetting.value);
-    }
-  }, [settings]);
 
   if (isLoading && settings.length === 0) {
     return (
@@ -128,137 +252,169 @@ const SettingsInterface: React.FC = () => {
   }
 
   if (error) {
-    return <WebSocketConfig />; // 显示 WebSocket 配置界面
+    return <WebSocketConfig />;
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className={`mx-auto p-6 ${isMobile ? "w-full" : "max-w-3xl"}`}
-    >
-      <div className="flex flex-col space-y-4">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <h1 className="text-3xl font-bold text-primary">设置</h1>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto p-4 lg:p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Panel */}
+          <div className="lg:col-span-3 space-y-4">
+            <Card className="bg-card">
+              <CardHeader>
+                <CardTitle>快速操作</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="relative w-full">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="搜索设置..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 w-full"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={toggleDarkMode}
+                    className="justify-start"
+                  >
+                    {darkMode ? (
+                      <Sun className="h-4 w-4 mr-2" />
+                    ) : (
+                      <Moon className="h-4 w-4 mr-2" />
+                    )}
+                    {darkMode ? "亮色模式" : "暗色模式"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleSave}
+                    className="justify-start"
+                  >
+                    <Activity className="h-4 w-4 mr-2" />
+                    保存更改
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="搜索设置..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-full"
-              />
+            <WebSocketStatus isConnected={true} latency={45} />
+          </div>
+
+          {/* Main Content */}
+          <div className="lg:col-span-9 space-y-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle>设置</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleUndo}
+                    disabled={historyIndex <= 0}
+                  >
+                    <Undo2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRedo}
+                    disabled={historyIndex >= history.length - 1}
+                  >
+                    <Redo2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <motion.div layout className="space-y-2">
+                  <Accordion
+                    type="multiple"
+                    className="w-full"
+                    defaultValue={["camera"]}
+                  >
+                    {filteredSettings.map((group) => (
+                      <SettingGroup key={group.id} group={group} path={[]} />
+                    ))}
+                  </Accordion>
+                </motion.div>
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={exportSettings}
+                disabled={isLoading}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                导出
+              </Button>
+              <Button variant="destructive" onClick={resetSettings}>
+                恢复默认
+              </Button>
             </div>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleDarkMode}
-              className="hover:bg-accent"
-              aria-label="切换暗黑模式"
-            >
-              {darkMode ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-            </Button>
-          </div>
-        </div>
-
-        {/* Loading Indicator */}
-        {isLoading && (
-          <div className="fixed top-0 left-0 w-full h-1 bg-blue-500 animate-pulse"></div>
-        )}
-
-        {/* Settings Content */}
-        <motion.div layout className="space-y-4">
-          <Accordion type="multiple" className="w-full">
-            {filteredSettings.map((group) => (
-              <SettingGroup key={group.id} group={group} path={[]} />
-            ))}
-          </Accordion>
-        </motion.div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col md:flex-row gap-2 justify-end">
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={handleUndo}
-              disabled={historyIndex <= 0}
-              aria-label="撤销"
-            >
-              <Undo2 className="mr-2 h-4 w-4" />
-              撤销
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleRedo}
-              disabled={historyIndex >= history.length - 1}
-              aria-label="重做"
-            >
-              <Redo2 className="mr-2 h-4 w-4" />
-              重做
-            </Button>
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={exportSettings}
-              disabled={isLoading}
-              aria-label="导出设置"
-            >
-              <Download className="mr-2 h-4 w-4" />
-              导出
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                // Implement import functionality
-                toast({
-                  title: "功能未实现",
-                  description: "导入功能正在开发中。",
-                  variant: "destructive",
-                });
-              }}
-              disabled={isLoading}
-              aria-label="导入设置"
-            >
-              <Upload className="mr-2 h-4 w-4" />
-              导入
-            </Button>
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              onClick={resetSettings}
-              disabled={isLoading}
-              variant="destructive"
-              aria-label="恢复默认设置"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  重置中...
-                </>
-              ) : (
-                "恢复默认设置"
-              )}
-            </Button>
-            <Button onClick={handleSave} disabled={isLoading} aria-label="保存更改">
-              保存更改
-            </Button>
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
+};
+
+// WebSocket status component
+const WebSocketStatus: React.FC<WebSocketStatusProps> = ({
+  latency = 45,
+  isConnected = false,
+}) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>连接状态</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div
+              className={`w-2 h-2 rounded-full ${
+                isConnected ? "bg-green-500" : "bg-red-500"
+              } animate-pulse`}
+            />
+            <span className="text-sm">{isConnected ? "已连接" : "未连接"}</span>
+          </div>
+          <div className="text-xs text-muted-foreground">延迟: {latency}ms</div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Helper function to find changed settings
+const findChangedSettings = (prevSettings: any[], newSettings: any[]) => {
+  const changes: Array<{ path: string[]; oldValue: any; newValue: any }> = [];
+
+  const traverse = (prev: any, curr: any, path: string[] = []) => {
+    if (!prev || !curr) return;
+
+    if (Array.isArray(prev)) {
+      prev.forEach((item, index) => {
+        traverse(item, curr[index], [...path, index.toString()]);
+      });
+    } else if (typeof prev === "object") {
+      Object.keys(prev).forEach((key) => {
+        traverse(prev[key], curr[key], [...path, key]);
+      });
+    } else if (prev !== curr) {
+      changes.push({
+        path,
+        oldValue: prev,
+        newValue: curr,
+      });
+    }
+  };
+
+  traverse(prevSettings, newSettings);
+  return changes;
 };
 
 export default SettingsInterface;

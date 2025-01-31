@@ -85,126 +85,111 @@ export function LoadingAnimation({ progress }: LoadingAnimationProps) {
   };
 
   return (
-    <div className="relative w-64 h-64 transform-gpu">
-      {/* 3D Cube Animation */}
-      <motion.div
-        className="absolute inset-0 flex items-center justify-center"
-        variants={cubeVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <div className="w-20 h-20 perspective-1000">
-          <motion.div
-            className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-600 rounded-lg shadow-2xl shadow-blue-500/50"
-            style={{
-              transformStyle: "preserve-3d",
-            }}
-          />
-        </div>
-      </motion.div>
+    <div className="relative w-full h-64 flex items-center justify-center transform-gpu">
+      {/* Background Glow */}
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl blur-3xl" />
 
-      {/* Particle Wave Animation */}
-      <div className="absolute inset-0 overflow-hidden">
-        {[...Array(30)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-blue-400 rounded-full"
-            custom={i}
-            variants={particleVariants}
+      <div className="relative">
+        {/* 3D Cube Animation with improved positioning */}
+        <motion.div
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+          variants={cubeVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <div className="w-20 h-20 perspective-1000">
+            <motion.div
+              className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-600 rounded-lg shadow-2xl shadow-blue-500/50"
+              style={{ transformStyle: "preserve-3d" }}
+            />
+          </div>
+        </motion.div>
+
+        {/* Centered Progress Ring */}
+        <svg className="w-64 h-64 -rotate-90" viewBox="0 0 100 100">
+          <defs>
+            <linearGradient
+              id="progressGradient"
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="0%"
+            >
+              <stop offset="0%" stopColor="#60A5FA" />
+              <stop offset="50%" stopColor="#3B82F6" />
+              <stop offset="100%" stopColor="#2563EB" />
+            </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2" result="blur" />
+              <feFlood floodColor="#3B82F6" floodOpacity="0.5" />
+              <feComposite in2="blur" operator="in" />
+              <feMerge>
+                <feMergeNode />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <motion.circle
+            cx="50"
+            cy="50"
+            r="45"
+            fill="none"
+            stroke="url(#progressGradient)"
+            strokeWidth="4"
+            strokeLinecap="round"
+            variants={progressRingVariants}
             initial="hidden"
             animate="visible"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              filter: "url(#glow)",
             }}
           />
-        ))}
-      </div>
 
-      {/* Progress Ring */}
-      <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-        <defs>
-          <linearGradient
-            id="progressGradient"
-            x1="0%"
-            y1="0%"
-            x2="100%"
-            y2="0%"
-          >
-            <stop offset="0%" stopColor="#60A5FA" />
-            <stop offset="50%" stopColor="#3B82F6" />
-            <stop offset="100%" stopColor="#2563EB" />
-          </linearGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="2" result="blur" />
-            <feFlood floodColor="#3B82F6" floodOpacity="0.5" />
-            <feComposite in2="blur" operator="in" />
-            <feMerge>
-              <feMergeNode />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
+          {/* Enhanced Glowing Trail */}
+          <motion.circle
+            cx="50"
+            cy="50"
+            r="45"
+            fill="none"
+            stroke="url(#progressGradient)"
+            strokeWidth="8"
+            strokeLinecap="round"
+            variants={trailVariants}
+            initial="hidden"
+            animate="visible"
+            style={{
+              filter: "url(#glow)",
+              strokeDasharray: "10 100",
+            }}
+          />
+        </svg>
 
-        <motion.circle
-          cx="50"
-          cy="50"
-          r="45"
-          fill="none"
-          stroke="url(#progressGradient)"
-          strokeWidth="4"
-          strokeLinecap="round"
-          variants={progressRingVariants}
-          initial="hidden"
-          animate="visible"
-          style={{
-            filter: "url(#glow)",
-          }}
-        />
-
-        {/* Glowing Trail */}
-        <motion.circle
-          cx="50"
-          cy="50"
-          r="45"
-          fill="none"
-          stroke="url(#progressGradient)"
-          strokeWidth="8"
-          strokeLinecap="round"
-          variants={trailVariants}
-          initial="hidden"
-          animate="visible"
-          style={{
-            filter: "url(#glow)",
-            strokeDasharray: "10 100",
-          }}
-        />
-      </svg>
-
-      {/* Progress Percentage */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={Math.round(progress)}
-            variants={numberVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            className="flex flex-col items-center"
-          >
-            <motion.span
-              className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600"
-              style={{
-                textShadow: "0 0 20px rgba(59, 130, 246, 0.5)",
-              }}
+        {/* Centered Progress Text */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={Math.round(progress)}
+              variants={numberVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="flex flex-col items-center"
             >
-              {Math.round(progress)}%
-            </motion.span>
-            <motion.span className="text-xs text-blue-300 mt-1 opacity-80">
-              正在加载...
-            </motion.span>
-          </motion.div>
-        </AnimatePresence>
+              <motion.span
+                className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400"
+                style={{
+                  textShadow: "0 0 30px rgba(59, 130, 246, 0.7)",
+                }}
+              >
+                {Math.round(progress)}%
+              </motion.span>
+              <motion.span className="text-sm text-blue-300 mt-2 opacity-80 tracking-wider">
+                正在加载...
+              </motion.span>
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );
