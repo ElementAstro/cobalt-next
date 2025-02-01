@@ -283,11 +283,26 @@ export function FocuserPage() {
                   variants={containerVariants}
                   className="grid grid-cols-1 sm:grid-cols-2 gap-4"
                 >
+                  {/* 核心状态 */}
+                  <motion.div
+                    variants={itemVariants}
+                    className="col-span-2 flex items-center gap-2"
+                  >
+                    <Target className="h-4 w-4" />
+                    <div className="flex-1 space-y-1">
+                      <Label>目标位置</Label>
+                      <div className="text-sm font-medium">
+                        {targetPosition} 步{" "}
+                        {focuserInfo.isMoving && "(移动中...)"}
+                      </div>
+                    </div>
+                  </motion.div>
+
                   <motion.div
                     variants={itemVariants}
                     className="flex items-center gap-2"
                   >
-                    <Target className="h-4 w-4" />
+                    <Focus className="h-4 w-4" />
                     <div className="space-y-1">
                       <Label>当前位置</Label>
                       <div className="text-sm font-medium">
@@ -302,9 +317,32 @@ export function FocuserPage() {
                   >
                     <Thermometer className="h-4 w-4" />
                     <div className="space-y-1">
-                      <Label>温度</Label>
+                      <Label>当前温度</Label>
                       <div className="text-sm font-medium">
                         {focuserInfo.temperature}°C
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* 补偿设置 */}
+                  <motion.div
+                    variants={itemVariants}
+                    className="flex items-center gap-2"
+                  >
+                    <ThermometerSnowflake className="h-4 w-4" />
+                    <div className="space-y-1">
+                      <Label>温度补偿</Label>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={temperatureCompensation}
+                          onCheckedChange={handleTemperatureCompensation}
+                          disabled={!isConnected}
+                        />
+                        <span className="text-sm">
+                          {focuserInfo.temperatureCompensation
+                            ? "已启用"
+                            : "已禁用"}
+                        </span>
                       </div>
                     </div>
                   </motion.div>
@@ -315,80 +353,85 @@ export function FocuserPage() {
                   >
                     <RotateCw className="h-4 w-4" />
                     <div className="space-y-1">
-                      <Label>反向间隙</Label>
-                      <div className="text-sm font-medium">
-                        {focuserInfo.backflash} 步
+                      <Label>反向间隙补偿</Label>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={backflashCompensation}
+                          onCheckedChange={handleBackflashCompensation}
+                          disabled={!isConnected}
+                        />
+                        <span className="text-sm">
+                          {backflashCompensation ? "已启用" : "已禁用"}
+                        </span>
                       </div>
                     </div>
                   </motion.div>
 
-                  <motion.div
-                    variants={itemVariants}
-                    className="flex items-center gap-2"
-                  >
-                    <ArrowUpDown className="h-4 w-4" />
-                    <div className="space-y-1">
-                      <Label>步进大小</Label>
-                      <div className="text-sm font-medium">
-                        {focuserInfo.stepSize}
-                      </div>
-                    </div>
-                  </motion.div>
-
+                  {/* 位置限制 */}
                   <motion.div
                     variants={itemVariants}
                     className="flex items-center gap-2"
                   >
                     <Maximize2 className="h-4 w-4" />
                     <div className="space-y-1">
-                      <Label>最大位置</Label>
+                      <Label>最大/最小位置</Label>
                       <div className="text-sm font-medium">
-                        {focuserInfo.maxPosition} 步
+                        {focuserInfo.maxPosition} / {focuserInfo.minPosition} 步
                       </div>
                     </div>
                   </motion.div>
 
+                  {/* 步进设置 */}
                   <motion.div
                     variants={itemVariants}
                     className="flex items-center gap-2"
                   >
-                    <Minimize2 className="h-4 w-4" />
+                    <ArrowUpDown className="h-4 w-4" />
                     <div className="space-y-1">
-                      <Label>最小位置</Label>
+                      <Label>步进参数</Label>
                       <div className="text-sm font-medium">
-                        {focuserInfo.minPosition} 步
+                        步长: {focuserInfo.stepSize} / 间隙:{" "}
+                        {focuserInfo.backflash} 步
                       </div>
                     </div>
                   </motion.div>
 
-                  <motion.div
-                    variants={itemVariants}
-                    className="flex items-center gap-2"
-                  >
-                    <ThermometerSnowflake className="h-4 w-4" />
-                    <div className="space-y-1">
-                      <Label>温度补偿</Label>
-                      <Switch
-                        checked={temperatureCompensation}
-                        onCheckedChange={handleTemperatureCompensation}
-                        disabled={!isConnected}
-                      />
-                    </div>
-                  </motion.div>
-
-                  <motion.div
-                    variants={itemVariants}
-                    className="flex items-center gap-2"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                    <div className="space-y-1">
-                      <Label>反向间隙补偿</Label>
-                      <Switch
-                        checked={backflashCompensation}
-                        onCheckedChange={handleBackflashCompensation}
-                        disabled={!isConnected}
-                      />
-                    </div>
+                  {/* 移动历史 */}
+                  <motion.div variants={itemVariants} className="col-span-2">
+                    <Collapsible>
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="flex items-center gap-2 w-full justify-between"
+                        >
+                          <div className="flex items-center gap-2">
+                            <History className="h-4 w-4" />
+                            <span>最近移动历史</span>
+                          </div>
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <ScrollArea className="h-24 w-full rounded-md border mt-2">
+                          <div className="p-4">
+                            {moveHistory.length === 0 ? (
+                              <div className="text-sm text-muted-foreground">
+                                暂无移动记录
+                              </div>
+                            ) : (
+                              moveHistory.map((step, index) => (
+                                <div
+                                  key={index}
+                                  className="text-sm flex items-center gap-2"
+                                >
+                                  <ArrowUpDown className="h-3 w-3" />
+                                  <span>{step > 0 ? `+${step}` : step} 步</span>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </motion.div>
                 </motion.div>
               </CardContent>

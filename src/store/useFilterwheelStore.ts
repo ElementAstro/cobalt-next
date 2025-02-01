@@ -2,7 +2,7 @@ import { create } from "zustand";
 import WebSocketClient from "@/utils/websocket-client";
 import MessageBus, { LogLevel } from "@/utils/message-bus";
 import { z } from "zod";
-import wsClient from "@/utils/ws-client";
+import getWsClient from "@/utils/ws-client";
 
 // Zod schemas for FilterWheel
 const FilterWheelStatusSchema = z.object({
@@ -59,6 +59,7 @@ interface FilterWheelState {
 }
 
 export const useFilterWheelStore = create<FilterWheelState>((set, get) => {
+  const wsClient = getWsClient();
   if (!wsClient) {
     throw new Error("WebSocket client is not initialized");
   }

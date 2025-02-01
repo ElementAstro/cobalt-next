@@ -66,18 +66,19 @@ const LogList: React.FC = () => {
     : filteredLogs;
 
   return (
-    <div className="flex flex-col h-full gap-2">
+    <div className="flex flex-col h-full gap-1">
       <motion.div
-        className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm rounded-lg"
+        className="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3 }}
       >
-        <LogFilters />
-        <LogActions />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2">
+          <LogFilters />
+          <LogActions />
+        </div>
       </motion.div>
       <div
-        className={`flex-1 min-h-0 rounded-lg overflow-hidden border dark:border-gray-800 transition-all duration-300 relative ${
+        className={`flex-1 min-h-0 relative border dark:border-gray-800 transition-all duration-300 ${
           isScrolling ? "shadow-lg" : "shadow-sm"
         }`}
       >
@@ -150,7 +151,7 @@ const LogList: React.FC = () => {
       <AnimatePresence>
         {isPaginationEnabled && (
           <motion.div
-            className="sticky bottom-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm rounded-lg"
+            className="sticky bottom-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md p-1"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 20, opacity: 0 }}

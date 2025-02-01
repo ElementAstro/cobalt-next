@@ -2,7 +2,8 @@ import React, { useRef, useEffect, useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -10,8 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Span } from "@/components/custom/span";
-import { Eye, FastForward, History, Maximize2, Sliders } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -20,449 +19,279 @@ import {
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useExposureTime } from "@/hooks/use-exposure-slider";
-import { formatExposureTime } from "@/utils/format-exposure-time";
-import { motion, useAnimation } from "framer-motion";
-import {
-  HistoryIcon,
-  SettingsIcon,
-  FullscreenIcon,
-  UndoIcon,
-  RedoIcon,
-} from "lucide-react";
+import { useExposureStore } from "@/store/useDashboardStore";
+import { Timer, Settings, ChevronDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface HistoryItem {
-  value: number;
+  exposureTime: number;
+  iso: number;
+  aperture: number;
   timestamp: Date;
 }
 
-interface SliderSettings {
-  showTooltips: boolean;
-  animationSpeed: number;
-  snapToPresets: boolean;
-  showPreview: boolean;
-  showHistory: boolean;
-  showFullscreen: boolean;
-}
+const MIN_EXPOSURE = 0.001;
+const MAX_EXPOSURE = 3600;
+const PRESET_VALUES = [0.001, 0.01, 0.1, 1, 10, 30, 60, 300, 600, 1800, 3600];
 
 export function ExposureTimeSlider() {
+  const {
+    exposureTime,
+    iso,
+    aperture,
+    setExposureTime,
+    setISO,
+    setAperture,
+    exposureMode,
+    setExposureMode,
+  } = useExposureStore();
+
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [settings, setSettings] = useState<SliderSettings>({
-    showTooltips: true,
-    animationSpeed: 0.3,
-    snapToPresets: false,
-    showPreview: true,
-    showHistory: true,
-    showFullscreen: true,
-  });
-  const {
-    exposureValue,
-    handleExposureChange,
-    animateToValue,
-    isAnimating,
-    MIN_EXPOSURE,
-    MAX_EXPOSURE,
-    PRESET_VALUES,
-  } = useExposureTime();
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const addToHistory = (value: number) => {
-    const newHistory = [
-      ...history.slice(0, historyIndex + 1),
-      { value, timestamp: new Date() },
-    ];
+  const addToHistory = () => {
+    const newHistoryItem = {
+      exposureTime,
+      iso,
+      aperture,
+      timestamp: new Date(),
+    };
+    const newHistory = [...history.slice(0, historyIndex + 1), newHistoryItem];
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
   };
 
   const handleUndo = () => {
     if (historyIndex > 0) {
-      const prevValue = history[historyIndex - 1].value;
-      animateToValue(prevValue);
+      const prevState = history[historyIndex - 1];
+      setExposureTime(prevState.exposureTime);
+      setISO(prevState.iso);
+      setAperture(prevState.aperture);
       setHistoryIndex(historyIndex - 1);
     }
   };
 
   const handleRedo = () => {
     if (historyIndex < history.length - 1) {
-      const nextValue = history[historyIndex + 1].value;
-      animateToValue(nextValue);
+      const nextState = history[historyIndex + 1];
+      setExposureTime(nextState.exposureTime);
+      setISO(nextState.iso);
+      setAperture(nextState.aperture);
       setHistoryIndex(historyIndex + 1);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowLeft") {
-      handleExposureChange(Math.max(exposureValue - 0.1, MIN_EXPOSURE));
-    } else if (e.key === "ArrowRight") {
-      handleExposureChange(Math.min(exposureValue + 0.1, MAX_EXPOSURE));
-    } else if (e.key === "z" && e.ctrlKey) {
-      handleUndo();
-    } else if (e.key === "y" && e.ctrlKey) {
-      handleRedo();
-    }
+  const handleExposureChange = (value: number) => {
+    setExposureTime(value);
+    addToHistory();
   };
 
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const controls = useAnimation();
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const toggleFullscreen = () => {
-    if (!isFullscreen && containerRef.current) {
-      containerRef.current.requestFullscreen();
-      setIsFullscreen(true);
-    } else if (isFullscreen) {
-      document.exitFullscreen();
-      setIsFullscreen(false);
-    }
+  const handleISOChange = (value: number) => {
+    setISO(value);
+    addToHistory();
   };
 
-  useEffect(() => {
-    controls.start({ opacity: 1, scale: 1 });
-    addToHistory(exposureValue);
-  }, [exposureValue]);
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(document.fullscreenElement !== null);
-    };
-
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    };
-  }, []);
-
-  const handlePresetClick = (value: number) => {
-    animateToValue(value);
-  };
-
-  const handleManualInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value);
-    if (!isNaN(value) && value >= MIN_EXPOSURE && value <= MAX_EXPOSURE) {
-      animateToValue(value);
-    }
+  const handleApertureChange = (value: number) => {
+    setAperture(value);
+    addToHistory();
   };
 
   return (
-    <div
-      ref={containerRef}
-      className="w-full p-4 bg-gray-800 rounded-lg shadow-md relative"
-      onKeyDown={handleKeyDown}
-      tabIndex={0}
-    >
-      {/* 调整顶部按钮样式 */}
-      <div className="absolute top-2 right-2 flex gap-2">
-        {settings.showFullscreen && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleFullscreen}
-                className="text-gray-300 hover:text-white hover:bg-gray-700"
-              >
-                <FullscreenIcon className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Toggle fullscreen</TooltipContent>
-          </Tooltip>
-        )}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleUndo}
-              disabled={historyIndex <= 0}
-              className="text-gray-300 hover:text-white hover:bg-gray-700"
-            >
-              <UndoIcon className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Undo</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRedo}
-              disabled={historyIndex >= history.length - 1}
-              className="text-gray-300 hover:text-white hover:bg-gray-700"
-            >
-              <RedoIcon className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Redo</TooltipContent>
-        </Tooltip>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-300 hover:text-white hover:bg-gray-700"
-            >
-              <SettingsIcon className="h-4 w-4" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-64 bg-gray-800 border-gray-700">
+    <TooltipProvider>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Card
+          ref={containerRef}
+          className="bg-gray-900 border-gray-800 transition-shadow hover:shadow-lg"
+        >
+          <CardHeader className="pb-2">
             <motion.div
-              className="space-y-6 p-4 bg-gray-900/60 backdrop-blur rounded-lg border border-gray-800"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
+              className="flex items-center justify-between"
+              layoutId="header"
             >
-              <div className="flex items-center gap-2 mb-4">
-                <Sliders className="w-5 h-5 text-gray-400" />
-                <h4 className="font-medium text-gray-200">滑块设置</h4>
-              </div>
-
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <Span
-                    icon={Eye}
-                    tooltip="在滑动时显示数值提示"
-                    variant="default"
-                    size="sm"
-                  >
-                    显示提示
-                  </Span>
-                  <Switch
-                    checked={settings.showTooltips}
-                    onCheckedChange={(checked) =>
-                      setSettings({ ...settings, showTooltips: checked })
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between gap-4">
-                  <Span
-                    icon={FastForward}
-                    tooltip="调整滑块动画速度"
-                    variant="default"
-                    size="sm"
-                  >
-                    动画速度
-                  </Span>
-                  <Select
-                    value={settings.animationSpeed.toString()}
-                    onValueChange={(value) =>
-                      setSettings({
-                        ...settings,
-                        animationSpeed: parseFloat(value),
-                      })
-                    }
-                  >
-                    <SelectTrigger className="w-[120px] bg-gray-800 border-gray-700">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0.1">快速</SelectItem>
-                      <SelectItem value="0.3">正常</SelectItem>
-                      <SelectItem value="0.5">慢速</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Span
-                      icon={Eye}
-                      tooltip="自动吸附到预设值"
-                      variant="default"
-                      size="sm"
-                    >
-                      吸附预设
-                    </Span>
-                    <Switch
-                      checked={settings.snapToPresets}
-                      onCheckedChange={(checked) =>
-                        setSettings({ ...settings, snapToPresets: checked })
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <Span
-                      icon={Eye}
-                      tooltip="显示实时预览"
-                      variant="default"
-                      size="sm"
-                    >
-                      显示预览
-                    </Span>
-                    <Switch
-                      checked={settings.showPreview}
-                      onCheckedChange={(checked) =>
-                        setSettings({ ...settings, showPreview: checked })
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <Span
-                      icon={History}
-                      tooltip="显示历史记录"
-                      variant="default"
-                      size="sm"
-                    >
-                      显示历史
-                    </Span>
-                    <Switch
-                      checked={settings.showHistory}
-                      onCheckedChange={(checked) =>
-                        setSettings({ ...settings, showHistory: checked })
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <Span
-                      icon={Maximize2}
-                      tooltip="允许全屏显示"
-                      variant="default"
-                      size="sm"
-                    >
-                      允许全屏
-                    </Span>
-                    <Switch
-                      checked={settings.showFullscreen}
-                      onCheckedChange={(checked) =>
-                        setSettings({ ...settings, showFullscreen: checked })
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </PopoverContent>
-        </Popover>
-      </div>
-      <h2 className="text-xl sm:text-2xl font-bold mb-4 text-gray-200">
-        Exposure Time
-      </h2>
-      <div className="flex items-center justify-between mb-2 text-xs sm:text-sm text-gray-300">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="font-medium text-gray-300 cursor-help">
-              1/{Math.pow(2, -MIN_EXPOSURE)}s
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>Minimum exposure time</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="font-medium text-gray-300 cursor-help">
-              {Math.pow(2, MAX_EXPOSURE)}s
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>Maximum exposure time</TooltipContent>
-        </Tooltip>
-      </div>
-      <div ref={sliderRef} className="relative mb-4 group">
-        <Slider
-          value={[exposureValue]}
-          onValueChange={(values) => handleExposureChange(values[0])}
-          max={MAX_EXPOSURE}
-          min={MIN_EXPOSURE}
-          step={0.1}
-          disabled={isAnimating}
-          className="touch-none"
-        />
-        <motion.div
-          className="absolute top-0 left-0 w-full h-full pointer-events-none"
-          animate={controls}
-          initial={{ opacity: 0, scale: 0.5 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        >
-          <div
-            className="absolute top-1/2 w-6 h-6 bg-blue-500 rounded-full transform -translate-y-1/2 -translate-x-1/2 shadow-lg hover:scale-110 transition-transform"
-            style={{
-              left: `${
-                ((exposureValue - MIN_EXPOSURE) /
-                  (MAX_EXPOSURE - MIN_EXPOSURE)) *
-                100
-              }%`,
-            }}
-          />
-        </motion.div>
-      </div>
-      <div className="flex items-center justify-center gap-4 mb-4">
-        <motion.div
-          className="text-center"
-          animate={controls}
-          initial={{ opacity: 0, scale: 0.5 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        >
-          <span className="text-2xl sm:text-3xl font-bold text-blue-600">
-            {formatExposureTime(exposureValue)}
-          </span>
-        </motion.div>
-        <Input
-          type="number"
-          value={exposureValue}
-          onChange={handleManualInput}
-          min={MIN_EXPOSURE}
-          max={MAX_EXPOSURE}
-          step={0.1}
-          className="w-24"
-        />
-      </div>
-      <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:justify-center mb-4">
-        {PRESET_VALUES.map((value) => (
-          <Tooltip key={value}>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={() => handlePresetClick(value)}
-                variant="outline"
-                size="sm"
-                className="text-xs sm:text-sm w-full sm:w-auto bg-gray-700 text-gray-200 hover:bg-gray-600 border-gray-600"
-              >
-                {formatExposureTime(value)}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Set to {formatExposureTime(value)}</TooltipContent>
-          </Tooltip>
-        ))}
-      </div>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full text-gray-300 hover:text-white hover:bg-gray-700"
-          >
-            <HistoryIcon className="mr-2 h-4 w-4" />
-            View History
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-80 bg-gray-800 border-gray-700">
-          <div className="space-y-2">
-            <h4 className="font-medium text-gray-200 leading-none">
-              Adjustment History
-            </h4>
-            <div className="max-h-60 overflow-y-auto">
-              {history.map((item, index) => (
-                <div
-                  key={item.timestamp.toISOString()}
-                  className={`flex justify-between items-center p-2 text-sm ${
-                    index === historyIndex ? "bg-blue-50" : ""
-                  }`}
+              <CardTitle className="text-lg font-semibold text-gray-200 flex items-center gap-2">
+                <motion.div
+                  whileHover={{ rotate: 180 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  <span>{formatExposureTime(item.value)}</span>
-                  <span className="text-gray-500">
-                    {item.timestamp.toLocaleTimeString()}
-                  </span>
+                  <Timer className="w-5 h-5" />
+                </motion.div>
+                <span>Exposure</span>
+              </CardTitle>
+              <Select value={exposureMode} onValueChange={setExposureMode}>
+                <SelectTrigger className="w-28 h-8 bg-gray-800 border-gray-700 transition-colors hover:bg-gray-700">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Manual">Manual</SelectItem>
+                  <SelectItem value="Auto">Auto</SelectItem>
+                  <SelectItem value="Bulb">Bulb</SelectItem>
+                </SelectContent>
+              </Select>
+            </motion.div>
+          </CardHeader>
+          <CardContent className="space-y-3 pt-2">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={exposureMode}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                {/* Exposure Controls */}
+                <div className="grid grid-cols-[auto_1fr_auto] gap-4 items-center mb-4">
+                  <Label className="w-24 text-gray-300">Exposure Time</Label>
+                  <motion.div whileTap={{ scale: 0.98 }}>
+                    <Slider
+                      value={[exposureTime]}
+                      onValueChange={(values) =>
+                        handleExposureChange(values[0])
+                      }
+                      max={MAX_EXPOSURE}
+                      min={MIN_EXPOSURE}
+                      step={0.1}
+                      disabled={exposureMode === "Auto"}
+                      className="flex-1"
+                    />
+                  </motion.div>
+                  <div className="flex items-center gap-2">
+                    <motion.div whileHover={{ scale: 1.02 }}>
+                      <Input
+                        type="number"
+                        value={exposureTime}
+                        onChange={(e) =>
+                          handleExposureChange(Number(e.target.value))
+                        }
+                        min={MIN_EXPOSURE}
+                        max={MAX_EXPOSURE}
+                        step={0.1}
+                        className="w-20 h-8 bg-gray-800 border-gray-700 transition-colors focus:border-blue-500"
+                        disabled={exposureMode === "Auto"}
+                      />
+                    </motion.div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 bg-gray-800 border-gray-700 transition-colors hover:bg-gray-700"
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                        </motion.div>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 grid grid-cols-4 gap-1 p-2 bg-gray-800 border-gray-700">
+                        {PRESET_VALUES.map((value) => (
+                          <Tooltip key={value}>
+                            <TooltipTrigger asChild>
+                              <motion.div
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <Button
+                                  onClick={() => handleExposureChange(value)}
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-xs w-full bg-gray-700 text-gray-200 hover:bg-gray-600 border-gray-600"
+                                >
+                                  {value}s
+                                </Button>
+                              </motion.div>
+                            </TooltipTrigger>
+                            <TooltipContent>Set to {value}s</TooltipContent>
+                          </Tooltip>
+                        ))}
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
+
+                {/* ISO Controls with Animation */}
+                <motion.div
+                  className="grid grid-cols-[auto_1fr_auto] gap-4 items-center mb-4"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <Label className="w-24 text-gray-300">ISO</Label>
+                  <motion.div whileTap={{ scale: 0.98 }}>
+                    <Slider
+                      value={[iso]}
+                      onValueChange={(values) => handleISOChange(values[0])}
+                      max={6400}
+                      min={100}
+                      step={100}
+                      disabled={exposureMode === "Auto"}
+                      className="flex-1"
+                    />
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.02 }}>
+                    <Input
+                      type="number"
+                      value={iso}
+                      onChange={(e) => handleISOChange(Number(e.target.value))}
+                      min={100}
+                      max={6400}
+                      step={100}
+                      className="w-20 h-8 bg-gray-800 border-gray-700 transition-colors focus:border-blue-500"
+                      disabled={exposureMode === "Auto"}
+                    />
+                  </motion.div>
+                </motion.div>
+
+                {/* Aperture Controls with Animation */}
+                <motion.div
+                  className="grid grid-cols-[auto_1fr_auto] gap-4 items-center"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Label className="w-24 text-gray-300">Aperture</Label>
+                  <motion.div whileTap={{ scale: 0.98 }}>
+                    <Slider
+                      value={[aperture]}
+                      onValueChange={(values) =>
+                        handleApertureChange(values[0])
+                      }
+                      max={22}
+                      min={1.4}
+                      step={0.1}
+                      disabled={exposureMode === "Auto"}
+                      className="flex-1"
+                    />
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.02 }}>
+                    <Input
+                      type="number"
+                      value={aperture}
+                      onChange={(e) =>
+                        handleApertureChange(Number(e.target.value))
+                      }
+                      min={1.4}
+                      max={22}
+                      step={0.1}
+                      className="w-20 h-8 bg-gray-800 border-gray-700 transition-colors focus:border-blue-500"
+                      disabled={exposureMode === "Auto"}
+                    />
+                  </motion.div>
+                </motion.div>
+              </motion.div>
+            </AnimatePresence>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </TooltipProvider>
   );
 }

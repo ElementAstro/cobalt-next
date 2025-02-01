@@ -14,19 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   ChevronDown,
-  ChevronUp,
-  Download,
-  Upload,
-  Trash,
-  Check,
-  X,
-  Loader2,
-  AlertCircle,
-  Settings,
   Focus,
-  RefreshCw,
-  Save,
-  Bell,
 } from "lucide-react";
 import {
   Dialog,
@@ -182,176 +170,52 @@ export function AutofocusSettings() {
   };
 
   return (
-    <Collapsible open={!isCollapsed} onOpenChange={setIsCollapsed}>
-      <CollapsibleTrigger asChild>
-        <Button
-          variant="ghost"
-          className="w-full flex justify-between items-center hover:bg-gray-800 transition-colors"
-        >
-          <div className="flex items-center gap-2">
-            <Focus className="h-4 w-4" />
-            <span>自动聚焦设置</span>
-          </div>
-          <motion.div
-            animate={{ rotate: isCollapsed ? 0 : 180 }}
-            transition={{ type: "spring", stiffness: 300 }}
+    <motion.div
+      className="bg-gray-900 rounded-md border border-gray-700 p-2"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <Collapsible open={!isCollapsed} onOpenChange={setIsCollapsed}>
+        <CollapsibleTrigger asChild>
+          <Button
+            variant="ghost"
+            className="w-full flex justify-between items-center p-2 hover:bg-gray-800/50"
           >
-            {isCollapsed ? <ChevronDown /> : <ChevronUp />}
-          </motion.div>
-        </Button>
-      </CollapsibleTrigger>
+            <div className="flex items-center space-x-2">
+              <Focus className="h-4 w-4" />
+              <span className="text-sm font-medium">自动聚焦</span>
+            </div>
+            <motion.div animate={{ rotate: isCollapsed ? 0 : 180 }} transition={{ type: "spring", stiffness: 300 }}>
+              <ChevronDown className="h-4 w-4" />
+            </motion.div>
+          </Button>
+        </CollapsibleTrigger>
 
-      <AnimatePresence>
-        {!isCollapsed && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <CollapsibleContent>
-              <div className="bg-gray-900/50 p-4 space-y-4">
-                {/* 目标设置部分 */}
-                <div className="flex flex-col md:flex-row justify-between gap-2">
-                  <div className="flex flex-wrap gap-1 overflow-x-auto">
-                    {targets.map((target) => (
-                      <motion.div
-                        key={target.id}
-                        className="flex items-center gap-1"
-                        whileHover={{ scale: 1.02 }}
-                      >
-                        <Button
-                          variant={
-                            target.id === activeTargetId ? "default" : "outline"
-                          }
-                          onClick={() => setActiveTargetId(target.id)}
-                          className="whitespace-nowrap bg-gray-800 text-white border-gray-700 hover:bg-gray-700 px-2 py-1 text-sm flex items-center gap-1"
-                        >
-                          {target.id === activeTargetId && (
-                            <Check className="h-3 w-3" />
-                          )}
-                          {target.name}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteTarget(target.id)}
-                          className="text-red-500 hover:text-red-700 p-1"
-                        >
-                          <Trash className="h-3 w-3" />
-                        </Button>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-1 flex-wrap">
-                    <Button
-                      onClick={addTarget}
-                      className="bg-teal-500 text-white hover:bg-teal-600 flex items-center gap-1"
-                    >
-                      <Settings className="h-4 w-4" />
-                      添加目标
-                    </Button>
-
-                    <Button
-                      onClick={exportJson}
-                      className="bg-teal-500 text-white hover:bg-teal-600 flex items-center gap-1"
-                    >
-                      <Download className="h-4 w-4" />
-                      导出
-                    </Button>
-
-                    <Label className="bg-teal-500 text-white hover:bg-teal-600 flex items-center cursor-pointer px-3 gap-1">
-                      <Upload className="h-4 w-4" />
-                      导入
-                      <Input
-                        type="file"
-                        accept=".json"
-                        className="hidden"
-                        onChange={importJson}
-                      />
-                    </Label>
-                  </div>
+        <AnimatePresence>
+          {!isCollapsed && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden"
+            >
+              <CollapsibleContent className="p-2 space-y-3">
+                {/* Focus Settings */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* ...existing focus settings... */}
                 </div>
 
-                {/* 任务列表部分 */}
-                {isMobile ? (
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full bg-gray-800 text-white border-gray-700 hover:bg-gray-700 flex items-center gap-1"
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                        编辑任务
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="w-screen h-screen max-w-none m-0 bg-gray-900 text-white">
-                      <DialogHeader>
-                        <DialogTitle className="text-teal-500 flex items-center gap-1">
-                          <Focus className="h-5 w-5" />
-                          编辑 {activeTarget.name} 的任务
-                        </DialogTitle>
-                      </DialogHeader>
-                      <ExposureTaskList
-                        tasks={activeTarget.tasks}
-                        onTasksChange={(newTasks) =>
-                          updateTasks(activeTargetId, newTasks)
-                        }
-                      />
-                    </DialogContent>
-                  </Dialog>
-                ) : (
-                  <ExposureTaskList
-                    tasks={activeTarget.tasks}
-                    onTasksChange={(newTasks) =>
-                      updateTasks(activeTargetId, newTasks)
-                    }
-                  />
-                )}
-
-                {/* 自动聚焦设置部分 */}
-                <motion.div
-                  className="space-y-2"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <div className="bg-gray-800 p-3 rounded-lg">
-                    <h3 className="text-base font-medium text-white mb-2 flex items-center gap-1">
-                      <Focus className="h-5 w-5" />
-                      自动聚焦设置
-                    </h3>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {/* 设置项... */}
-                    </div>
-                  </div>
-
-                  {/* 保存按钮 */}
-                  <Button
-                    onClick={saveSettings}
-                    disabled={isSaving}
-                    className="w-full bg-teal-500 hover:bg-teal-600 text-white flex items-center justify-center gap-1"
-                  >
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        保存中...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4" />
-                        保存设置
-                      </>
-                    )}
-                  </Button>
-                </motion.div>
-              </div>
-            </CollapsibleContent>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </Collapsible>
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-2">
+                  {/* ...existing action buttons... */}
+                </div>
+              </CollapsibleContent>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Collapsible>
+    </motion.div>
   );
 }

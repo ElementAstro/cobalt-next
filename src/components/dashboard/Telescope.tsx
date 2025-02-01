@@ -21,6 +21,7 @@ import {
   Sliders,
   Wifi,
   WifiOff,
+  ScrollText,
 } from "lucide-react";
 import { useTelescopeStore } from "@/store/useTelescopeStore";
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,12 @@ import { Switch } from "@/components/ui/switch";
 import { DeviceSelector } from "./device-selector";
 import { useMediaQuery } from "react-responsive";
 import { AnimatePresence } from "framer-motion";
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import {
+  TooltipProvider,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -348,7 +354,11 @@ export function TelescopePage() {
 
         {/* Main control grid */}
         <div className="flex-1 p-4 overflow-y-auto">
-          <div className={`grid ${isDesktop ? 'grid-cols-2' : 'grid-cols-1'} gap-6`}>
+          <div
+            className={`grid ${
+              isDesktop ? "grid-cols-2" : "grid-cols-1"
+            } gap-6`}
+          >
             {/* Control Panel */}
             <Card className="bg-background/95 supports-[backdrop-filter]:bg-background/60 shadow-xl">
               <CardHeader>
@@ -369,7 +379,9 @@ export function TelescopePage() {
                     className="relative group"
                   >
                     <ChevronLeft className="w-6 h-6 group-active:scale-90 transition-transform" />
-                    <span className="absolute -bottom-6 text-xs opacity-50">西</span>
+                    <span className="absolute -bottom-6 text-xs opacity-50">
+                      西
+                    </span>
                   </Button>
                   <div className="flex flex-col space-y-2">
                     <Button
@@ -380,7 +392,9 @@ export function TelescopePage() {
                       className="relative group"
                     >
                       <ChevronUp className="w-6 h-6 group-active:scale-90 transition-transform" />
-                      <span className="absolute -top-6 text-xs opacity-50">北</span>
+                      <span className="absolute -top-6 text-xs opacity-50">
+                        北
+                      </span>
                     </Button>
                     <Button
                       variant="outline"
@@ -399,7 +413,9 @@ export function TelescopePage() {
                       className="relative group"
                     >
                       <ChevronDown className="w-6 h-6 group-active:scale-90 transition-transform" />
-                      <span className="absolute -bottom-6 text-xs opacity-50">南</span>
+                      <span className="absolute -bottom-6 text-xs opacity-50">
+                        南
+                      </span>
                     </Button>
                   </div>
                   <Button
@@ -410,7 +426,9 @@ export function TelescopePage() {
                     className="relative group"
                   >
                     <ChevronRight className="w-6 h-6 group-active:scale-90 transition-transform" />
-                    <span className="absolute -bottom-6 text-xs opacity-50">东</span>
+                    <span className="absolute -bottom-6 text-xs opacity-50">
+                      东
+                    </span>
                   </Button>
                 </div>
 
@@ -633,6 +651,164 @@ export function TelescopePage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Status Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            {/* Status Card */}
+            <Card className="bg-background/95 supports-[backdrop-filter]:bg-background/60 shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  系统状态
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>连接状态</Label>
+                    <Badge variant={isConnected ? "default" : "destructive"}>
+                      {isConnected ? "已连接" : "未连接"}
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>系统模式</Label>
+                    <Badge variant={nightMode ? "default" : "secondary"}>
+                      {nightMode ? "夜间模式" : "日间模式"}
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>工作状态</Label>
+                    <Badge variant={isIdle ? "outline" : "default"}>
+                      {isIdle ? "空闲" : "工作中"}
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>追踪状态</Label>
+                    <Badge variant={trackSwitch ? "default" : "outline"}>
+                      {trackSwitch ? "追踪中" : "未追踪"}
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Position Card */}
+            <Card className="bg-background/95 supports-[backdrop-filter]:bg-background/60 shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Telescope className="h-5 w-5" />
+                  位置信息
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>赤经 (RA)</Label>
+                    <div className="text-xl font-mono">
+                      {currentRA.toFixed(4)}°
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>赤纬 (DEC)</Label>
+                    <div className="text-xl font-mono">
+                      {currentDec.toFixed(4)}°
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>方位角 (AZ)</Label>
+                    <div className="text-xl font-mono">
+                      {currentAz.toFixed(4)}°
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>高度角 (ALT)</Label>
+                    <div className="text-xl font-mono">
+                      {currentAlt.toFixed(4)}°
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Settings Card */}
+            <Card className="bg-background/95 supports-[backdrop-filter]:bg-background/60 shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sliders className="h-5 w-5" />
+                  设置状态
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>停靠开关</Label>
+                    <Badge variant={parkSwitch ? "default" : "outline"}>
+                      {parkSwitch ? "已停靠" : "未停靠"}
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>归位开关</Label>
+                    <Badge variant={homeSwitch ? "default" : "outline"}>
+                      {homeSwitch ? "已归位" : "未归位"}
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>当前速度</Label>
+                    <div className="text-sm font-mono">
+                      {speedNum + 1}/{speedTotalNum.length} (
+                      {speedTotalNum[speedNum]}x)
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>可用速度</Label>
+                    <div className="text-sm font-mono">
+                      [{speedTotalNum.join(", ")}]
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Operations Log Card */}
+          <Card className="bg-background/95 supports-[backdrop-filter]:bg-background/60 shadow-xl mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ScrollText className="h-5 w-5" />
+                操作日志
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {new Date().toLocaleTimeString()} - 系统状态检查
+                    </span>
+                    <Badge variant="outline">
+                      {isConnected ? "已连接" : "未连接"}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {new Date().toLocaleTimeString()} - 追踪状态
+                    </span>
+                    <Badge variant={trackSwitch ? "default" : "outline"}>
+                      {trackSwitch ? "追踪中" : "未追踪"}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {new Date().toLocaleTimeString()} - 运动速度变更
+                    </span>
+                    <Badge variant="secondary">
+                      {speedTotalNum[speedNum]}x
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </motion.div>
     </AnimatePresence>

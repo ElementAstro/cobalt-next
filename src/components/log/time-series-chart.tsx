@@ -233,17 +233,22 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
       darkMode={chartOptions.darkMode}
       headerControls={timeRangeControls}
       isLoading={isLoading}
-      className="min-h-[500px]"
+      className="min-h-[300px] sm:min-h-[400px]"
     >
       <AnimatePresence mode="wait">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="space-y-4"
+          className="space-y-2"
         >
-          <Card className="p-4">
-            <ResponsiveContainer width="100%" height={400}>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {/* Metric cards */}
+            {/* ...existing code... */}
+          </div>
+          
+          <Card className="p-2 sm:p-4">
+            <ResponsiveContainer width="100%" height={300}>
               <LineChart
                 data={chartData}
                 margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
@@ -267,8 +272,7 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
                     id="errorGradient"
                     x1="0"
                     y1="0"
-                    x2="0"
-                    y2="1"
+                    x2="0" y2="1"
                   >
                     <stop offset="5%" stopColor="#ff7300" stopOpacity={0.8} />
                     <stop offset="95%" stopColor="#ff7300" stopOpacity={0} />

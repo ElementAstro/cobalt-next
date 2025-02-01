@@ -372,48 +372,190 @@ export function FilterWheelPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <motion.div
-                    className="grid grid-cols-1 sm:grid-cols-2 gap-4"
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="visible"
-                  >
-                    <motion.div variants={itemVariants} className="space-y-2">
-                      <Label>名称</Label>
-                      <div className="text-sm">{filterWheelInfo.name}</div>
-                    </motion.div>
-                    <motion.div variants={itemVariants} className="space-y-2">
-                      <Label>驱动信息</Label>
-                      <div className="text-sm">
-                        {filterWheelInfo.driverInfo}
-                      </div>
-                    </motion.div>
-                    <motion.div variants={itemVariants} className="space-y-2">
-                      <Label>驱动版本</Label>
-                      <div className="text-sm">
-                        {filterWheelInfo.driverVersion}
-                      </div>
-                    </motion.div>
-                    <motion.div variants={itemVariants} className="space-y-2">
+                  <Tabs defaultValue="basic" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="basic">基本信息</TabsTrigger>
+                      <TabsTrigger value="advanced">详细参数</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="basic">
+                      <motion.div
+                        className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                        variants={containerVariants}
+                      >
+                        <motion.div
+                          variants={itemVariants}
+                          className="space-y-2"
+                        >
+                          <Label>名称</Label>
+                          <div className="text-sm">{filterWheelInfo.name}</div>
+                        </motion.div>
+                        <motion.div
+                          variants={itemVariants}
+                          className="space-y-2"
+                        >
+                          <Label>驱动信息</Label>
+                          <div className="text-sm">
+                            {filterWheelInfo.driverInfo}
+                          </div>
+                        </motion.div>
+                        <motion.div
+                          variants={itemVariants}
+                          className="space-y-2"
+                        >
+                          <Label>驱动版本</Label>
+                          <div className="text-sm">
+                            {filterWheelInfo.driverVersion}
+                          </div>
+                        </motion.div>
+                        <motion.div
+                          variants={itemVariants}
+                          className="space-y-2"
+                        >
+                          <Label>当前滤镜</Label>
+                          <div className="text-sm">
+                            {filterWheelInfo.currentFilter}
+                          </div>
+                        </motion.div>
+                        <motion.div
+                          variants={itemVariants}
+                          className="space-y-2"
+                        >
+                          <Label>描述</Label>
+                          <div className="text-sm">
+                            {filterWheelInfo.description}
+                          </div>
+                        </motion.div>
+                        <motion.div
+                          variants={itemVariants}
+                          className="space-y-2"
+                        >
+                          <Label>当前位置</Label>
+                          <div className="text-sm">
+                            {filterWheelInfo.position} /{" "}
+                            {filterWheelInfo.maxPosition}
+                          </div>
+                        </motion.div>
+                      </motion.div>
+                    </TabsContent>
+                    <TabsContent value="advanced">
+                      <motion.div
+                        className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                        variants={containerVariants}
+                      >
+                        <motion.div
+                          variants={itemVariants}
+                          className="space-y-2"
+                        >
+                          <Label>连接状态</Label>
+                          <div className="text-sm">
+                            {isConnected ? "已连接" : "未连接"}
+                          </div>
+                        </motion.div>
+                        <motion.div
+                          variants={itemVariants}
+                          className="space-y-2"
+                        >
+                          <Label>移动状态</Label>
+                          <div className="text-sm">
+                            {filterWheelInfo.isMoving ? "移动中" : "静止"}
+                          </div>
+                        </motion.div>
+                        <motion.div
+                          variants={itemVariants}
+                          className="space-y-2"
+                        >
+                          <Label>可用滤镜列表</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {filterWheelInfo.filters.map((filter, index) => (
+                              <Badge key={index} variant="outline">
+                                {filter}
+                              </Badge>
+                            ))}
+                          </div>
+                        </motion.div>
+                        <motion.div
+                          variants={itemVariants}
+                          className="space-y-2"
+                        >
+                          <Label>位置范围</Label>
+                          <div className="text-sm">
+                            最小: {filterWheelInfo.minPosition} / 最大:{" "}
+                            {filterWheelInfo.maxPosition}
+                          </div>
+                        </motion.div>
+                        <motion.div
+                          variants={itemVariants}
+                          className="space-y-2"
+                        >
+                          <Label>移动历史记录</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {moveHistory.map((position, index) => (
+                              <Badge key={index} variant="secondary">
+                                位置 {position}
+                              </Badge>
+                            ))}
+                          </div>
+                        </motion.div>
+                        <motion.div
+                          variants={itemVariants}
+                          className="space-y-2"
+                        >
+                          <Label>当前选中滤镜</Label>
+                          <div className="text-sm">{selectedFilter}</div>
+                        </motion.div>
+                      </motion.div>
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+
+              {/* 实时状态监控 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <RotateCw className="h-5 w-5" />
+                    实时状态监控
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <Label>当前位置进度</Label>
+                      <Progress
+                        value={getFilterPositionProgress()}
+                        className="w-2/3"
+                      />
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <Label>移动状态</Label>
+                      <Badge
+                        variant={
+                          filterWheelInfo.isMoving ? "default" : "secondary"
+                        }
+                      >
+                        {filterWheelInfo.isMoving ? (
+                          <RotateCw className="w-4 h-4 mr-1 animate-spin" />
+                        ) : (
+                          <StopCircle className="w-4 h-4 mr-1" />
+                        )}
+                        {filterWheelInfo.isMoving ? "移动中" : "静止"}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
                       <Label>当前滤镜</Label>
-                      <div className="text-sm">
+                      <div className="flex items-center gap-2">
+                        <CircleDot className="w-4 h-4" />
                         {filterWheelInfo.currentFilter}
                       </div>
-                    </motion.div>
-                    <motion.div variants={itemVariants} className="space-y-2">
-                      <Label>描述</Label>
-                      <div className="text-sm">
-                        {filterWheelInfo.description}
-                      </div>
-                    </motion.div>
-                    <motion.div variants={itemVariants} className="space-y-2">
-                      <Label>当前位置</Label>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <Label>位置信息</Label>
                       <div className="text-sm">
                         {filterWheelInfo.position} /{" "}
                         {filterWheelInfo.maxPosition}
                       </div>
-                    </motion.div>
-                  </motion.div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 

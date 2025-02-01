@@ -2,6 +2,11 @@
 
 import React, { useEffect } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +37,7 @@ import { useExposureStore, ExposureSettings } from "@/store/useDashboardStore";
 import { AnimatedCircularProgressBar } from "@/components/ui/animated-circular-progress-bar";
 import { cn } from "@/lib/utils";
 import { ExposureTimeSlider } from "./exposure-slider";
+import { formatExposureTime } from "@/utils/format-exposure-time";
 
 const containerVariants: Variants = {
   hidden: { opacity: 0, scale: 0.95 },
@@ -342,9 +348,26 @@ const ExposureControls: React.FC<ExposureControlsProps> = React.memo(
           </motion.div>
         )}
 
-        <motion.div variants={itemVariants} className="w-full mb-4">
-          <ExposureTimeSlider />
-        </motion.div>
+        <HoverCard openDelay={0} closeDelay={0}>
+          <HoverCardTrigger asChild>
+            <motion.div variants={itemVariants} className="w-full mb-4">
+              <Button
+                variant="ghost"
+                className="w-full flex items-center justify-between px-4 py-2 text-gray-300 hover:text-white hover:bg-gray-700"
+              >
+                <span>Exposure Settings</span>
+                <span>{formatExposureTime(exposureTime)}</span>
+              </Button>
+            </motion.div>
+          </HoverCardTrigger>
+          <HoverCardContent
+            side="left"
+            align="start"
+            className="w-96 p-0 bg-gray-800 border-gray-700"
+          >
+            <ExposureTimeSlider />
+          </HoverCardContent>
+        </HoverCard>
 
         <motion.div
           variants={containerVariants}

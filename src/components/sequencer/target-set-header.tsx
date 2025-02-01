@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Button as BaseButton } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { useSequencerStore } from "@/store/useSequencerStore";
 
 const Button = motion(BaseButton);
 import { ChevronDown, ChevronUp, Search, X } from "lucide-react";
@@ -115,7 +116,23 @@ function SwitchOption({
   );
 }
 
-export function TargetSetHeader() {
+export default function TargetSetHeader() {
+  const {
+    settings,
+    setSetting,
+    saveSettings,
+    notifications,
+    errors,
+    clearErrors
+  } = useSequencerStore();
+
+  useEffect(() => {
+    if (errors.length > 0) {
+      // 显示错误通知
+      setTimeout(clearErrors, 5000);
+    }
+  }, [errors]);
+
   const [options, setOptions] = useState<TargetSetOptions>(DEFAULT_OPTIONS);
   const [isStartOptionsCollapsed, setIsStartOptionsCollapsed] = useState(true);
   const [isEndOptionsCollapsed, setIsEndOptionsCollapsed] = useState(true);
@@ -261,14 +278,163 @@ export function TargetSetHeader() {
 
   return (
     <motion.div
-      className="bg-gray-800 p-4 sm:p-6 rounded-lg w-full max-w-4xl mx-auto"
+      className="bg-gray-900/50 p-3 rounded-lg"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       layout
     >
-      <div className="space-y-6">
-        <div className="flex items-center space-x-2">
+      <header className="p-4 bg-gray-900 rounded-md shadow-md flex justify-between items-center">
+        <h1 className="text-xl font-bold text-white">目标设置</h1>
+        {/* ...existing操作按钮或图标... */}
+      </header>
+      <div className="space-y-3">
+        {/* Options Panels */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+          {/* Start Options */}
+          <Collapsible
+            open={!isStartOptionsCollapsed}
+            onOpenChange={(open) => setIsStartOptionsCollapsed(!open)}
+          >
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full flex justify-between items-center hover:bg-gray-800/50"
+              >
+                <h2 className="text-sm font-medium">Start Options</h2>
+                <ChevronDown
+                  className={`h-4 w-4 transform transition-transform ${
+                    isStartOptionsCollapsed ? "" : "rotate-180"
+                  }`}
+                />
+              </Button>
+            </CollapsibleTrigger>
+            <AnimatePresence>
+              {!isStartOptionsCollapsed && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{
+                    duration: 0.3,
+                    ease: "easeInOut",
+                    opacity: { duration: 0.2 },
+                  }}
+                  style={{ overflow: "hidden" }}
+                >
+                  <CollapsibleContent>
+                    <div className="space-y-4 mt-2">
+                      {startOptions.map((option) => (
+                        <SwitchOption
+                          key={option.id}
+                          id={option.id}
+                          label={option.label}
+                          checked={options[option.id as keyof TargetSetOptions]}
+                          onChange={() =>
+                            updateOption(option.id as keyof TargetSetOptions)
+                          }
+                          description={option.description}
+                          category={option.category}
+                        />
+                      ))}
+                      <div className="flex justify-end space-x-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => toggleAll("start", true)}
+                          className="text-teal-500 hover:bg-teal-500/10 transition-colors duration-200"
+                        >
+                          Enable All
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => toggleAll("start", false)}
+                          className="text-red-500 hover:bg-red-500/10 transition-colors duration-200"
+                        >
+                          Disable All
+                        </Button>
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </Collapsible>
+
+          {/* End Options */}
+          <Collapsible
+            open={!isEndOptionsCollapsed}
+            onOpenChange={(open) => setIsEndOptionsCollapsed(!open)}
+          >
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full flex justify-between items-center text-left hover:scale-[1.02] transition-transform duration-200"
+              >
+                <h2 className="text-sm font-medium text-gray-300">
+                  Target Set End Options
+                </h2>
+                <motion.div
+                  animate={{ rotate: isEndOptionsCollapsed ? 0 : 180 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <ChevronDown className="h-4 w-4 text-gray-300" />
+                </motion.div>
+              </Button>
+            </CollapsibleTrigger>
+            <AnimatePresence>
+              {!isEndOptionsCollapsed && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{
+                    duration: 0.3,
+                    ease: "easeInOut",
+                    opacity: { duration: 0.2 },
+                  }}
+                  style={{ overflow: "hidden" }}
+                >
+                  <CollapsibleContent>
+                    <div className="space-y-4 mt-2">
+                      {endOptions.map((option) => (
+                        <SwitchOption
+                          key={option.id}
+                          id={option.id}
+                          label={option.label}
+                          checked={options[option.id as keyof TargetSetOptions]}
+                          onChange={() =>
+                            updateOption(option.id as keyof TargetSetOptions)
+                          }
+                          description={option.description}
+                          category={option.category}
+                        />
+                      ))}
+                      <div className="flex justify-end space-x-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => toggleAll("end", true)}
+                          className="text-teal-500 hover:bg-teal-500/10 transition-colors duration-200"
+                        >
+                          Enable All
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => toggleAll("end", false)}
+                          className="text-red-500 hover:bg-red-500/10 transition-colors duration-200"
+                        >
+                          Disable All
+                        </Button>
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </Collapsible>
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative">
           <motion.div className="relative flex-1" layout>
             <motion.div
               className="absolute left-3 top-1/2 -translate-y-1/2"
@@ -306,150 +472,6 @@ export function TargetSetHeader() {
             </AnimatePresence>
           </motion.div>
         </div>
-
-        {/* Start Options */}
-        <Collapsible
-          open={!isStartOptionsCollapsed}
-          onOpenChange={(open) => setIsStartOptionsCollapsed(!open)}
-        >
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              className="w-full flex justify-between items-center text-left hover:scale-[1.02] transition-transform duration-200"
-            >
-              <h2 className="text-sm font-medium text-gray-300">
-                Target Set Start Options
-              </h2>
-              <motion.div
-                animate={{ rotate: isStartOptionsCollapsed ? 0 : 180 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <ChevronDown className="h-4 w-4 text-gray-300" />
-              </motion.div>
-            </Button>
-          </CollapsibleTrigger>
-          <AnimatePresence>
-            {!isStartOptionsCollapsed && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{
-                  duration: 0.3,
-                  ease: "easeInOut",
-                  opacity: { duration: 0.2 },
-                }}
-                style={{ overflow: "hidden" }}
-              >
-                <CollapsibleContent>
-                  <div className="space-y-4 mt-2">
-                    {startOptions.map((option) => (
-                      <SwitchOption
-                        key={option.id}
-                        id={option.id}
-                        label={option.label}
-                        checked={options[option.id as keyof TargetSetOptions]}
-                        onChange={() =>
-                          updateOption(option.id as keyof TargetSetOptions)
-                        }
-                        description={option.description}
-                        category={option.category}
-                      />
-                    ))}
-                    <div className="flex justify-end space-x-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => toggleAll("start", true)}
-                        className="text-teal-500 hover:bg-teal-500/10 transition-colors duration-200"
-                      >
-                        Enable All
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => toggleAll("start", false)}
-                        className="text-red-500 hover:bg-red-500/10 transition-colors duration-200"
-                      >
-                        Disable All
-                      </Button>
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </Collapsible>
-
-        {/* End Options */}
-        <Collapsible
-          open={!isEndOptionsCollapsed}
-          onOpenChange={(open) => setIsEndOptionsCollapsed(!open)}
-        >
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              className="w-full flex justify-between items-center text-left hover:scale-[1.02] transition-transform duration-200"
-            >
-              <h2 className="text-sm font-medium text-gray-300">
-                Target Set End Options
-              </h2>
-              <motion.div
-                animate={{ rotate: isEndOptionsCollapsed ? 0 : 180 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <ChevronDown className="h-4 w-4 text-gray-300" />
-              </motion.div>
-            </Button>
-          </CollapsibleTrigger>
-          <AnimatePresence>
-            {!isEndOptionsCollapsed && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{
-                  duration: 0.3,
-                  ease: "easeInOut",
-                  opacity: { duration: 0.2 },
-                }}
-                style={{ overflow: "hidden" }}
-              >
-                <CollapsibleContent>
-                  <div className="space-y-4 mt-2">
-                    {endOptions.map((option) => (
-                      <SwitchOption
-                        key={option.id}
-                        id={option.id}
-                        label={option.label}
-                        checked={options[option.id as keyof TargetSetOptions]}
-                        onChange={() =>
-                          updateOption(option.id as keyof TargetSetOptions)
-                        }
-                        description={option.description}
-                        category={option.category}
-                      />
-                    ))}
-                    <div className="flex justify-end space-x-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => toggleAll("end", true)}
-                        className="text-teal-500 hover:bg-teal-500/10 transition-colors duration-200"
-                      >
-                        Enable All
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => toggleAll("end", false)}
-                        className="text-red-500 hover:bg-red-500/10 transition-colors duration-200"
-                      >
-                        Disable All
-                      </Button>
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </Collapsible>
       </div>
     </motion.div>
   );

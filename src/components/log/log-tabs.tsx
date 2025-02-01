@@ -30,34 +30,27 @@ const LogTabs: React.FC = () => {
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
-        className="flex-grow flex flex-col dark:text-gray-200 "
+        className="flex-grow flex flex-col dark:text-gray-200"
       >
         <motion.div
-          className="border-b dark:border-gray-800"
+          className="border-b dark:border-gray-800 flex-none"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <TabsList className="flex justify-start px-2 py-1 bg-transparent">
-            <TabsTrigger value="logs" className="flex-1 text-center rounded-t-lg">
+          <TabsList className="h-8 w-full grid grid-cols-4 gap-1 bg-transparent p-0">
+            <TabsTrigger value="logs" className="text-xs sm:text-sm">
               日志列表
-              <span className="ml-2 text-xs text-gray-500">{logs.length}</span>
+              <span className="ml-1 text-xs text-gray-500 hidden sm:inline">
+                {logs.length}
+              </span>
             </TabsTrigger>
-            <TabsTrigger
-              value="analysis"
-              className="flex-1 text-center rounded-t-lg"
-            >
+            <TabsTrigger value="analysis" className="text-xs sm:text-sm">
               统计分析
             </TabsTrigger>
-            <TabsTrigger
-              value="timeseries"
-              className="flex-1 text-center rounded-t-lg"
-            >
+            <TabsTrigger value="timeseries" className="text-xs sm:text-sm">
               时间序列
             </TabsTrigger>
-            <TabsTrigger
-              value="comparison"
-              className="flex-1 text-center rounded-t-lg"
-            >
+            <TabsTrigger value="comparison" className="text-xs sm:text-sm">
               日志对比
             </TabsTrigger>
           </TabsList>

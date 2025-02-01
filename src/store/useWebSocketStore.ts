@@ -1,12 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { WebSocketConfig, WebSocketStatus } from '@/types/websocket';
+import WebSocketClient from '@/utils/websocket-client';
 
 interface WebSocketState {
   config: WebSocketConfig;
   status: WebSocketStatus;
+  client: WebSocketClient | null;
   setConfig: (config: Partial<WebSocketConfig>) => void;
   updateStatus: (status: Partial<WebSocketStatus>) => void;
+  initializeClient: () => void;
 }
 
 const defaultConfig: WebSocketConfig = {
@@ -34,9 +37,10 @@ const defaultStatus: WebSocketStatus = {
 
 export const useWebSocketStore = create<WebSocketState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       config: defaultConfig,
       status: defaultStatus,
+      client: null,
       setConfig: (newConfig) =>
         set((state) => ({
           config: { ...state.config, ...newConfig },
@@ -45,6 +49,14 @@ export const useWebSocketStore = create<WebSocketState>()(
         set((state) => ({
           status: { ...state.status, ...newStatus },
         })),
+      initializeClient: () => {
+        const state = get();
+        if (!state.client) {
+          const client = new WebSocketClient(state.config);
+          set({ client });
+        }
+        return state.client;
+      },
     }),
     {
       name: 'websocket-storage',

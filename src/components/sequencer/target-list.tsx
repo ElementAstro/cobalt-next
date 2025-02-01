@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Target, Task, CoordinateData } from "@/types/sequencer";
+import { Target, Task, CoordinateData, ExposureTask } from "@/types/sequencer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Accordion,
@@ -44,6 +44,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 
 interface TargetListProps {}
 
@@ -62,7 +64,7 @@ export function TargetList({}: TargetListProps) {
   const [editingTarget, setEditingTarget] = useState<Target | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editingTask, setEditingTask] = useState<ExposureTask | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -94,17 +96,44 @@ export function TargetList({}: TargetListProps) {
   };
 
   const addTask = (targetId: string) => {
-    const newTask: Task = {
+    const target = targets.find((t) => t.id === targetId);
+    const taskCount = (target?.tasks.length || 0) + 1;
+    const newTask: ExposureTask = {
       id: Date.now().toString(),
-      name: `任务 ${
-        targets.find((t) => t.id === targetId)?.tasks.length || 0 + 1
-      }`,
+      name: `任务 ${taskCount}`,
       duration: 60,
       type: "imaging",
       filter: "L",
       binning: "1x1",
       count: 1,
       category: "imaging",
+      enabled: true,
+      total: 0,
+      time: "",
+      progress: [0, 0],
+      metadata: {
+        camera: "",
+        filter: "",
+        exposure: 0,
+        gain: 0,
+        binning: "",
+        temperature: 0,
+      },
+      status: {
+        state: "pending",
+        progress: 0,
+        attempts: 0,
+        logs: [],
+      },
+      settings: {
+        dither: false,
+        ditherScale: 0,
+        focusCheck: false,
+        meridianFlip: false,
+        autoGuide: false,
+        delay: 0,
+        repeat: 0,
+      },
     };
     setEditingTask(newTask);
     setIsTaskDialogOpen(true);
@@ -153,265 +182,293 @@ export function TargetList({}: TargetListProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
     >
-      <div className="flex flex-col md:flex-row items-center justify-between space-y-2 md:space-y-0">
-        <div className="flex items-center space-x-2">
-          <Input
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="搜索目标..."
-            className="w-48"
-          />
+      <div className="p-4 bg-gray-900 rounded-md text-white">
+        <div className="flex flex-col md:flex-row items-center justify-between space-y-2 md:space-y-0">
+          <div className="flex items-center space-x-2">
+            <Input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="搜索目标..."
+              className="w-48"
+            />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Input
+              value={newTargetName}
+              onChange={(e) => setNewTargetName(e.target.value)}
+              placeholder="输入目标名称"
+              className="bg-dark-700 text-dark-200"
+            />
+            <Button onClick={addTarget} className="bg-dark-500 text-dark-200">
+              添加目标
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <Input
-            value={newTargetName}
-            onChange={(e) => setNewTargetName(e.target.value)}
-            placeholder="输入目标名称"
-            className="bg-dark-700 text-dark-200"
-          />
-          <Button onClick={addTarget} className="bg-dark-500 text-dark-200">
-            添加目标
-          </Button>
-        </div>
-      </div>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={filteredTargets.map((target) => target.id)}
-          strategy={verticalListSortingStrategy}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
         >
-          <Accordion type="single" collapsible className="w-full">
-            {filteredTargets.map((target) => (
-              <SortableItem
-                key={target.id}
-                task={{
-                  id: target.id,
-                  name: target.name,
-                  enabled: true,
-                  progress: [0, 0],
-                  total: 0,
-                  time: "",
-                  type: "",
-                  filter: "",
-                  binning: "",
-                }}
-              >
-                <AccordionItem value={target.id}>
-                  <AccordionTrigger className="bg-dark-700 text-dark-200 flex justify-between items-center">
-                    {target.name}
-                    <div className="flex space-x-2">
-                      <Button
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          editTarget(target);
-                        }}
-                        className="bg-teal-500 text-white"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteTarget(target.id);
-                        }}
-                        className="bg-red-500 text-white"
-                      >
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="bg-dark-800 text-dark-200">
-                    <Card className="bg-dark-800 text-dark-200">
-                      <CardHeader>
-                        <CardTitle>坐标</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-3 gap-4">
-                          <CoordinateInput
-                            label="RA"
-                            value={target.coordinates.ra}
-                            onChange={(ra) =>
-                              updateCoordinates(target.id, {
-                                ...target.coordinates,
-                                ra,
-                              })
-                            }
-                          />
-                          <CoordinateInput
-                            label="Dec"
-                            value={target.coordinates.dec}
-                            onChange={(dec) =>
-                              updateCoordinates(target.id, {
-                                ...target.coordinates,
-                                dec,
-                              })
-                            }
-                          />
-                          <div>
-                            <Label className="text-dark-400">旋转</Label>
-                            <Input
-                              type="number"
-                              value={target.coordinates.rotation}
-                              onChange={(e) =>
+          <SortableContext
+            items={filteredTargets.map((target) => target.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <Accordion type="single" collapsible className="w-full">
+              {filteredTargets.map((target) => (
+                <SortableItem
+                  key={target.id}
+                  task={{
+                    id: target.id,
+                    name: target.name,
+                    enabled: true,
+                    progress: [0, 0],
+                    total: 0,
+                    time: "",
+                    type: "",
+                    filter: "",
+                    binning: "",
+                    duration: 0,
+                    count: 1,
+                    category: "imaging",
+                    metadata: {
+                      camera: "",
+                      filter: "",
+                      exposure: 0,
+                      gain: 0,
+                      binning: "",
+                      temperature: 0,
+                    },
+                    status: {
+                      state: "pending",
+                      progress: 0,
+                      attempts: 0,
+                      logs: [],
+                    },
+                    settings: {
+                      dither: false,
+                      ditherScale: 0,
+                      focusCheck: false,
+                      meridianFlip: false,
+                      autoGuide: false,
+                      delay: 0,
+                      repeat: 0,
+                    },
+                  }}
+                >
+                  <AccordionItem value={target.id}>
+                    <AccordionTrigger className="bg-dark-700 text-dark-200 flex justify-between items-center">
+                      {target.name}
+                      <div className="flex space-x-2">
+                        <Button
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            editTarget(target);
+                          }}
+                          className="bg-teal-500 text-white"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteTarget(target.id);
+                          }}
+                          className="bg-red-500 text-white"
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="bg-dark-800 text-dark-200">
+                      <Card className="bg-dark-800 text-dark-200">
+                        <CardHeader>
+                          <CardTitle>坐标</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-3 gap-4">
+                            <CoordinateInput
+                              label="RA"
+                              value={target.coordinates.ra}
+                              onChange={(ra) =>
                                 updateCoordinates(target.id, {
                                   ...target.coordinates,
-                                  rotation: Number(e.target.value),
+                                  ra,
                                 })
                               }
-                              className="bg-dark-700 text-dark-200"
                             />
+                            <CoordinateInput
+                              label="Dec"
+                              value={target.coordinates.dec}
+                              onChange={(dec) =>
+                                updateCoordinates(target.id, {
+                                  ...target.coordinates,
+                                  dec,
+                                })
+                              }
+                            />
+                            <div>
+                              <Label className="text-dark-400">旋转</Label>
+                              <Input
+                                type="number"
+                                value={target.coordinates.rotation}
+                                onChange={(e) =>
+                                  updateCoordinates(target.id, {
+                                    ...target.coordinates,
+                                    rotation: Number(e.target.value),
+                                  })
+                                }
+                                className="bg-dark-700 text-dark-200"
+                              />
+                            </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    <Card className="mt-4 bg-dark-800 text-dark-200">
-                      <CardHeader>
-                        <CardTitle>任务</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <TaskList
-                          tasks={target.tasks}
-                          onAddTask={() => addTask(target.id)}
-                          onUpdateTasks={(updatedTasks) =>
-                            setTargets(
-                              targets.map((t) =>
-                                t.id === target.id
-                                  ? { ...t, tasks: updatedTasks }
-                                  : t
+                        </CardContent>
+                      </Card>
+                      <Card className="mt-4 bg-dark-800 text-dark-200">
+                        <CardHeader>
+                          <CardTitle>任务</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <TaskList
+                            tasks={target.tasks}
+                            onAddTask={() => addTask(target.id)}
+                            onUpdateTasks={(updatedTasks: ExposureTask[]) =>
+                              setTargets(
+                                targets.map((t) =>
+                                  t.id === target.id
+                                    ? { ...t, tasks: updatedTasks }
+                                    : t
+                                )
                               )
-                            )
-                          }
-                        />
-                        <Button
-                          onClick={() => addTask(target.id)}
-                          className="mt-2 bg-dark-500 text-dark-200"
-                        >
-                          添加任务
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </AccordionContent>
-                </AccordionItem>
-              </SortableItem>
-            ))}
-          </Accordion>
-        </SortableContext>
-      </DndContext>
+                            }
+                          />
+                          <Button
+                            onClick={() => addTask(target.id)}
+                            className="mt-2 bg-dark-500 text-dark-200"
+                          >
+                            添加任务
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </AccordionContent>
+                  </AccordionItem>
+                </SortableItem>
+              ))}
+            </Accordion>
+          </SortableContext>
+        </DndContext>
 
-      {/* 编辑目标对话框 */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-dark-800 text-dark-200">
-          <DialogHeader>
-            <DialogTitle>编辑目标</DialogTitle>
-          </DialogHeader>
-          {editingTarget && (
-            <div className="space-y-4">
-              <Input
-                value={editingTarget.name}
-                onChange={(e) =>
-                  setEditingTarget({ ...editingTarget, name: e.target.value })
-                }
-                placeholder="目标名称"
-                className="bg-dark-700 text-dark-200"
-              />
-              <Button
-                onClick={() => updateTarget(editingTarget)}
-                className="bg-teal-500 text-white"
-              >
-                保存
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* 编辑任务对话框 */}
-      <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
-        <DialogContent className="bg-dark-800 text-dark-200">
-          <DialogHeader>
-            <DialogTitle>编辑任务</DialogTitle>
-          </DialogHeader>
-          {editingTask && (
-            <div className="space-y-4">
-              <Input
-                value={editingTask.name}
-                onChange={(e) =>
-                  setEditingTask({ ...editingTask, name: e.target.value })
-                }
-                placeholder="任务名称"
-                className="bg-dark-700 text-dark-200"
-              />
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>类型</Label>
-                  <Select
-                    value={editingTask.type}
-                    onValueChange={(value) =>
-                      setEditingTask({ ...editingTask, type: value })
-                    }
-                  >
-                    <SelectTrigger className="bg-dark-700 text-dark-200">
-                      <SelectValue placeholder="选择类型" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="imaging">成像</SelectItem>
-                      <SelectItem value="calibration">校准</SelectItem>
-                      <SelectItem value="focus">对焦</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>滤镜</Label>
-                  <Select
-                    value={editingTask.filter}
-                    onValueChange={(value) =>
-                      setEditingTask({ ...editingTask, filter: value })
-                    }
-                  >
-                    <SelectTrigger className="bg-dark-700 text-dark-200">
-                      <SelectValue placeholder="选择滤镜" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="L">L</SelectItem>
-                      <SelectItem value="R">R</SelectItem>
-                      <SelectItem value="G">G</SelectItem>
-                      <SelectItem value="B">B</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <Button
-                onClick={() => {
-                  if (editingTask) {
-                    const target = targets.find(
-                      (t) => t.id === editingTarget?.id
-                    );
-                    if (target) {
-                      setTargets(
-                        targets.map((t) =>
-                          t.id === target.id
-                            ? { ...t, tasks: [...t.tasks, editingTask] }
-                            : t
-                        )
-                      );
-                    }
+        {/* 编辑目标对话框 */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="bg-dark-800 text-dark-200">
+            <DialogHeader>
+              <DialogTitle>编辑目标</DialogTitle>
+            </DialogHeader>
+            {editingTarget && (
+              <div className="space-y-4">
+                <Input
+                  value={editingTarget.name}
+                  onChange={(e) =>
+                    setEditingTarget({ ...editingTarget, name: e.target.value })
                   }
-                  setIsTaskDialogOpen(false);
-                }}
-                className="bg-teal-500 text-white"
-              >
-                保存
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+                  placeholder="目标名称"
+                  className="bg-dark-700 text-dark-200"
+                />
+                <Button
+                  onClick={() => updateTarget(editingTarget)}
+                  className="bg-teal-500 text-white"
+                >
+                  保存
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* 编辑任务对话框 */}
+        <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
+          <DialogContent className="bg-dark-800 text-dark-200">
+            <DialogHeader>
+              <DialogTitle>编辑任务</DialogTitle>
+            </DialogHeader>
+            {editingTask && (
+              <div className="space-y-4">
+                <Input
+                  value={editingTask.name}
+                  onChange={(e) =>
+                    setEditingTask({ ...editingTask, name: e.target.value })
+                  }
+                  placeholder="任务名称"
+                  className="bg-dark-700 text-dark-200"
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>类型</Label>
+                    <Select
+                      value={editingTask.type}
+                      onValueChange={(value) =>
+                        setEditingTask({ ...editingTask, type: value })
+                      }
+                    >
+                      <SelectTrigger className="bg-dark-700 text-dark-200">
+                        <SelectValue placeholder="选择类型" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="imaging">成像</SelectItem>
+                        <SelectItem value="calibration">校准</SelectItem>
+                        <SelectItem value="focus">对焦</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>滤镜</Label>
+                    <Select
+                      value={editingTask.filter}
+                      onValueChange={(value) =>
+                        setEditingTask({ ...editingTask, filter: value })
+                      }
+                    >
+                      <SelectTrigger className="bg-dark-700 text-dark-200">
+                        <SelectValue placeholder="选择滤镜" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="L">L</SelectItem>
+                        <SelectItem value="R">R</SelectItem>
+                        <SelectItem value="G">G</SelectItem>
+                        <SelectItem value="B">B</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => {
+                    if (editingTask) {
+                      const target = targets.find(
+                        (t) => t.id === editingTarget?.id
+                      );
+                      if (target) {
+                        setTargets(
+                          targets.map((t) =>
+                            t.id === target.id
+                              ? { ...t, tasks: [...t.tasks, editingTask] }
+                              : t
+                          )
+                        );
+                      }
+                    }
+                    setIsTaskDialogOpen(false);
+                  }}
+                  className="bg-teal-500 text-white"
+                >
+                  保存
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
     </motion.div>
   );
 }
@@ -475,9 +532,9 @@ function CoordinateInput({ label, value, onChange }: CoordinateInputProps) {
 }
 
 interface TaskListProps {
-  tasks: Task[];
+  tasks: ExposureTask[];
   onAddTask: () => void;
-  onUpdateTasks: (tasks: Task[]) => void;
+  onUpdateTasks: (tasks: ExposureTask[]) => void;
 }
 
 function TaskList({ tasks, onAddTask, onUpdateTasks }: TaskListProps) {
@@ -500,35 +557,68 @@ function TaskList({ tasks, onAddTask, onUpdateTasks }: TaskListProps) {
       {tasks.map((task) => (
         <li
           key={task.id}
-          className="flex items-center justify-between bg-dark-700 p-2 rounded"
+          className="flex flex-col bg-gray-800/50 p-3 rounded-lg border border-gray-700"
         >
-          <div>
-            {task.name} - {task.duration}s
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={task.enabled}
+                onCheckedChange={(checked) => {
+                  const updatedTasks = tasks.map((t) =>
+                    t.id === task.id ? { ...t, enabled: checked } : t
+                  );
+                  onUpdateTasks(updatedTasks);
+                }}
+              />
+              <span className="text-sm font-medium">{task.name}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                onClick={() => {
+                  const newName = prompt("输入新的任务名称", task.name);
+                  const newDuration = Number(
+                    prompt("输入新的持续时间（秒）", task.duration.toString())
+                  );
+                  if (newName && !isNaN(newDuration)) {
+                    editTask(task.id, newName, newDuration);
+                  }
+                }}
+                className="h-8 px-2"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => deleteTask(task.id)}
+                className="h-8 px-2"
+              >
+                <Trash className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex space-x-2">
-            <Button
-              size="sm"
-              onClick={() => {
-                const newName = prompt("输入新的任务名称", task.name);
-                const newDuration = Number(
-                  prompt("输入新的持续时间（秒）", task.duration.toString())
-                );
-                if (newName && !isNaN(newDuration)) {
-                  editTask(task.id, newName, newDuration);
-                }
-              }}
-              className="bg-teal-500 text-white"
-            >
-              编辑
-            </Button>
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => deleteTask(task.id)}
-              className="bg-red-500 text-white"
-            >
-              删除
-            </Button>
+
+          <div className="grid grid-cols-3 gap-2 text-xs text-gray-400">
+            <div>
+              <span>总数: </span>
+              <span className="text-white">{task.total}</span>
+            </div>
+            <div>
+              <span>时间: </span>
+              <span className="text-white">{task.time}</span>
+            </div>
+            <div>
+              <span>进度: </span>
+              <span className="text-white">{task.progress.join("/")}</span>
+            </div>
+          </div>
+
+          <div className="mt-2">
+            <Progress
+              value={(task.progress[0] / task.progress[1]) * 100}
+              className="h-1"
+            />
           </div>
         </li>
       ))}

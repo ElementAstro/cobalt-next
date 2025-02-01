@@ -2,50 +2,55 @@
 
 import { create } from "zustand";
 import MessageBus, { LogLevel } from "@/utils/message-bus";
-import WebSocketClient from "@/utils/websocket-client";
 import { DeviceInfo, DeviceType } from "@/types/device";
+import getWsClient from "@/utils/ws-client";
+import { z } from "zod";
+import logger from "@/utils/logger";
 
-interface DeviceSelectorState {
-  devices: DeviceInfo[];
-  remoteDrivers: DeviceInfo[];
-  selectedDevice: DeviceInfo | null;
-  isConnected: boolean;
-  isScanning: boolean;
-  connectionProgress: number;
-  lastScanTime: string;
-  error: string | null;
+// Zod schemas for Device
+const DeviceInfoSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.enum([
+    "Camera",
+    "Telescope",
+    "Focuser",
+    "FilterWheel",
+    "Guider",
+    "Dome",
+    "Rotator",
+  ]),
+  manufacturer: z.string().optional(),
+  model: z.string().optional(),
+  firmware: z.string(),
+  serial: z.string(),
+  lastConnected: z.string(),
+  capabilities: z.array(z.string()).optional(),
+  connected: z.boolean(),
+  isFavorite: z.boolean(),
+});
 
-  setDevices: (devices: DeviceInfo[]) => void;
-  setRemoteDrivers: (drivers: DeviceInfo[]) => void;
-  selectDevice: (device: DeviceInfo) => void;
-  startScanning: () => void;
-  stopScanning: () => void;
-  connect: () => void;
-  disconnect: () => void;
-  setError: (error: string | null) => void;
-  setConnectionProgress: (progress: number) => void;
+// Message type definitions
+type MessageType =
+  | "device/update"
+  | "device/connected"
+  | "device/disconnected"
+  | "scan/progress"
+  | "scan/error"
+  | "scan/completed"
+  | "scan/start"
+  | "scan/stop"
+  | "device/connect"
+  | "device/disconnect";
 
-  // 新增状态
-  deviceGroups: { [key: string]: string[] };
-  favoriteDevices: string[];
-  deviceNotes: { [key: string]: string };
-  deviceSettings: { [key: string]: any };
-  lastConnectionAttempt: string;
-  connectionHistory: Array<{
-    deviceId: string;
-    timestamp: string;
-    success: boolean;
+interface DeviceMessage {
+  type: MessageType;
+  payload: {
+    devices?: DeviceInfo[];
+    device?: DeviceInfo;
+    progress?: number;
     error?: string;
-  }>;
-
-  // 新增方法
-  addDeviceGroup: (name: string, deviceIds: string[]) => void;
-  removeDeviceGroup: (name: string) => void;
-  toggleFavoriteDevice: (deviceId: string) => void;
-  updateDeviceNote: (deviceId: string, note: string) => void;
-  updateDeviceSettings: (deviceId: string, settings: any) => void;
-  setConnectionHistory: (history: any) => void;
-  clearConnectionHistory: () => void;
+  };
 }
 
 // 设备模拟数据
@@ -170,90 +175,204 @@ const deviceTemplates: Record<DeviceType, DeviceInfo[]> = {
   ],
 };
 
-// 初始化 WebSocket 客户端和消息总线
-const wsClient = new WebSocketClient({
-  url: "ws://localhost:8081",
-  reconnectInterval: 3000,
-  maxReconnectAttempts: 5,
-  debug: true,
-});
+interface DeviceSelectorState {
+  devices: DeviceInfo[];
+  remoteDrivers: string[];
+  selectedDevice: DeviceInfo | null;
+  isConnected: boolean;
+  isScanning: boolean;
+  connectionProgress: number;
+  lastScanTime: string;
+  error: string | null;
+  deviceGroups: Record<string, string[]>;
+  favoriteDevices: string[];
+  deviceNotes: Record<string, string>;
+  deviceSettings: Record<string, any>;
+  lastConnectionAttempt: string;
+  connectionHistory: string[];
 
-const messageBus = new MessageBus(wsClient, {
-  logLevel: LogLevel.DEBUG,
-  maxRetries: 5,
-  retryDelay: 1000,
-});
-
-// 使用消息中间件处理
-messageBus.use((message, topic, next) => {
-  // 示例中间件：日志记录
-  console.log(`Middleware: Received message on topic "${topic}":`, message);
-  next();
-});
+  setDevices: (devices: DeviceInfo[]) => void;
+  setRemoteDrivers: (drivers: string[]) => void;
+  selectDevice: (device: DeviceInfo) => void;
+  startScanning: () => void;
+  stopScanning: () => void;
+  connect: () => void;
+  disconnect: () => void;
+  setError: (error: string | null) => void;
+  setConnectionProgress: (progress: number) => void;
+  addDeviceGroup: (name: string, deviceIds: string[]) => void;
+  removeDeviceGroup: (name: string) => void;
+  toggleFavoriteDevice: (deviceId: string) => void;
+  updateDeviceNote: (deviceId: string, note: string) => void;
+  updateDeviceSettings: (deviceId: string, settings: any) => void;
+  setConnectionHistory: (history: string[]) => void;
+  clearConnectionHistory: () => void;
+}
 
 export const useDeviceSelectorStore = create<DeviceSelectorState>(
   (set, get) => {
-    messageBus.subscribe("device/update", (data: DeviceInfo[]) => {
-      set({ devices: data });
+    const wsClient = getWsClient();
+    if (!wsClient) {
+      throw new Error("WebSocket client is not initialized");
+    }
+
+    const messageBus = new MessageBus<DeviceMessage>(wsClient, {
+      logLevel: LogLevel.INFO,
+      maxRetries: 3,
+      retryDelay: 1000,
     });
 
-    messageBus.subscribe("device/connected", (data: DeviceInfo) => {
-      set({
-        selectedDevice: data,
-        isConnected: true,
-        lastScanTime: new Date().toISOString(),
-      });
+    // Add message validation middleware
+    messageBus.use((message, topic, next) => {
+      try {
+        if (topic === "device/update" || topic === "device/connected") {
+          // Validate device info
+          if (Array.isArray(message.payload)) {
+            message.payload.forEach((device) => DeviceInfoSchema.parse(device));
+          } else {
+            DeviceInfoSchema.parse(message.payload);
+          }
+        }
+        logger.info(`Message received on topic ${topic}:`, message);
+        next();
+      } catch (error) {
+        logger.error("Message validation failed:", error);
+      }
+    });
+
+    // Subscribe to device updates
+    messageBus.subscribe("device/update", (message: DeviceMessage) => {
+      try {
+        if (message.payload.devices) {
+          const devices = message.payload.devices.map((device) => ({
+            ...device,
+            type: device.type as DeviceType, // 确保类型转换正确
+          }));
+          logger.info("Device list update received:", devices);
+          set({ devices });
+        }
+      } catch (error) {
+        logger.error("Error handling device update:", error);
+      }
+    });
+
+    messageBus.subscribe("device/connected", (message: DeviceMessage) => {
+      try {
+        if (message.payload.device) {
+          const device = {
+            ...message.payload.device,
+            type: message.payload.device.type as DeviceType,
+          };
+          logger.info("Device connected:", device);
+          set({
+            selectedDevice: device,
+            isConnected: true,
+            lastScanTime: new Date().toISOString(),
+          });
+        }
+      } catch (error) {
+        logger.error("Error handling device connection:", error);
+      }
     });
 
     messageBus.subscribe("device/disconnected", () => {
       set({ selectedDevice: null, isConnected: false });
     });
 
-    messageBus.subscribe("scan/progress", (progress: number) => {
-      set({ connectionProgress: progress });
+    messageBus.subscribe("scan/progress", (message: DeviceMessage) => {
+      if (typeof message.payload.progress === "number") {
+        set({ connectionProgress: message.payload.progress });
+      }
     });
 
-    messageBus.subscribe("scan/error", (error: string) => {
-      set({ error });
+    messageBus.subscribe("scan/error", (message: DeviceMessage) => {
+      if (message.payload.error) {
+        set({ error: message.payload.error });
+      }
     });
 
-    messageBus.subscribe("scan/completed", (devices: DeviceInfo[]) => {
-      set({
-        devices,
-        isScanning: false,
-        lastScanTime: new Date().toISOString(),
+    messageBus.subscribe("scan/completed", (message: DeviceMessage) => {
+      if (message.payload.devices) {
+        const devices = message.payload.devices.map((device) => ({
+          ...device,
+          type: device.type as DeviceType,
+        }));
+        set({
+          devices,
+          isScanning: false,
+          lastScanTime: new Date().toISOString(),
+        });
+      }
+    });
+
+    // Clean up function
+    const cleanup = () => {
+      logger.info("Cleaning up WebSocket and message bus subscriptions");
+      messageBus.getTopics().forEach((topic) => {
+        messageBus.clearTopic(topic);
       });
-    });
+      if (wsClient) {
+        wsClient.close();
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("beforeunload", cleanup);
+    }
 
     // 开始扫描设备
     const startScanning = () => {
-      set({ isScanning: true, error: null, devices: [] });
-      messageBus.publish("scan/start", {});
+      try {
+        logger.info("Starting device scan");
+        set({ isScanning: true, error: null, devices: [] });
+        messageBus.publish("scan/start", {});
+      } catch (error) {
+        logger.error("Error starting scan:", error);
+        set({ error: "扫描启动失败" });
+      }
     };
 
     // 停止扫描设备
     const stopScanning = () => {
-      set({ isScanning: false });
-      messageBus.publish("scan/stop", {});
+      try {
+        logger.info("Stopping device scan");
+        set({ isScanning: false });
+        messageBus.publish("scan/stop", {});
+      } catch (error) {
+        logger.error("Error stopping scan:", error);
+        set({ error: "扫描停止失败" });
+      }
     };
 
     // 连接设备
     const connect = () => {
-      const { selectedDevice } = get();
-      if (selectedDevice) {
-        messageBus.publish("device/connect", selectedDevice.id);
-      } else {
-        set({ error: "未选择设备" });
+      try {
+        const { selectedDevice } = get();
+        if (selectedDevice) {
+          logger.info("Connecting to device:", selectedDevice.id);
+          messageBus.publish("device/connect", selectedDevice.id);
+        } else {
+          set({ error: "未选择设备" });
+        }
+      } catch (error) {
+        logger.error("Error connecting to device:", error);
+        set({ error: "设备连接失败" });
       }
     };
 
     // 断开设备连接
     const disconnect = () => {
-      const { selectedDevice } = get();
-      if (selectedDevice) {
-        messageBus.publish("device/disconnect", selectedDevice.id);
-      } else {
-        set({ error: "未选择设备" });
+      try {
+        const { selectedDevice } = get();
+        if (selectedDevice) {
+          logger.info("Disconnecting from device:", selectedDevice.id);
+          messageBus.publish("device/disconnect", selectedDevice.id);
+        } else {
+          set({ error: "未选择设备" });
+        }
+      } catch (error) {
+        logger.error("Error disconnecting from device:", error);
+        set({ error: "设备断开失败" });
       }
     };
 
@@ -267,15 +386,15 @@ export const useDeviceSelectorStore = create<DeviceSelectorState>(
       lastScanTime: "",
       error: null,
 
-      setDevices: (devices) => set({ devices }),
-      setRemoteDrivers: (drivers) => set({ remoteDrivers: drivers }),
-      selectDevice: (device) => set({ selectedDevice: device }),
+      setDevices: (devices: DeviceInfo[]) => set({ devices }),
+      setRemoteDrivers: (drivers: string[]) => set({ remoteDrivers: drivers }),
+      selectDevice: (device: DeviceInfo) => set({ selectedDevice: device }),
       startScanning,
       stopScanning,
       connect,
       disconnect,
-      setError: (error) => set({ error }),
-      setConnectionProgress: (progress) =>
+      setError: (error: string | null) => set({ error }),
+      setConnectionProgress: (progress: number) =>
         set({ connectionProgress: progress }),
 
       deviceGroups: {},
@@ -285,45 +404,45 @@ export const useDeviceSelectorStore = create<DeviceSelectorState>(
       lastConnectionAttempt: "",
       connectionHistory: [],
 
-      addDeviceGroup: (name, deviceIds) =>
-        set((state) => ({
+      addDeviceGroup: (name: string, deviceIds: string[]) =>
+        set((state: DeviceSelectorState) => ({
           deviceGroups: {
             ...state.deviceGroups,
             [name]: deviceIds,
           },
         })),
 
-      removeDeviceGroup: (name) =>
-        set((state) => {
+      removeDeviceGroup: (name: string) =>
+        set((state: DeviceSelectorState) => {
           const { [name]: removed, ...rest } = state.deviceGroups;
           return { deviceGroups: rest };
         }),
 
-      toggleFavoriteDevice: (deviceId) =>
-        set((state) => ({
+      toggleFavoriteDevice: (deviceId: string) =>
+        set((state: DeviceSelectorState) => ({
           favoriteDevices: state.favoriteDevices.includes(deviceId)
-            ? state.favoriteDevices.filter((id) => id !== deviceId)
+            ? state.favoriteDevices.filter((id: string) => id !== deviceId)
             : [...state.favoriteDevices, deviceId],
         })),
 
-      updateDeviceNote: (deviceId, note) =>
-        set((state) => ({
+      updateDeviceNote: (deviceId: string, note: string) =>
+        set((state: DeviceSelectorState) => ({
           deviceNotes: {
             ...state.deviceNotes,
             [deviceId]: note,
           },
         })),
 
-      updateDeviceSettings: (deviceId, settings) =>
-        set((state) => ({
+      updateDeviceSettings: (deviceId: string, settings: any) =>
+        set((state: DeviceSelectorState) => ({
           deviceSettings: {
             ...state.deviceSettings,
             [deviceId]: settings,
           },
         })),
 
-      setConnectionHistory: (history) => set({ connectionHistory: history }),
-
+      setConnectionHistory: (history: string[]) =>
+        set({ connectionHistory: history }),
       clearConnectionHistory: () => set({ connectionHistory: [] }),
     };
   }
@@ -341,7 +460,14 @@ interface ProfileState {
   error: string | null;
 }
 
-export const useProfileStore = create<ProfileState>((set, get) => {
+export const useProfileStore = create<ProfileState>((set) => {
+  const wsClient = getWsClient();
+  if (!wsClient) {
+    throw new Error("WebSocket client is not initialized");
+  }
+
+  const messageBus = new MessageBus(wsClient);
+
   // 订阅与Profile相关的消息主题
   messageBus.subscribe("profile/update", (data: Partial<ProfileData>) => {
     set((state) => ({

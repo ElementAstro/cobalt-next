@@ -201,6 +201,28 @@ export function CameraPage() {
               </div>
               <div className="flex items-center justify-between">
                 <Span className="flex items-center gap-2">
+                  <Database className="w-4 h-4" />
+                  录制状态
+                </Span>
+                <Badge
+                  variant={camera.isRecording ? "default" : "secondary"}
+                  className="flex items-center gap-1"
+                >
+                  {camera.isRecording ? (
+                    <Activity className="w-3 h-3 animate-pulse" />
+                  ) : (
+                    <Power className="w-3 h-3" />
+                  )}
+                  {camera.isRecording ? "录制中" : "停止"}
+                </Badge>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Span className="flex items-center gap-2">
                   <ThermometerSnowflake className="w-4 h-4" />
                   制冷状态
                 </Span>
@@ -224,13 +246,15 @@ export function CameraPage() {
               </div>
               <div className="flex items-center justify-between">
                 <Span>目标温度</Span>
-                <Span className="font-mono">
-                  {camera.targetTemperature}°C
-                </Span>
+                <Span className="font-mono">{camera.targetTemperature}°C</Span>
               </div>
               <div className="flex items-center justify-between">
                 <Span>制冷功率</Span>
                 <Span className="font-mono">{camera.power}%</Span>
+              </div>
+              <div className="flex items-center justify-between">
+                <Span>目标制冷功率</Span>
+                <Span className="font-mono">{camera.targetCoolingPower}%</Span>
               </div>
             </div>
 
@@ -258,6 +282,43 @@ export function CameraPage() {
                 <Span className="font-mono">
                   {camera.binning}x{camera.binning}
                 </Span>
+              </div>
+              <div className="flex items-center justify-between">
+                <Span>白平衡</Span>
+                <Span className="font-mono">
+                  {camera.whiteBalance || "auto"}
+                </Span>
+              </div>
+              <div className="flex items-center justify-between">
+                <Span>对焦位置</Span>
+                <Span className="font-mono">{camera.focus || "N/A"}</Span>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Span>暗场校正</Span>
+                <Badge
+                  variant={camera.darkFrameEnabled ? "default" : "secondary"}
+                >
+                  {camera.darkFrameEnabled ? "启用" : "禁用"}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <Span>自动白平衡</Span>
+                <Badge variant={camera.autoWBEnabled ? "default" : "secondary"}>
+                  {camera.autoWBEnabled ? "启用" : "禁用"}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <Span>读出模式</Span>
+                <Badge variant="outline">{camera.readoutMode}</Badge>
+              </div>
+              <div className="flex items-center justify-between">
+                <Span>USB带宽</Span>
+                <Span className="font-mono">{camera.usbBandwidth}%</Span>
               </div>
             </div>
 
@@ -641,7 +702,10 @@ export function CameraPage() {
       </div>
 
       {/* Advanced Settings Dialog */}
-      <AlertDialog open={showAdvancedDialog} onOpenChange={setShowAdvancedDialog}>
+      <AlertDialog
+        open={showAdvancedDialog}
+        onOpenChange={setShowAdvancedDialog}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>高级相机设置</AlertDialogTitle>

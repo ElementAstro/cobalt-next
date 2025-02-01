@@ -79,29 +79,11 @@ const LogItem: React.FC<RowProps> = ({ index, style }) => {
     <motion.div
       style={style}
       className={cn(
-        "group px-4 py-2 border-b dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-all duration-200 relative",
+        "group px-2 py-1.5 border-b dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-all duration-200 relative",
         selectedLogs.includes(log.id) && "bg-blue-50/50 dark:bg-blue-900/10"
       )}
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.2 }}
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.98 }}
     >
-      <AnimatePresence>
-        {isCopied && (
-          <motion.div
-            className="absolute top-2 right-2 bg-green-500 text-white px-3 py-1 rounded-full text-xs"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
-            已复制
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-2">
         <Checkbox
           checked={selectedLogs.includes(log.id)}
           onCheckedChange={(checked) => {
@@ -111,9 +93,10 @@ const LogItem: React.FC<RowProps> = ({ index, style }) => {
                 : selectedLogs.filter((id) => id !== log.id)
             );
           }}
+          className="mt-1"
         />
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex flex-wrap gap-1 items-center text-xs mb-1">
             <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">
               {new Date(log.timestamp).toLocaleString()}
             </span>
@@ -138,7 +121,7 @@ const LogItem: React.FC<RowProps> = ({ index, style }) => {
               </Badge>
             ))}
           </div>
-          <pre className="text-sm font-mono whitespace-pre-wrap break-all">
+          <pre className="text-xs sm:text-sm font-mono whitespace-pre-wrap break-all">
             {log.message}
           </pre>
           {log.note && (

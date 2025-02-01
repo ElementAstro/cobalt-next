@@ -24,6 +24,7 @@ import {
   ZoomOut,
 } from "lucide-react";
 import { useState } from "react";
+import { useSequencerStore } from "@/store/useSequencerStore";
 
 interface TimelineGraphProps {
   data: TimelineData[];
@@ -61,29 +62,30 @@ interface TimelineGraphProps {
   onControlClick?: (action: string) => void;
 }
 
-export function TimelineGraph({
-  data,
-  height,
-  showLineChart,
-  colors,
-  showGrid = true,
-  gridStroke = "#444",
-  gridStrokeDasharray = "3 3",
-  showLegend = true,
-  legendPosition = "bottom",
-  axisLabels = {},
-  showMarkers = false,
-  markerSize = 5,
-  markerStroke = "#fff",
-  markerFill = "#888",
-  zoomable = false,
-  panable = false,
-  animationDuration = 1000,
-  animationEasing = "ease-in-out",
-  hoverAnimation = true,
-  hoverAnimationDuration = 300,
-  showControls = false,
-  controlIcons = {
+const defaultProps: Partial<TimelineGraphProps> = {
+  showLineChart: false,
+  colors: ["#82ca9d", "#8884d8", "#ffc658"],
+  showGrid: true,
+  gridStroke: "#333",
+  gridStrokeDasharray: "3 3",
+  showLegend: true,
+  legendPosition: "bottom",
+  axisLabels: {
+    x: "时间",
+    y: "亮度",
+  },
+  showMarkers: false,
+  markerSize: 4,
+  markerStroke: "#fff",
+  markerFill: "#666",
+  zoomable: true,
+  panable: true,
+  animationDuration: 1000,
+  animationEasing: "ease-in-out",
+  hoverAnimation: true,
+  hoverAnimationDuration: 300,
+  showControls: true,
+  controlIcons: {
     play: true,
     pause: true,
     refresh: true,
@@ -91,9 +93,14 @@ export function TimelineGraph({
     zoomIn: true,
     zoomOut: true,
   },
-  onControlClick,
-}: TimelineGraphProps) {
-  const formattedData = data.map((item, index) => {
+};
+
+export function TimelineGraph(props: TimelineGraphProps) {
+  const mergedProps = { ...defaultProps, ...props };
+  const { timeline, isRunning, startSequence, pauseSequence, stopSequence } =
+    useSequencerStore();
+
+  const formattedData = timeline.map((item, index) => {
     const dataPoint: any = { hour: `${index}:00` };
     if (Array.isArray(item.value)) {
       item.value.forEach((val, i) => {
@@ -107,13 +114,13 @@ export function TimelineGraph({
 
   const getAnimationProps = (index: number) => ({
     isAnimationActive: true,
-    animationDuration,
-    animationEasing,
-    ...(hoverAnimation && {
+    animationDuration: mergedProps.animationDuration,
+    animationEasing: mergedProps.animationEasing,
+    ...(mergedProps.hoverAnimation && {
       onMouseEnter: () => {
         const element = document.getElementById(`chart-element-${index}`);
         if (element) {
-          element.style.transition = `all ${hoverAnimationDuration}ms ease`;
+          element.style.transition = `all ${mergedProps.hoverAnimationDuration}ms ease`;
           element.style.transform = "scale(1.05)";
           element.style.filter = "brightness(1.2)";
         }
@@ -121,7 +128,7 @@ export function TimelineGraph({
       onMouseLeave: () => {
         const element = document.getElementById(`chart-element-${index}`);
         if (element) {
-          element.style.transition = `all ${hoverAnimationDuration}ms ease`;
+          element.style.transition = `all ${mergedProps.hoverAnimationDuration}ms ease`;
           element.style.transform = "scale(1)";
           element.style.filter = "brightness(1)";
         }
@@ -145,15 +152,27 @@ export function TimelineGraph({
   const [zoomLevel, setZoomLevel] = useState(1);
 
   const handleControlClick = (action: string) => {
-    if (onControlClick) {
-      onControlClick(action);
+    switch (action) {
+      case "play":
+        if (!isRunning) startSequence();
+        break;
+      case "pause":
+        if (isRunning) pauseSequence();
+        break;
+      case "stop":
+        stopSequence();
+        break;
+      case "zoomIn":
+        setZoomLevel((prev) => prev + 0.1);
+        break;
+      case "zoomOut":
+        setZoomLevel((prev) => Math.max(0.5, prev - 0.1));
+        break;
+      // other controls can be added here
+      default:
+        break;
     }
-    if (action === "zoomIn") {
-      setZoomLevel((prev) => Math.min(2, prev + 0.1));
-    }
-    if (action === "zoomOut") {
-      setZoomLevel((prev) => Math.max(0.5, prev - 0.1));
-    }
+    if (mergedProps.onControlClick) mergedProps.onControlClick(action);
   };
 
   const chartContainerStyle = {
@@ -169,19 +188,22 @@ export function TimelineGraph({
       transition={{ duration: 0.5 }}
       className="bg-gray-900 p-4 rounded-lg shadow-lg relative"
     >
-      {showControls && (
+      <h2 className="text-lg font-semibold text-white mb-2">时间轴图</h2>
+      {mergedProps.showControls && (
         <motion.div
           className="absolute top-2 right-2 flex gap-3 bg-gray-800/50 backdrop-blur-sm p-1.5 rounded-lg"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
         >
-          {controlIcons?.play && (
+          {mergedProps.controlIcons?.play && (
             <motion.div
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => handleControlClick("play")}
-              className="p-1 rounded-full hover:bg-gray-700 cursor-pointer relative group active:scale-95 transition-transform"
+              className={`p-1 rounded-full hover:bg-gray-700 cursor-pointer relative group active:scale-95 transition-transform ${
+                isRunning ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             >
               <Play className="w-5 h-5 text-gray-300" />
               <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 px-2 py-1 rounded text-sm text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -189,12 +211,14 @@ export function TimelineGraph({
               </div>
             </motion.div>
           )}
-          {controlIcons?.pause && (
+          {mergedProps.controlIcons?.pause && (
             <motion.div
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => handleControlClick("pause")}
-              className="p-1 rounded-full hover:bg-gray-700 cursor-pointer relative group active:scale-95 transition-transform"
+              className={`p-1 rounded-full hover:bg-gray-700 cursor-pointer relative group active:scale-95 transition-transform ${
+                !isRunning ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             >
               <Pause className="w-5 h-5 text-gray-300" />
               <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 px-2 py-1 rounded text-sm text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -202,7 +226,7 @@ export function TimelineGraph({
               </div>
             </motion.div>
           )}
-          {controlIcons?.refresh && (
+          {mergedProps.controlIcons?.refresh && (
             <motion.div
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -215,7 +239,7 @@ export function TimelineGraph({
               </div>
             </motion.div>
           )}
-          {controlIcons?.settings && (
+          {mergedProps.controlIcons?.settings && (
             <motion.div
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -228,7 +252,7 @@ export function TimelineGraph({
               </div>
             </motion.div>
           )}
-          {controlIcons?.zoomIn && (
+          {mergedProps.controlIcons?.zoomIn && (
             <motion.div
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -241,7 +265,7 @@ export function TimelineGraph({
               </div>
             </motion.div>
           )}
-          {controlIcons?.zoomOut && (
+          {mergedProps.controlIcons?.zoomOut && (
             <motion.div
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -267,24 +291,24 @@ export function TimelineGraph({
             {Math.round(zoomLevel * 100)}%
           </div>
         )}
-        <ResponsiveContainer width="100%" height={height}>
-          {showLineChart ? (
+        <ResponsiveContainer width="100%" height={mergedProps.height}>
+          {mergedProps.showLineChart ? (
             <LineChart
               data={formattedData}
-              {...(zoomable && { zoomable: true })}
-              {...(panable && { panable: true })}
+              {...(mergedProps.zoomable && { zoomable: true })}
+              {...(mergedProps.panable && { panable: true })}
             >
-              {showGrid && (
+              {mergedProps.showGrid && (
                 <CartesianGrid
-                  stroke={gridStroke}
-                  strokeDasharray={gridStrokeDasharray}
+                  stroke={mergedProps.gridStroke}
+                  strokeDasharray={mergedProps.gridStrokeDasharray}
                 />
               )}
               <XAxis
                 dataKey="hour"
                 stroke="#ccc"
                 label={{
-                  value: axisLabels.x,
+                  value: mergedProps.axisLabels?.x || "",
                   position: "insideBottom",
                   offset: -10,
                 }}
@@ -292,7 +316,7 @@ export function TimelineGraph({
               <YAxis
                 stroke="#ccc"
                 label={{
-                  value: axisLabels.y,
+                  value: mergedProps.axisLabels?.y || "",
                   angle: -90,
                   position: "insideLeft",
                   offset: 10,
@@ -327,30 +351,32 @@ export function TimelineGraph({
                 }}
                 cursor={{ fill: "rgba(255,255,255,0.1)" }}
               />
-              {showLegend && <Legend verticalAlign={legendPosition} />}
-              {Array.isArray(data[0]?.value) ? (
-                data[0].value.map((_, i) => (
+              {mergedProps.showLegend && (
+                <Legend verticalAlign={mergedProps.legendPosition} />
+              )}
+              {Array.isArray(timeline[0]?.value) ? (
+                timeline[0].value.map((_, i) => (
                   <Line
                     key={i}
                     id={`chart-element-${i}`}
                     type="monotone"
                     dataKey={`value${i}`}
                     stroke={
-                      colors?.[i] ||
+                      mergedProps.colors?.[i] ||
                       `hsl(${
                         (i * 360) /
-                        (Array.isArray(data[0]?.value)
-                          ? data[0].value.length
+                        (Array.isArray(timeline[0]?.value)
+                          ? timeline[0].value.length
                           : 1)
                       }, 70%, 50%)`
                     }
                     strokeWidth={2}
                     dot={
-                      showMarkers
+                      mergedProps.showMarkers
                         ? {
-                            stroke: markerStroke,
-                            fill: markerFill,
-                            r: markerSize,
+                            stroke: mergedProps.markerStroke,
+                            fill: mergedProps.markerFill,
+                            r: mergedProps.markerSize,
                           }
                         : false
                     }
@@ -362,14 +388,14 @@ export function TimelineGraph({
                   id="chart-element-single"
                   type="monotone"
                   dataKey="value"
-                  stroke={colors?.[0] || "#82ca9d"}
+                  stroke={mergedProps.colors?.[0] || "#82ca9d"}
                   strokeWidth={2}
                   dot={
-                    showMarkers
+                    mergedProps.showMarkers
                       ? {
-                          stroke: markerStroke,
-                          fill: markerFill,
-                          r: markerSize,
+                          stroke: mergedProps.markerStroke,
+                          fill: mergedProps.markerFill,
+                          r: mergedProps.markerSize,
                         }
                       : false
                   }
@@ -390,20 +416,20 @@ export function TimelineGraph({
           ) : (
             <BarChart
               data={formattedData}
-              {...(zoomable && { zoomable: true })}
-              {...(panable && { panable: true })}
+              {...(mergedProps.zoomable && { zoomable: true })}
+              {...(mergedProps.panable && { panable: true })}
             >
-              {showGrid && (
+              {mergedProps.showGrid && (
                 <CartesianGrid
-                  stroke={gridStroke}
-                  strokeDasharray={gridStrokeDasharray}
+                  stroke={mergedProps.gridStroke}
+                  strokeDasharray={mergedProps.gridStrokeDasharray}
                 />
               )}
               <XAxis
                 dataKey="hour"
                 stroke="#ccc"
                 label={{
-                  value: axisLabels.x,
+                  value: mergedProps.axisLabels?.x || "",
                   position: "insideBottom",
                   offset: -10,
                 }}
@@ -411,7 +437,7 @@ export function TimelineGraph({
               <YAxis
                 stroke="#ccc"
                 label={{
-                  value: axisLabels.y,
+                  value: mergedProps.axisLabels?.y || "",
                   angle: -90,
                   position: "insideLeft",
                   offset: 10,
@@ -422,19 +448,21 @@ export function TimelineGraph({
                 itemStyle={{ color: "#fff" }}
                 cursor={{ fill: "rgba(255,255,255,0.1)" }}
               />
-              {showLegend && <Legend verticalAlign={legendPosition} />}
-              {Array.isArray(data[0]?.value) ? (
-                data[0].value.map((_, i) => (
+              {mergedProps.showLegend && (
+                <Legend verticalAlign={mergedProps.legendPosition} />
+              )}
+              {Array.isArray(timeline[0]?.value) ? (
+                timeline[0].value.map((_, i) => (
                   <Bar
                     key={i}
                     id={`chart-element-${i}`}
                     dataKey={`value${i}`}
                     fill={
-                      colors?.[i] ||
+                      mergedProps.colors?.[i] ||
                       `hsl(${
                         (i * 360) /
-                        (Array.isArray(data[0]?.value)
-                          ? data[0].value.length
+                        (Array.isArray(timeline[0]?.value)
+                          ? timeline[0].value.length
                           : 1)
                       }, 70%, 50%)`
                     }

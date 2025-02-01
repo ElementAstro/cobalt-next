@@ -2,10 +2,10 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Task } from "./exposure-task-list";
+import { ExposureTask } from "@/types/sequencer";
 
 interface SortableItemProps {
-  task: Task;
+  task: ExposureTask;
   children: React.ReactNode;
 }
 
@@ -27,7 +27,13 @@ export function SortableItem({ task, children }: SortableItemProps) {
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="p-2 bg-gray-800 rounded-md" /* 新增统一样式 */
+    >
       {children}
     </div>
   );

@@ -1,5 +1,11 @@
-import useWebSocketStore from "@/store/useWebSocketStore";
+import { useWebSocketStore } from "@/store/useWebSocketStore";
 
-const wsClient = useWebSocketStore.getState().client;
+export const getWsClient = () => {
+  const store = useWebSocketStore.getState();
+  if (!store.client) {
+    store.initializeClient();
+  }
+  return store.client;
+};
 
-export default wsClient;
+export default getWsClient;

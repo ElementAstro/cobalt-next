@@ -1,9 +1,8 @@
 import { create } from "zustand";
 import logger from "@/utils/logger";
 import MessageBus, { LogLevel } from "@/utils/message-bus";
-import WebSocketClient from "@/utils/websocket-client";
 import { z } from "zod";
-import wsClient from "@/utils/ws-client";
+import getWsClient from "@/utils/ws-client";
 
 // Zod schemas for Camera
 const CameraStatusSchema = z.object({
@@ -122,6 +121,7 @@ interface CameraSettingMessage {
 }
 
 export const useCameraStore = create<CameraState>((set, get) => {
+  const wsClient = getWsClient();
   if (!wsClient) {
     throw new Error("WebSocket client is not initialized");
   }

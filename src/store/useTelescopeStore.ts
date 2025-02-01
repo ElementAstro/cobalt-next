@@ -1,9 +1,8 @@
 import logger from "@/utils/logger";
 import MessageBus, { LogLevel } from "@/utils/message-bus";
-import WebSocketClient from "@/utils/websocket-client";
 import { z } from "zod";
 import { create } from "zustand";
-import wsClient from "@/utils/ws-client";
+import getWsClient from "@/utils/ws-client";
 
 // Zod schemas for Telescope
 const TelescopeStatusSchema = z.object({
@@ -106,6 +105,7 @@ interface TelescopeSettingMessage {
 }
 
 export const useTelescopeStore = create<TelescopeState>((set, get) => {
+  const wsClient = getWsClient();
   if (!wsClient) {
     throw new Error("WebSocket client is not initialized");
   }
